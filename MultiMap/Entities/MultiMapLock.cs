@@ -1,8 +1,9 @@
-﻿using System.Collections;
+﻿using MultiMap.Interfaces;
+using System.Collections;
 
-namespace MultiMap
+namespace MultiMap.Entities
 {
-    public class MultiMapLock<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
+    public class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
         where TKey : notnull
         where TValue : notnull
     {
@@ -149,6 +150,19 @@ namespace MultiMap
                 {
                     _lock.ExitReadLock();
                 }
+            }
+        }
+
+        public void Clear()
+        {
+            _lock.EnterWriteLock();
+            try
+            {
+                _dictionary.Clear();
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
             }
         }
 

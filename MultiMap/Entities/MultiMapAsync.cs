@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace MultiMap
+namespace MultiMap.Entities
 {
     public class MultiMapAsync<TKey, TValue> : IAsyncEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
         where TKey : notnull

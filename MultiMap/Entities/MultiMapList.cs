@@ -1,45 +1,48 @@
-﻿using System.Collections;
+﻿using MultiMap.Interfaces;
+using System.Collections;
 
-namespace MultiMap
+namespace MultiMap.Entities
 {
-    public class SortedMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public class MultiMapList<TKey, TValue> : IMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
-        private SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
+        private readonly Dictionary<TKey, List<TValue>> _dictionary;
 
-        public SortedMultiMap()
+        public MultiMapList()
         {
-            _dictionary = new SortedDictionary<TKey, SortedSet<TValue>>();
+            _dictionary = new Dictionary<TKey, List<TValue>>();
         }
 
         public bool Add(TKey key, TValue value)
         {
-            if (!_dictionary.TryGetValue(key, out var set))
+            if (!_dictionary.TryGetValue(key, out var list))
             {
-                set = new SortedSet<TValue>();
-                _dictionary[key] = set;
+                list = new List<TValue>();
+                _dictionary[key] = list;
             }
 
-            return set.Add(value);
+            list.Add(value);
+
+            return true;
         }
 
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (!_dictionary.TryGetValue(key, out var set))
+            if (!_dictionary.TryGetValue(key, out var list))
             {
-                set = new SortedSet<TValue>();
-                _dictionary[key] = set;
+                list = new List<TValue>();
+                _dictionary[key] = list;
             }
 
-            foreach (var value in values)
-                set.Add(value);
+            list.AddRange(values);
         }
 
+        // Get all values for a key
         public IEnumerable<TValue> Get(TKey key)
         {
-            if (_dictionary.TryGetValue(key, out var set))
-                return set;
+            if (_dictionary.TryGetValue(key, out var list))
+                return list;
 
             return Enumerable.Empty<TValue>();
         }
@@ -47,11 +50,11 @@ namespace MultiMap
         // Remove a specific value under a key
         public bool Remove(TKey key, TValue value)
         {
-            if (_dictionary.TryGetValue(key, out var set))
+            if (_dictionary.TryGetValue(key, out var list))
             {
-                bool removed = set.Remove(value);
+                bool removed = list.Remove(value);
 
-                if (set.Count == 0)
+                if (list.Count == 0)
                     _dictionary.Remove(key);
 
                 return removed;
@@ -60,11 +63,13 @@ namespace MultiMap
             return false;
         }
 
+        // Remove all values for a key
         public bool RemoveKey(TKey key)
         {
             return _dictionary.Remove(key);
         }
 
+        // Check if key exists
         public bool ContainsKey(TKey key)
         {
             return _dictionary.ContainsKey(key);
@@ -73,7 +78,7 @@ namespace MultiMap
         // Check if key contains a specific value
         public bool Contains(TKey key, TValue value)
         {
-            return _dictionary.TryGetValue(key, out var set) && set.Contains(value);
+            return _dictionary.TryGetValue(key, out var list) && list.Contains(value);
         }
 
         // Get total number of key-value pairs
@@ -81,6 +86,7 @@ namespace MultiMap
 
         public void Clear() => _dictionary.Clear();
 
+        // Enumerator to iterate through all key-value pairs
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             foreach (var kvp in _dictionary)
@@ -96,8 +102,8 @@ namespace MultiMap
 
         public override bool Equals(object? obj)
         {
-            return obj is SortedMultiMap<TKey, TValue> map &&
-                   EqualityComparer<SortedDictionary<TKey, SortedSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
+            return obj is MultiMapList<TKey, TValue> map &&
+                   EqualityComparer<Dictionary<TKey, List<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
         public override int GetHashCode()

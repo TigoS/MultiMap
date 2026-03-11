@@ -1,45 +1,49 @@
-﻿using System.Collections;
+﻿using MultiMap.Interfaces;
+using System.Collections;
 
-namespace MultiMap
+namespace MultiMap.Entities
 {
-    public class MultiMapList<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public class MultiMapSet<TKey, TValue> : IMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly Dictionary<TKey, List<TValue>> _dictionary;
+        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
 
-        public MultiMapList()
+        public MultiMapSet()
         {
-            _dictionary = new Dictionary<TKey, List<TValue>>();
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
         }
 
-        public void Add(TKey key, TValue value)
+        public bool Add(TKey key, TValue value)
         {
-            if (!_dictionary.TryGetValue(key, out var list))
+            if (!_dictionary.TryGetValue(key, out var hashset))
             {
-                list = new List<TValue>();
-                _dictionary[key] = list;
+                hashset = new HashSet<TValue>();
+                _dictionary[key] = hashset;
             }
 
-            list.Add(value);
+            return hashset.Add(value); // Returns false if duplicate
         }
 
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (!_dictionary.TryGetValue(key, out var list))
+            if (!_dictionary.TryGetValue(key, out var hashset))
             {
-                list = new List<TValue>();
-                _dictionary[key] = list;
+                hashset = new HashSet<TValue>();
+                _dictionary[key] = hashset;
             }
 
-            list.AddRange(values);
+            foreach (var value in values)
+            {
+                hashset.Add(value); // Ignores duplicates
+            }
         }
 
         // Get all values for a key
         public IEnumerable<TValue> Get(TKey key)
         {
-            if (_dictionary.TryGetValue(key, out var list))
-                return list;
+            if (_dictionary.TryGetValue(key, out var hashset))
+                return hashset;
 
             return Enumerable.Empty<TValue>();
         }
@@ -75,7 +79,7 @@ namespace MultiMap
         // Check if key contains a specific value
         public bool Contains(TKey key, TValue value)
         {
-            return _dictionary.TryGetValue(key, out var list) && list.Contains(value);
+            return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
         }
 
         // Get total number of key-value pairs
@@ -99,8 +103,8 @@ namespace MultiMap
 
         public override bool Equals(object? obj)
         {
-            return obj is MultiMapList<TKey, TValue> map &&
-                   EqualityComparer<Dictionary<TKey, List<TValue>>>.Default.Equals(_dictionary, map._dictionary);
+            return obj is MultiMapSet<TKey, TValue> map &&
+                   EqualityComparer<Dictionary<TKey, HashSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
         public override int GetHashCode()

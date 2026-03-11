@@ -1,9 +1,10 @@
-﻿using System.Collections;
+﻿using MultiMap.Interfaces;
+using System.Collections;
 using System.Collections.Concurrent;
 
-namespace MultiMap
+namespace MultiMap.Entities
 {
-    public class ConcurrentMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public class ConcurrentMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
@@ -77,6 +78,8 @@ namespace MultiMap
 
         public int Count =>
             _dictionary.Sum(kvp => kvp.Value.Count);
+
+        public void Clear() => _dictionary.Clear();
 
         // Enumerator
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

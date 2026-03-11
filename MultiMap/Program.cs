@@ -1,5 +1,5 @@
 ﻿// See https://aka.ms/new-console-template for more information
-using MultiMap;
+using MultiMap.Entities;
 
 var multiMap = new MultiMapList<string, int>();
 
