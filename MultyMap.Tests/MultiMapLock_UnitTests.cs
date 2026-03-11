@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using System.Reflection;
 
 namespace MultyMap.Tests;
 
@@ -492,5 +493,16 @@ public class MultiMapLockTests
 
         Assert.That(_map.Count, Is.Zero);
         Assert.That(_map.ContainsKey("a"), Is.False);
+    }
+
+    [Test]
+    public void Dispose_WhenLockIsNull_DoesNotThrow()
+    {
+        var map = new MultiMapLock<string, int>();
+        var field = typeof(MultiMapLock<string, int>)
+            .GetField("_lock", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        field.SetValue(map, null);
+
+        Assert.DoesNotThrow(() => map.Dispose());
     }
 }

@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using System.Reflection;
 
 namespace MultyMap.Tests;
 
@@ -461,5 +462,16 @@ public class MultiMapAsyncTests
         Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
 
         other.Dispose();
+    }
+
+    [Test]
+    public void Dispose_WhenSemaphoreIsNull_DoesNotThrow()
+    {
+        var map = new MultiMapAsync<string, int>();
+        var field = typeof(MultiMapAsync<string, int>)
+            .GetField("_semaphore", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        field.SetValue(map, null);
+
+        Assert.DoesNotThrow(() => map.Dispose());
     }
 }
