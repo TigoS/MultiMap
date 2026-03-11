@@ -1,4 +1,4 @@
-using MultiMap;
+using MultiMap.Entities;
 
 namespace MultyMap.Tests;
 
@@ -417,5 +417,17 @@ public class ConcurrentMultiMapTests
         other.Add("a", 1);
 
         Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
+    }
+
+    [Test]
+    public void Clear_RemovesAllEntries()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        _map.Clear();
+
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.ContainsKey("a"), Is.False);
     }
 }

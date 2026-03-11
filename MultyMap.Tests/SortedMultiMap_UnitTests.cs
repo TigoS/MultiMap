@@ -1,4 +1,4 @@
-using MultiMap;
+using MultiMap.Entities;
 
 namespace MultyMap.Tests;
 

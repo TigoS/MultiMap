@@ -1,4 +1,4 @@
-using MultiMap;
+using MultiMap.Entities;
 
 namespace MultyMap.Tests;
 
@@ -480,5 +480,17 @@ public class MultiMapLockTests
         Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
 
         other.Dispose();
+    }
+
+    [Test]
+    public void Clear_RemovesAllEntries()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        _map.Clear();
+
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.ContainsKey("a"), Is.False);
     }
 }

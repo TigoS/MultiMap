@@ -1,9 +1,9 @@
-﻿using MultiMap;
+﻿using MultiMap.Entities;
 
 namespace MultyMap.Tests;
 
 [TestFixture]
-public class MultiMapTests
+public class MultiMapListTests
 {
     private MultiMapList<string, int> _map;
 
@@ -19,6 +19,20 @@ public class MultiMapTests
         _map.Add("a", 1);
 
         Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Add_NewValue_ReturnsTrue()
+    {
+        Assert.That(_map.Add("a", 1), Is.True);
+    }
+
+    [Test]
+    public void Add_DuplicateValue_AlsoReturnsTrue()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.Add("a", 1), Is.True);
     }
 
     [Test]
@@ -300,6 +314,18 @@ public class MultiMapTests
         _map.Remove("a", 1);
 
         Assert.That(_map.Contains("a", 1), Is.False);
+    }
+
+    [Test]
+    public void Clear_RemovesAllEntries()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        _map.Clear();
+
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.ContainsKey("a"), Is.False);
     }
 
     [Test]
