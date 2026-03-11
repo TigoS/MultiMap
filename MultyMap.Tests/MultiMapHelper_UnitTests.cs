@@ -1064,7 +1064,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 2);
         _other.Add("b", 3);
 
-        _target.Union(_other);
+        _target = _target.MyUnion(_other);
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
@@ -1075,7 +1075,7 @@ public class SimpleMultiMapHelperTests
     {
         _target.Add("a", 1);
 
-        _target.Union(_other);
+        _target.MyUnion(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
     }
@@ -1086,7 +1086,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.Union(_other);
+        _target.MyUnion(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1099,7 +1099,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("a", 1);
 
-        _target.Union(_other);
+        _target.MyUnion(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
     }
@@ -1107,7 +1107,7 @@ public class SimpleMultiMapHelperTests
     [Test]
     public void Union_BothEmpty_RemainsEmpty()
     {
-        _target.Union(_other);
+        _target.MyUnion(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1118,7 +1118,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.Union(_other);
+        _target.MyUnion(_other);
 
         Assert.That(_other.Flatten().Count(), Is.EqualTo(1));
         Assert.That(_other.GetOrDefault("a"), Is.Empty);
@@ -1132,7 +1132,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("b", 3);
         _other.Add("c", 4);
 
-        _target.Union(_other);
+        _target.MyUnion(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(4));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1151,7 +1151,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 3);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
@@ -1164,7 +1164,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1174,7 +1174,7 @@ public class SimpleMultiMapHelperTests
     {
         _target.Add("a", 1);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1184,7 +1184,7 @@ public class SimpleMultiMapHelperTests
     {
         _other.Add("a", 1);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1197,7 +1197,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
     }
@@ -1209,7 +1209,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("b", 2);
         _other.Add("a", 1);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_other.Flatten().Count(), Is.EqualTo(1));
     }
@@ -1222,7 +1222,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 3);
         _other.Add("a", 2);
 
-        _target.Intersect(_other);
+        _target = _target.MyIntersect(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
@@ -1239,7 +1239,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 3);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
         Assert.That(_target.GetOrDefault("b"), Is.Empty);
@@ -1252,7 +1252,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1263,7 +1263,7 @@ public class SimpleMultiMapHelperTests
     {
         _target.Add("a", 1);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
     }
@@ -1274,7 +1274,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("a", 1);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1284,7 +1284,7 @@ public class SimpleMultiMapHelperTests
     {
         _other.Add("a", 1);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1296,7 +1296,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1307,7 +1307,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("a", 1);
 
-        _target.ExceptWith(_other);
+        _target.MyExceptWith(_other);
 
         Assert.That(_other.Flatten().Count(), Is.EqualTo(1));
         Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1323,7 +1323,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 2);
         _other.Add("b", 3);
 
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
@@ -1336,7 +1336,7 @@ public class SimpleMultiMapHelperTests
         _target.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1351,7 +1351,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1361,7 +1361,7 @@ public class SimpleMultiMapHelperTests
     {
         _target.Add("a", 1);
 
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1373,7 +1373,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
@@ -1383,7 +1383,7 @@ public class SimpleMultiMapHelperTests
     [Test]
     public void SymmetricExceptWith_BothEmpty_RemainsEmpty()
     {
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_target.Flatten(), Is.Empty);
     }
@@ -1395,7 +1395,7 @@ public class SimpleMultiMapHelperTests
         _other.Add("a", 1);
         _other.Add("b", 2);
 
-        _target.SymmetricExceptWith(_other);
+        _target = _target.MySymmetricExceptWith(_other);
 
         Assert.That(_other.Flatten().Count(), Is.EqualTo(2));
         Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
