@@ -5,12 +5,12 @@ namespace MultyMap.Tests;
 [TestFixture]
 public class MultiMapTests
 {
-    private MultiMap<string, int> _map;
+    private MultiMapList<string, int> _map;
 
     [SetUp]
     public void SetUp()
     {
-        _map = new MultiMap<string, int>();
+        _map = new MultiMapList<string, int>();
     }
 
     [Test]
@@ -311,7 +311,7 @@ public class MultiMapTests
     [Test]
     public void Equals_DifferentInstanceSameContent_ReturnsFalse()
     {
-        var other = new MultiMap<string, int>();
+        var other = new MultiMapList<string, int>();
         _map.Add("a", 1);
         other.Add("a", 1);
 
@@ -344,7 +344,7 @@ public class MultiMapTests
     [Test]
     public void GetHashCode_DifferentInstances_MayDiffer()
     {
-        var other = new MultiMap<string, int>();
+        var other = new MultiMapList<string, int>();
         _map.Add("a", 1);
         other.Add("a", 1);
 

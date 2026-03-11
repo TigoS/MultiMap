@@ -2,13 +2,13 @@
 
 namespace MultiMap
 {
-    public class MultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public class MultiMapList<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
         where TKey : notnull
         where TValue : notnull
     {
         private readonly Dictionary<TKey, List<TValue>> _dictionary;
 
-        public MultiMap()
+        public MultiMapList()
         {
             _dictionary = new Dictionary<TKey, List<TValue>>();
         }
@@ -99,7 +99,7 @@ namespace MultiMap
 
         public override bool Equals(object? obj)
         {
-            return obj is MultiMap<TKey, TValue> map &&
+            return obj is MultiMapList<TKey, TValue> map &&
                    EqualityComparer<Dictionary<TKey, List<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
