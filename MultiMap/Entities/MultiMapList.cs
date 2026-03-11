@@ -3,17 +3,33 @@ using System.Collections;
 
 namespace MultiMap.Entities
 {
+    /// <summary>
+    /// Represents a collection that associates multiple values with each key,
+    /// allowing efficient storage and retrieval of key-value pairs where keys may map to zero or more values.
+    /// </summary>
+    /// <remarks>MultiMapList<TKey, TValue> is useful for scenarios where a key can have multiple associated
+    /// values, such as grouping or indexing. The collection maintains insertion order for values under each key.
+    /// Keys and values must be non-null. Thread safety is not guaranteed;
+    /// external synchronization is required for concurrent access.</remarks>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapList<TKey, TValue> : IMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
         private readonly Dictionary<TKey, List<TValue>> _dictionary;
 
+        /// <summary>
+        /// Initializes a new instance of the MultiMapList class with an empty mapping.
+        /// </summary>
+        /// <remarks>Use this constructor to create a MultiMapList that starts with no key-value associations.
+        /// The internal dictionary is initialized and ready for adding keys and values.</remarks>
         public MultiMapList()
         {
             _dictionary = new Dictionary<TKey, List<TValue>>();
         }
 
+        /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
             if (!_dictionary.TryGetValue(key, out var list))
@@ -27,6 +43,7 @@ namespace MultiMap.Entities
             return true;
         }
 
+        /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
             if (!_dictionary.TryGetValue(key, out var list))
@@ -38,7 +55,7 @@ namespace MultiMap.Entities
             list.AddRange(values);
         }
 
-        // Get all values for a key
+        /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var list))
@@ -47,7 +64,7 @@ namespace MultiMap.Entities
             return Enumerable.Empty<TValue>();
         }
 
-        // Remove a specific value under a key
+        /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
             if (_dictionary.TryGetValue(key, out var list))
@@ -63,30 +80,31 @@ namespace MultiMap.Entities
             return false;
         }
 
-        // Remove all values for a key
+        /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
             return _dictionary.Remove(key);
         }
 
-        // Check if key exists
+        /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
             return _dictionary.ContainsKey(key);
         }
 
-        // Check if key contains a specific value
+        /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
             return _dictionary.TryGetValue(key, out var list) && list.Contains(value);
         }
 
-        // Get total number of key-value pairs
+        /// <inheritdoc/>
         public int Count => _dictionary.Sum(kvp => kvp.Value.Count);
 
+        /// <inheritdoc/>
         public void Clear() => _dictionary.Clear();
 
-        // Enumerator to iterate through all key-value pairs
+        /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             foreach (var kvp in _dictionary)
@@ -98,14 +116,17 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
             return obj is MultiMapList<TKey, TValue> map &&
                    EqualityComparer<Dictionary<TKey, List<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return HashCode.Combine(_dictionary);

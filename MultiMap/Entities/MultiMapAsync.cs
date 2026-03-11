@@ -2,6 +2,18 @@ using System.Runtime.CompilerServices;
 
 namespace MultiMap.Entities
 {
+    /// <summary>
+    /// Represents an asynchronous multi-map collection that associates each key with a set of unique values. Provides
+    /// thread-safe operations for adding, removing, and retrieving values by key, as well as asynchronous enumeration
+    /// of all key-value pairs.
+    /// </summary>
+    /// <remarks>MultiMapAsync is designed for concurrent scenarios where asynchronous access and modification
+    /// of the collection are required. All operations are thread-safe and use internal locking to ensure consistency.
+    /// Enumerating the collection produces a snapshot of the current state, so changes made during enumeration are not reflected.
+    /// This class is useful for managing associations where each key can have multiple distinct values, such
+    /// as grouping or indexing tasks in asynchronous workflows.</remarks>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapAsync<TKey, TValue> : IAsyncEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
         where TKey : notnull
         where TValue : notnull
@@ -191,12 +203,14 @@ namespace MultiMap.Entities
             _semaphore?.Dispose();
         }
 
+        /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
             return obj is MultiMapAsync<TKey, TValue> map &&
                    EqualityComparer<Dictionary<TKey, HashSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return HashCode.Combine(_dictionary);

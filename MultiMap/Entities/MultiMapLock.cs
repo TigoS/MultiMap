@@ -3,6 +3,15 @@ using System.Collections;
 
 namespace MultiMap.Entities
 {
+    /// <summary>
+    /// Provides a thread-safe multi-map collection that associates each key with a set of values, allowing concurrent
+    /// access and modification.
+    /// </summary>
+    /// <remarks>This class uses internal locking to ensure safe concurrent operations. It is suitable for
+    /// scenarios where multiple threads need to add, remove, or query key-value associations without external
+    /// synchronization. Dispose the instance when no longer needed to release resources.</remarks>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
         where TKey : notnull
         where TValue : notnull
@@ -16,7 +25,7 @@ namespace MultiMap.Entities
             _lock = new ReaderWriterLockSlim();
         }
 
-        // Add value (no duplicates)
+        /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
             _lock.EnterWriteLock();
@@ -36,6 +45,7 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
             _lock.EnterWriteLock();
@@ -56,7 +66,7 @@ namespace MultiMap.Entities
             }
         }
 
-        // Get values for a key (returns snapshot for safety)
+        /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
             _lock.EnterReadLock();
@@ -73,7 +83,7 @@ namespace MultiMap.Entities
             }
         }
 
-        // Remove specific value
+        /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
             _lock.EnterWriteLock();
@@ -97,7 +107,7 @@ namespace MultiMap.Entities
             }
         }
 
-        // Remove entire key
+        /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
             _lock.EnterWriteLock();
@@ -111,6 +121,7 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
             _lock.EnterReadLock();
@@ -124,6 +135,7 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
             _lock.EnterReadLock();
@@ -137,6 +149,7 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
         public int Count
         {
             get
@@ -153,6 +166,7 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
         public void Clear()
         {
             _lock.EnterWriteLock();
@@ -166,7 +180,7 @@ namespace MultiMap.Entities
             }
         }
 
-        // Safe enumeration (snapshot)
+        /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             List<KeyValuePair<TKey, TValue>> snapshot;
@@ -186,14 +200,17 @@ namespace MultiMap.Entities
             return snapshot.GetEnumerator();
         }
 
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
             return obj is MultiMapLock<TKey, TValue> map &&
                    EqualityComparer<Dictionary<TKey, HashSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
+        /// <inheritdoc/>
         public override int GetHashCode()
         {
             return HashCode.Combine(_dictionary);
