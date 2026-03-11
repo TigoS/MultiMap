@@ -1,8 +1,8 @@
 ﻿namespace MultiMap.Interfaces
 {
     /// <summary>
-    /// Defines a collection that associates multiple values with each key, allowing retrieval, addition, and removal of
-    /// key-value pairs.
+    /// Defines a collection that associates multiple values with each key,
+    /// allowing retrieval, addition, and removal of key-value pairs.
     /// </summary>
     /// <remarks>A multimap enables storing multiple values for a single key, unlike a standard dictionary.
     /// Implementations may vary in how duplicate values are handled and in the ordering of values. The interface
@@ -41,7 +41,6 @@
         /// If the key does not exist, an empty collection is returned.</param>
         /// <returns>An enumerable collection of values associated with the specified key.
         /// The collection is empty if the key is not found.</returns>
-        // Get all values for a key
         public IEnumerable<TValue> Get(TKey key);
 
         /// <summary>
@@ -87,7 +86,6 @@
         /// <summary>
         /// Gets the total number of key-value pairs contained in the collection.
         /// </summary>
-        // Get total number of key-value pairs
         public int Count { get; }
     }
 }
