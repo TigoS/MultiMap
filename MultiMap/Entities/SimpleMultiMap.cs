@@ -24,7 +24,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        bool ISimpleMultiMap<TKey, TValue>.Add(TKey key, TValue value)
+        public bool Add(TKey key, TValue value)
         {
             if (!_dictionary.TryGetValue(key, out var hashset))
             {
@@ -36,7 +36,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        IEnumerable<TValue> ISimpleMultiMap<TKey, TValue>.Get(TKey key)
+        public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset;
@@ -45,7 +45,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        IEnumerable<TValue> ISimpleMultiMap<TKey, TValue>.GetOrDefault(TKey key)
+        public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset;
@@ -54,7 +54,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        void ISimpleMultiMap<TKey, TValue>.Remove(TKey key, TValue value)
+        public void Remove(TKey key, TValue value)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
             {
@@ -66,13 +66,13 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        void ISimpleMultiMap<TKey, TValue>.Clear(TKey key)
+        public void Clear(TKey key)
         {
             _dictionary.Remove(key);
         }
 
         /// <inheritdoc />
-        IEnumerable<KeyValuePair<TKey, TValue>> ISimpleMultiMap<TKey, TValue>.Flatten()
+        public IEnumerable<KeyValuePair<TKey, TValue>> Flatten()
         {
             foreach (var kvp in _dictionary)
             {
@@ -84,15 +84,12 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        IEnumerator<KeyValuePair<TKey, TValue>> IEnumerable<KeyValuePair<TKey, TValue>>.GetEnumerator()
+        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return ((ISimpleMultiMap<TKey, TValue>)this).Flatten().GetEnumerator();
+            return Flatten().GetEnumerator();
         }
 
         /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return ((IEnumerable<KeyValuePair<TKey, TValue>>)this).GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     }
 }
