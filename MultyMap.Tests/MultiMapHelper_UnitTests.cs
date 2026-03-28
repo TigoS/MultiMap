@@ -1402,3 +1402,371 @@ public class SimpleMultiMapHelperTests
         Assert.That(_other.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
 }
+
+[TestFixture]
+public class MultiMapHelperAsyncTests
+{
+    private MultiMapAsync<string, int> _target;
+    private MultiMapAsync<string, int> _other;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _target = new MultiMapAsync<string, int>();
+        _other = new MultiMapAsync<string, int>();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _target.Dispose();
+        _other.Dispose();
+    }
+
+    // ── UnionAsync ──────────────────────────────────────────
+
+    [Test]
+    public async Task UnionAsync_AddsAllPairsFromOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 2);
+        await _other.AddAsync("b", 3);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task UnionAsync_WithEmptyOther_DoesNotChangeTarget()
+    {
+        await _target.AddAsync("a", 1);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task UnionAsync_WithEmptyTarget_CopiesAllFromOther()
+    {
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+    }
+
+    [Test]
+    public async Task UnionAsync_OverlappingPairs_NoDuplicates()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task UnionAsync_BothEmpty_RemainsEmpty()
+    {
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task UnionAsync_DoesNotModifyOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _other.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _other.ContainsAsync("a", 1), Is.False);
+    }
+
+    [Test]
+    public async Task UnionAsync_MultipleKeys_MergesCorrectly()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("b", 3);
+        await _other.AddAsync("c", 4);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(4));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.ContainsAsync("c", 4), Is.True);
+    }
+
+    // ── IntersectAsync ──────────────────────────────────────
+
+    [Test]
+    public async Task IntersectAsync_KeepsOnlyCommonPairs()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("b", 3);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 3);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.False);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task IntersectAsync_NoOverlap_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task IntersectAsync_WithEmptyOther_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task IntersectAsync_WithEmptyTarget_RemainsEmpty()
+    {
+        await _other.AddAsync("a", 1);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task IntersectAsync_IdenticalMaps_KeepsAll()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task IntersectAsync_DoesNotModifyOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _other.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _other.ContainsAsync("b", 2), Is.False);
+    }
+
+    [Test]
+    public async Task IntersectAsync_SameKeySomeValuesMatch_KeepsOnlyMatchingValues()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("a", 3);
+        await _other.AddAsync("a", 2);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+    }
+
+    // ── ExceptWithAsync ─────────────────────────────────────
+
+    [Test]
+    public async Task ExceptWithAsync_RemovesPairsFoundInOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("b", 3);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 3);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 1), Is.False);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.False);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_WithEmptyOther_DoesNotChangeTarget()
+    {
+        await _target.AddAsync("a", 1);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_WithEmptyTarget_RemainsEmpty()
+    {
+        await _other.AddAsync("a", 1);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_CompleteOverlap_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_NoOverlap_TargetUnchanged()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_DoesNotModifyOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _other.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_BothEmpty_RemainsEmpty()
+    {
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    // ── SymmetricExceptWithAsync ────────────────────────────
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_KeepsPairsInOneButNotBoth()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _other.AddAsync("a", 2);
+        await _other.AddAsync("b", 3);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.False);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_IdenticalMaps_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_NoOverlap_CombinesAll()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_WithEmptyOther_TargetUnchanged()
+    {
+        await _target.AddAsync("a", 1);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_WithEmptyTarget_CopiesOther()
+    {
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_BothEmpty_RemainsEmpty()
+    {
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_DoesNotModifyOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _other.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _other.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _other.ContainsAsync("b", 2), Is.True);
+    }
+}
