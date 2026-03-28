@@ -115,7 +115,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        public static ISimpleMultiMap<TKey, TValue> MyUnion<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> Union<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -134,7 +134,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        public static ISimpleMultiMap<TKey, TValue> MyIntersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> Intersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -163,7 +163,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        public static ISimpleMultiMap<TKey, TValue> MyExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -183,7 +183,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        public static ISimpleMultiMap<TKey, TValue> MySymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
