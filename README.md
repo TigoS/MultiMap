@@ -75,7 +75,7 @@ MultiMap.Demo/                       # Console app demonstrating library usage
 ├── Program.cs                       # Demonstrates set operations on SimpleMultiMap
 └── MultiMap.Demo.csproj             # Console project referencing MultiMap
 
-MultyMap.Tests/                      # Unit test project
+MultiMap.Tests/                      # Unit test project
 ├── MultiMapList_UnitTest.cs
 ├── MultiMapSet_UnitTests.cs
 ├── SortedMultiMap_UnitTests.cs
@@ -106,6 +106,7 @@ The full-featured multimap interface, extending `IEnumerable<KeyValuePair<TKey, 
 | `Contains(TKey, TValue)` | `bool` | Checks if a specific key-value pair exists. |
 | `Clear()` | `void` | Removes all entries. |
 | `Count` | `int` | Total number of key-value pairs across all keys. |
+| `Keys` | `IEnumerable<TKey>` | Gets the collection of keys in the multimap. |
 
 ### ISimpleMultiMap\<TKey, TValue\>
 
@@ -265,10 +266,10 @@ The `MultiMapHelper` static class provides set-like operations as extension meth
 
 | Method | Returns | Description |
 |---|---|---|
-| `MyUnion(target, other)` | `ISimpleMultiMap` | Adds all pairs from `other` into `target`. |
-| `MyIntersect(target, other)` | `ISimpleMultiMap` | Keeps only pairs present in both. |
-| `MyExceptWith(target, other)` | `ISimpleMultiMap` | Removes pairs found in `other`. |
-| `MySymmetricExceptWith(target, other)` | `ISimpleMultiMap` | Keeps only pairs in one but not both. |
+| `Union(target, other)` | `ISimpleMultiMap` | Adds all pairs from `other` into `target`. |
+| `Intersect(target, other)` | `ISimpleMultiMap` | Keeps only pairs present in both. |
+| `ExceptWith(target, other)` | `ISimpleMultiMap` | Removes pairs found in `other`. |
+| `SymmetricExceptWith(target, other)` | `ISimpleMultiMap` | Keeps only pairs in one but not both. |
 
 ---
 
@@ -501,7 +502,7 @@ var map2 = new SimpleMultiMap<string, int>();
 map2.Add("A", 2);
 map2.Add("B", 3);
 
-var result = map1.MyUnion(map2); // A:[1,2], B:[3]
+var result = map1.Union(map2); // A:[1,2], B:[3]
 
 foreach (var kvp in result.Flatten())
 {
