@@ -1,6 +1,6 @@
 using MultiMap.Entities;
 
-namespace MultyMap.Tests;
+namespace MultiMap.Tests;
 
 [TestFixture]
 public class ConcurrentMultiMapTests

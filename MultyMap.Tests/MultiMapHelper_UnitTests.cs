@@ -2,7 +2,7 @@ using MultiMap.Entities;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
-namespace MultyMap.Tests;
+namespace MultiMap.Tests;
 
 [TestFixture]
 public class MultiMapHelperTests
