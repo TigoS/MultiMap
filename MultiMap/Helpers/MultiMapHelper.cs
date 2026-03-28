@@ -214,5 +214,113 @@ namespace MultiMap.Helpers
 
             return target;
         }
+
+        // ── IMultiMapAsync overloads ──────────────────────
+
+        /// <summary>
+        /// Asynchronously adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
+        /// <param name="target">The multimap to add pairs into.</param>
+        /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public static async Task UnionAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
+        {
+            var keys = await other.GetKeysAsync(cancellationToken);
+
+            foreach (var key in keys)
+            {
+                var values = await other.GetAsync(key, cancellationToken);
+                await target.AddRangeAsync(key, values, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously removes all key-value pairs from <paramref name="target"/> that do not exist in <paramref name="other"/>.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
+        /// <param name="target">The multimap to modify.</param>
+        /// <param name="other">The multimap that defines the pairs to keep.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public static async Task IntersectAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
+        {
+            var toRemove = new List<KeyValuePair<TKey, TValue>>();
+
+            await foreach (var kvp in target.WithCancellation(cancellationToken))
+            {
+                if (!await other.ContainsAsync(kvp.Key, kvp.Value, cancellationToken))
+                {
+                    toRemove.Add(kvp);
+                }
+            }
+
+            foreach (var kvp in toRemove)
+            {
+                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously removes all key-value pairs from <paramref name="target"/> that exist in <paramref name="other"/>.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
+        /// <param name="target">The multimap to remove pairs from.</param>
+        /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public static async Task ExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
+        {
+            await foreach (var kvp in other.WithCancellation(cancellationToken))
+            {
+                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Asynchronously modifies <paramref name="target"/> to contain only pairs present in either
+        /// <paramref name="target"/> or <paramref name="other"/>, but not both.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
+        /// <param name="target">The multimap to modify.</param>
+        /// <param name="other">The multimap to compare against.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public static async Task SymmetricExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
+        {
+            var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var toAdd = new List<KeyValuePair<TKey, TValue>>();
+
+            await foreach (var kvp in other.WithCancellation(cancellationToken))
+            {
+                if (await target.ContainsAsync(kvp.Key, kvp.Value, cancellationToken))
+                {
+                    toRemove.Add(kvp);
+                }
+                else
+                {
+                    toAdd.Add(kvp);
+                }
+            }
+
+            foreach (var kvp in toRemove)
+            {
+                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
+            }
+
+            foreach (var kvp in toAdd)
+            {
+                await target.AddAsync(kvp.Key, kvp.Value, cancellationToken);
+            }
+        }
     }
 }
