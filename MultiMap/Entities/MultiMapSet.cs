@@ -1,5 +1,6 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace MultiMap.Entities
 {
@@ -19,6 +20,7 @@ namespace MultiMap.Entities
         where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class.
@@ -31,26 +33,29 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            if (!_dictionary.TryGetValue(key, out var hashset))
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            hashset ??= new HashSet<TValue>();
+
+            if (hashset.Add(value))
             {
-                hashset = new HashSet<TValue>();
-                _dictionary[key] = hashset;
+                _count++;
+                return true;
             }
 
-            return hashset.Add(value);
+            return false;
         }
 
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>();
-                _dictionary[key] = hashset;
-            }
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            hashset ??= new HashSet<TValue>();
 
             foreach (var value in values)
-                hashset.Add(value);
+            {
+                if (hashset.Add(value))
+                    _count++;
+            }
         }
 
         /// <inheritdoc/>
@@ -59,18 +64,22 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset;
 
-            return Enumerable.Empty<TValue>();
+            return [];
         }
 
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            if (_dictionary.TryGetValue(key, out var list))
+            if (_dictionary.TryGetValue(key, out var hashset))
             {
-                bool removed = list.Remove(value);
+                bool removed = hashset.Remove(value);
 
-                if (list.Count == 0)
-                    _dictionary.Remove(key);
+                if (removed)
+                {
+                    _count--;
+                    if (hashset.Count == 0)
+                        _dictionary.Remove(key);
+                }
 
                 return removed;
             }
@@ -81,7 +90,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            return _dictionary.Remove(key);
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                _count -= hashset.Count;
+                return _dictionary.Remove(key);
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -97,13 +112,17 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _dictionary.Sum(kvp => kvp.Value.Count);
+        public int Count => _count;
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
-        public void Clear() => _dictionary.Clear();
+        public void Clear()
+        {
+            _dictionary.Clear();
+            _count = 0;
+        }
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

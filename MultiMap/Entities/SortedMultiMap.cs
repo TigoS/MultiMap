@@ -19,6 +19,7 @@ namespace MultiMap.Entities
         where TValue : notnull
     {
         private SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class.
@@ -37,7 +38,13 @@ namespace MultiMap.Entities
                 _dictionary[key] = set;
             }
 
-            return set.Add(value);
+            if (set.Add(value))
+            {
+                _count++;
+                return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -50,7 +57,10 @@ namespace MultiMap.Entities
             }
 
             foreach (var value in values)
-                set.Add(value);
+            {
+                if (set.Add(value))
+                    _count++;
+            }
         }
 
         /// <inheritdoc/>
@@ -59,7 +69,7 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var set))
                 return set;
 
-            return Enumerable.Empty<TValue>();
+            return [];
         }
 
         /// <inheritdoc/>
@@ -69,8 +79,12 @@ namespace MultiMap.Entities
             {
                 bool removed = set.Remove(value);
 
-                if (set.Count == 0)
-                    _dictionary.Remove(key);
+                if (removed)
+                {
+                    _count--;
+                    if (set.Count == 0)
+                        _dictionary.Remove(key);
+                }
 
                 return removed;
             }
@@ -81,7 +95,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            return _dictionary.Remove(key);
+            if (_dictionary.TryGetValue(key, out var set))
+            {
+                _count -= set.Count;
+                return _dictionary.Remove(key);
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -97,13 +117,17 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _dictionary.Sum(kvp => kvp.Value.Count);
+        public int Count => _count;
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
-        public void Clear() => _dictionary.Clear();
+        public void Clear()
+        {
+            _dictionary.Clear();
+            _count = 0;
+        }
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

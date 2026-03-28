@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
@@ -21,6 +22,7 @@ namespace MultiMap.Entities
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly SemaphoreSlim _semaphore;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class.
@@ -37,13 +39,16 @@ namespace MultiMap.Entities
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
-                if (!_dictionary.TryGetValue(key, out var hashset))
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>();
+
+                if (hashset.Add(value))
                 {
-                    hashset = new HashSet<TValue>();
-                    _dictionary[key] = hashset;
+                    _count++;
+                    return true;
                 }
 
-                return hashset.Add(value);
+                return false;
             }
             finally
             {
@@ -57,14 +62,14 @@ namespace MultiMap.Entities
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                {
-                    hashset = new HashSet<TValue>();
-                    _dictionary[key] = hashset;
-                }
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>();
 
                 foreach (var value in values)
-                    hashset.Add(value);
+                {
+                    if (hashset.Add(value))
+                        _count++;
+                }
             }
             finally
             {
@@ -81,7 +86,7 @@ namespace MultiMap.Entities
                 if (_dictionary.TryGetValue(key, out var hashset))
                     return hashset.ToList();
 
-                return Enumerable.Empty<TValue>();
+                return [];
             }
             finally
             {
@@ -99,8 +104,12 @@ namespace MultiMap.Entities
                 {
                     bool removed = hashset.Remove(value);
 
-                    if (hashset.Count == 0)
-                        _dictionary.Remove(key);
+                    if (removed)
+                    {
+                        _count--;
+                        if (hashset.Count == 0)
+                            _dictionary.Remove(key);
+                    }
 
                     return removed;
                 }
@@ -119,7 +128,13 @@ namespace MultiMap.Entities
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
-                return _dictionary.Remove(key);
+                if (_dictionary.TryGetValue(key, out var hashset))
+                {
+                    _count -= hashset.Count;
+                    return _dictionary.Remove(key);
+                }
+
+                return false;
             }
             finally
             {
@@ -161,7 +176,7 @@ namespace MultiMap.Entities
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
-                return _dictionary.Sum(kvp => kvp.Value.Count);
+                return _count;
             }
             finally
             {
@@ -176,6 +191,7 @@ namespace MultiMap.Entities
             try
             {
                 _dictionary.Clear();
+                _count = 0;
             }
             finally
             {
@@ -213,9 +229,14 @@ namespace MultiMap.Entities
             await _semaphore.WaitAsync(cancellationToken);
             try
             {
-                snapshot = _dictionary
-                    .SelectMany(kvp => kvp.Value.Select(v => new KeyValuePair<TKey, TValue>(kvp.Key, v)))
-                    .ToList();
+                snapshot = new List<KeyValuePair<TKey, TValue>>(_count);
+                foreach (var kvp in _dictionary)
+                {
+                    foreach (var value in kvp.Value)
+                    {
+                        snapshot.Add(new KeyValuePair<TKey, TValue>(kvp.Key, value));
+                    }
+                }
             }
             finally
             {

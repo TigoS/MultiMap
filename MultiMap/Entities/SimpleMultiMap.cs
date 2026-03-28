@@ -1,5 +1,6 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace MultiMap.Entities
 {
@@ -29,11 +30,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Add(TKey key, TValue value)
         {
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>();
-                _dictionary[key] = hashset;
-            }
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            hashset ??= new HashSet<TValue>();
 
             return hashset.Add(value);
         }
@@ -53,7 +51,7 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset;
 
-            return Enumerable.Empty<TValue>();
+            return [];
         }
 
         /// <inheritdoc />

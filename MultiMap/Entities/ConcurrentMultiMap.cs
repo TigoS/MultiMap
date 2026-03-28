@@ -20,6 +20,7 @@ namespace MultiMap.Entities
         where TValue : notnull
     {
         private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>> _dictionary;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
@@ -36,7 +37,13 @@ namespace MultiMap.Entities
                 key,
                 _ => new ConcurrentDictionary<TValue, byte>());
 
-            return concurrentSet.TryAdd(value, 0);
+            if (concurrentSet.TryAdd(value, 0))
+            {
+                Interlocked.Increment(ref _count);
+                return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -47,7 +54,10 @@ namespace MultiMap.Entities
                 _ => new ConcurrentDictionary<TValue, byte>());
 
             foreach (var value in values)
-                concurrentSet.TryAdd(value, 0);
+            {
+                if (concurrentSet.TryAdd(value, 0))
+                    Interlocked.Increment(ref _count);
+            }
         }
 
         /// <inheritdoc/>
@@ -56,7 +66,7 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var concurrentSet))
                 return concurrentSet.Keys;
 
-            return Enumerable.Empty<TValue>();
+            return [];
         }
 
         /// <inheritdoc/>
@@ -66,8 +76,12 @@ namespace MultiMap.Entities
             {
                 bool removed = concurrentSet.TryRemove(value, out _);
 
-                if (removed && concurrentSet.IsEmpty)
-                    _dictionary.TryRemove(key, out _);
+                if (removed)
+                {
+                    Interlocked.Decrement(ref _count);
+                    if (concurrentSet.IsEmpty)
+                        _dictionary.TryRemove(key, out _);
+                }
 
                 return removed;
             }
@@ -78,7 +92,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            return _dictionary.TryRemove(key, out _);
+            if (_dictionary.TryRemove(key, out var concurrentSet))
+            {
+                Interlocked.Add(ref _count, -concurrentSet.Count);
+                return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -94,13 +114,17 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _dictionary.Sum(kvp => kvp.Value.Count);
+        public int Count => Volatile.Read(ref _count);
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
-        public void Clear() => _dictionary.Clear();
+        public void Clear()
+        {
+            _dictionary.Clear();
+            Volatile.Write(ref _count, 0);
+        }
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

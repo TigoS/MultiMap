@@ -1,5 +1,6 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace MultiMap.Entities
 {
@@ -19,6 +20,7 @@ namespace MultiMap.Entities
         where TValue : notnull
     {
         private readonly Dictionary<TKey, List<TValue>> _dictionary;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the MultiMapList class with an empty mapping.
@@ -33,13 +35,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            if (!_dictionary.TryGetValue(key, out var list))
-            {
-                list = new List<TValue>();
-                _dictionary[key] = list;
-            }
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            list ??= new List<TValue>();
 
             list.Add(value);
+            _count++;
 
             return true;
         }
@@ -47,13 +47,12 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (!_dictionary.TryGetValue(key, out var list))
-            {
-                list = new List<TValue>();
-                _dictionary[key] = list;
-            }
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            list ??= new List<TValue>();
 
+            int before = list.Count;
             list.AddRange(values);
+            _count += list.Count - before;
         }
 
         /// <inheritdoc/>
@@ -62,7 +61,7 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var list))
                 return list;
 
-            return Enumerable.Empty<TValue>();
+            return [];
         }
 
         /// <inheritdoc/>
@@ -72,8 +71,12 @@ namespace MultiMap.Entities
             {
                 bool removed = list.Remove(value);
 
-                if (list.Count == 0)
-                    _dictionary.Remove(key);
+                if (removed)
+                {
+                    _count--;
+                    if (list.Count == 0)
+                        _dictionary.Remove(key);
+                }
 
                 return removed;
             }
@@ -84,7 +87,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            return _dictionary.Remove(key);
+            if (_dictionary.TryGetValue(key, out var list))
+            {
+                _count -= list.Count;
+                return _dictionary.Remove(key);
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -100,13 +109,17 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _dictionary.Sum(kvp => kvp.Value.Count);
+        public int Count => _count;
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
-        public void Clear() => _dictionary.Clear();
+        public void Clear()
+        {
+            _dictionary.Clear();
+            _count = 0;
+        }
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
