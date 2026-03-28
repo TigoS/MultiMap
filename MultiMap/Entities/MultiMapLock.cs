@@ -20,6 +20,9 @@ namespace MultiMap.Entities
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly ReaderWriterLockSlim _lock;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class.
+        /// </summary>
         public MultiMapLock()
         {
             _dictionary = new Dictionary<TKey, HashSet<TValue>>();
@@ -217,6 +220,9 @@ namespace MultiMap.Entities
             return HashCode.Combine(_dictionary);
         }
 
+        /// <summary>
+        /// Releases the resources used by the <see cref="MultiMapLock{TKey, TValue}"/> instance.
+        /// </summary>
         public void Dispose()
         {
             _lock?.Dispose();

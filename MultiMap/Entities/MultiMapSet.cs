@@ -20,6 +20,9 @@ namespace MultiMap.Entities
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class.
+        /// </summary>
         public MultiMapSet()
         {
             _dictionary = new Dictionary<TKey, HashSet<TValue>>();

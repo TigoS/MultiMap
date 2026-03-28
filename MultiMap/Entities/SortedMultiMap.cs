@@ -20,6 +20,9 @@ namespace MultiMap.Entities
     {
         private SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class.
+        /// </summary>
         public SortedMultiMap()
         {
             _dictionary = new SortedDictionary<TKey, SortedSet<TValue>>();

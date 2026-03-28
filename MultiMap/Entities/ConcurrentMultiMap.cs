@@ -21,6 +21,9 @@ namespace MultiMap.Entities
     {
         private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>> _dictionary;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
+        /// </summary>
         public ConcurrentMultiMap()
         {
             _dictionary = new ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>();
