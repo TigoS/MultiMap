@@ -10,7 +10,7 @@
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null.</typeparam>
-    public  interface IMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public interface IMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
         where TKey : notnull
         where TValue : notnull
     {
