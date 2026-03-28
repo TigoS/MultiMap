@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="MultiMap.Demo/MultiMap.Demo.csproj" />
   <Project Path="MultiMap/MultiMap.csproj" />
   <Project Path="MultyMap.Tests/MultiMap.Tests.csproj" />
 </Solution>
