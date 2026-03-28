@@ -1,10 +1,27 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+
+    <!-- NuGet Package Metadata -->
+    <PackageId>MultiMap</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>TigoS</Authors>
+    <Description>A .NET 10 library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods.</Description>
+    <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
+    <RepositoryUrl>https://github.com/TigoS/MultiMap</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+
+    <!-- Generate XML documentation for IntelliSense in consuming projects -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>
