@@ -47,7 +47,7 @@ This library provides:
 
 - **7 concrete implementations** covering different use cases (lists, sets, sorted, concurrent, locked, async, simple)
 - **3 interfaces** (`IMultiMap<TKey, TValue>`, `IMultiMapAsync<TKey, TValue>`, and `ISimpleMultiMap<TKey, TValue>`) for polymorphic usage
-- **Set-like extension methods** (Union, Intersect, ExceptWith, SymmetricExceptWith) for both `IMultiMap` and `ISimpleMultiMap`
+- **Set-like extension methods** (Union, Intersect, ExceptWith, SymmetricExceptWith) for `IMultiMap`, `IMultiMapAsync`, and `ISimpleMultiMap`
 - **Full thread-safety options** via `ConcurrentDictionary`, `ReaderWriterLockSlim`, and `SemaphoreSlim`
 
 ---
@@ -272,7 +272,7 @@ A lightweight multimap implementing the simplified `ISimpleMultiMap` interface. 
 
 ## Extension Methods (MultiMapHelper)
 
-The `MultiMapHelper` static class provides set-like operations as extension methods for both `IMultiMap` and `ISimpleMultiMap`.
+The `MultiMapHelper` static class provides set-like operations as extension methods for `IMultiMap`, `ISimpleMultiMap`, and `IMultiMapAsync`.
 
 ### IMultiMap Extensions
 
@@ -291,6 +291,15 @@ The `MultiMapHelper` static class provides set-like operations as extension meth
 | `Intersect(target, other)` | `ISimpleMultiMap` | Keeps only pairs present in both. |
 | `ExceptWith(target, other)` | `ISimpleMultiMap` | Removes pairs found in `other`. |
 | `SymmetricExceptWith(target, other)` | `ISimpleMultiMap` | Keeps only pairs in one but not both. |
+
+### IMultiMapAsync Extensions
+
+| Method | Returns | Description |
+|---|---|---|
+| `UnionAsync(target, other, cancellationToken)` | `Task` | Asynchronously adds all key-value pairs from `other` into `target`. |
+| `IntersectAsync(target, other, cancellationToken)` | `Task` | Asynchronously removes pairs from `target` that do not exist in `other`. |
+| `ExceptWithAsync(target, other, cancellationToken)` | `Task` | Asynchronously removes pairs from `target` that exist in `other`. |
+| `SymmetricExceptWithAsync(target, other, cancellationToken)` | `Task` | Asynchronously keeps only pairs present in `target` or `other`, but not both. |
 
 ---
 
@@ -542,7 +551,7 @@ foreach (var kvp in result.Flatten())
 
 ## Testing
 
-The test suite uses **NUnit 4** and covers all implementations with **432 tests** achieving **96.01% line coverage** and **98.92% branch coverage** on production code. All entity classes, interfaces, and helper methods have **100% line and branch coverage** — the only uncovered code is `TestDataHelper` (a demo-only utility class).
+The test suite uses **NUnit 4** and covers all implementations with **460 tests**
 
 ### Run Tests
 
@@ -567,7 +576,7 @@ dotnet test --collect:"XPlat Code Coverage"
 | `MultiMapLock_UnitTests.cs` | `MultiMapLock` | 59 |
 | `MultiMapAsync_UnitTests.cs` | `MultiMapAsync` | 53 |
 | `SimpleMultiMap_UnitTests.cs` | `SimpleMultiMap` | 33 |
-| `MultiMapHelper_UnitTests.cs` | `MultiMapHelper` | 100 |
+| `MultiMapHelper_UnitTests.cs` | `MultiMapHelper` | 128 |
 
 ### Coverage Details
 
