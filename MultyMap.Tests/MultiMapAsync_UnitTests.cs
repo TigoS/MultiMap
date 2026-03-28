@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using MultiMap.Interfaces;
 using System.Reflection;
 
 namespace MultiMap.Tests;
@@ -473,5 +474,84 @@ public class MultiMapAsyncTests
         field.SetValue(map, null);
 
         Assert.DoesNotThrow(() => map.Dispose());
+    }
+
+    [Test]
+    public async Task GetKeysAsync_EmptyMap_ReturnsEmpty()
+    {
+        Assert.That(await _map.GetKeysAsync(), Is.Empty);
+    }
+
+    [Test]
+    public async Task GetKeysAsync_MultipleKeys_ReturnsAllKeys()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await _map.AddAsync("c", 3);
+
+        Assert.That(await _map.GetKeysAsync(), Is.EquivalentTo(new[] { "a", "b", "c" }));
+    }
+
+    [Test]
+    public async Task GetKeysAsync_MultipleValuesPerKey_ReturnsDistinctKeys()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        Assert.That(await _map.GetKeysAsync(), Is.EquivalentTo(new[] { "a", "b" }));
+    }
+
+    [Test]
+    public async Task GetKeysAsync_AfterRemovingLastValueForKey_DoesNotContainKey()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await _map.RemoveAsync("a", 1);
+
+        Assert.That(await _map.GetKeysAsync(), Is.EquivalentTo(new[] { "b" }));
+    }
+
+    [Test]
+    public async Task GetKeysAsync_AfterRemoveKey_DoesNotContainKey()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await _map.RemoveKeyAsync("a");
+
+        Assert.That(await _map.GetKeysAsync(), Is.EquivalentTo(new[] { "b" }));
+    }
+
+    [Test]
+    public async Task GetKeysAsync_AfterClear_ReturnsEmpty()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await _map.ClearAsync();
+
+        Assert.That(await _map.GetKeysAsync(), Is.Empty);
+    }
+
+    [Test]
+    public async Task IMultiMapAsync_CanBeUsedThroughInterface()
+    {
+        IMultiMapAsync<string, int> map = _map;
+
+        Assert.That(await map.AddAsync("x", 1), Is.True);
+        Assert.That(await map.AddAsync("x", 2), Is.True);
+        await map.AddRangeAsync("y", new[] { 10, 20 });
+
+        Assert.That(await map.GetAsync("x"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(await map.ContainsKeyAsync("x"), Is.True);
+        Assert.That(await map.ContainsAsync("x", 1), Is.True);
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(4));
+        Assert.That(await map.GetKeysAsync(), Is.EquivalentTo(new[] { "x", "y" }));
+
+        Assert.That(await map.RemoveAsync("x", 1), Is.True);
+        Assert.That(await map.RemoveKeyAsync("y"), Is.True);
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
+
+        await map.ClearAsync();
+        Assert.That(await map.GetCountAsync(), Is.Zero);
     }
 }
