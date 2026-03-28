@@ -15,8 +15,8 @@ A .NET 10 library providing multiple multimap implementations — collections th
 - [Project Structure](#project-structure)
 - [Interfaces](#interfaces)
   - [IMultiMap\<TKey, TValue\>](#imultimaptkey-tvalue)
-  - [ISimpleMultiMap\<TKey, TValue\>](#isimplemultimaptkey-tvalue)
   - [IMultiMapAsync\<TKey, TValue\>](#imultimapasynctkey-tvalue)
+  - [ISimpleMultiMap\<TKey, TValue\>](#isimplemultimaptkey-tvalue)
 - [Implementations](#implementations)
   - [MultiMapList](#multimaplist)
   - [MultiMapSet](#multimapset)
@@ -46,7 +46,7 @@ A **multimap** is a generalization of a dictionary where each key can be associa
 This library provides:
 
 - **7 concrete implementations** covering different use cases (lists, sets, sorted, concurrent, locked, async, simple)
-- **3 interfaces** (`IMultiMap<TKey, TValue>`, `ISimpleMultiMap<TKey, TValue>`, and `IMultiMapAsync<TKey, TValue>`) for polymorphic usage
+- **3 interfaces** (`IMultiMap<TKey, TValue>`, `IMultiMapAsync<TKey, TValue>`, and `ISimpleMultiMap<TKey, TValue>`) for polymorphic usage
 - **Set-like extension methods** (Union, Intersect, ExceptWith, SymmetricExceptWith) for both `IMultiMap` and `ISimpleMultiMap`
 - **Full thread-safety options** via `ConcurrentDictionary`, `ReaderWriterLockSlim`, and `SemaphoreSlim`
 
@@ -66,8 +66,8 @@ MultiMap/                            # Class library (NuGet package)
 │   └── SimpleMultiMap.cs            # Simplified multimap with ISimpleMultiMap interface
 ├── Interfaces/
 │   ├── IMultiMap.cs                 # Full-featured multimap interface
-│   ├── ISimpleMultiMap.cs           # Simplified multimap interface
-│   └── IMultiMapAsync.cs            # Async multimap interface
+│   ├── IMultiMapAsync.cs            # Async multimap interface
+│   └── ISimpleMultiMap.cs           # Simplified multimap interface
 ├── Helpers/
 │   ├── MultiMapHelper.cs            # Set-like extension methods
 │   └── TestDataHelper.cs            # Sample data factory for demos
@@ -110,19 +110,6 @@ The full-featured multimap interface, extending `IEnumerable<KeyValuePair<TKey, 
 | `Count` | `int` | Total number of key-value pairs across all keys. |
 | `Keys` | `IEnumerable<TKey>` | Gets the collection of keys in the multimap. |
 
-### ISimpleMultiMap\<TKey, TValue\>
-
-A simplified multimap interface with a different API surface, extending `IEnumerable<KeyValuePair<TKey, TValue>>`.
-
-| Method | Return Type | Description |
-|---|---|---|
-| `Add(TKey, TValue)` | `bool` | Adds a key-value pair. Returns `false` if duplicate. |
-| `Get(TKey)` | `IEnumerable<TValue>` | Retrieves values for a key. Throws `KeyNotFoundException` if not found. |
-| `GetOrDefault(TKey)` | `IEnumerable<TValue>` | Retrieves values or empty collection if key not found. |
-| `Remove(TKey, TValue)` | `void` | Removes a specific value (no return value). |
-| `Clear(TKey)` | `void` | Removes all values for a key. |
-| `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all key-value pairs as a flat sequence. |
-
 ### IMultiMapAsync\<TKey, TValue\>
 
 An asynchronous multimap interface extending `IAsyncEnumerable<KeyValuePair<TKey, TValue>>` and `IDisposable`. All operations return `Task` for async/await usage.
@@ -139,6 +126,19 @@ An asynchronous multimap interface extending `IAsyncEnumerable<KeyValuePair<TKey
 | `GetCountAsync(CancellationToken)` | `Task<int>` | Gets the total number of key-value pairs across all keys. |
 | `ClearAsync(CancellationToken)` | `Task` | Removes all entries asynchronously. |
 | `GetKeysAsync(CancellationToken)` | `Task<IEnumerable<TKey>>` | Gets the collection of keys asynchronously. |
+
+### ISimpleMultiMap\<TKey, TValue\>
+
+A simplified multimap interface with a different API surface, extending `IEnumerable<KeyValuePair<TKey, TValue>>`.
+
+| Method | Return Type | Description |
+|---|---|---|
+| `Add(TKey, TValue)` | `bool` | Adds a key-value pair. Returns `false` if duplicate. |
+| `Get(TKey)` | `IEnumerable<TValue>` | Retrieves values for a key. Throws `KeyNotFoundException` if not found. |
+| `GetOrDefault(TKey)` | `IEnumerable<TValue>` | Retrieves values or empty collection if key not found. |
+| `Remove(TKey, TValue)` | `void` | Removes a specific value (no return value). |
+| `Clear(TKey)` | `void` | Removes all values for a key. |
+| `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all key-value pairs as a flat sequence. |
 
 ---
 
