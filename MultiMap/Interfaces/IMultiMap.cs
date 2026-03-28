@@ -105,5 +105,10 @@
         /// Gets the total number of key-value pairs contained in the collection.
         /// </summary>
         public int Count { get; }
+
+        /// <summary>
+        /// Gets an enumerable collection of keys contained in the collection.
+        /// </summary>
+        public IEnumerable<TKey> Keys { get; }
     }
 }
