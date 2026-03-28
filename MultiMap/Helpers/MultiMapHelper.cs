@@ -35,17 +35,32 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var keysToRemove = new List<TKey>();
+            var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
 
-            foreach (var kvp in target)
+            foreach (var key in target.Keys)
             {
-                if (!other.Contains(kvp.Key, kvp.Value))
+                if (!other.ContainsKey(key))
                 {
-                    toRemove.Add(kvp);
+                    keysToRemove.Add(key);
+                    continue;
+                }
+
+                foreach (var value in target.Get(key))
+                {
+                    if (!other.Contains(key, value))
+                    {
+                        valuesToRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
+                    }
                 }
             }
 
-            foreach (var kvp in toRemove)
+            foreach (var key in keysToRemove)
+            {
+                target.RemoveKey(key);
+            }
+
+            foreach (var kvp in valuesToRemove)
             {
                 target.Remove(kvp.Key, kvp.Value);
             }
@@ -62,9 +77,12 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            foreach (var kvp in other)
+            foreach (var key in other.Keys)
             {
-                target.Remove(kvp.Key, kvp.Value);
+                foreach (var value in other.Get(key))
+                {
+                    target.Remove(key, value);
+                }
             }
         }
 
@@ -83,15 +101,18 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
-            foreach (var kvp in other)
+            foreach (var key in other.Keys)
             {
-                if (target.Contains(kvp.Key, kvp.Value))
+                foreach (var value in other.Get(key))
                 {
-                    toRemove.Add(kvp);
-                }
-                else
-                {
-                    toAdd.Add(kvp);
+                    if (target.Contains(key, value))
+                    {
+                        toRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
+                    }
+                    else
+                    {
+                        toAdd.Add(new KeyValuePair<TKey, TValue>(key, value));
+                    }
                 }
             }
 
@@ -140,9 +161,10 @@ namespace MultiMap.Helpers
         {
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
 
-            foreach (var kvp in target)
+            foreach (var kvp in target.Flatten())
             {
-                if (!other.GetOrDefault(kvp.Key).Contains(kvp.Value))
+                var otherValues = other.GetOrDefault(kvp.Key);
+                if (!otherValues.Contains(kvp.Value))
                 {
                     toRemove.Add(kvp);
                 }
@@ -190,9 +212,10 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
-            foreach (var kvp in other)
+            foreach (var kvp in other.Flatten())
             {
-                if (target.GetOrDefault(kvp.Key).Contains(kvp.Value))
+                var targetValues = target.GetOrDefault(kvp.Key);
+                if (targetValues.Contains(kvp.Value))
                 {
                     toRemove.Add(kvp);
                 }
@@ -250,17 +273,34 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var keysToRemove = new List<TKey>();
+            var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
 
-            await foreach (var kvp in target.WithCancellation(cancellationToken))
+            var targetKeys = await target.GetKeysAsync(cancellationToken);
+            foreach (var key in targetKeys)
             {
-                if (!await other.ContainsAsync(kvp.Key, kvp.Value, cancellationToken))
+                if (!await other.ContainsKeyAsync(key, cancellationToken))
                 {
-                    toRemove.Add(kvp);
+                    keysToRemove.Add(key);
+                    continue;
+                }
+
+                var values = await target.GetAsync(key, cancellationToken);
+                foreach (var value in values)
+                {
+                    if (!await other.ContainsAsync(key, value, cancellationToken))
+                    {
+                        valuesToRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
+                    }
                 }
             }
 
-            foreach (var kvp in toRemove)
+            foreach (var key in keysToRemove)
+            {
+                await target.RemoveKeyAsync(key, cancellationToken);
+            }
+
+            foreach (var kvp in valuesToRemove)
             {
                 await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
             }
@@ -278,9 +318,14 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            await foreach (var kvp in other.WithCancellation(cancellationToken))
+            var keys = await other.GetKeysAsync(cancellationToken);
+            foreach (var key in keys)
             {
-                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
+                var values = await other.GetAsync(key, cancellationToken);
+                foreach (var value in values)
+                {
+                    await target.RemoveAsync(key, value, cancellationToken);
+                }
             }
         }
 
@@ -300,15 +345,20 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
-            await foreach (var kvp in other.WithCancellation(cancellationToken))
+            var otherKeys = await other.GetKeysAsync(cancellationToken);
+            foreach (var key in otherKeys)
             {
-                if (await target.ContainsAsync(kvp.Key, kvp.Value, cancellationToken))
+                var values = await other.GetAsync(key, cancellationToken);
+                foreach (var value in values)
                 {
-                    toRemove.Add(kvp);
-                }
-                else
-                {
-                    toAdd.Add(kvp);
+                    if (await target.ContainsAsync(key, value, cancellationToken))
+                    {
+                        toRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
+                    }
+                    else
+                    {
+                        toAdd.Add(new KeyValuePair<TKey, TValue>(key, value));
+                    }
                 }
             }
 
