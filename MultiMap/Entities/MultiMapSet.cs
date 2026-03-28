@@ -4,12 +4,14 @@ using System.Collections;
 namespace MultiMap.Entities
 {
     /// <summary>
-    /// Represents a collection that maps keys to sets of values, allowing multiple values to be associated with each
-    /// key. Provides set semantics for values, ensuring that each value is unique per key.
+    /// Represents a collection that maps keys to sets of values, allowing multiple values to be associated with each key.
+    /// Provides set semantics for values, ensuring that each value is unique per key.
     /// </summary>
-    /// <remarks>This implementation uses a dictionary of hash sets to store values for each key, providing
-    /// efficient lookup and uniqueness enforcement. Values associated with a key are unordered and duplicates are not
-    /// allowed. The class is not thread-safe; external synchronization is required for concurrent access.</remarks>
+    /// <remarks>
+    /// This implementation uses a dictionary of hash sets to store values for each key, providing efficient lookup and uniqueness enforcement.
+    /// Values associated with a key are unordered and duplicates are not allowed.
+    /// The class is not thread-safe; external synchronization is required for concurrent access.
+    /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values in the multimap. Must be non-nullable.</typeparam>
     public class MultiMapSet<TKey, TValue> : IMultiMap<TKey, TValue>

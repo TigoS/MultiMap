@@ -4,12 +4,12 @@ using System.Collections;
 namespace MultiMap.Entities
 {
     /// <summary>
-    /// Represents a collection that associates multiple values with each key,
-    /// allowing efficient retrieval and management of grouped data.
+    /// Represents a collection that associates multiple values with each key, allowing efficient retrieval and management of grouped data.
     /// </summary>
-    /// <remarks>Use this class to store and access sets of values for each key, where duplicate values per
-    /// key are not allowed. The map is suitable for scenarios where one-to-many relationships are required, such as
-    /// grouping items or indexing data.</remarks>
+    /// <remarks>
+    /// Use this class to store and access sets of values for each key, where duplicate values per key are not allowed.
+    /// The map is suitable for scenarios where one-to-many relationships are required, such as grouping items or indexing data.
+    /// </remarks>
     /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>

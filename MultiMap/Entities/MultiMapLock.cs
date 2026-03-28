@@ -4,12 +4,13 @@ using System.Collections;
 namespace MultiMap.Entities
 {
     /// <summary>
-    /// Provides a thread-safe multi-map collection that associates each key with a set of values, allowing concurrent
-    /// access and modification.
+    /// Provides a thread-safe multi-map collection that associates each key with a set of values, allowing concurrent access and modification.
     /// </summary>
-    /// <remarks>This class uses internal locking to ensure safe concurrent operations. It is suitable for
-    /// scenarios where multiple threads need to add, remove, or query key-value associations without external
-    /// synchronization. Dispose the instance when no longer needed to release resources.</remarks>
+    /// <remarks>
+    /// This class uses internal locking to ensure safe concurrent operations.
+    /// It is suitable for scenarios where multiple threads need to add, remove, or query key-value associations without external synchronization.
+    /// Dispose the instance when no longer needed to release resources.
+    /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable

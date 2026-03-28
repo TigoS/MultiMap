@@ -5,13 +5,14 @@ using System.Collections.Concurrent;
 namespace MultiMap.Entities
 {
     /// <summary>
-    /// Represents a thread-safe multi-map collection that associates each key with a set of values. Supports concurrent
-    /// operations for adding, removing, and querying key-value pairs.
+    /// Represents a thread-safe multi-map collection that associates each key with a set of values.
+    /// Supports concurrent operations for adding, removing, and querying key-value pairs.
     /// </summary>
-    /// <remarks>ConcurrentMultiMap is designed for scenarios where multiple threads may add or remove
-    /// key-value pairs simultaneously. Each key maps to a set of unique values, and all operations are safe for
-    /// concurrent access. This class is useful for managing collections where keys can have multiple associated values
-    /// and thread safety is required.</remarks>
+    /// <remarks>
+    /// ConcurrentMultiMap is designed for scenarios where multiple threads may add or remove key-value pairs simultaneously.
+    /// Each key maps to a set of unique values, and all operations are safe for concurrent access.
+    /// This class is useful for managing collections where keys can have multiple associated values and thread safety is required.
+    /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class ConcurrentMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>

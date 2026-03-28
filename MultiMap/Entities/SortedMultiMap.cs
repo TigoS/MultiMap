@@ -4,13 +4,14 @@ using System.Collections;
 namespace MultiMap.Entities
 {
     /// <summary>
-    /// Represents a collection that associates each key with a sorted set of values, allowing multiple values per key
-    /// and maintaining both keys and values in sorted order.
+    /// Represents a collection that associates each key with a sorted set of values,
+    /// allowing multiple values per key and maintaining both keys and values in sorted order.
     /// </summary>
-    /// <remarks>The keys and values are stored in sorted order according to their natural comparer or a
-    /// specified comparer. This type is useful when you need to maintain multiple values per key and require
-    /// predictable ordering for both keys and values. Thread safety is not guaranteed; external synchronization is
-    /// required for concurrent access.</remarks>
+    /// <remarks>
+    /// The keys and values are stored in sorted order according to their natural comparer or a specified comparer.
+    /// This type is useful when you need to maintain multiple values per key and require predictable ordering for both keys and values.
+    /// Thread safety is not guaranteed; external synchronization is required for concurrent access.
+    /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
     public class SortedMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>

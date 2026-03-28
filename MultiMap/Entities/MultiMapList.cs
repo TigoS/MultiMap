@@ -4,13 +4,14 @@ using System.Collections;
 namespace MultiMap.Entities
 {
     /// <summary>
-    /// Represents a collection that associates multiple values with each key,
-    /// allowing efficient storage and retrieval of key-value pairs where keys may map to zero or more values.
+    /// Represents a collection that associates multiple values with each key, allowing efficient storage and retrieval of key-value pairs where keys may map to zero or more values.
     /// </summary>
-    /// <remarks>MultiMapList<TKey, TValue> is useful for scenarios where a key can have multiple associated
-    /// values, such as grouping or indexing. The collection maintains insertion order for values under each key.
+    /// <remarks>
+    /// This class is useful for scenarios where a key can have multiple associated values, such as grouping or indexing.
+    /// The collection maintains insertion order for values under each key.
     /// Keys and values must be non-null. Thread safety is not guaranteed;
-    /// external synchronization is required for concurrent access.</remarks>
+    /// external synchronization is required for concurrent access.
+    /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapList<TKey, TValue> : IMultiMap<TKey, TValue>
