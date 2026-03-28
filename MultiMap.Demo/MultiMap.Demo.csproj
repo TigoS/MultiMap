@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MultiMap\MultiMap.csproj" />
+    <PackageReference Include="MultiMap" Version="1.0.0" />
   </ItemGroup>
 
 </Project>
