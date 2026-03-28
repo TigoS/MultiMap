@@ -5,6 +5,7 @@ A .NET 10 library providing multiple multimap implementations — collections th
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
+[![NuGet](https://img.shields.io/nuget/v/MultiMap)](https://www.nuget.org/packages/MultiMap)
 
 ---
 
@@ -29,7 +30,9 @@ A .NET 10 library providing multiple multimap implementations — collections th
   - [Internal Storage Comparison](#internal-storage-comparison)
   - [Thread Safety Comparison](#thread-safety-comparison)
 - [Extension Methods (MultiMapHelper)](#extension-methods-multimaphelper)
+- [NuGet Package](#nuget-package)
 - [Getting Started](#getting-started)
+- [Demo Project (MultiMap.Demo)](#demo-project-multimapdemo)
 - [Usage Examples](#usage-examples)
 - [Testing](#testing)
 
@@ -51,24 +54,28 @@ This library provides:
 ## Project Structure
 
 ```
-MultiMap/
+MultiMap/                            # Class library (NuGet package)
 ├── Entities/
-│   ├── MultiMapList.cs          # List-based multimap (allows duplicates per key)
-│   ├── MultiMapSet.cs           # HashSet-based multimap (unique values per key)
-│   ├── SortedMultiMap.cs        # Sorted keys and sorted values
-│   ├── ConcurrentMultiMap.cs    # Lock-free concurrent multimap
-│   ├── MultiMapLock.cs          # ReaderWriterLockSlim-based thread-safe multimap
-│   ├── MultiMapAsync.cs         # Async/await multimap with SemaphoreSlim
-│   └── SimpleMultiMap.cs        # Simplified multimap with ISimpleMultiMap interface
+│   ├── MultiMapList.cs              # List-based multimap (allows duplicates per key)
+│   ├── MultiMapSet.cs               # HashSet-based multimap (unique values per key)
+│   ├── SortedMultiMap.cs            # Sorted keys and sorted values
+│   ├── ConcurrentMultiMap.cs        # Lock-free concurrent multimap
+│   ├── MultiMapLock.cs              # ReaderWriterLockSlim-based thread-safe multimap
+│   ├── MultiMapAsync.cs             # Async/await multimap with SemaphoreSlim
+│   └── SimpleMultiMap.cs            # Simplified multimap with ISimpleMultiMap interface
 ├── Interfaces/
-│   ├── IMultiMap.cs             # Full-featured multimap interface
-│   └── ISimpleMultiMap.cs       # Simplified multimap interface
+│   ├── IMultiMap.cs                 # Full-featured multimap interface
+│   └── ISimpleMultiMap.cs           # Simplified multimap interface
 ├── Helpers/
-│   ├── MultiMapHelper.cs        # Set-like extension methods
-│   └── TestDataHelper.cs        # Sample data factory for demos
-└── Program.cs                   # Entry point / demo
+│   ├── MultiMapHelper.cs            # Set-like extension methods
+│   └── TestDataHelper.cs            # Sample data factory for demos
+└── MultiMap.csproj                  # Library project with NuGet package metadata
 
-MultyMap.Tests/
+MultiMap.Demo/                       # Console app demonstrating library usage
+├── Program.cs                       # Demonstrates set operations on SimpleMultiMap
+└── MultiMap.Demo.csproj             # Console project referencing MultiMap
+
+MultyMap.Tests/                      # Unit test project
 ├── MultiMapList_UnitTest.cs
 ├── MultiMapSet_UnitTests.cs
 ├── SortedMultiMap_UnitTests.cs
@@ -76,7 +83,8 @@ MultyMap.Tests/
 ├── MultiMapLock_UnitTests.cs
 ├── MultiMapAsync_UnitTests.cs
 ├── SimpleMultiMap_UnitTests.cs
-└── MultiMapHelper_UnitTests.cs
+├── MultiMapHelper_UnitTests.cs
+└── MultiMap.Tests.csproj
 ```
 
 ---
@@ -264,6 +272,62 @@ The `MultiMapHelper` static class provides set-like operations as extension meth
 
 ---
 
+## NuGet Package
+
+The library is published as the **MultiMap** NuGet package.
+
+| Property | Value |
+|---|---|
+| **Package ID** | `MultiMap` |
+| **Version** | `1.0.0` |
+| **Target Framework** | `net10.0` |
+| **License** | MIT |
+| **Tags** | `multimap` `dictionary` `collection` `concurrent` `async` `sorted` `data-structures` |
+
+### Install
+
+#### .NET CLI
+
+```bash
+dotnet add package MultiMap
+```
+
+#### Package Manager Console
+
+```powershell
+Install-Package MultiMap
+```
+
+#### PackageReference
+
+```xml
+<PackageReference Include="MultiMap" Version="1.0.0" />
+```
+
+### Build the Package Locally
+
+```bash
+dotnet pack MultiMap/MultiMap.csproj --configuration Release
+```
+
+The `.nupkg` file is output to `MultiMap/bin/Release/`.
+
+### Publish to NuGet.org
+
+```bash
+dotnet nuget push MultiMap/bin/Release/MultiMap.1.0.0.nupkg --api-key <YOUR_API_KEY> --source https://api.nuget.org/v3/index.json
+```
+
+### Package Contents
+
+The NuGet package includes:
+
+- Compiled library assembly (`MultiMap.dll`)
+- XML documentation file for IntelliSense support in consuming projects
+- This `README.md` as the package readme
+
+---
+
 ## Getting Started
 
 ### Prerequisites
@@ -276,10 +340,59 @@ The `MultiMapHelper` static class provides set-like operations as extension meth
 dotnet build
 ```
 
-### Run
+---
+
+## Demo Project (MultiMap.Demo)
+
+The `MultiMap.Demo` console application demonstrates the library's set-like extension methods using `SimpleMultiMap` and `ISimpleMultiMap`.
+
+### Run the Demo
 
 ```bash
-dotnet run --project MultiMap
+dotnet run --project MultiMap.Demo
+```
+
+### What It Demonstrates
+
+The demo creates two sample multimaps and runs all four set operations, printing the results:
+
+| Operation | Description |
+|---|---|
+| **Union** | Combines all key-value pairs from both maps |
+| **Intersect** | Keeps only pairs present in both maps |
+| **ExceptWith** | Removes pairs found in the second map from the first |
+| **SymmetricExceptWith** | Keeps only pairs present in one map but not both |
+
+### Sample Output
+
+```
+MULTI MAP 1:
+A: 1
+A: 2
+B: 3
+
+MULTI MAP 2:
+A: 1
+A: 3
+C: 4
+C: 3
+
+UNION:
+A: 1
+A: 2
+A: 3
+B: 3
+C: 4
+C: 3
+
+INTERSECT:
+A: 1
+
+EXCEPT WITH 1:
+A: 2
+B: 3
+
+...
 ```
 
 ---
@@ -431,4 +544,4 @@ dotnet test --collect:"XPlat Code Coverage"
 
 ## License
 
-This project is provided as-is for educational and development purposes.
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
