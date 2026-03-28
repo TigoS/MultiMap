@@ -1,5 +1,6 @@
 <Solution>
+  <Project Path="BenchmarkSuite/BenchmarkSuite.csproj" />
   <Project Path="MultiMap.Demo/MultiMap.Demo.csproj" />
   <Project Path="MultiMap/MultiMap.csproj" />
-  <Project Path="MultyMap.Tests/MultiMap.Tests.csproj" />
+  <Project Path="MultiMap.Tests/MultiMap.Tests.csproj" />
 </Solution>
