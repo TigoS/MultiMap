@@ -329,6 +329,62 @@ public class MultiMapListTests
     }
 
     [Test]
+    public void Keys_EmptyMap_ReturnsEmpty()
+    {
+        Assert.That(_map.Keys, Is.Empty);
+    }
+
+    [Test]
+    public void Keys_MultipleKeys_ReturnsAllKeys()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Add("c", 3);
+
+        Assert.That(_map.Keys, Is.EquivalentTo(new[] { "a", "b", "c" }));
+    }
+
+    [Test]
+    public void Keys_MultipleValuesPerKey_ReturnsDistinctKeys()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        Assert.That(_map.Keys, Is.EquivalentTo(new[] { "a", "b" }));
+    }
+
+    [Test]
+    public void Keys_AfterRemovingLastValueForKey_DoesNotContainKey()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Remove("a", 1);
+
+        Assert.That(_map.Keys, Is.EquivalentTo(new[] { "b" }));
+    }
+
+    [Test]
+    public void Keys_AfterRemoveKey_DoesNotContainKey()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Keys, Is.EquivalentTo(new[] { "b" }));
+    }
+
+    [Test]
+    public void Keys_AfterClear_ReturnsEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Clear();
+
+        Assert.That(_map.Keys, Is.Empty);
+    }
+
+    [Test]
     public void Equals_SameInstance_ReturnsTrue()
     {
         Assert.That(_map.Equals(_map), Is.True);
