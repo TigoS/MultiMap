@@ -138,21 +138,20 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            //var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var toRemove = new List<KeyValuePair<TKey, TValue>>();
 
             foreach (var kvp in target)
             {
                 if (!other.GetOrDefault(kvp.Key).Contains(kvp.Value))
                 {
-                    //toRemove.Add(kvp);
-                    target.Remove(kvp.Key, kvp.Value);
+                    toRemove.Add(kvp);
                 }
             }
 
-            //foreach (var kvp in toRemove)
-            //{
-            //    target.Remove(kvp.Key, kvp.Value);
-            //}
+            foreach (var kvp in toRemove)
+            {
+                target.Remove(kvp.Key, kvp.Value);
+            }
 
             return target;
         }
@@ -188,32 +187,30 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            //var toRemove = new List<KeyValuePair<TKey, TValue>>();
-            //var toAdd = new List<KeyValuePair<TKey, TValue>>();
+            var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
             foreach (var kvp in other)
             {
                 if (target.GetOrDefault(kvp.Key).Contains(kvp.Value))
                 {
-                    //toRemove.Add(kvp);
-                    target.Remove(kvp.Key, kvp.Value);
+                    toRemove.Add(kvp);
                 }
                 else
                 {
-                    //toAdd.Add(kvp);
-                    target.Add(kvp.Key, kvp.Value);
+                    toAdd.Add(kvp);
                 }
             }
 
-            //foreach (var kvp in toRemove)
-            //{
-            //    target.Remove(kvp.Key, kvp.Value);
-            //}
+            foreach (var kvp in toRemove)
+            {
+                target.Remove(kvp.Key, kvp.Value);
+            }
 
-            //foreach (var kvp in toAdd)
-            //{
-            //    target.Add(kvp.Key, kvp.Value);
-            //}
+            foreach (var kvp in toAdd)
+            {
+                target.Add(kvp.Key, kvp.Value);
+            }
 
             return target;
         }
