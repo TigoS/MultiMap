@@ -18,9 +18,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            foreach (var kvp in other)
+            foreach (var key in other.Keys)
             {
-                target.Add(kvp.Key, kvp.Value);
+                target.AddRange(key, other.Get(key));
             }
         }
 
