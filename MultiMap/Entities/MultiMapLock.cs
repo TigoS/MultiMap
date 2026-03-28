@@ -171,6 +171,23 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public IEnumerable<TKey> Keys
+        {
+            get
+            {
+                _lock.EnterReadLock();
+                try
+                {
+                    return _dictionary.Keys.ToList(); // snapshot to avoid external modification issues
+                }
+                finally
+                {
+                    _lock.ExitReadLock();
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public void Clear()
         {
             _lock.EnterWriteLock();

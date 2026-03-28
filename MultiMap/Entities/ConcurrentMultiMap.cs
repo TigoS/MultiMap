@@ -94,8 +94,10 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count =>
-            _dictionary.Sum(kvp => kvp.Value.Count);
+        public int Count => _dictionary.Sum(kvp => kvp.Value.Count);
+
+        /// <inheritdoc/>
+        public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
         public void Clear() => _dictionary.Clear();
