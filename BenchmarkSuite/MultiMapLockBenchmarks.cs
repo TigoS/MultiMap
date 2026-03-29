@@ -8,8 +8,6 @@ namespace BenchmarkSuite;
 [CPUUsageDiagnoser]
 public class MultiMapLockBenchmarks
 {
-    private const int KeyCount = 100;
-    private const int ValuesPerKey = 50;
     private MultiMapLock<string, int> _map = null!;
     private string[] _keys = null!;
 
@@ -17,11 +15,11 @@ public class MultiMapLockBenchmarks
     public void Setup()
     {
         _map = new MultiMapLock<string, int>();
-        _keys = new string[KeyCount];
-        for (int i = 0; i < KeyCount; i++)
+        _keys = new string[Consts.KeyCount];
+        for (int i = 0; i < Consts.KeyCount; i++)
         {
             _keys[i] = $"key{i}";
-            for (int j = 0; j < ValuesPerKey; j++)
+            for (int j = 0; j < Consts.ValuesPerKey; j++)
             {
                 _map.Add(_keys[i], j);
             }
@@ -38,10 +36,10 @@ public class MultiMapLockBenchmarks
     public void MultiMapLock_Add()
     {
         var map = new MultiMapLock<string, int>();
-        for (int k = 0; k < KeyCount; k++)
+        for (int k = 0; k < Consts.KeyCount; k++)
         {
             string key = $"key{k}";
-            for (int v = 0; v < ValuesPerKey; v++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
             {
                 map.Add(key, v);
             }
@@ -54,7 +52,7 @@ public class MultiMapLockBenchmarks
     public int MultiMapLock_Get()
     {
         int sum = 0;
-        for (int k = 0; k < KeyCount; k++)
+        for (int k = 0; k < Consts.KeyCount; k++)
         {
             foreach (var v in _map.Get(_keys[k]))
                 sum += v;
@@ -80,12 +78,12 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -99,12 +97,12 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -118,12 +116,12 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -137,12 +135,12 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 

@@ -2,6 +2,7 @@ using BenchmarkDotNet.Attributes;
 using MultiMap.Entities;
 using MultiMap.Helpers;
 using Microsoft.VSDiagnostics;
+using BenchmarkSuite;
 
 [CPUUsageDiagnoser]
 public class MultiMapBenchmarks
@@ -12,8 +13,6 @@ public class MultiMapBenchmarks
     private SortedMultiMap<string, int> _sortedMap = null!;
     private MultiMapSet<string, int> _helperTarget = null!;
     private MultiMapSet<string, int> _helperOther = null!;
-    private const int KeyCount = 100;
-    private const int ValuesPerKey = 50;
 
     [GlobalSetup]
     public void Setup()
@@ -22,10 +21,10 @@ public class MultiMapBenchmarks
         _listMap = new MultiMapList<string, int>();
         _concurrentMap = new ConcurrentMultiMap<string, int>();
         _sortedMap = new SortedMultiMap<string, int>();
-        for (int k = 0; k < KeyCount; k++)
+        for (int k = 0; k < Consts.KeyCount; k++)
         {
             string key = $"key{k}";
-            for (int v = 0; v < ValuesPerKey; v++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
             {
                 _setMap.Add(key, v);
                 _listMap.Add(key, v);
@@ -36,12 +35,12 @@ public class MultiMapBenchmarks
 
         _helperTarget = new MultiMapSet<string, int>();
         _helperOther = new MultiMapSet<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 _helperTarget.Add($"key{k}", v);
-                _helperOther.Add($"key{k + 25}", v + 10);
+                _helperOther.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
     }
@@ -64,10 +63,10 @@ public class MultiMapBenchmarks
     public void MultiMapSet_Add()
     {
         var map = new MultiMapSet<string, int>();
-        for (int k = 0; k < KeyCount; k++)
+        for (int k = 0; k < Consts.KeyCount; k++)
         {
             string key = $"key{k}";
-            for (int v = 0; v < ValuesPerKey; v++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
             {
                 map.Add(key, v);
             }
@@ -78,10 +77,10 @@ public class MultiMapBenchmarks
     public void MultiMapList_Add()
     {
         var map = new MultiMapList<string, int>();
-        for (int k = 0; k < KeyCount; k++)
+        for (int k = 0; k < Consts.KeyCount; k++)
         {
             string key = $"key{k}";
-            for (int v = 0; v < ValuesPerKey; v++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
             {
                 map.Add(key, v);
             }
@@ -93,7 +92,7 @@ public class MultiMapBenchmarks
     public int MultiMapSet_Get()
     {
         int sum = 0;
-        for (int k = 0; k < KeyCount; k++)
+        for (int k = 0; k < Consts.KeyCount; k++)
         {
             foreach (var v in _setMap.Get($"key{k}"))
                 sum += v;
@@ -112,12 +111,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapSet<string, int>();
         var other = new MultiMapSet<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -129,12 +128,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapSet<string, int>();
         var other = new MultiMapSet<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -146,12 +145,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapSet<string, int>();
         var other = new MultiMapSet<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -163,12 +162,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapSet<string, int>();
         var other = new MultiMapSet<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -181,12 +180,12 @@ public class MultiMapBenchmarks
     {
         var target = new ConcurrentMultiMap<string, int>();
         var other = new ConcurrentMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -198,12 +197,12 @@ public class MultiMapBenchmarks
     {
         var target = new ConcurrentMultiMap<string, int>();
         var other = new ConcurrentMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -215,12 +214,12 @@ public class MultiMapBenchmarks
     {
         var target = new ConcurrentMultiMap<string, int>();
         var other = new ConcurrentMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -232,12 +231,12 @@ public class MultiMapBenchmarks
     {
         var target = new ConcurrentMultiMap<string, int>();
         var other = new ConcurrentMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -250,12 +249,12 @@ public class MultiMapBenchmarks
     {
         var target = new SortedMultiMap<string, int>();
         var other = new SortedMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -267,12 +266,12 @@ public class MultiMapBenchmarks
     {
         var target = new SortedMultiMap<string, int>();
         var other = new SortedMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -284,12 +283,12 @@ public class MultiMapBenchmarks
     {
         var target = new SortedMultiMap<string, int>();
         var other = new SortedMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -301,12 +300,12 @@ public class MultiMapBenchmarks
     {
         var target = new SortedMultiMap<string, int>();
         var other = new SortedMultiMap<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -319,12 +318,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapList<string, int>();
         var other = new MultiMapList<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -336,12 +335,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapList<string, int>();
         var other = new MultiMapList<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -353,12 +352,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapList<string, int>();
         var other = new MultiMapList<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -370,12 +369,12 @@ public class MultiMapBenchmarks
     {
         var target = new MultiMapList<string, int>();
         var other = new MultiMapList<string, int>();
-        for (int k = 0; k < 50; k++)
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
-            for (int v = 0; v < 20; v++)
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
                 target.Add($"key{k}", v);
-                other.Add($"key{k + 25}", v + 10);
+                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
