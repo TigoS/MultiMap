@@ -105,7 +105,25 @@ public class MultiMapBenchmarks
     // --- Contains benchmarks ---
     [Benchmark]
     public bool MultiMapSet_Contains() => _setMap.Contains("key50", 25);
-    // --- Helper Intersect benchmark ---
+
+    // --- Helper set-operation benchmarks (MultiMapSet) ---
+    [Benchmark]
+    public void MultiMapHelper_Union()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Union(other);
+    }
+
     [Benchmark]
     public void MultiMapHelper_Intersect()
     {
@@ -121,5 +139,246 @@ public class MultiMapBenchmarks
         }
 
         target.Intersect(other);
+    }
+
+    [Benchmark]
+    public void MultiMapHelper_ExceptWith()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.ExceptWith(other);
+    }
+
+    [Benchmark]
+    public void MultiMapHelper_SymmetricExceptWith()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.SymmetricExceptWith(other);
+    }
+
+    // --- ConcurrentMultiMap set-operation benchmarks ---
+    [Benchmark]
+    public void ConcurrentMultiMap_Union()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Union(other);
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_Intersect()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Intersect(other);
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_ExceptWith()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.ExceptWith(other);
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_SymmetricExceptWith()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.SymmetricExceptWith(other);
+    }
+
+    // --- SortedMultiMap set-operation benchmarks ---
+    [Benchmark]
+    public void SortedMultiMap_Union()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Union(other);
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_Intersect()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Intersect(other);
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_ExceptWith()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.ExceptWith(other);
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_SymmetricExceptWith()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.SymmetricExceptWith(other);
+    }
+
+    // --- MultiMapList set-operation benchmarks ---
+    [Benchmark]
+    public void MultiMapList_Union()
+    {
+        var target = new MultiMapList<string, int>();
+        var other = new MultiMapList<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Union(other);
+    }
+
+    [Benchmark]
+    public void MultiMapList_Intersect()
+    {
+        var target = new MultiMapList<string, int>();
+        var other = new MultiMapList<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Intersect(other);
+    }
+
+    [Benchmark]
+    public void MultiMapList_ExceptWith()
+    {
+        var target = new MultiMapList<string, int>();
+        var other = new MultiMapList<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.ExceptWith(other);
+    }
+
+    [Benchmark]
+    public void MultiMapList_SymmetricExceptWith()
+    {
+        var target = new MultiMapList<string, int>();
+        var other = new MultiMapList<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.SymmetricExceptWith(other);
     }
 }

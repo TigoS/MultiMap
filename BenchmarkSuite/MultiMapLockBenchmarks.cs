@@ -1,10 +1,10 @@
 using System.Linq;
 using BenchmarkDotNet.Attributes;
 using MultiMap.Entities;
-using MultiMap.Helpers;
 using Microsoft.VSDiagnostics;
 
 namespace BenchmarkSuite;
+
 [CPUUsageDiagnoser]
 public class MultiMapLockBenchmarks
 {
@@ -12,6 +12,7 @@ public class MultiMapLockBenchmarks
     private const int ValuesPerKey = 50;
     private MultiMapLock<string, int> _map = null!;
     private string[] _keys = null!;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -64,12 +65,35 @@ public class MultiMapLockBenchmarks
 
     [Benchmark]
     public bool MultiMapLock_Contains() => _map.Contains("key50", 25);
+
     [Benchmark]
     public bool MultiMapLock_ContainsKey() => _map.ContainsKey("key50");
+
     [Benchmark]
     public int MultiMapLock_Count() => _map.Count;
+
     [Benchmark]
     public int MultiMapLock_GetKeys() => _map.Keys.Count();
+
+    [Benchmark]
+    public void MultiMapLock_Union()
+    {
+        var target = new MultiMapLock<string, int>();
+        var other = new MultiMapLock<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.Union(other);
+        target.Dispose();
+        other.Dispose();
+    }
+
     [Benchmark]
     public void MultiMapLock_Intersect()
     {
@@ -85,6 +109,44 @@ public class MultiMapLockBenchmarks
         }
 
         target.Intersect(other);
+        target.Dispose();
+        other.Dispose();
+    }
+
+    [Benchmark]
+    public void MultiMapLock_ExceptWith()
+    {
+        var target = new MultiMapLock<string, int>();
+        var other = new MultiMapLock<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.ExceptWith(other);
+        target.Dispose();
+        other.Dispose();
+    }
+
+    [Benchmark]
+    public void MultiMapLock_SymmetricExceptWith()
+    {
+        var target = new MultiMapLock<string, int>();
+        var other = new MultiMapLock<string, int>();
+        for (int k = 0; k < 50; k++)
+        {
+            for (int v = 0; v < 20; v++)
+            {
+                target.Add($"key{k}", v);
+                other.Add($"key{k + 25}", v + 10);
+            }
+        }
+
+        target.SymmetricExceptWith(other);
         target.Dispose();
         other.Dispose();
     }

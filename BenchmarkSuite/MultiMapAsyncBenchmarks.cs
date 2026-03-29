@@ -4,13 +4,20 @@ using MultiMap.Entities;
 using Microsoft.VSDiagnostics;
 
 namespace BenchmarkSuite;
+
 [CPUUsageDiagnoser]
 public class MultiMapAsyncBenchmarks
 {
     private const int KeyCount = 100;
     private const int ValuesPerKey = 50;
+    private const int SetOpKeyCount = 50;
+    private const int SetOpValuesPerKey = 20;
+    private const int KeyOffset = 25;
+    private const int ValueOffset = 10;
     private MultiMapAsync<string, int> _map = null!;
     private string[] _keys = null!;
+    private string[] _values = null!;
+
     [GlobalSetup]
     public void Setup()
     {
@@ -83,5 +90,73 @@ public class MultiMapAsyncBenchmarks
     public int MultiMapAsync_GetKeys()
     {
         return _map.GetKeysAsync().GetAwaiter().GetResult().Count();
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_Union()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+        for (int k = 0; k < SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"key{k + KeyOffset}", v + ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        target.UnionAsync(other).GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_Intersect()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+        for (int k = 0; k < SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"key{k + KeyOffset}", v + ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        target.IntersectAsync(other).GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_ExceptWith()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+        for (int k = 0; k < SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"key{k + KeyOffset}", v + ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        target.ExceptWithAsync(other).GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_SymmetricExceptWith()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+        for (int k = 0; k < SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"key{k + KeyOffset}", v + ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        target.SymmetricExceptWithAsync(other).GetAwaiter().GetResult();
     }
 }
