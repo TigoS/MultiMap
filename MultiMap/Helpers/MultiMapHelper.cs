@@ -61,9 +61,11 @@ namespace MultiMap.Helpers
                     continue;
                 }
 
+                var otherValues = other.Get(key);
+                var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
                 foreach (var value in target.Get(key))
                 {
-                    if (!other.Contains(key, value))
+                    if (!otherSet.Contains(value))
                     {
                         valuesToRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
                     }
@@ -130,9 +132,11 @@ namespace MultiMap.Helpers
 
             foreach (var key in other.Keys)
             {
+                var targetValues = target.Get(key);
+                var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
                 foreach (var value in other.Get(key))
                 {
-                    if (target.Contains(key, value))
+                    if (targetSet.Contains(value))
                     {
                         toRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
                     }
@@ -154,7 +158,7 @@ namespace MultiMap.Helpers
             }
         }
 
-        // ── ISimpleMultiMap overloads ──────────────────────
+        // ── ISimpleMultiMap overloads
 
         /// <summary>
         /// Adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
@@ -187,11 +191,18 @@ namespace MultiMap.Helpers
             where TValue : notnull
         {
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var otherLookup = new Dictionary<TKey, ISet<TValue>>();
 
             foreach (var kvp in target.Flatten())
             {
-                var otherValues = other.GetOrDefault(kvp.Key);
-                if (!otherValues.Contains(kvp.Value))
+                if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
+                {
+                    var raw = other.GetOrDefault(kvp.Key);
+                    otherSet = raw as ISet<TValue> ?? new HashSet<TValue>(raw);
+                    otherLookup[kvp.Key] = otherSet;
+                }
+
+                if (!otherSet.Contains(kvp.Value))
                 {
                     toRemove.Add(kvp);
                 }
@@ -239,10 +250,18 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
+            var targetLookup = new Dictionary<TKey, ISet<TValue>>();
+
             foreach (var kvp in other.Flatten())
             {
-                var targetValues = target.GetOrDefault(kvp.Key);
-                if (targetValues.Contains(kvp.Value))
+                if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
+                {
+                    var raw = target.GetOrDefault(kvp.Key);
+                    targetSet = raw as ISet<TValue> ?? new HashSet<TValue>(raw);
+                    targetLookup[kvp.Key] = targetSet;
+                }
+
+                if (targetSet.Contains(kvp.Value))
                 {
                     toRemove.Add(kvp);
                 }
@@ -324,10 +343,12 @@ namespace MultiMap.Helpers
                     continue;
                 }
 
+                var otherValues = await other.GetAsync(key, cancellationToken);
+                var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
                 var values = await target.GetAsync(key, cancellationToken);
                 foreach (var value in values)
                 {
-                    if (!await other.ContainsAsync(key, value, cancellationToken))
+                    if (!otherSet.Contains(value))
                     {
                         valuesToRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
                     }
@@ -399,10 +420,12 @@ namespace MultiMap.Helpers
             var otherKeys = await other.GetKeysAsync(cancellationToken);
             foreach (var key in otherKeys)
             {
+                var targetValues = await target.GetAsync(key, cancellationToken);
+                var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
                 var values = await other.GetAsync(key, cancellationToken);
                 foreach (var value in values)
                 {
-                    if (await target.ContainsAsync(key, value, cancellationToken))
+                    if (targetSet.Contains(value))
                     {
                         toRemove.Add(new KeyValuePair<TKey, TValue>(key, value));
                     }
