@@ -432,6 +432,220 @@ namespace MultiMap.Entities
             }
         }
 
+        // ── UnionAsync ────────────────────────────────────────
+
+        /// <summary>
+        /// Atomically adds all key-value pairs from <paramref name="other"/> into this multi-map.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted via its async interface before the
+        /// semaphore is acquired, so <paramref name="other"/> may be the same instance or another
+        /// locked collection without risk of deadlock. The entire mutation phase executes under a
+        /// single semaphore hold, guaranteeing that no concurrent caller can observe a partial union.
+        /// </remarks>
+        /// <param name="other">The multi-map whose pairs are added to this instance.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public async Task UnionAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        {
+            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            foreach (var key in await other.GetKeysAsync(cancellationToken))
+            {
+                snapshot.Add((key, (await other.GetAsync(key, cancellationToken)).ToArray()));
+            }
+
+            await _semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                UnionCore(snapshot);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private void UnionCore(List<(TKey Key, TValue[] Values)> snapshot)
+        {
+            foreach (var (key, values) in snapshot)
+            {
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>();
+
+                foreach (var value in values)
+                {
+                    if (hashset.Add(value))
+                        _count++;
+                }
+            }
+        }
+
+        // ── IntersectAsync ────────────────────────────────────
+
+        /// <summary>
+        /// Atomically removes all key-value pairs from this multi-map that do not exist in <paramref name="other"/>.
+        /// </summary>
+        /// <remarks>
+        /// The membership of <paramref name="other"/> is snapshotted into a dictionary of hash sets
+        /// via its async interface before the semaphore is acquired, avoiding deadlock when
+        /// <paramref name="other"/> is a locked collection. The entire read-and-remove phase executes
+        /// under a single semaphore hold, so concurrent operations cannot insert values that bypass
+        /// the intersect filter.
+        /// </remarks>
+        /// <param name="other">The multi-map that defines the pairs to keep.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public async Task IntersectAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        {
+            var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
+            foreach (var key in await other.GetKeysAsync(cancellationToken))
+            {
+                otherIndex[key] = new HashSet<TValue>(await other.GetAsync(key, cancellationToken));
+            }
+
+            await _semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                IntersectCore(otherIndex);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private void IntersectCore(Dictionary<TKey, HashSet<TValue>> otherIndex)
+        {
+            var keysToRemove = new List<TKey>();
+
+            foreach (var kvp in _dictionary)
+            {
+                if (!otherIndex.TryGetValue(kvp.Key, out var otherValues))
+                {
+                    _count -= kvp.Value.Count;
+                    keysToRemove.Add(kvp.Key);
+                    continue;
+                }
+
+                int removed = kvp.Value.RemoveWhere(v => !otherValues.Contains(v));
+                _count -= removed;
+
+                if (kvp.Value.Count == 0)
+                    keysToRemove.Add(kvp.Key);
+            }
+
+            foreach (var key in keysToRemove)
+            {
+                _dictionary.Remove(key);
+            }
+        }
+
+        // ── ExceptWithAsync ───────────────────────────────────
+
+        /// <summary>
+        /// Atomically removes all key-value pairs from this multi-map that exist in <paramref name="other"/>.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted via its async interface before the
+        /// semaphore is acquired, so <paramref name="other"/> may be the same instance or another
+        /// locked collection without risk of deadlock. The entire mutation phase executes under a
+        /// single semaphore hold, guaranteeing that no concurrent caller can observe a partial removal.
+        /// </remarks>
+        /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public async Task ExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        {
+            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            foreach (var key in await other.GetKeysAsync(cancellationToken))
+            {
+                snapshot.Add((key, (await other.GetAsync(key, cancellationToken)).ToArray()));
+            }
+
+            await _semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                ExceptWithCore(snapshot);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private void ExceptWithCore(List<(TKey Key, TValue[] Values)> snapshot)
+        {
+            foreach (var (key, values) in snapshot)
+            {
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                    continue;
+
+                foreach (var value in values)
+                {
+                    if (hashset.Remove(value))
+                        _count--;
+                }
+
+                if (hashset.Count == 0)
+                    _dictionary.Remove(key);
+            }
+        }
+
+        // ── SymmetricExceptWithAsync ──────────────────────────
+
+        /// <summary>
+        /// Atomically modifies this multi-map to contain only pairs present in either this instance
+        /// or <paramref name="other"/>, but not both.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted via its async interface before the
+        /// semaphore is acquired, so <paramref name="other"/> may be the same instance or another
+        /// locked collection without risk of deadlock. Classification and all mutations execute under
+        /// a single semaphore hold, guaranteeing full atomicity.
+        /// </remarks>
+        /// <param name="other">The multi-map to compare against.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        public async Task SymmetricExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        {
+            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            foreach (var key in await other.GetKeysAsync(cancellationToken))
+            {
+                snapshot.Add((key, (await other.GetAsync(key, cancellationToken)).ToArray()));
+            }
+
+            await _semaphore.WaitAsync(cancellationToken);
+            try
+            {
+                SymmetricExceptWithCore(snapshot);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        private void SymmetricExceptWithCore(List<(TKey Key, TValue[] Values)> snapshot)
+        {
+            foreach (var (key, values) in snapshot)
+            {
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>();
+
+                foreach (var value in values)
+                {
+                    if (!hashset.Remove(value))
+                    {
+                        hashset.Add(value);
+                        _count++;
+                    }
+                    else
+                    {
+                        _count--;
+                    }
+                }
+
+                if (hashset.Count == 0)
+                    _dictionary.Remove(key);
+            }
+        }
+
         /// <summary>
         /// Returns an asynchronous enumerator that iterates over a snapshot of all key-value pairs in the multi-map.
         /// Changes made to the collection during enumeration are not reflected.
