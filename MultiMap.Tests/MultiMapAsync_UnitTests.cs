@@ -739,4 +739,57 @@ public class MultiMapAsyncTests
 
         Assert.That(count, Is.EqualTo(verifyCount));
     }
+
+    [Test]
+    public async Task Stress_AsyncEnumeratorSnapshot_CountConsistency()
+    {
+        const int snapshotCount = 30;
+        const int mutationsPerCycle = 20;
+        using var cts = new CancellationTokenSource();
+
+        var mutationTask = Task.Run(async () =>
+        {
+            int value = 0;
+            while (!cts.IsCancellationRequested)
+            {
+                for (int i = 0; i < mutationsPerCycle; i++)
+                    await _map.AddAsync($"key{i % 5}", value++);
+
+                for (int i = 0; i < mutationsPerCycle; i++)
+                    await _map.RemoveAsync($"key{i % 5}", value - mutationsPerCycle + i);
+
+                await _map.AddRangeAsync("bulk", Enumerable.Range(value, 10));
+                await _map.RemoveKeyAsync("bulk");
+            }
+        });
+
+        for (int snapshot = 0; snapshot < snapshotCount; snapshot++)
+        {
+            var items = new List<KeyValuePair<string, int>>();
+            await foreach (var kvp in _map)
+                items.Add(kvp);
+
+            Assert.That(items.Count, Is.GreaterThanOrEqualTo(0),
+                $"Snapshot {snapshot}: negative item count");
+
+            var distinctPairs = items.Distinct().ToList();
+            Assert.That(distinctPairs.Count, Is.EqualTo(items.Count),
+                $"Snapshot {snapshot}: snapshot contains duplicate pairs");
+        }
+
+        cts.Cancel();
+
+        try { await mutationTask; }
+        catch (OperationCanceledException) { }
+
+        int finalCount = await _map.GetCountAsync();
+        Assert.That(finalCount, Is.GreaterThanOrEqualTo(0));
+
+        int verifyCount = 0;
+        foreach (var key in await _map.GetKeysAsync())
+            verifyCount += (await _map.GetAsync(key)).Count();
+
+        Assert.That(finalCount, Is.EqualTo(verifyCount),
+            "Final Count does not match sum of per-key values");
+    }
 }

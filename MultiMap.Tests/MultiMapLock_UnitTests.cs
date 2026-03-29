@@ -743,4 +743,55 @@ public class MultiMapLockTests
 
         Assert.That(_map.Count, Is.EqualTo(verifyCount));
     }
+
+    [Test]
+    public void Stress_EnumeratorSnapshot_CountConsistency()
+    {
+        const int snapshotCount = 30;
+        const int mutationsPerCycle = 20;
+        using var cts = new CancellationTokenSource();
+
+        var mutationTask = Task.Run(() =>
+        {
+            int value = 0;
+            while (!cts.IsCancellationRequested)
+            {
+                for (int i = 0; i < mutationsPerCycle; i++)
+                    _map.Add($"key{i % 5}", value++);
+
+                for (int i = 0; i < mutationsPerCycle; i++)
+                    _map.Remove($"key{i % 5}", value - mutationsPerCycle + i);
+
+                _map.AddRange("bulk", Enumerable.Range(value, 10));
+                _map.RemoveKey("bulk");
+            }
+        });
+
+        for (int snapshot = 0; snapshot < snapshotCount; snapshot++)
+        {
+            var items = _map.ToList();
+
+            Assert.That(items.Count, Is.GreaterThanOrEqualTo(0),
+                $"Snapshot {snapshot}: negative item count");
+
+            var distinctPairs = items.Distinct().ToList();
+            Assert.That(distinctPairs.Count, Is.EqualTo(items.Count),
+                $"Snapshot {snapshot}: snapshot contains duplicate pairs");
+        }
+
+        cts.Cancel();
+
+        try { mutationTask.Wait(); }
+        catch (AggregateException) { }
+
+        int finalCount = _map.Count;
+        Assert.That(finalCount, Is.GreaterThanOrEqualTo(0));
+
+        int verifyCount = 0;
+        foreach (var key in _map.Keys)
+            verifyCount += _map.Get(key).Count();
+
+        Assert.That(finalCount, Is.EqualTo(verifyCount),
+            "Final Count does not match sum of per-key values");
+    }
 }
