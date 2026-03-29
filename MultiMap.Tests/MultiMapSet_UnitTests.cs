@@ -239,6 +239,57 @@ public class MultiMapSetTests
     }
 
     [Test]
+    public void Count_DecreasesAfterRemoveKey()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Count_UnchangedAfterFailedRemove_NonExistentValue()
+    {
+        _map.Add("a", 1);
+
+        _map.Remove("a", 99);
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Count_UnchangedAfterFailedRemove_NonExistentKey()
+    {
+        _map.Add("a", 1);
+
+        _map.Remove("missing", 1);
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Count_UnchangedAfterFailedRemoveKey()
+    {
+        _map.Add("a", 1);
+
+        _map.RemoveKey("missing");
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_WithPartialDuplicates_CountsOnlyNewValues()
+    {
+        _map.Add("a", 1);
+        _map.AddRange("a", new[] { 1, 2, 3 });
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+    }
+
+    [Test]
     public void Clear_RemovesAllEntries()
     {
         _map.Add("a", 1);
@@ -430,5 +481,91 @@ public class MultiMapSetTests
         other.Add("a", 1);
 
         Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
+    }
+
+    [Test]
+    public void Stress_RepeatedAddRemoveCycles_CountRemainsAccurate()
+    {
+        for (int cycle = 0; cycle < 50; cycle++)
+        {
+            for (int i = 0; i < 20; i++)
+                _map.Add("key", i);
+
+            Assert.That(_map.Count, Is.EqualTo(20), $"Count wrong after adds in cycle {cycle}");
+
+            for (int i = 0; i < 20; i++)
+                _map.Remove("key", i);
+
+            Assert.That(_map.Count, Is.Zero, $"Count wrong after removes in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_ClearAndRebuild_CountResetsCorrectly()
+    {
+        for (int cycle = 0; cycle < 50; cycle++)
+        {
+            for (int i = 0; i < 10; i++)
+                _map.Add($"k{i % 3}", cycle * 10 + i);
+
+            Assert.That(_map.Count, Is.EqualTo(10), $"Count wrong before clear in cycle {cycle}");
+
+            _map.Clear();
+
+            Assert.That(_map.Count, Is.Zero, $"Count wrong after clear in cycle {cycle}");
+            Assert.That(_map.Keys, Is.Empty);
+        }
+    }
+
+    [Test]
+    public void Stress_MixedOperations_CountTracksCorrectly()
+    {
+        int expected = 0;
+
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            if (_map.Add("a", cycle))
+                expected++;
+
+            foreach (var v in new[] { cycle * 10, cycle * 10 + 1 })
+            {
+                if (_map.Add("b", v))
+                    expected++;
+            }
+
+            if (cycle > 0 && cycle % 5 == 0)
+            {
+                _map.Clear();
+                expected = 0;
+            }
+
+            if (cycle > 0 && cycle % 3 == 0 && _map.ContainsKey("a"))
+            {
+                int beforeKeys = _map.Get("a").Count();
+                _map.RemoveKey("a");
+                expected -= beforeKeys;
+            }
+
+            Assert.That(_map.Count, Is.EqualTo(expected), $"Count mismatch at cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_AddRangeAndRemoveKey_CountDecreasesCorrectly()
+    {
+        for (int cycle = 0; cycle < 40; cycle++)
+        {
+            string key = $"key{cycle % 5}";
+            _map.RemoveKey(key);
+
+            var values = Enumerable.Range(cycle * 10, 5);
+            _map.AddRange(key, values);
+        }
+
+        int totalCount = 0;
+        foreach (var key in _map.Keys)
+            totalCount += _map.Get(key).Count();
+
+        Assert.That(_map.Count, Is.EqualTo(totalCount));
     }
 }

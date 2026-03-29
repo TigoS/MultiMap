@@ -258,6 +258,57 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public async Task GetCountAsync_DecreasesAfterRemoveKey()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        await _map.RemoveKeyAsync("a");
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetCountAsync_UnchangedAfterFailedRemove_NonExistentValue()
+    {
+        await _map.AddAsync("a", 1);
+
+        await _map.RemoveAsync("a", 99);
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetCountAsync_UnchangedAfterFailedRemove_NonExistentKey()
+    {
+        await _map.AddAsync("a", 1);
+
+        await _map.RemoveAsync("missing", 1);
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetCountAsync_UnchangedAfterFailedRemoveKey()
+    {
+        await _map.AddAsync("a", 1);
+
+        await _map.RemoveKeyAsync("missing");
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task AddRangeAsync_WithPartialDuplicates_CountsOnlyNewValues()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddRangeAsync("a", new[] { 1, 2, 3 });
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(3));
+    }
+
+    [Test]
     public async Task ClearAsync_RemovesAllEntries()
     {
         await _map.AddAsync("a", 1);
@@ -341,7 +392,7 @@ public class MultiMapAsyncTests
         const int count = 1000;
 
         var tasks = Enumerable.Range(0, count)
-            .Select(i => _map.AddAsync("a", i))
+            .Select(i => _map.AddAsync("a", i).AsTask())
             .ToArray();
 
         await Task.WhenAll(tasks);
@@ -355,7 +406,7 @@ public class MultiMapAsyncTests
         const int threads = 100;
 
         var tasks = Enumerable.Range(0, threads)
-            .Select(_ => _map.AddAsync("a", 42))
+            .Select(_ => _map.AddAsync("a", 42).AsTask())
             .ToArray();
 
         await Task.WhenAll(tasks);
@@ -372,7 +423,7 @@ public class MultiMapAsyncTests
             await _map.AddAsync("a", i);
 
         var tasks = Enumerable.Range(0, count)
-            .Select(i => _map.RemoveAsync("a", i))
+            .Select(i => _map.RemoveAsync("a", i).AsTask())
             .ToArray();
 
         await Task.WhenAll(tasks);
@@ -386,7 +437,7 @@ public class MultiMapAsyncTests
         const int count = 1000;
 
         var tasks = Enumerable.Range(0, count)
-            .Select(i => _map.AddAsync($"key{i}", i))
+            .Select(i => _map.AddAsync($"key{i}", i).AsTask())
             .ToArray();
 
         await Task.WhenAll(tasks);
@@ -533,6 +584,18 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public async Task GetKeysAsync_ReturnsSnapshot_NotLiveCollection()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var keys = await _map.GetKeysAsync();
+        await _map.AddAsync("c", 3);
+
+        Assert.That(keys, Is.EquivalentTo(new[] { "a", "b" }));
+    }
+
+    [Test]
     public async Task IMultiMapAsync_CanBeUsedThroughInterface()
     {
         IMultiMapAsync<string, int> map = _map;
@@ -553,5 +616,127 @@ public class MultiMapAsyncTests
 
         await map.ClearAsync();
         Assert.That(await map.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task Stress_RepeatedAddRemoveCycles_CountRemainsAccurate()
+    {
+        for (int cycle = 0; cycle < 50; cycle++)
+        {
+            for (int i = 0; i < 20; i++)
+                await _map.AddAsync("key", i);
+
+            Assert.That(await _map.GetCountAsync(), Is.EqualTo(20), $"Count wrong after adds in cycle {cycle}");
+
+            for (int i = 0; i < 20; i++)
+                await _map.RemoveAsync("key", i);
+
+            Assert.That(await _map.GetCountAsync(), Is.Zero, $"Count wrong after removes in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public async Task Stress_ClearAndRebuild_CountResetsCorrectly()
+    {
+        for (int cycle = 0; cycle < 50; cycle++)
+        {
+            for (int i = 0; i < 10; i++)
+                await _map.AddAsync($"k{i % 3}", cycle * 10 + i);
+
+            Assert.That(await _map.GetCountAsync(), Is.EqualTo(10), $"Count wrong before clear in cycle {cycle}");
+
+            await _map.ClearAsync();
+
+            Assert.That(await _map.GetCountAsync(), Is.Zero, $"Count wrong after clear in cycle {cycle}");
+            Assert.That(await _map.GetKeysAsync(), Is.Empty);
+        }
+    }
+
+    [Test]
+    public async Task Stress_MixedOperations_CountTracksCorrectly()
+    {
+        int expected = 0;
+
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            if (await _map.AddAsync("a", cycle))
+                expected++;
+
+            foreach (var v in new[] { cycle * 10, cycle * 10 + 1 })
+            {
+                if (await _map.AddAsync("b", v))
+                    expected++;
+            }
+
+            if (cycle > 0 && cycle % 5 == 0)
+            {
+                await _map.ClearAsync();
+                expected = 0;
+            }
+
+            if (cycle > 0 && cycle % 3 == 0 && await _map.ContainsKeyAsync("a"))
+            {
+                int beforeKeys = (await _map.GetAsync("a")).Count();
+                await _map.RemoveKeyAsync("a");
+                expected -= beforeKeys;
+            }
+
+            Assert.That(await _map.GetCountAsync(), Is.EqualTo(expected), $"Count mismatch at cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public async Task Stress_AddRangeAndRemoveKey_CountDecreasesCorrectly()
+    {
+        for (int cycle = 0; cycle < 40; cycle++)
+        {
+            string key = $"key{cycle % 5}";
+            await _map.RemoveKeyAsync(key);
+
+            var values = Enumerable.Range(cycle * 10, 5);
+            await _map.AddRangeAsync(key, values);
+        }
+
+        int totalCount = 0;
+        foreach (var key in await _map.GetKeysAsync())
+            totalCount += (await _map.GetAsync(key)).Count();
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(totalCount));
+    }
+
+    [Test]
+    public async Task Stress_ConcurrentAddRemoveClear_CountNeverNegative()
+    {
+        const int iterations = 500;
+
+        var tasks = Enumerable.Range(0, iterations).Select(async i =>
+        {
+            switch (i % 4)
+            {
+                case 0:
+                    await _map.AddAsync($"key{i % 10}", i);
+                    break;
+                case 1:
+                    await _map.RemoveAsync($"key{i % 10}", i - 1);
+                    break;
+                case 2:
+                    await _map.AddRangeAsync($"key{i % 10}", new[] { i, i + 1000 });
+                    break;
+                case 3:
+                    await _map.RemoveKeyAsync($"key{i % 10}");
+                    break;
+            }
+        }).ToArray();
+
+        await Task.WhenAll(tasks);
+
+        int count = await _map.GetCountAsync();
+        Assert.That(count, Is.GreaterThanOrEqualTo(0));
+
+        int verifyCount = 0;
+        foreach (var key in await _map.GetKeysAsync())
+            verifyCount += (await _map.GetAsync(key)).Count();
+
+        Assert.That(count, Is.EqualTo(verifyCount));
     }
 }
