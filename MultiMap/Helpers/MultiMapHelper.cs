@@ -10,6 +10,13 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. When used with concurrent implementations such as
+        /// <see cref="Entities.ConcurrentMultiMap{TKey, TValue}"/> or <see cref="Entities.MultiMapLock{TKey, TValue}"/>,
+        /// concurrent modifications to <paramref name="target"/> or <paramref name="other"/> between
+        /// individual operations may cause the result to reflect a mix of states rather than a
+        /// point-in-time union. No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
@@ -27,6 +34,14 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Removes all key-value pairs from <paramref name="target"/> that do not exist in <paramref name="other"/>.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. It reads a snapshot of <paramref name="target"/> keys and values,
+        /// then applies removals in a separate phase. When used with concurrent implementations,
+        /// key-value pairs added to <paramref name="target"/> between the read and write phases will
+        /// survive the intersect even if absent from <paramref name="other"/>. Pairs scheduled for
+        /// <see cref="IMultiMap{TKey, TValue}.RemoveKey"/> removal will also remove any values added
+        /// concurrently under the same key. No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
@@ -69,6 +84,11 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Removes all key-value pairs from <paramref name="target"/> that exist in <paramref name="other"/>.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. Each removal is individually atomic, but values added to
+        /// <paramref name="target"/> between iterations that also exist in <paramref name="other"/>
+        /// may not be removed. No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
@@ -90,6 +110,13 @@ namespace MultiMap.Helpers
         /// Modifies <paramref name="target"/> to contain only pairs present in either
         /// <paramref name="target"/> or <paramref name="other"/>, but not both.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. It classifies pairs via <see cref="IMultiMap{TKey, TValue}.Contains"/>
+        /// in a read phase, then applies additions and removals in separate write phases. When used with
+        /// concurrent implementations, pairs added to <paramref name="target"/> between classification and
+        /// mutation may be misclassified, leaving values that should have been removed or failing to add
+        /// values that should have been included. No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
@@ -243,6 +270,11 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Asynchronously adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. Each awaited operation releases the underlying lock, allowing
+        /// concurrent callers to interleave between steps. The result may reflect a mix of states
+        /// rather than a point-in-time union. No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
@@ -264,6 +296,13 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Asynchronously removes all key-value pairs from <paramref name="target"/> that do not exist in <paramref name="other"/>.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. It snapshots keys and values in a read phase, then removes
+        /// non-matching pairs in a write phase. Between awaited operations, concurrent callers may
+        /// add pairs that survive the intersect or remove pairs redundantly. Pairs scheduled for
+        /// key-level removal will also remove any values added concurrently under the same key.
+        /// No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
@@ -309,6 +348,11 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Asynchronously removes all key-value pairs from <paramref name="target"/> that exist in <paramref name="other"/>.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. Each removal is individually atomic, but values added to
+        /// <paramref name="target"/> between awaited iterations that also exist in <paramref name="other"/>
+        /// may not be removed. No structural corruption or count drift will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
@@ -333,6 +377,13 @@ namespace MultiMap.Helpers
         /// Asynchronously modifies <paramref name="target"/> to contain only pairs present in either
         /// <paramref name="target"/> or <paramref name="other"/>, but not both.
         /// </summary>
+        /// <remarks>
+        /// This method is not atomic. It classifies pairs in a read phase, then applies additions
+        /// and removals in separate write phases. Between awaited operations, concurrent callers may
+        /// cause pairs to be misclassified, leaving values that should have been removed or failing
+        /// to add values that should have been included. No structural corruption or count drift
+        /// will occur.
+        /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
