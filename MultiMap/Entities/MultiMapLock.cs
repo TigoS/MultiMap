@@ -82,7 +82,7 @@ namespace MultiMap.Entities
             try
             {
                 if (_dictionary.TryGetValue(key, out var hashset))
-                    return hashset.ToList(); // snapshot to avoid external modification issues
+                    return hashset.ToArray();
 
                 return [];
             }
@@ -193,7 +193,7 @@ namespace MultiMap.Entities
                 _lock.EnterReadLock();
                 try
                 {
-                    return _dictionary.Keys.ToList(); // snapshot to avoid external modification issues
+                    return _dictionary.Keys.ToArray();
                 }
                 finally
                 {

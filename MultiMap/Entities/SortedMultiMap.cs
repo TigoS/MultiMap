@@ -18,7 +18,7 @@ namespace MultiMap.Entities
         where TKey : notnull
         where TValue : notnull
     {
-        private SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
+        private readonly SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
         private int _count;
 
         /// <summary>

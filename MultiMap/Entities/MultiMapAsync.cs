@@ -36,14 +36,14 @@ namespace MultiMap.Entities
         // ── AddAsync ──────────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
+        public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(AddCore(key, value));
+                    return new ValueTask<bool>(AddCore(key, value));
                 }
                 finally
                 {
@@ -67,7 +67,7 @@ namespace MultiMap.Entities
             return false;
         }
 
-        private async Task<bool> AddSlowAsync(Task waitTask, TKey key, TValue value)
+        private async ValueTask<bool> AddSlowAsync(Task waitTask, TKey key, TValue value)
         {
             await waitTask;
             try
@@ -129,14 +129,14 @@ namespace MultiMap.Entities
         // ── GetAsync ──────────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
+        public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(GetCore(key));
+                    return new ValueTask<IEnumerable<TValue>>(GetCore(key));
                 }
                 finally
                 {
@@ -149,12 +149,12 @@ namespace MultiMap.Entities
         private IEnumerable<TValue> GetCore(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToList();
+                return hashset.ToArray();
 
             return [];
         }
 
-        private async Task<IEnumerable<TValue>> GetSlowAsync(Task waitTask, TKey key)
+        private async ValueTask<IEnumerable<TValue>> GetSlowAsync(Task waitTask, TKey key)
         {
             await waitTask;
             try
@@ -170,14 +170,14 @@ namespace MultiMap.Entities
         // ── RemoveAsync ───────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
+        public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(RemoveCore(key, value));
+                    return new ValueTask<bool>(RemoveCore(key, value));
                 }
                 finally
                 {
@@ -206,7 +206,7 @@ namespace MultiMap.Entities
             return false;
         }
 
-        private async Task<bool> RemoveSlowAsync(Task waitTask, TKey key, TValue value)
+        private async ValueTask<bool> RemoveSlowAsync(Task waitTask, TKey key, TValue value)
         {
             await waitTask;
             try
@@ -222,14 +222,14 @@ namespace MultiMap.Entities
         // ── RemoveKeyAsync ────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
+        public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(RemoveKeyCore(key));
+                    return new ValueTask<bool>(RemoveKeyCore(key));
                 }
                 finally
                 {
@@ -250,7 +250,7 @@ namespace MultiMap.Entities
             return false;
         }
 
-        private async Task<bool> RemoveKeySlowAsync(Task waitTask, TKey key)
+        private async ValueTask<bool> RemoveKeySlowAsync(Task waitTask, TKey key)
         {
             await waitTask;
             try
@@ -266,14 +266,14 @@ namespace MultiMap.Entities
         // ── ContainsKeyAsync ──────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
+        public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(_dictionary.ContainsKey(key));
+                    return new ValueTask<bool>(_dictionary.ContainsKey(key));
                 }
                 finally
                 {
@@ -283,7 +283,7 @@ namespace MultiMap.Entities
             return ContainsKeySlowAsync(waitTask, key);
         }
 
-        private async Task<bool> ContainsKeySlowAsync(Task waitTask, TKey key)
+        private async ValueTask<bool> ContainsKeySlowAsync(Task waitTask, TKey key)
         {
             await waitTask;
             try
@@ -299,14 +299,14 @@ namespace MultiMap.Entities
         // ── ContainsAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
+        public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(
+                    return new ValueTask<bool>(
                         _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value));
                 }
                 finally
@@ -317,7 +317,7 @@ namespace MultiMap.Entities
             return ContainsSlowAsync(waitTask, key, value);
         }
 
-        private async Task<bool> ContainsSlowAsync(Task waitTask, TKey key, TValue value)
+        private async ValueTask<bool> ContainsSlowAsync(Task waitTask, TKey key, TValue value)
         {
             await waitTask;
             try
@@ -333,14 +333,14 @@ namespace MultiMap.Entities
         // ── GetCountAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<int> GetCountAsync(CancellationToken cancellationToken = default)
+        public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult(_count);
+                    return new ValueTask<int>(_count);
                 }
                 finally
                 {
@@ -350,7 +350,7 @@ namespace MultiMap.Entities
             return GetCountSlowAsync(waitTask);
         }
 
-        private async Task<int> GetCountSlowAsync(Task waitTask)
+        private async ValueTask<int> GetCountSlowAsync(Task waitTask)
         {
             await waitTask;
             try
@@ -402,14 +402,14 @@ namespace MultiMap.Entities
         // ── GetKeysAsync ──────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
+        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
         {
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
-                    return Task.FromResult<IEnumerable<TKey>>(_dictionary.Keys.ToList());
+                    return new ValueTask<IEnumerable<TKey>>(_dictionary.Keys.ToArray());
                 }
                 finally
                 {
@@ -419,12 +419,12 @@ namespace MultiMap.Entities
             return GetKeysSlowAsync(waitTask);
         }
 
-        private async Task<IEnumerable<TKey>> GetKeysSlowAsync(Task waitTask)
+        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(Task waitTask)
         {
             await waitTask;
             try
             {
-                return _dictionary.Keys.ToList();
+                return _dictionary.Keys.ToArray();
             }
             finally
             {
