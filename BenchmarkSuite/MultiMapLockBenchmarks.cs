@@ -62,7 +62,7 @@ public class MultiMapLockBenchmarks
     }
 
     [Benchmark]
-    public bool MultiMapLock_Contains() => _map.Contains("key50", 25);
+    public bool MultiMapLock_Contains() => _map.Contains("key50", Consts.KeyOffset);
 
     [Benchmark]
     public bool MultiMapLock_ContainsKey() => _map.ContainsKey("key50");

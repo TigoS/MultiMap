@@ -1,8 +1,9 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkSuite;
+using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
 using MultiMap.Helpers;
-using Microsoft.VSDiagnostics;
-using BenchmarkSuite;
+using System.Linq;
 
 [CPUUsageDiagnoser]
 public class MultiMapBenchmarks
@@ -73,10 +74,85 @@ public class MultiMapBenchmarks
         }
     }
 
+    // --- MultiMapSet microbenchmarks ---
+    [Benchmark]
+    public int MultiMapSet_Count_AfterAdd()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public int MultiMapSet_Count_AfterRemove()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("key1", 1);
+        map.Remove("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public void MultiMapSet_RemoveKey()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("key1", 1);
+        map.RemoveKey("key1");
+    }
+
+    [Benchmark]
+    public bool MultiMapSet_ContainsKey_Missing()
+    {
+        var map = new MultiMapSet<string, int>();
+        return map.ContainsKey("missing");
+    }
+
+    [Benchmark]
+    public bool MultiMapSet_Remove_Missing()
+    {
+        var map = new MultiMapSet<string, int>();
+        return map.Remove("missing", 1);
+    }
+
+    [Benchmark]
+    public bool MultiMapSet_Add_Duplicate()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("key1", 1);
+        return map.Add("key1", 1);
+    }
     [Benchmark]
     public void MultiMapList_Add()
     {
         var map = new MultiMapList<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_Add()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_Add()
+    {
+        var map = new SortedMultiMap<string, int>();
         for (int k = 0; k < Consts.KeyCount; k++)
         {
             string key = $"key{k}";
@@ -101,9 +177,276 @@ public class MultiMapBenchmarks
         return sum;
     }
 
+    [Benchmark]
+    public int ConcurrentMultiMap_Get()
+    {
+        int sum = 0;
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _concurrentMap.Get($"key{k}"))
+                sum += v;
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_Get()
+    {
+        int sum = 0;
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _sortedMap.Get($"key{k}"))
+                sum += v;
+        }
+
+        return sum;
+    }
+
+    // --- Remove benchmarks ---
+    [Benchmark]
+    public void MultiMapSet_Remove()
+    {
+        var map = new MultiMapSet<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Remove(key, v);
+            }
+        }
+    }
+
+    [Benchmark]
+    public void MultiMapList_Remove()
+    {
+        var map = new MultiMapList<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Remove(key, v);
+            }
+        }
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_Remove()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Remove(key, v);
+            }
+        }
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_Remove()
+    {
+        var map = new SortedMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"key{k}";
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Remove(key, v);
+            }
+        }
+    }
+
+    // --- Clear benchmarks ---
+    [Benchmark]
+    public void MultiMapSet_Clear()
+    {
+        var map = new MultiMapSet<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"key{k}", v);
+        map.Clear();
+    }
+
+    [Benchmark]
+    public void MultiMapList_Clear()
+    {
+        var map = new MultiMapList<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"key{k}", v);
+        map.Clear();
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_Clear()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"key{k}", v);
+        map.Clear();
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_Clear()
+    {
+        var map = new SortedMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"key{k}", v);
+        map.Clear();
+    }
+
     // --- Contains benchmarks ---
     [Benchmark]
-    public bool MultiMapSet_Contains() => _setMap.Contains("key50", 25);
+    public bool MultiMapSet_Contains()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("key50", 25);
+        return map.Contains("key50", 25);
+    }
+
+    // --- TryGetValue benchmarks ---
+    [Benchmark]
+    public bool MultiMapSet_ContainsKey_Get()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("key50", 25);
+        return map.ContainsKey("key50") && map.Get("key50").Contains(25);
+    }
+
+    [Benchmark]
+    public bool MultiMapList_ContainsKey_Get()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("key50", 25);
+        return map.ContainsKey("key50") && map.Get("key50").Contains(25);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_ContainsKey_Get()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("key50", 25);
+        return map.ContainsKey("key50") && map.Get("key50").Contains(25);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_ContainsKey_Get()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add("key50", 25);
+        return map.ContainsKey("key50") && map.Get("key50").Contains(25);
+    }
+
+    // --- Keys enumeration benchmarks ---
+    [Benchmark]
+    public int MultiMapSet_Keys_Enumeration()
+    {
+        var map = new MultiMapSet<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            map.Add($"key{k}", 0);
+        int sum = 0;
+        foreach (var key in map.Keys)
+            sum += key.Length;
+        return sum;
+    }
+
+    [Benchmark]
+    public int MultiMapList_Keys_Enumeration()
+    {
+        var map = new MultiMapList<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            map.Add($"key{k}", 0);
+        int sum = 0;
+        foreach (var key in map.Keys)
+            sum += key.Length;
+        return sum;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_Keys_Enumeration()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            map.Add($"key{k}", 0);
+        int sum = 0;
+        foreach (var key in map.Keys)
+            sum += key.Length;
+        return sum;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_Keys_Enumeration()
+    {
+        var map = new SortedMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            map.Add($"key{k}", 0);
+        int sum = 0;
+        foreach (var key in map.Keys)
+            sum += key.Length;
+        return sum;
+    }
+
+    [Benchmark]
+    public bool MultiMapList_Contains()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("key50", 25);
+        return map.Contains("key50", 25);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_Contains()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("key50", 25);
+        return map.Contains("key50", 25);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_Contains()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add("key50", 25);
+        return map.Contains("key50", 25);
+    }
 
     // --- Helper set-operation benchmarks (MultiMapSet) ---
     [Benchmark]
@@ -379,5 +722,156 @@ public class MultiMapBenchmarks
         }
 
         target.SymmetricExceptWith(other);
+    }
+
+    // --- MultiMapList microbenchmarks ---
+    [Benchmark]
+    public int MultiMapList_Count_AfterAdd()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public int MultiMapList_Count_AfterRemove()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("key1", 1);
+        map.Remove("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public void MultiMapList_RemoveKey()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("key1", 1);
+        map.RemoveKey("key1");
+    }
+
+    [Benchmark]
+    public bool MultiMapList_ContainsKey_Missing()
+    {
+        var map = new MultiMapList<string, int>();
+        return map.ContainsKey("missing");
+    }
+
+    [Benchmark]
+    public bool MultiMapList_Remove_Missing()
+    {
+        var map = new MultiMapList<string, int>();
+        return map.Remove("missing", 1);
+    }
+
+    [Benchmark]
+    public bool MultiMapList_Add_Duplicate()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("key1", 1);
+        return map.Add("key1", 1);
+    }
+
+    // --- ConcurrentMultiMap microbenchmarks ---
+    [Benchmark]
+    public int ConcurrentMultiMap_Count_AfterAdd()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_Count_AfterRemove()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("key1", 1);
+        map.Remove("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_RemoveKey()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("key1", 1);
+        map.RemoveKey("key1");
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_Clear_Empty()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Clear();
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_ContainsKey_Missing()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        return map.ContainsKey("missing");
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_Remove_Missing()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        return map.Remove("missing", 1);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_Add_Duplicate()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("key1", 1);
+        return map.Add("key1", 1);
+    }
+
+    // --- SortedMultiMap microbenchmarks ---
+    [Benchmark]
+    public int SortedMultiMap_Count_AfterAdd()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_Count_AfterRemove()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add("key1", 1);
+        map.Remove("key1", 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_RemoveKey()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add("key1", 1);
+        map.RemoveKey("key1");
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_ContainsKey_Missing()
+    {
+        var map = new SortedMultiMap<string, int>();
+        return map.ContainsKey("missing");
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_Remove_Missing()
+    {
+        var map = new SortedMultiMap<string, int>();
+        return map.Remove("missing", 1);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_Add_Duplicate()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add("key1", 1);
+        return map.Add("key1", 1);
     }
 }

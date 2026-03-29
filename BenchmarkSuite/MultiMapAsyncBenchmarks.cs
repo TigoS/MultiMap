@@ -10,7 +10,6 @@ public class MultiMapAsyncBenchmarks
 {
     private MultiMapAsync<string, int> _map = null!;
     private string[] _keys = null!;
-    private string[] _values = null!;
 
     [GlobalSetup]
     public void Setup()
