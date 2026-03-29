@@ -24,7 +24,7 @@ namespace MultiMap.Interfaces
         /// <see langword="true"/> if the value was added successfully;
         /// <see langword="false"/> if it already existed for the key.
         /// </returns>
-        Task<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
+        ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously adds multiple values to the set associated with the specified key.
@@ -45,7 +45,7 @@ namespace MultiMap.Interfaces
         /// An <see cref="IEnumerable{TValue}"/> containing the values associated with the key,
         /// or an empty sequence if the key does not exist.
         /// </returns>
-        Task<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default);
+        ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes a specific value from the set associated with the specified key.
@@ -58,7 +58,7 @@ namespace MultiMap.Interfaces
         /// <see langword="true"/> if the value was successfully removed;
         /// <see langword="false"/> if the key or value was not found.
         /// </returns>
-        Task<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
+        ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes the specified key and all its associated values.
@@ -69,7 +69,7 @@ namespace MultiMap.Interfaces
         /// <see langword="true"/> if the key was found and removed;
         /// <see langword="false"/> if the key did not exist.
         /// </returns>
-        Task<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default);
+        ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously determines whether the multimap contains the specified key.
@@ -79,7 +79,7 @@ namespace MultiMap.Interfaces
         /// <returns>
         /// <see langword="true"/> if the multimap contains the key; otherwise, <see langword="false"/>.
         /// </returns>
-        Task<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default);
+        ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously determines whether the multimap contains the specified value for the given key.
@@ -90,14 +90,14 @@ namespace MultiMap.Interfaces
         /// <returns>
         /// <see langword="true"/> if the key exists and contains the specified value; otherwise, <see langword="false"/>.
         /// </returns>
-        Task<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
+        ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously gets the total number of values across all keys in the multimap.
         /// </summary>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         /// <returns>The total count of all values stored in the multimap.</returns>
-        Task<int> GetCountAsync(CancellationToken cancellationToken = default);
+        ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes all keys and values from the multimap.
@@ -111,6 +111,6 @@ namespace MultiMap.Interfaces
         /// </summary>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         /// <returns>An enumerable collection of keys.</returns>
-        Task<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default);
+        ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default);
     }
 }
