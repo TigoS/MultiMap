@@ -20,7 +20,6 @@ namespace MultiMap.Entities
         where TValue : notnull
     {
         private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>> _dictionary;
-        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
@@ -39,7 +38,6 @@ namespace MultiMap.Entities
 
             if (concurrentSet.TryAdd(value, 0))
             {
-                Interlocked.Increment(ref _count);
                 return true;
             }
 
@@ -55,8 +53,7 @@ namespace MultiMap.Entities
 
             foreach (var value in values)
             {
-                if (concurrentSet.TryAdd(value, 0))
-                    Interlocked.Increment(ref _count);
+                concurrentSet.TryAdd(value, 0);
             }
         }
 
@@ -78,8 +75,6 @@ namespace MultiMap.Entities
 
                 if (removed)
                 {
-                    Interlocked.Decrement(ref _count);
-
                     if (concurrentSet.IsEmpty)
                         _dictionary.TryRemove(new KeyValuePair<TKey, ConcurrentDictionary<TValue, byte>>(key, concurrentSet));
                 }
@@ -95,7 +90,6 @@ namespace MultiMap.Entities
         {
             if (_dictionary.TryRemove(key, out var concurrentSet))
             {
-                Interlocked.Add(ref _count, -concurrentSet.Count);
                 return true;
             }
 
@@ -115,7 +109,18 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _count;
+        public int Count
+        {
+            get
+            {
+                int total = 0;
+                foreach (var kvp in _dictionary)
+                {
+                    total += kvp.Value.Count;
+                }
+                return total;
+            }
+        }
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
@@ -124,7 +129,6 @@ namespace MultiMap.Entities
         public void Clear()
         {
             _dictionary.Clear();
-            Interlocked.Exchange(ref _count, 0);
         }
 
         /// <inheritdoc/>
