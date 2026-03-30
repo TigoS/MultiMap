@@ -423,7 +423,17 @@ EXCEPT WITH 1:
 A: 2
 B: 3
 
-...
+EXCEPT WITH 2:
+A: 3
+C: 4
+C: 3
+
+SYMMETRIC EXCEPT WITH:
+A: 3
+A: 2
+B: 3
+C: 4
+C: 3
 ```
 
 ---
