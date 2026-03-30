@@ -16,9 +16,11 @@ public class MultiMapLockBenchmarks
     {
         _map = new MultiMapLock<string, int>();
         _keys = new string[Consts.KeyCount];
+
         for (int i = 0; i < Consts.KeyCount; i++)
         {
-            _keys[i] = $"key{i}";
+            _keys[i] = $"{Consts.KeyPrefix}{i}";
+
             for (int j = 0; j < Consts.ValuesPerKey; j++)
             {
                 _map.Add(_keys[i], j);
@@ -36,9 +38,11 @@ public class MultiMapLockBenchmarks
     public void MultiMapLock_Add()
     {
         var map = new MultiMapLock<string, int>();
+
         for (int k = 0; k < Consts.KeyCount; k++)
         {
-            string key = $"key{k}";
+            string key = $"{Consts.KeyPrefix}{k}";
+
             for (int v = 0; v < Consts.ValuesPerKey; v++)
             {
                 map.Add(key, v);
@@ -52,20 +56,23 @@ public class MultiMapLockBenchmarks
     public int MultiMapLock_Get()
     {
         int sum = 0;
+
         for (int k = 0; k < Consts.KeyCount; k++)
         {
             foreach (var v in _map.Get(_keys[k]))
+            {
                 sum += v;
+            }
         }
 
         return sum;
     }
 
     [Benchmark]
-    public bool MultiMapLock_Contains() => _map.Contains("key50", Consts.KeyOffset);
+    public bool MultiMapLock_Contains() => _map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
 
     [Benchmark]
-    public bool MultiMapLock_ContainsKey() => _map.ContainsKey("key50");
+    public bool MultiMapLock_ContainsKey() => _map.ContainsKey(Consts.Key50Prefix);
 
     [Benchmark]
     public int MultiMapLock_Count() => _map.Count;
@@ -78,12 +85,13 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.Add($"key{k}", v);
-                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -97,12 +105,13 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.Add($"key{k}", v);
-                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -116,12 +125,13 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.Add($"key{k}", v);
-                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 
@@ -135,12 +145,13 @@ public class MultiMapLockBenchmarks
     {
         var target = new MultiMapLock<string, int>();
         var other = new MultiMapLock<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.Add($"key{k}", v);
-                other.Add($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
             }
         }
 

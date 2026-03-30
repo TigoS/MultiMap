@@ -16,9 +16,11 @@ public class MultiMapAsyncBenchmarks
     {
         _map = new MultiMapAsync<string, int>();
         _keys = new string[Consts.KeyCount];
+
         for (int i = 0; i < Consts.KeyCount; i++)
         {
-            _keys[i] = $"key{i}";
+            _keys[i] = $"{Consts.KeyPrefix}{i}";
+
             for (int j = 0; j < Consts.ValuesPerKey; j++)
             {
                 _map.AddAsync(_keys[i], j).GetAwaiter().GetResult();
@@ -36,9 +38,11 @@ public class MultiMapAsyncBenchmarks
     public void MultiMapAsync_Add()
     {
         var map = new MultiMapAsync<string, int>();
+
         for (int k = 0; k < Consts.KeyCount; k++)
         {
-            string key = $"key{k}";
+            string key = $"{Consts.KeyPrefix}{k}";
+
             for (int v = 0; v < Consts.ValuesPerKey; v++)
             {
                 map.AddAsync(key, v).GetAwaiter().GetResult();
@@ -52,10 +56,13 @@ public class MultiMapAsyncBenchmarks
     public int MultiMapAsync_Get()
     {
         int sum = 0;
+
         for (int k = 0; k < Consts.KeyCount; k++)
         {
             foreach (var v in _map.GetAsync(_keys[k]).GetAwaiter().GetResult())
+            {
                 sum += v;
+            }
         }
 
         return sum;
@@ -64,13 +71,13 @@ public class MultiMapAsyncBenchmarks
     [Benchmark]
     public bool MultiMapAsync_Contains()
     {
-        return _map.ContainsAsync("key50", 25).GetAwaiter().GetResult();
+        return _map.ContainsAsync(Consts.Key50Prefix, Consts.KeyOffset).GetAwaiter().GetResult();
     }
 
     [Benchmark]
     public bool MultiMapAsync_ContainsKey()
     {
-        return _map.ContainsKeyAsync("key50").GetAwaiter().GetResult();
+        return _map.ContainsKeyAsync(Consts.Key50Prefix).GetAwaiter().GetResult();
     }
 
     [Benchmark]
@@ -90,12 +97,13 @@ public class MultiMapAsyncBenchmarks
     {
         var target = new MultiMapAsync<string, int>();
         var other = new MultiMapAsync<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
-                other.AddAsync($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
             }
         }
 
@@ -107,12 +115,13 @@ public class MultiMapAsyncBenchmarks
     {
         var target = new MultiMapAsync<string, int>();
         var other = new MultiMapAsync<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
-                other.AddAsync($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
             }
         }
 
@@ -124,12 +133,13 @@ public class MultiMapAsyncBenchmarks
     {
         var target = new MultiMapAsync<string, int>();
         var other = new MultiMapAsync<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
-                other.AddAsync($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
             }
         }
 
@@ -141,12 +151,13 @@ public class MultiMapAsyncBenchmarks
     {
         var target = new MultiMapAsync<string, int>();
         var other = new MultiMapAsync<string, int>();
+
         for (int k = 0; k < Consts.SetOpKeyCount; k++)
         {
             for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
             {
-                target.AddAsync($"key{k}", v).GetAwaiter().GetResult();
-                other.AddAsync($"key{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
             }
         }
 

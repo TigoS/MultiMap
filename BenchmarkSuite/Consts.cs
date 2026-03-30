@@ -8,4 +8,8 @@ public static class Consts
     public const int SetOpValuesPerKey = 20;
     public const int KeyOffset = 25;
     public const int ValueOffset = 10;
+    public const string KeyPrefix = "key";
+    public const string Key1Prefix = "key1";
+    public const string Key50Prefix = "key50";
+    public const string KeyMissingPrefix = "missing";
 }
