@@ -51,25 +51,25 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 ```
 MultiMap/
-├── MultiMap/                    # Core library (NuGet package)
+├── MultiMap/                     # Core library (NuGet package)
 │   ├── Interfaces/
-│   │   ├── IMultiMap.cs         # Synchronous multimap interface
-│   │   ├── IMultiMapAsync.cs    # Asynchronous multimap interface
-│   │   └── ISimpleMultiMap.cs   # Simplified multimap interface
+│   │   ├── IMultiMap.cs          # Synchronous multimap interface
+│   │   ├── IMultiMapAsync.cs     # Asynchronous multimap interface
+│   │   └── ISimpleMultiMap.cs    # Simplified multimap interface
 │   ├── Entities/
-│   │   ├── MultiMapList.cs      # List-based (allows duplicates)
-│   │   ├── MultiMapSet.cs       # HashSet-based (unique values)
-│   │   ├── SortedMultiMap.cs    # SortedDictionary + SortedSet
-│   │   ├── ConcurrentMultiMap.cs# Lock-free ConcurrentDictionary-based
-│   │   ├── MultiMapLock.cs      # ReaderWriterLockSlim-based
-│   │   ├── MultiMapAsync.cs     # SemaphoreSlim-based async
-│   │   └── SimpleMultiMap.cs    # Lightweight ISimpleMultiMap impl
+│   │   ├── MultiMapList.cs       # List-based (allows duplicates)
+│   │   ├── MultiMapSet.cs        # HashSet-based (unique values)
+│   │   ├── SortedMultiMap.cs     # SortedDictionary + SortedSet
+│   │   ├── ConcurrentMultiMap.cs # Lock-free ConcurrentDictionary-based
+│   │   ├── MultiMapLock.cs       # ReaderWriterLockSlim-based
+│   │   ├── MultiMapAsync.cs      # SemaphoreSlim-based async
+│   │   └── SimpleMultiMap.cs     # Lightweight ISimpleMultiMap impl
 │   └── Helpers/
-│       ├── MultiMapHelper.cs    # Set-like extension methods
-│       └── TestDataHelper.cs    # Sample data factory for demos
-├── MultiMap.Tests/              # Unit tests (NUnit 4, 574 tests)
-├── MultiMap.Demo/               # Console demo application
-└── BenchmarkSuite/              # BenchmarkDotNet performance benchmarks
+│       ├── MultiMapHelper.cs     # Set-like extension methods
+│       └── TestDataHelper.cs     # Sample data factory for demos
+├── MultiMap.Tests/               # Unit tests (NUnit 4, 574 tests)
+├── MultiMap.Demo/                # Console demo application
+└── BenchmarkSuite/               # BenchmarkDotNet performance benchmarks
 ```
 
 ## Interfaces
@@ -253,9 +253,9 @@ map.Add("fruits", 2);
 map.Add("fruits", 1); // returns false — already exists
 map.AddRange("vegetables", [10, 20, 30]);
 
-IEnumerable<int> values = map.Get("fruits");     // [1, 2]
-bool exists = map.Contains("fruits", 1);          // true
-int count = map.Count;                             // 5
+IEnumerable<int> values = map.Get("fruits");   // [1, 2]
+bool exists = map.Contains("fruits", 1);       // true
+int count = map.Count;                         // 5
 
 map.Remove("fruits", 1);
 map.RemoveKey("vegetables");
@@ -284,7 +284,7 @@ using var asyncMap = new MultiMapAsync<string, int>();
 await asyncMap.AddAsync("key", 1);
 await asyncMap.AddAsync("key", 2);
 
-var values = await asyncMap.GetAsync("key");             // [1, 2]
+var values = await asyncMap.GetAsync("key");              // [1, 2]
 var count = await asyncMap.GetCountAsync();               // 2
 bool contains = await asyncMap.ContainsAsync("key", 1);   // true
 ```
@@ -328,9 +328,9 @@ ISimpleMultiMap<string, int> map = new SimpleMultiMap<string, int>();
 map.Add("A", 1);
 map.Add("A", 2);
 
-var values = map.Get("A");              // [1, 2]
-var safe = map.GetOrDefault("missing"); // empty
-var flat = map.Flatten();               // all key-value pairs
+var values = map.Get("A");                // [1, 2]
+var safe = map.GetOrDefault("missing");   // empty
+var flat = map.Flatten();                 // all key-value pairs
 
 // Set operations return the modified map
 map = map.Union(otherMap);
