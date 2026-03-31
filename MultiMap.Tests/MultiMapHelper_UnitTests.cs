@@ -3074,4 +3074,1441 @@ public class MultiMapHelperAsyncTests
             operand.Dispose();
         }
     }
+
+    // ── Additional async coverage tests ─────────────────────
+
+    [Test]
+    public async Task IntersectAsync_MixedKeysToRemoveAndValuesToRemove_InSameCall()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("b", 3);
+        await _target.AddAsync("c", 4);
+        await _target.AddAsync("c", 5);
+
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("c", 5);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.False);
+        Assert.That(await _target.ContainsKeyAsync("b"), Is.False);
+        Assert.That(await _target.ContainsAsync("c", 4), Is.False);
+        Assert.That(await _target.ContainsAsync("c", 5), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task IntersectAsync_ManyKeysDeepIteration_AllPathsExercised()
+    {
+        for (int k = 0; k < 10; k++)
+            for (int v = 0; v < 5; v++)
+                await _target.AddAsync($"k{k}", k * 100 + v);
+
+        for (int k = 0; k < 10; k += 2)
+            for (int v = 0; v < 3; v++)
+                await _other.AddAsync($"k{k}", k * 100 + v);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(15));
+        for (int k = 1; k < 10; k += 2)
+            Assert.That(await _target.ContainsKeyAsync($"k{k}"), Is.False);
+        for (int k = 0; k < 10; k += 2)
+        {
+            var values = await _target.GetAsync($"k{k}");
+            Assert.That(values.Count(), Is.EqualTo(3));
+        }
+    }
+
+    [Test]
+    public async Task IntersectAsync_OnlyKeysToRemove_NoValuesToRemove()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _target.AddAsync("c", 3);
+
+        await _other.AddAsync("d", 4);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+        Assert.That(await _target.GetKeysAsync(), Is.Empty);
+    }
+
+    [Test]
+    public async Task IntersectAsync_OnlyValuesToRemove_NoKeysToRemove()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("a", 3);
+
+        await _other.AddAsync("a", 2);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_ManyKeys_RemovesAcrossAllKeys()
+    {
+        for (int k = 0; k < 10; k++)
+            for (int v = 0; v < 5; v++)
+                await _target.AddAsync($"k{k}", k * 100 + v);
+
+        for (int k = 0; k < 10; k++)
+            for (int v = 0; v < 3; v++)
+                await _other.AddAsync($"k{k}", k * 100 + v);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(20));
+        for (int k = 0; k < 10; k++)
+        {
+            var values = await _target.GetAsync($"k{k}");
+            Assert.That(values.Count(), Is.EqualTo(2));
+        }
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_ManyKeys_MixedOverlap_DeepIteration()
+    {
+        for (int k = 0; k < 5; k++)
+            for (int v = 0; v < 4; v++)
+                await _target.AddAsync($"k{k}", k * 100 + v);
+
+        for (int k = 2; k < 7; k++)
+            for (int v = 2; v < 6; v++)
+                await _other.AddAsync($"k{k}", k * 100 + v);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("k0", 0), Is.True);
+        Assert.That(await _target.ContainsAsync("k0", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("k2", 202), Is.False);
+        Assert.That(await _target.ContainsAsync("k2", 203), Is.False);
+        Assert.That(await _target.ContainsAsync("k2", 200), Is.True);
+        Assert.That(await _target.ContainsAsync("k2", 201), Is.True);
+        Assert.That(await _target.ContainsAsync("k2", 204), Is.True);
+        Assert.That(await _target.ContainsAsync("k2", 205), Is.True);
+        Assert.That(await _target.ContainsAsync("k5", 502), Is.True);
+        Assert.That(await _target.ContainsAsync("k6", 602), Is.True);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_AllOverlap_ClearsAllShared()
+    {
+        for (int v = 0; v < 5; v++)
+        {
+            await _target.AddAsync("x", v);
+            await _other.AddAsync("x", v);
+        }
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task UnionAsync_ManyKeysDeepIteration()
+    {
+        for (int k = 0; k < 10; k++)
+            await _target.AddAsync($"k{k}", k);
+
+        for (int k = 5; k < 15; k++)
+            await _other.AddAsync($"k{k}", k + 100);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(20));
+        for (int k = 0; k < 10; k++)
+            Assert.That(await _target.ContainsAsync($"k{k}", k), Is.True);
+        for (int k = 5; k < 15; k++)
+            Assert.That(await _target.ContainsAsync($"k{k}", k + 100), Is.True);
+    }
+
+    [Test]
+    public async Task UnionAsync_ChainedWithIntersect_ProducesCorrectResult()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 2);
+        await _other.AddAsync("b", 3);
+
+        await _target.UnionAsync(_other);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(3));
+
+        var intersector = new MultiMapAsync<string, int>();
+        await intersector.AddAsync("a", 1);
+        await intersector.AddAsync("a", 2);
+
+        await _target.IntersectAsync(intersector);
+        intersector.Dispose();
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+        Assert.That(await _target.ContainsKeyAsync("b"), Is.False);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_ChainedWithUnion_RoundTrip()
+    {
+        for (int i = 0; i < 5; i++)
+            await _target.AddAsync("a", i);
+
+        var extra = new MultiMapAsync<string, int>();
+        for (int i = 5; i < 10; i++)
+            await extra.AddAsync("a", i);
+
+        await _target.UnionAsync(extra);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(10));
+
+        await _target.ExceptWithAsync(extra);
+        extra.Dispose();
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(5));
+        for (int i = 0; i < 5; i++)
+            Assert.That(await _target.ContainsAsync("a", i), Is.True);
+        for (int i = 5; i < 10; i++)
+            Assert.That(await _target.ContainsAsync("a", i), Is.False);
+    }
+
+    [Test]
+    public async Task IntersectAsync_TargetHasManyKeysOtherHasOne_RemovesMostKeys()
+    {
+        for (int k = 0; k < 20; k++)
+            await _target.AddAsync($"k{k}", k);
+
+        await _other.AddAsync("k5", 5);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _target.ContainsAsync("k5", 5), Is.True);
+        var keys = await _target.GetKeysAsync();
+        Assert.That(keys.Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_RemovesPartialValuesFromMultipleKeys()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("a", 3);
+        await _target.AddAsync("b", 10);
+        await _target.AddAsync("b", 20);
+        await _target.AddAsync("c", 100);
+
+        await _other.AddAsync("a", 2);
+        await _other.AddAsync("b", 10);
+        await _other.AddAsync("c", 100);
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 3), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 20), Is.True);
+        Assert.That(await _target.ContainsKeyAsync("c"), Is.False);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_OtherOnlyAdds_WhenNoOverlap()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+        await _other.AddAsync("c", 3);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(3));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("c", 3), Is.True);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_OtherOnlyRemoves_WhenFullOverlap()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("a", 2);
+
+        await _target.SymmetricExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+        Assert.That(await _target.GetKeysAsync(), Is.Empty);
+    }
+
+    [Test]
+    public async Task IntersectAsync_BothEmpty_RemainsEmpty()
+    {
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_BothHaveSameMultipleKeys_AllRemoved()
+    {
+        for (int k = 0; k < 5; k++)
+            for (int v = 0; v < 3; v++)
+            {
+                await _target.AddAsync($"k{k}", v);
+                await _other.AddAsync($"k{k}", v);
+            }
+
+        await _target.ExceptWithAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task UnionAsync_SameKeyDifferentValuesInBoth_MergesAll()
+    {
+        await _target.AddAsync("x", 1);
+        await _target.AddAsync("x", 2);
+        await _other.AddAsync("x", 3);
+        await _other.AddAsync("x", 4);
+
+        await _target.UnionAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(4));
+        for (int v = 1; v <= 4; v++)
+            Assert.That(await _target.ContainsAsync("x", v), Is.True);
+    }
+
+    [Test]
+    public async Task IntersectAsync_MultipleValuesPerKey_KeepsOnlyShared()
+    {
+        for (int v = 0; v < 10; v++)
+            await _target.AddAsync("x", v);
+
+        for (int v = 5; v < 15; v++)
+            await _other.AddAsync("x", v);
+
+        await _target.IntersectAsync(_other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(5));
+        for (int v = 5; v < 10; v++)
+            Assert.That(await _target.ContainsAsync("x", v), Is.True);
+        for (int v = 0; v < 5; v++)
+            Assert.That(await _target.ContainsAsync("x", v), Is.False);
+    }
+}
+
+[TestFixture]
+public class MultiMapHelperWithSortedMultiMapEdgeCaseTests
+{
+    private SortedMultiMap<string, int> _target;
+    private SortedMultiMap<string, int> _other;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _target = new SortedMultiMap<string, int>();
+        _other = new SortedMultiMap<string, int>();
+    }
+
+    [Test]
+    public void Union_WithEmptyOther_DoesNotChangeTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_WithEmptyTarget_CopiesAllFromOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Union_BothEmpty_RemainsEmpty()
+    {
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Union_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+        Assert.That(_other.Contains("a", 1), Is.False);
+    }
+
+    [Test]
+    public void Union_OverlappingPairs_NoDuplicatesInSortedSet()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_MultipleKeys_MergesCorrectly()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("b", 3);
+        _other.Add("c", 4);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void Intersect_WithEmptyOther_ClearsTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_NoOverlap_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_IdenticalMaps_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Intersect_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Intersect_SameKeySomeValuesMatch_KeepsOnlyMatchingValues()
+    {
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _target.Add("a", 3);
+        _other.Add("a", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+        Assert.That(_target.Contains("a", 2), Is.True);
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_NoOverlap_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_OtherHasExtraPairs_OnlyRemovesMatching()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyTarget_CopiesOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_BothEmpty_RemainsEmpty()
+    {
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_NoOverlap_UnionsBoth()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(2));
+    }
+}
+
+[TestFixture]
+public class MultiMapHelperWithConcurrentMultiMapEdgeCaseTests
+{
+    private ConcurrentMultiMap<string, int> _target;
+    private ConcurrentMultiMap<string, int> _other;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _target = new ConcurrentMultiMap<string, int>();
+        _other = new ConcurrentMultiMap<string, int>();
+    }
+
+    [Test]
+    public void Union_WithEmptyOther_DoesNotChangeTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_WithEmptyTarget_CopiesAllFromOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Union_BothEmpty_RemainsEmpty()
+    {
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Union_OverlappingPairs_NoDuplicates()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+        Assert.That(_other.Contains("a", 1), Is.False);
+    }
+
+    [Test]
+    public void Union_MultipleKeys_MergesCorrectly()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("b", 3);
+        _other.Add("c", 4);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void Intersect_WithEmptyOther_ClearsTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_NoOverlap_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_IdenticalMaps_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Intersect_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Intersect_SameKeySomeValuesMatch_KeepsOnlyMatchingValues()
+    {
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _target.Add("a", 3);
+        _other.Add("a", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+        Assert.That(_target.Contains("a", 2), Is.True);
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_NoOverlap_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_OtherHasExtraPairs_OnlyRemovesMatching()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyTarget_CopiesOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_BothEmpty_RemainsEmpty()
+    {
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_NoOverlap_UnionsBoth()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(2));
+    }
+}
+
+[TestFixture]
+public class MultiMapHelperWithMultiMapListEdgeCaseTests
+{
+    private MultiMapList<string, int> _target;
+    private MultiMapList<string, int> _other;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _target = new MultiMapList<string, int>();
+        _other = new MultiMapList<string, int>();
+    }
+
+    [Test]
+    public void Union_WithEmptyOther_DoesNotChangeTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_WithEmptyTarget_CopiesAllFromOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Union_BothEmpty_RemainsEmpty()
+    {
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Union_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+        Assert.That(_other.Contains("a", 1), Is.False);
+    }
+
+    [Test]
+    public void Union_MultipleKeys_MergesCorrectly()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("b", 3);
+        _other.Add("c", 4);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void Intersect_WithEmptyOther_ClearsTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_NoOverlap_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_IdenticalMaps_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Intersect_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Intersect_SameKeySomeValuesMatch_KeepsOnlyMatchingValues()
+    {
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _target.Add("a", 3);
+        _other.Add("a", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+        Assert.That(_target.Contains("a", 2), Is.True);
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_NoOverlap_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_OtherHasExtraPairs_OnlyRemovesMatching()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyTarget_CopiesOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_BothEmpty_RemainsEmpty()
+    {
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_NoOverlap_UnionsBoth()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(2));
+    }
+}
+
+[TestFixture]
+public class MultiMapHelperWithMultiMapLockEdgeCaseTests
+{
+    private MultiMapLock<string, int> _target;
+    private MultiMapLock<string, int> _other;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _target = new MultiMapLock<string, int>();
+        _other = new MultiMapLock<string, int>();
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _target.Dispose();
+        _other.Dispose();
+    }
+
+    [Test]
+    public void Union_WithEmptyOther_DoesNotChangeTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_WithEmptyTarget_CopiesAllFromOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Union_BothEmpty_RemainsEmpty()
+    {
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Union_OverlappingPairs_NoDuplicates()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Union_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Union(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+        Assert.That(_other.Contains("a", 1), Is.False);
+    }
+
+    [Test]
+    public void Union_MultipleKeys_MergesCorrectly()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("b", 3);
+        _other.Add("c", 4);
+
+        _target.Union(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void Intersect_WithEmptyOther_ClearsTarget()
+    {
+        _target.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_NoOverlap_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_IdenticalMaps_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Intersect_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+
+        _target.Intersect(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Intersect_SameKeySomeValuesMatch_KeepsOnlyMatchingValues()
+    {
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _target.Add("a", 3);
+        _other.Add("a", 2);
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+        Assert.That(_target.Contains("a", 2), Is.True);
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_NoOverlap_KeepsAll()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_WithEmptyTarget_RemainsEmpty()
+    {
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void ExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ExceptWith_OtherHasExtraPairs_OnlyRemovesMatching()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.ExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyOther_KeepsAll()
+    {
+        _target.Add("a", 1);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithEmptyTarget_CopiesOther()
+    {
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_BothEmpty_RemainsEmpty()
+    {
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_NoOverlap_UnionsBoth()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_IdenticalMaps_ClearsTarget()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_DoesNotModifyOther()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_other.Count, Is.EqualTo(2));
+    }
 }
