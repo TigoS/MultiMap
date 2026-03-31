@@ -19,49 +19,77 @@ namespace MultiMap.Entities
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>> _dictionary;
+        private readonly ConcurrentDictionary<TKey, HashSet<TValue>> _dictionary;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
         /// </summary>
         public ConcurrentMultiMap()
         {
-            _dictionary = new ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>();
+            _dictionary = new ConcurrentDictionary<TKey, HashSet<TValue>>();
         }
 
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            var concurrentSet = _dictionary.GetOrAdd(
-                key,
-                _ => new ConcurrentDictionary<TValue, byte>());
-
-            if (concurrentSet.TryAdd(value, 0))
+            while (true)
             {
-                return true;
-            }
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                    hashset = _dictionary.GetOrAdd(key, static _ => new HashSet<TValue>());
 
-            return false;
+                lock (hashset)
+                {
+                    if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                        continue;
+
+                    if (hashset.Add(value))
+                    {
+                        Interlocked.Increment(ref _count);
+                        return true;
+                    }
+
+                    return false;
+                }
+            }
         }
 
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            var concurrentSet = _dictionary.GetOrAdd(
-                key,
-                _ => new ConcurrentDictionary<TValue, byte>());
+            var items = values as ICollection<TValue> ?? [.. values];
 
-            foreach (var value in values)
+            while (true)
             {
-                concurrentSet.TryAdd(value, 0);
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                    hashset = _dictionary.GetOrAdd(key, static _ => new HashSet<TValue>());
+
+                lock (hashset)
+                {
+                    if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                        continue;
+
+                    foreach (var value in items)
+                    {
+                        if (hashset.Add(value))
+                            Interlocked.Increment(ref _count);
+                    }
+
+                    return;
+                }
             }
         }
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-            if (_dictionary.TryGetValue(key, out var concurrentSet))
-                return concurrentSet.Keys;
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                lock (hashset)
+                {
+                    return hashset.ToArray();
+                }
+            }
 
             return [];
         }
@@ -69,17 +97,23 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            if (_dictionary.TryGetValue(key, out var concurrentSet))
+            if (_dictionary.TryGetValue(key, out var hashset))
             {
-                bool removed = concurrentSet.TryRemove(value, out _);
-
-                if (removed)
+                lock (hashset)
                 {
-                    if (concurrentSet.IsEmpty)
-                        _dictionary.TryRemove(new KeyValuePair<TKey, ConcurrentDictionary<TValue, byte>>(key, concurrentSet));
-                }
+                    if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                        return false;
 
-                return removed;
+                    if (hashset.Remove(value))
+                    {
+                        Interlocked.Decrement(ref _count);
+
+                        if (hashset.Count == 0)
+                            _dictionary.TryRemove(new KeyValuePair<TKey, HashSet<TValue>>(key, hashset));
+
+                        return true;
+                    }
+                }
             }
 
             return false;
@@ -88,8 +122,12 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            if (_dictionary.TryRemove(key, out var concurrentSet))
+            if (_dictionary.TryRemove(key, out var hashset))
             {
+                lock (hashset)
+                {
+                    Interlocked.Add(ref _count, -hashset.Count);
+                }
                 return true;
             }
 
@@ -105,22 +143,19 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-            return _dictionary.TryGetValue(key, out var concurrentSet) && concurrentSet.ContainsKey(value);
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                lock (hashset)
+                {
+                    return hashset.Contains(value);
+                }
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
-        public int Count
-        {
-            get
-            {
-                int total = 0;
-                foreach (var kvp in _dictionary)
-                {
-                    total += kvp.Value.Count;
-                }
-                return total;
-            }
-        }
+        public int Count => Volatile.Read(ref _count);
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
@@ -129,6 +164,7 @@ namespace MultiMap.Entities
         public void Clear()
         {
             _dictionary.Clear();
+            Volatile.Write(ref _count, 0);
         }
 
         /// <inheritdoc/>
@@ -136,7 +172,13 @@ namespace MultiMap.Entities
         {
             foreach (var kvp in _dictionary)
             {
-                foreach (var value in kvp.Value.Keys)
+                TValue[] snapshot;
+                lock (kvp.Value)
+                {
+                    snapshot = [.. kvp.Value];
+                }
+
+                foreach (var value in snapshot)
                 {
                     yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
                 }
@@ -150,7 +192,7 @@ namespace MultiMap.Entities
         public override bool Equals(object? obj)
         {
             return obj is ConcurrentMultiMap<TKey, TValue> map &&
-                   EqualityComparer<ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>>.Default.Equals(_dictionary, map._dictionary);
+                   EqualityComparer<ConcurrentDictionary<TKey, HashSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
         }
 
         /// <inheritdoc/>
