@@ -7,7 +7,7 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET 10 library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
@@ -21,9 +21,14 @@
     <Title>Collections that maps each key to one or more values</Title>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <PackageIcon>nuget.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\..\..\nuget.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
