@@ -238,7 +238,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.2" />
+<PackageReference Include="MultiMap" Version="1.0.3" />
 ```
 
 ## Usage
