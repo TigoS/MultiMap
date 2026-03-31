@@ -803,4 +803,399 @@ public class MultiMapAsyncTests
         Assert.That(finalCount, Is.EqualTo(verifyCount),
             "Final Count does not match sum of per-key values");
     }
+
+    // ── Helper ────────────────────────────────────────────────
+
+    private SemaphoreSlim GetSemaphore()
+    {
+        return (SemaphoreSlim)typeof(MultiMapAsync<string, int>)
+            .GetField("_semaphore", BindingFlags.NonPublic | BindingFlags.Instance)!
+            .GetValue(_map)!;
+    }
+
+    // ── Cancellation Token Tests ──────────────────────────────
+
+    [Test]
+    public void AddAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.AddAsync("a", 1, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void AddRangeAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.AddRangeAsync("a", new[] { 1, 2 }, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void GetAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.GetAsync("a", cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void RemoveAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.RemoveAsync("a", 1, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void RemoveKeyAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.RemoveKeyAsync("a", cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void ContainsKeyAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.ContainsKeyAsync("a", cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void ContainsAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.ContainsAsync("a", 1, cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void GetCountAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.GetCountAsync(cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void ClearAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.ClearAsync(cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
+    public void GetKeysAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.GetKeysAsync(cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    // ── Slow Path Tests (semaphore contention) ────────────────
+
+    [Test]
+    public async Task AddAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var addTask = _map.AddAsync("a", 1).AsTask();
+        Assert.That(addTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        bool result = await addTask;
+
+        Assert.That(result, Is.True);
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task AddRangeAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var addTask = _map.AddRangeAsync("a", new[] { 1, 2, 3 });
+        Assert.That(addTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        await addTask;
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public async Task GetAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var getTask = _map.GetAsync("a").AsTask();
+        Assert.That(getTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        var result = await getTask;
+
+        Assert.That(result, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task RemoveAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var removeTask = _map.RemoveAsync("a", 1).AsTask();
+        Assert.That(removeTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        bool result = await removeTask;
+
+        Assert.That(result, Is.True);
+        Assert.That(await _map.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task RemoveKeyAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var removeTask = _map.RemoveKeyAsync("a").AsTask();
+        Assert.That(removeTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        bool result = await removeTask;
+
+        Assert.That(result, Is.True);
+        Assert.That(await _map.ContainsKeyAsync("a"), Is.False);
+    }
+
+    [Test]
+    public async Task ContainsKeyAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var containsTask = _map.ContainsKeyAsync("a").AsTask();
+        Assert.That(containsTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        bool result = await containsTask;
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task ContainsAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var containsTask = _map.ContainsAsync("a", 1).AsTask();
+        Assert.That(containsTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        bool result = await containsTask;
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task GetCountAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var countTask = _map.GetCountAsync().AsTask();
+        Assert.That(countTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        int result = await countTask;
+
+        Assert.That(result, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task ClearAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var clearTask = _map.ClearAsync();
+        Assert.That(clearTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        await clearTask;
+
+        Assert.That(await _map.GetCountAsync(), Is.Zero);
+        Assert.That(await _map.ContainsKeyAsync("a"), Is.False);
+    }
+
+    [Test]
+    public async Task GetKeysAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var keysTask = _map.GetKeysAsync().AsTask();
+        Assert.That(keysTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        var result = await keysTask;
+
+        Assert.That(result, Is.EquivalentTo(new[] { "a", "b" }));
+    }
+
+    // ── Set Operation Direct Tests ────────────────────────────
+
+    [Test]
+    public async Task UnionAsync_AddsAllPairsFromOther()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        using var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 3);
+        await other.AddAsync("c", 4);
+
+        await _map.UnionAsync(other);
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 3 }));
+        Assert.That(await _map.GetAsync("b"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetAsync("c"), Is.EquivalentTo(new[] { 4 }));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(4));
+    }
+
+    [Test]
+    public async Task IntersectAsync_KeepsOnlyCommonPairs()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        using var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+        await other.AddAsync("c", 4);
+
+        await _map.IntersectAsync(other);
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.ContainsKeyAsync("b"), Is.False);
+        Assert.That(await _map.ContainsKeyAsync("c"), Is.False);
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_RemovesPairsPresentInOther()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        using var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 3);
+
+        await _map.ExceptWithAsync(other);
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.ContainsKeyAsync("b"), Is.False);
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_KeepsPairsInOneButNotBoth()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        using var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 2);
+        await other.AddAsync("a", 3);
+        await other.AddAsync("c", 4);
+
+        await _map.SymmetricExceptWithAsync(other);
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 3 }));
+        Assert.That(await _map.GetAsync("b"), Is.EquivalentTo(new[] { 3 }));
+        Assert.That(await _map.GetAsync("c"), Is.EquivalentTo(new[] { 4 }));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(4));
+    }
+
+    // ── Edge Case Tests ───────────────────────────────────────
+
+    [Test]
+    public async Task ClearAsync_OnEmptyMap_DoesNotThrow()
+    {
+        await _map.ClearAsync();
+
+        Assert.That(await _map.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task AddAsync_AfterClear_WorksCorrectly()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.ClearAsync();
+        await _map.AddAsync("a", 2);
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveAsync_ValueExistsInDifferentKey_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        Assert.That(await _map.RemoveAsync("a", 2), Is.False);
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(2));
+    }
 }
