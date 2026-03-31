@@ -474,6 +474,7 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
 | **Add** (5,000 pairs) | 67,784 ns | 34,421 ns | 168,146 ns | 821,434 ns | 110,189 ns | 189,770 ns |
+| **AddRange** (5,000 pairs) | 44,595 ns | 4,729 ns | 161,466 ns | 137,967 ns | 46,560 ns | 43,650 ns |
 | **Get** (100 keys) | 9,031 ns | 8,039 ns | 53,216 ns | 42,121 ns | 12,673 ns | 14,297 ns |
 | **Remove** (5,000 pairs) | 128,853 ns | 120,274 ns | 330,675 ns | 1,512,986 ns | 209,114 ns | 357,093 ns |
 | **Clear** | 154,808 ns | 121,023 ns | 279,090 ns | 927,196 ns | 188,679 ns | 246,965 ns |
@@ -493,6 +494,7 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 
 ### Key Takeaways
 
+- **AddRange vs Add**: `AddRange` is significantly faster — `MultiMapList` **~7x faster**, `SortedMultiMap` **~6x faster**, `MultiMapLock` **~2.4x faster**, `MultiMapAsync` **~4.3x faster** than individual `Add` calls
 - **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2x faster** than `MultiMapSet`
 - **Fastest lookups**: `SortedMultiMap` Contains at 24 ns; `MultiMapLock` Contains at 14 ns
 - **ConcurrentMultiMap Count**: O(k) — 37,655 ns vs O(1) sub-nanosecond for cached implementations
