@@ -53,6 +53,20 @@ public class MultiMapLockBenchmarks
     }
 
     [Benchmark]
+    public void MultiMapLock_AddRange()
+    {
+        var map = new MultiMapLock<string, int>();
+        var values = Enumerable.Range(0, Consts.ValuesPerKey).ToArray();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            map.AddRange($"{Consts.KeyPrefix}{k}", values);
+        }
+
+        map.Dispose();
+    }
+
+    [Benchmark]
     public int MultiMapLock_Get()
     {
         int sum = 0;

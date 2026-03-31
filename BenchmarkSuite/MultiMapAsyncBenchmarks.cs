@@ -53,6 +53,20 @@ public class MultiMapAsyncBenchmarks
     }
 
     [Benchmark]
+    public void MultiMapAsync_AddRange()
+    {
+        var map = new MultiMapAsync<string, int>();
+        var values = Enumerable.Range(0, Consts.ValuesPerKey).ToArray();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            map.AddRangeAsync($"{Consts.KeyPrefix}{k}", values).GetAwaiter().GetResult();
+        }
+
+        map.Dispose();
+    }
+
+    [Benchmark]
     public int MultiMapAsync_Get()
     {
         int sum = 0;

@@ -181,6 +181,55 @@ public class MultiMapBenchmarks
         }
     }
 
+    // --- AddRange benchmarks ---
+    [Benchmark]
+    public void MultiMapSet_AddRange()
+    {
+        var map = new MultiMapSet<string, int>();
+        var values = Enumerable.Range(0, Consts.ValuesPerKey).ToArray();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            map.AddRange($"{Consts.KeyPrefix}{k}", values);
+        }
+    }
+
+    [Benchmark]
+    public void MultiMapList_AddRange()
+    {
+        var map = new MultiMapList<string, int>();
+        var values = Enumerable.Range(0, Consts.ValuesPerKey).ToArray();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            map.AddRange($"{Consts.KeyPrefix}{k}", values);
+        }
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_AddRange()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        var values = Enumerable.Range(0, Consts.ValuesPerKey).ToArray();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            map.AddRange($"{Consts.KeyPrefix}{k}", values);
+        }
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_AddRange()
+    {
+        var map = new SortedMultiMap<string, int>();
+        var values = Enumerable.Range(0, Consts.ValuesPerKey).ToArray();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            map.AddRange($"{Consts.KeyPrefix}{k}", values);
+        }
+    }
+
     // --- Get benchmarks ---
     [Benchmark]
     public int MultiMapSet_Get()
