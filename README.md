@@ -1,400 +1,342 @@
-# MultiMap
+﻿# MultiMap
 
-A .NET 10 library providing multiple multimap implementations — collections that associate each key with one or more values. The library offers a range of implementations from simple, non-thread-safe collections to fully concurrent and asynchronous variants.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
+[![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-purple)](https://dotnet.microsoft.com/)
-[![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
-[![NuGet](https://img.shields.io/nuget/v/MultiMap)](https://www.nuget.org/packages/MultiMap)
-
----
+A **.NET 10** library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, async, and simple variants with set-like extension methods.
 
 ## Table of Contents
 
 - [Overview](#overview)
+- [Features](#features)
 - [Project Structure](#project-structure)
 - [Interfaces](#interfaces)
-  - [IMultiMap\<TKey, TValue\>](#imultimaptkey-tvalue)
-  - [IMultiMapAsync\<TKey, TValue\>](#imultimapasynctkey-tvalue)
-  - [ISimpleMultiMap\<TKey, TValue\>](#isimplemultimaptkey-tvalue)
 - [Implementations](#implementations)
-  - [MultiMapList](#multimaplist)
-  - [MultiMapSet](#multimapset)
-  - [SortedMultiMap](#sortedmultimap)
-  - [ConcurrentMultiMap](#concurrentmultimap)
-  - [MultiMapLock](#multimaplock)
-  - [MultiMapAsync](#multimapasync)
-  - [SimpleMultiMap](#simplemultimap)
-- [Comparison Tables](#comparison-tables)
-  - [Implementation Comparison](#implementation-comparison)
-  - [Interface Comparison](#interface-comparison)
-  - [Internal Storage Comparison](#internal-storage-comparison)
-  - [Thread Safety Comparison](#thread-safety-comparison)
-- [Extension Methods (MultiMapHelper)](#extension-methods-multimaphelper)
-- [NuGet Package](#nuget-package)
-- [Getting Started](#getting-started)
-- [Demo Project (MultiMap.Demo)](#demo-project-multimapdemo)
-- [Usage Examples](#usage-examples)
+- [Comparison Table](#comparison-table)
+  - [Internal Data Structures](#internal-data-structures)
+  - [API Behavior Differences](#api-behavior-differences)
+  - [When to Use Which Implementation](#when-to-use-which-implementation)
+  - [Performance Comparison](#performance-comparison-5000-pairs)
+- [Extension Methods](#extension-methods)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Demo Console Output](#demo-console-output)
 - [Testing](#testing)
-
----
+  - [Test Coverage by Implementation](#test-coverage-by-implementation)
+  - [Test Coverage by Extension Methods](#test-coverage-by-extension-methods)
+  - [Test Categories](#test-categories)
+- [Benchmarks](#benchmarks)
+- [License](#license)
 
 ## Overview
 
-A **multimap** is a generalization of a dictionary where each key can be associated with multiple values. Unlike `Dictionary<TKey, TValue>`, which enforces a one-to-one mapping, a multimap supports one-to-many relationships.
+A **multimap** is a collection that maps each key to one or more values — unlike a standard `Dictionary<TKey, TValue>`, which allows only one value per key. This library provides **7 ready-to-use implementations** behind **3 interfaces**, so you can choose the right trade-off between uniqueness, ordering, thread-safety, and async support for your scenario. It also ships with **set-like extension methods** (`Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) that work across all implementations.
 
-This library provides:
+## Features
 
-- **7 concrete implementations** covering different use cases (lists, sets, sorted, concurrent, locked, async, simple)
-- **3 interfaces** (`IMultiMap<TKey, TValue>`, `IMultiMapAsync<TKey, TValue>`, and `ISimpleMultiMap<TKey, TValue>`) for polymorphic usage
-- **Set-like extension methods** (Union, Intersect, ExceptWith, SymmetricExceptWith) for `IMultiMap`, `IMultiMapAsync`, and `ISimpleMultiMap`
-- **Full thread-safety options** via `ConcurrentDictionary`, `ReaderWriterLockSlim`, and `SemaphoreSlim`
-
----
+- **7 multimap implementations** covering a wide range of use cases
+- **3 interfaces** (`IMultiMap`, `IMultiMapAsync`, `ISimpleMultiMap`) for flexibility
+- **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
+- **Thread-safe variants**: lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
+- **Full XML documentation** for IntelliSense support
+- **556 unit tests** with NUnit 4
 
 ## Project Structure
 
 ```
-MultiMap/                            # Class library (NuGet package)
-├── Entities/
-│   ├── MultiMapList.cs              # List-based multimap (allows duplicates per key)
-│   ├── MultiMapSet.cs               # HashSet-based multimap (unique values per key)
-│   ├── SortedMultiMap.cs            # Sorted keys and sorted values
-│   ├── ConcurrentMultiMap.cs        # Lock-free concurrent multimap
-│   ├── MultiMapLock.cs              # ReaderWriterLockSlim-based thread-safe multimap
-│   ├── MultiMapAsync.cs             # Async/await multimap with SemaphoreSlim
-│   └── SimpleMultiMap.cs            # Simplified multimap with ISimpleMultiMap interface
-├── Interfaces/
-│   ├── IMultiMap.cs                 # Full-featured multimap interface
-│   ├── IMultiMapAsync.cs            # Async multimap interface
-│   └── ISimpleMultiMap.cs           # Simplified multimap interface
-├── Helpers/
-│   ├── MultiMapHelper.cs            # Set-like extension methods
-│   └── TestDataHelper.cs            # Sample data factory for demos
-└── MultiMap.csproj                  # Library project with NuGet package metadata
-
-MultiMap.Demo/                       # Console app demonstrating library usage
-├── Program.cs                       # Demonstrates set operations on SimpleMultiMap
-└── MultiMap.Demo.csproj             # Console project referencing MultiMap
-
-MultiMap.Tests/                      # Unit test project
-├── MultiMapList_UnitTest.cs
-├── MultiMapSet_UnitTests.cs
-├── SortedMultiMap_UnitTests.cs
-├── ConcurrentMultiMap_UnitTests.cs
-├── MultiMapLock_UnitTests.cs
-├── MultiMapAsync_UnitTests.cs
-├── SimpleMultiMap_UnitTests.cs
-├── MultiMapHelper_UnitTests.cs
-└── MultiMap.Tests.csproj
+MultiMap/
+├── MultiMap/                    # Core library (NuGet package)
+│   ├── Interfaces/
+│   │   ├── IMultiMap.cs         # Synchronous multimap interface
+│   │   ├── IMultiMapAsync.cs    # Asynchronous multimap interface
+│   │   └── ISimpleMultiMap.cs   # Simplified multimap interface
+│   ├── Entities/
+│   │   ├── MultiMapList.cs      # List-based (allows duplicates)
+│   │   ├── MultiMapSet.cs       # HashSet-based (unique values)
+│   │   ├── SortedMultiMap.cs    # SortedDictionary + SortedSet
+│   │   ├── ConcurrentMultiMap.cs# Lock-free ConcurrentDictionary-based
+│   │   ├── MultiMapLock.cs      # ReaderWriterLockSlim-based
+│   │   ├── MultiMapAsync.cs     # SemaphoreSlim-based async
+│   │   └── SimpleMultiMap.cs    # Lightweight ISimpleMultiMap impl
+│   └── Helpers/
+│       ├── MultiMapHelper.cs    # Set-like extension methods
+│       └── TestDataHelper.cs    # Sample data factory for demos
+├── MultiMap.Tests/              # Unit tests (NUnit 4, 556 tests)
+├── MultiMap.Demo/               # Console demo application
+└── BenchmarkSuite/              # BenchmarkDotNet performance benchmarks
 ```
-
----
 
 ## Interfaces
 
-### IMultiMap\<TKey, TValue\>
+### `IMultiMap<TKey, TValue>`
 
-The full-featured multimap interface, extending `IEnumerable<KeyValuePair<TKey, TValue>>`.
+The standard synchronous multimap interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
 
-| Method | Return Type | Description |
+| Method | Returns | Description |
 |---|---|---|
-| `Add(TKey, TValue)` | `bool` | Adds a key-value pair. Returns `false` if duplicate (set-based) or always `true` (list-based). |
-| `AddRange(TKey, IEnumerable<TValue>)` | `void` | Adds multiple values to a key. |
-| `Get(TKey)` | `IEnumerable<TValue>` | Retrieves all values for a key; returns empty if key not found. |
-| `Remove(TKey, TValue)` | `bool` | Removes a specific value from a key. Returns `true` if removed. |
-| `RemoveKey(TKey)` | `bool` | Removes a key and all its values. Returns `true` if key existed. |
-| `ContainsKey(TKey)` | `bool` | Checks if a key exists. |
-| `Contains(TKey, TValue)` | `bool` | Checks if a specific key-value pair exists. |
-| `Clear()` | `void` | Removes all entries. |
-| `Count` | `int` | Total number of key-value pairs across all keys. |
-| `Keys` | `IEnumerable<TKey>` | Gets the collection of keys in the multimap. |
+| `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
+| `AddRange(key, values)` | `void` | Adds multiple values for a key |
+| `Get(key)` | `IEnumerable<TValue>` | Returns values for a key (empty if not found) |
+| `Remove(key, value)` | `bool` | Removes a specific key-value pair |
+| `RemoveKey(key)` | `bool` | Removes a key and all its values |
+| `ContainsKey(key)` | `bool` | Checks if a key exists |
+| `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
+| `Clear()` | `void` | Removes all entries |
+| `Count` | `int` | Total number of key-value pairs |
+| `Keys` | `IEnumerable<TKey>` | All keys in the collection |
 
-### IMultiMapAsync\<TKey, TValue\>
+### `IMultiMapAsync<TKey, TValue>`
 
-An asynchronous multimap interface extending `IAsyncEnumerable<KeyValuePair<TKey, TValue>>` and `IDisposable`. All operations return `Task` for async/await usage.
+Asynchronous multimap interface. Extends `IAsyncEnumerable<KeyValuePair<TKey, TValue>>` and `IDisposable`. All methods support `CancellationToken` and return `ValueTask` or `Task`.
 
-| Method | Return Type | Description |
+| Method | Returns | Description |
 |---|---|---|
-| `AddAsync(TKey, TValue, CancellationToken)` | `Task<bool>` | Adds a key-value pair asynchronously. Returns `false` if duplicate. |
-| `AddRangeAsync(TKey, IEnumerable<TValue>, CancellationToken)` | `Task` | Adds multiple values to a key asynchronously. |
-| `GetAsync(TKey, CancellationToken)` | `Task<IEnumerable<TValue>>` | Retrieves all values for a key; returns empty if not found. |
-| `RemoveAsync(TKey, TValue, CancellationToken)` | `Task<bool>` | Removes a specific value from a key. Returns `true` if removed. |
-| `RemoveKeyAsync(TKey, CancellationToken)` | `Task<bool>` | Removes a key and all its values. Returns `true` if key existed. |
-| `ContainsKeyAsync(TKey, CancellationToken)` | `Task<bool>` | Checks if a key exists asynchronously. |
-| `ContainsAsync(TKey, TValue, CancellationToken)` | `Task<bool>` | Checks if a specific key-value pair exists asynchronously. |
-| `GetCountAsync(CancellationToken)` | `Task<int>` | Gets the total number of key-value pairs across all keys. |
-| `ClearAsync(CancellationToken)` | `Task` | Removes all entries asynchronously. |
-| `GetKeysAsync(CancellationToken)` | `Task<IEnumerable<TKey>>` | Gets the collection of keys asynchronously. |
+| `AddAsync(key, value)` | `ValueTask<bool>` | Asynchronously adds a key-value pair |
+| `AddRangeAsync(key, values)` | `Task` | Asynchronously adds multiple values |
+| `GetAsync(key)` | `ValueTask<IEnumerable<TValue>>` | Asynchronously retrieves values |
+| `RemoveAsync(key, value)` | `ValueTask<bool>` | Asynchronously removes a pair |
+| `RemoveKeyAsync(key)` | `ValueTask<bool>` | Asynchronously removes a key |
+| `ContainsKeyAsync(key)` | `ValueTask<bool>` | Asynchronously checks for a key |
+| `ContainsAsync(key, value)` | `ValueTask<bool>` | Asynchronously checks for a pair |
+| `GetCountAsync()` | `ValueTask<int>` | Asynchronously gets total count |
+| `ClearAsync()` | `Task` | Asynchronously clears all entries |
+| `GetKeysAsync()` | `ValueTask<IEnumerable<TKey>>` | Asynchronously gets all keys |
 
-### ISimpleMultiMap\<TKey, TValue\>
+### `ISimpleMultiMap<TKey, TValue>`
 
-A simplified multimap interface with a different API surface, extending `IEnumerable<KeyValuePair<TKey, TValue>>`.
+A simplified multimap interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
 
-| Method | Return Type | Description |
+| Method | Returns | Description |
 |---|---|---|
-| `Add(TKey, TValue)` | `bool` | Adds a key-value pair. Returns `false` if duplicate. |
-| `Get(TKey)` | `IEnumerable<TValue>` | Retrieves values for a key. Throws `KeyNotFoundException` if not found. |
-| `GetOrDefault(TKey)` | `IEnumerable<TValue>` | Retrieves values or empty collection if key not found. |
-| `Remove(TKey, TValue)` | `void` | Removes a specific value (no return value). |
-| `Clear(TKey)` | `void` | Removes all values for a key. |
-| `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all key-value pairs as a flat sequence. |
-
----
+| `Add(key, value)` | `bool` | Adds a key-value pair |
+| `Get(key)` | `IEnumerable<TValue>` | Returns values; throws `KeyNotFoundException` if not found |
+| `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
+| `Remove(key, value)` | `void` | Removes a specific pair |
+| `Clear(key)` | `void` | Removes all values for a key |
+| `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all pairs as a flat sequence |
 
 ## Implementations
 
-### MultiMapList
+### `MultiMapList<TKey, TValue>` — List-Based
 
-A multimap backed by `Dictionary<TKey, List<TValue>>`. **Allows duplicate values** per key and preserves insertion order.
+Implements `IMultiMap`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized.
 
-- **Interface:** `IMultiMap<TKey, TValue>`
-- **Duplicates:** Allowed — `Add` always returns `true`
-- **Ordering:** Insertion order preserved
-- **Thread Safety:** None
+### `MultiMapSet<TKey, TValue>` — HashSet-Based
 
-### MultiMapSet
+Implements `IMultiMap`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios requiring fast lookups and unique value semantics.
 
-A multimap backed by `Dictionary<TKey, HashSet<TValue>>`. **Enforces unique values** per key with O(1) lookup.
+### `SortedMultiMap<TKey, TValue>` — Sorted
 
-- **Interface:** `IMultiMap<TKey, TValue>`
-- **Duplicates:** Not allowed — `Add` returns `false` for duplicates
-- **Ordering:** Unordered
-- **Thread Safety:** None
+Implements `IMultiMap`. Uses `SortedDictionary<TKey, SortedSet<TValue>>`. Keys and values are maintained in sorted order. Ideal for ordered enumeration and range queries.
 
-### SortedMultiMap
+### `ConcurrentMultiMap<TKey, TValue>` — Lock-Free Concurrent
 
-A multimap backed by `SortedDictionary<TKey, SortedSet<TValue>>`. Both keys and values are maintained in **sorted order**.
+Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` for lock-free thread safety. Suitable for high-concurrency scenarios. Note: `Count` is computed dynamically by iterating all keys (O(k) complexity).
 
-- **Interface:** `IMultiMap<TKey, TValue>`
-- **Duplicates:** Not allowed — `Add` returns `false` for duplicates
-- **Ordering:** Keys and values sorted by natural comparer
-- **Thread Safety:** None
+### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
-### ConcurrentMultiMap
+Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow concurrent reads with exclusive writes. Good for read-heavy workloads with occasional writes.
 
-A **lock-free** thread-safe multimap using `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. Safe for concurrent reads and writes without explicit locking.
+### `MultiMapAsync<TKey, TValue>` — Async-Safe
 
-- **Interface:** `IMultiMap<TKey, TValue>`
-- **Duplicates:** Not allowed
-- **Ordering:** Unordered
-- **Thread Safety:** Full (lock-free)
+Implements `IMultiMapAsync` and `IAsyncEnumerable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios.
 
-### MultiMapLock
+### `SimpleMultiMap<TKey, TValue>` — Lightweight
 
-A thread-safe multimap using `ReaderWriterLockSlim` for fine-grained locking. Allows concurrent readers with exclusive writers. Implements `IDisposable`.
+Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection.
 
-- **Interface:** `IMultiMap<TKey, TValue>`, `IDisposable`
-- **Duplicates:** Not allowed
-- **Ordering:** Unordered
-- **Thread Safety:** Full (reader-writer lock)
-- **Enumeration:** Returns snapshot to avoid lock contention
+## Comparison Table
 
-### MultiMapAsync
+| Implementation | Interface | Thread-Safe | Duplicates | Ordered | Count Complexity |
+|---|---|---|---|---|---|
+| `MultiMapList` | `IMultiMap` | ❌ No | ✅ Yes | ❌ No | O(1) |
+| `MultiMapSet` | `IMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
+| `SortedMultiMap` | `IMultiMap` | ❌ No | ❌ No | ✅ Yes | O(1) |
+| `ConcurrentMultiMap` | `IMultiMap` | Lock-free | ❌ No | ❌ No | O(k) |
+| `MultiMapLock` | `IMultiMap` | RW Lock | ❌ No | ❌ No | O(1) |
+| `MultiMapAsync` | `IMultiMapAsync` | Semaphore | ❌ No | ❌ No | O(1) |
+| `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | — |
 
-An **asynchronous** thread-safe multimap using `SemaphoreSlim`. All operations are `async`/`await`-based. Implements `IMultiMapAsync<TKey, TValue>` (which extends `IAsyncEnumerable<KeyValuePair<TKey, TValue>>` and `IDisposable`).
+### Internal Data Structures
 
-- **Interface:** `IMultiMapAsync<TKey, TValue>`
-- **Duplicates:** Not allowed
-- **Ordering:** Unordered
-- **Thread Safety:** Full (semaphore-based)
-- **Enumeration:** Async snapshot via `await foreach`
-
-### SimpleMultiMap
-
-A lightweight multimap implementing the simplified `ISimpleMultiMap` interface. Uses `Dictionary<TKey, HashSet<TValue>>` internally.
-
-- **Interface:** `ISimpleMultiMap<TKey, TValue>`
-- **Duplicates:** Not allowed
-- **Ordering:** Unordered
-- **Thread Safety:** None
-
----
-
-## Comparison Tables
-
-### Implementation Comparison
-
-| Class | Interface | Allows Duplicates | Sorted | Thread-Safe | Disposable | Async |
-|---|---|---|---|---|---|---|
-| `MultiMapList` | `IMultiMap` | ✅ Yes | ❌ | ❌ | ❌ | ❌ |
-| `MultiMapSet` | `IMultiMap` | ❌ No | ❌ | ❌ | ❌ | ❌ |
-| `SortedMultiMap` | `IMultiMap` | ❌ No | ✅ | ❌ | ❌ | ❌ |
-| `ConcurrentMultiMap` | `IMultiMap` | ❌ No | ❌ | ✅ Lock-free | ❌ | ❌ |
-| `MultiMapLock` | `IMultiMap` | ❌ No | ❌ | ✅ RW Lock | ✅ | ❌ |
-| `MultiMapAsync` | `IMultiMapAsync` | ❌ No | ❌ | ✅ Semaphore | ✅ | ✅ |
-| `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ | ❌ | ❌ | ❌ |
-
-### Interface Comparison
-
-| Feature | `IMultiMap<TKey, TValue>` | `ISimpleMultiMap<TKey, TValue>` | `IMultiMapAsync<TKey, TValue>` |
+| Implementation | Outer Structure | Inner Structure | Notes |
 |---|---|---|---|
-| `Add` | `bool Add(key, value)` | `bool Add(key, value)` | `Task<bool> AddAsync(key, value)` |
-| `AddRange` | ✅ `void AddRange(key, values)` | ❌ Not available | ✅ `Task AddRangeAsync(key, values)` |
-| `Get` (key not found) | Returns empty collection | Throws `KeyNotFoundException` | Returns empty collection |
-| `GetOrDefault` | ❌ Not available | ✅ Returns empty collection | ❌ Not available |
-| `Remove(key, value)` | Returns `bool` | Returns `void` | Returns `Task<bool>` |
-| `RemoveKey` / `Clear(key)` | `bool RemoveKey(key)` | `void Clear(key)` | `Task<bool> RemoveKeyAsync(key)` |
-| `Clear` (all) | ✅ `void Clear()` | ❌ Not available | ✅ `Task ClearAsync()` |
-| `ContainsKey` | ✅ | ❌ Not available | ✅ `Task<bool> ContainsKeyAsync(key)` |
-| `Contains(key, value)` | ✅ | ❌ Not available | ✅ `Task<bool> ContainsAsync(key, value)` |
-| `Count` / `GetCount` | ✅ `int Count` | ❌ Not available | ✅ `Task<int> GetCountAsync()` |
-| `Keys` / `GetKeys` | ✅ `IEnumerable<TKey> Keys` | ❌ Not available | ✅ `Task<IEnumerable<TKey>> GetKeysAsync()` |
-| `Flatten` | ❌ (use enumeration) | ✅ `IEnumerable<KVP> Flatten()` | ❌ (use async enumeration) |
-| Enumeration | `IEnumerable<KVP>` | `IEnumerable<KVP>` | `IAsyncEnumerable<KVP>` |
-| `IDisposable` | ❌ | ❌ | ✅ |
+| `MultiMapList` | `Dictionary<TKey, List<TValue>>` | `List<TValue>` | O(1) amortized add; allows duplicate values |
+| `MultiMapSet` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | O(1) add/contains; enforces unique values |
+| `SortedMultiMap` | `SortedDictionary<TKey, SortedSet<TValue>>` | `SortedSet<TValue>` | O(log n) operations; keys & values sorted |
+| `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` | `ConcurrentDictionary<TValue, byte>` | Lock-free; byte value used as dummy |
+| `MultiMapLock` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `ReaderWriterLockSlim` |
+| `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `SemaphoreSlim(1,1)` |
+| `SimpleMultiMap` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Simplified API surface |
 
-### Internal Storage Comparison
+### API Behavior Differences
 
-| Class | Key Storage | Value Storage | Lookup Complexity |
+| Behavior | `IMultiMap` | `IMultiMapAsync` | `ISimpleMultiMap` |
 |---|---|---|---|
-| `MultiMapList` | `Dictionary<TKey, ...>` | `List<TValue>` | O(n) per value |
-| `MultiMapSet` | `Dictionary<TKey, ...>` | `HashSet<TValue>` | O(1) per value |
-| `SortedMultiMap` | `SortedDictionary<TKey, ...>` | `SortedSet<TValue>` | O(log n) per value |
-| `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ...>` | `ConcurrentDictionary<TValue, byte>` | O(1) per value |
-| `MultiMapLock` | `Dictionary<TKey, ...>` | `HashSet<TValue>` | O(1) per value |
-| `MultiMapAsync` | `Dictionary<TKey, ...>` | `HashSet<TValue>` | O(1) per value |
-| `SimpleMultiMap` | `Dictionary<TKey, ...>` | `HashSet<TValue>` | O(1) per value |
+| **Get (missing key)** | Returns empty `IEnumerable` | Returns empty `IEnumerable` | `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty |
+| **Add (duplicate)** | Returns `false` | Returns `false` (via `ValueTask<bool>`) | Returns `false` |
+| **Remove return type** | `bool` | `ValueTask<bool>` | `void` |
+| **Enumeration** | `IEnumerable<KeyValuePair>` | `IAsyncEnumerable<KeyValuePair>` | `IEnumerable<KeyValuePair>` (+ `Flatten()`) |
+| **Disposable** | Only `MultiMapLock` | ✅ Yes (`IDisposable`) | ❌ No |
+| **CancellationToken** | ❌ No | ✅ Yes (all methods) | ❌ No |
 
-### Thread Safety Comparison
+### When to Use Which Implementation
 
-| Class | Mechanism | Read Concurrency | Write Concurrency | Best For |
-|---|---|---|---|---|
-| `MultiMapList` | None | ❌ | ❌ | Single-threaded, ordered values |
-| `MultiMapSet` | None | ❌ | ❌ | Single-threaded, unique values |
-| `SortedMultiMap` | None | ❌ | ❌ | Single-threaded, sorted access |
-| `ConcurrentMultiMap` | `ConcurrentDictionary` | ✅ | ✅ | High-throughput concurrent access |
-| `MultiMapLock` | `ReaderWriterLockSlim` | ✅ Concurrent reads | ❌ Exclusive writes | Read-heavy workloads |
-| `MultiMapAsync` | `SemaphoreSlim` | ❌ Exclusive | ❌ Exclusive | Async/await workflows |
-| `SimpleMultiMap` | None | ❌ | ❌ | Simple one-to-many mapping |
-
----
-
-## Extension Methods (MultiMapHelper)
-
-The `MultiMapHelper` static class provides set-like operations as extension methods for `IMultiMap`, `ISimpleMultiMap`, and `IMultiMapAsync`.
-
-### IMultiMap Extensions
-
-| Method | Description |
-|---|---|
-| `Union(target, other)` | Adds all key-value pairs from `other` into `target`. |
-| `Intersect(target, other)` | Removes pairs from `target` that do not exist in `other`. |
-| `ExceptWith(target, other)` | Removes pairs from `target` that exist in `other`. |
-| `SymmetricExceptWith(target, other)` | Keeps only pairs present in `target` or `other`, but not both. |
-
-### ISimpleMultiMap Extensions
-
-| Method | Returns | Description |
+| Use Case | Recommended Implementation | Reason |
 |---|---|---|
-| `Union(target, other)` | `ISimpleMultiMap` | Adds all pairs from `other` into `target`. |
-| `Intersect(target, other)` | `ISimpleMultiMap` | Keeps only pairs present in both. |
-| `ExceptWith(target, other)` | `ISimpleMultiMap` | Removes pairs found in `other`. |
-| `SymmetricExceptWith(target, other)` | `ISimpleMultiMap` | Keeps only pairs in one but not both. |
+| General purpose, unique values | `MultiMapSet` | Fast O(1) lookups with uniqueness guarantee |
+| Duplicate values needed | `MultiMapList` | Only implementation allowing duplicate values per key |
+| Sorted enumeration / range queries | `SortedMultiMap` | Maintains key and value ordering |
+| High-concurrency, many threads | `ConcurrentMultiMap` | Lock-free design scales well with thread count |
+| Read-heavy, occasional writes | `MultiMapLock` | RW lock allows concurrent readers |
+| Async / I/O-bound code | `MultiMapAsync` | `SemaphoreSlim` works with `async`/`await` |
+| Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `Flatten()` and `GetOrDefault` |
 
-### IMultiMapAsync Extensions
+### Performance Comparison (5,000 pairs)
 
-| Method | Returns | Description |
-|---|---|---|
-| `UnionAsync(target, other, cancellationToken)` | `Task` | Asynchronously adds all key-value pairs from `other` into `target`. |
-| `IntersectAsync(target, other, cancellationToken)` | `Task` | Asynchronously removes pairs from `target` that do not exist in `other`. |
-| `ExceptWithAsync(target, other, cancellationToken)` | `Task` | Asynchronously removes pairs from `target` that exist in `other`. |
-| `SymmetricExceptWithAsync(target, other, cancellationToken)` | `Task` | Asynchronously keeps only pairs present in `target` or `other`, but not both. |
+| Implementation | Add | Get (100 keys) | Contains | Count | Relative Add Speed |
+|---|---|---|---|---|---|
+| `MultiMapList` | 38,158 ns | — | 33 ns | 0.016 ns | **1.0x** (baseline) |
+| `MultiMapSet` | 75,482 ns | 9,844 ns | 36 ns | 0.008 ns | 2.0x |
+| `MultiMapLock` | 115,716 ns | 13,094 ns | 15 ns | 10 ns | 3.0x |
+| `ConcurrentMultiMap` | 182,034 ns | 55,520 ns | 223 ns | 38,533 ns | 4.8x |
+| `MultiMapAsync` | 191,115 ns | 14,013 ns | 28 ns | 29 ns | 5.0x |
+| `SortedMultiMap` | 855,055 ns | 45,666 ns | 26 ns | 0.012 ns | 22.4x |
 
----
+> **Note:** Performance data from BenchmarkDotNet ShortRun job. See [Benchmarks](#benchmarks) for full details.
 
-## NuGet Package
+## Extension Methods
 
-The library is published as the **MultiMap** NuGet package.
+`MultiMapHelper` provides set-like operations as extension methods for all three interface families:
 
-| Property | Value |
-|---|---|
-| **Package ID** | `MultiMap` |
-| **Version** | `1.0.0` |
-| **Target Framework** | `net10.0` |
-| **License** | MIT |
-| **Tags** | `multimap` `dictionary` `collection` `concurrent` `async` `sorted` `data-structures` |
+| Method | `IMultiMap` | `ISimpleMultiMap` | `IMultiMapAsync` |
+|---|---|---|---|
+| **Union** | `Union()` | `Union()` | `UnionAsync()` |
+| **Intersect** | `Intersect()` | `Intersect()` | `IntersectAsync()` |
+| **ExceptWith** | `ExceptWith()` | `ExceptWith()` | `ExceptWithAsync()` |
+| **SymmetricExceptWith** | `SymmetricExceptWith()` | `SymmetricExceptWith()` | `SymmetricExceptWithAsync()` |
 
-### Install
+> **Note:** When used with concurrent implementations, these methods are **not atomic**. Individual operations are thread-safe, but the overall result may reflect interleaved concurrent modifications. No structural corruption or count drift will occur.
 
-#### .NET CLI
+## Installation
 
-```bash
+### NuGet
+
+```shell
 dotnet add package MultiMap
 ```
 
-#### Package Manager Console
-
-```powershell
-Install-Package MultiMap
-```
-
-#### PackageReference
+### Package Reference
 
 ```xml
 <PackageReference Include="MultiMap" Version="1.0.0" />
 ```
 
-### Build the Package Locally
+## Usage
 
-```bash
-dotnet pack MultiMap/MultiMap.csproj --configuration Release
+### Basic Usage with `IMultiMap`
+
+```csharp
+using MultiMap.Entities;
+using MultiMap.Helpers;
+
+// HashSet-based (unique values per key)
+var map = new MultiMapSet<string, int>();
+map.Add("fruits", 1);
+map.Add("fruits", 2);
+map.Add("fruits", 1); // returns false — already exists
+map.AddRange("vegetables", [10, 20, 30]);
+
+IEnumerable<int> values = map.Get("fruits");     // [1, 2]
+bool exists = map.Contains("fruits", 1);          // true
+int count = map.Count;                             // 5
+
+map.Remove("fruits", 1);
+map.RemoveKey("vegetables");
 ```
 
-The `.nupkg` file is output to `MultiMap/bin/Release/`.
+### Concurrent Usage
 
-### Publish to NuGet.org
+```csharp
+using MultiMap.Entities;
 
-```bash
-dotnet nuget push MultiMap/bin/Release/MultiMap.1.0.0.nupkg --api-key <YOUR_API_KEY> --source https://api.nuget.org/v3/index.json
+var concurrentMap = new ConcurrentMultiMap<string, int>();
+
+// Safe to call from multiple threads
+Parallel.For(0, 1000, i =>
+{
+    concurrentMap.Add("key", i);
+});
 ```
 
-### Package Contents
+### Async Usage
 
-The NuGet package includes:
+```csharp
+using MultiMap.Entities;
 
-- Compiled library assembly (`MultiMap.dll`)
-- XML documentation file for IntelliSense support in consuming projects
-- This `README.md` as the package readme
+using var asyncMap = new MultiMapAsync<string, int>();
+await asyncMap.AddAsync("key", 1);
+await asyncMap.AddAsync("key", 2);
 
----
-
-## Getting Started
-
-### Prerequisites
-
-- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
-
-### Build
-
-```bash
-dotnet build
+var values = await asyncMap.GetAsync("key");             // [1, 2]
+var count = await asyncMap.GetCountAsync();               // 2
+bool contains = await asyncMap.ContainsAsync("key", 1);   // true
 ```
 
----
+### Set Operations
 
-## Demo Project (MultiMap.Demo)
+```csharp
+using MultiMap.Entities;
+using MultiMap.Helpers;
 
-The `MultiMap.Demo` console application demonstrates the library's set-like extension methods using `SimpleMultiMap` and `ISimpleMultiMap`. The demo project consumes the library as a **NuGet package** (via `PackageReference`) rather than a project reference.
+var map1 = new MultiMapSet<string, int>();
+map1.Add("A", 1);
+map1.Add("A", 2);
+map1.Add("B", 3);
 
-### Run the Demo
+var map2 = new MultiMapSet<string, int>();
+map2.Add("A", 2);
+map2.Add("A", 3);
+map2.Add("C", 4);
 
-```bash
-dotnet run --project MultiMap.Demo
+// Union: adds all pairs from map2 into map1
+map1.Union(map2);
+
+// Intersect: keeps only pairs present in both
+map1.Intersect(map2);
+
+// ExceptWith: removes pairs that exist in map2
+map1.ExceptWith(map2);
+
+// SymmetricExceptWith: keeps only pairs in one but not both
+map1.SymmetricExceptWith(map2);
 ```
 
-### What It Demonstrates
+### SimpleMultiMap with Demo
 
-The demo creates two sample multimaps and runs all four set operations, printing the results:
+```csharp
+using MultiMap.Entities;
+using MultiMap.Helpers;
 
-| Operation | Description |
-|---|---|
-| **Union** | Combines all key-value pairs from both maps |
-| **Intersect** | Keeps only pairs present in both maps |
-| **ExceptWith** | Removes pairs found in the second map from the first |
-| **SymmetricExceptWith** | Keeps only pairs present in one map but not both |
+ISimpleMultiMap<string, int> map = new SimpleMultiMap<string, int>();
+map.Add("A", 1);
+map.Add("A", 2);
 
-### Sample Output
+var values = map.Get("A");              // [1, 2]
+var safe = map.GetOrDefault("missing"); // empty
+var flat = map.Flatten();               // all key-value pairs
+
+// Set operations return the modified map
+map = map.Union(otherMap);
+map = map.Intersect(otherMap);
+map = map.ExceptWith(otherMap);
+map = map.SymmetricExceptWith(otherMap);
+```
+
+### Demo Console Output
+
+Running `MultiMap.Demo` produces the following output:
 
 ```
 MULTI MAP 1:
@@ -436,174 +378,103 @@ C: 4
 C: 3
 ```
 
----
-
-## Usage Examples
-
-### Basic Usage with MultiMapSet
-
-```csharp
-using MultiMap.Entities;
-
-var map = new MultiMapSet<string, int>();
-
-map.Add("fruits", 1);
-map.Add("fruits", 2);
-map.Add("fruits", 2); // returns false — duplicate
-map.Add("vegetables", 3);
-
-var fruits = map.Get("fruits"); // [1, 2]
-bool hasFruits = map.ContainsKey("fruits"); // true
-int total = map.Count; // 3
-
-map.Remove("fruits", 1); // removes value 1 from "fruits"
-map.RemoveKey("vegetables"); // removes "vegetables" and all values
-```
-
-### Thread-Safe with ConcurrentMultiMap
-
-```csharp
-using MultiMap.Entities;
-
-var map = new ConcurrentMultiMap<string, int>();
-
-// Safe to call from multiple threads
-Parallel.For(0, 100, i =>
-{
-    map.Add("key", i);
-});
-
-foreach (var kvp in map)
-{
-    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-}
-```
-
-### Async Usage with MultiMapAsync
-
-```csharp
-using MultiMap.Entities;
-using MultiMap.Interfaces;
-
-await using var map = new MultiMapAsync<string, int>();
-
-await map.AddAsync("colors", 1);
-await map.AddAsync("colors", 2);
-await map.AddRangeAsync("sizes", new[] { 10, 20, 30 });
-
-var colors = await map.GetAsync("colors"); // [1, 2]
-int count = await map.GetCountAsync(); // 5
-var keys = await map.GetKeysAsync(); // ["colors", "sizes"]
-
-await foreach (var kvp in map)
-{
-    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-}
-
-// Use through the IMultiMapAsync interface
-IMultiMapAsync<string, int> asyncMap = new MultiMapAsync<string, int>();
-await asyncMap.AddAsync("key", 42);
-var values = await asyncMap.GetAsync("key");
-```
-
-### Set Operations with Extension Methods
-
-```csharp
-using MultiMap.Entities;
-using MultiMap.Helpers;
-
-var mapA = new MultiMapSet<string, int>();
-mapA.Add("x", 1);
-mapA.Add("x", 2);
-mapA.Add("y", 3);
-
-var mapB = new MultiMapSet<string, int>();
-mapB.Add("x", 2);
-mapB.Add("x", 4);
-mapB.Add("z", 5);
-
-// Union: mapA now contains all pairs from both
-mapA.Union(mapB);
-
-// Intersect: keep only common pairs
-mapA.Intersect(mapB);
-
-// ExceptWith: remove pairs found in mapB
-mapA.ExceptWith(mapB);
-
-// SymmetricExceptWith: keep only pairs in one but not both
-mapA.SymmetricExceptWith(mapB);
-```
-
-### SimpleMultiMap with Fluent Helpers
-
-```csharp
-using MultiMap.Entities;
-using MultiMap.Helpers;
-
-var map1 = new SimpleMultiMap<string, int>();
-map1.Add("A", 1);
-map1.Add("A", 2);
-
-var map2 = new SimpleMultiMap<string, int>();
-map2.Add("A", 2);
-map2.Add("B", 3);
-
-var result = map1.Union(map2); // A:[1,2], B:[3]
-
-foreach (var kvp in result.Flatten())
-{
-    Console.WriteLine($"{kvp.Key}: {kvp.Value}");
-}
-```
-
----
-
 ## Testing
 
-The test suite uses **NUnit 4** and covers all implementations with **460 tests**
+The library includes **556 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
-### Run Tests
-
-```bash
+```shell
 dotnet test
 ```
 
-### Run with Coverage
+### Test Coverage by Implementation
 
-```bash
-dotnet test --collect:"XPlat Code Coverage"
-```
-
-### Test Fixtures
-
-| Test File | Target Class | Test Count |
+| Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapList_UnitTest.cs` | `MultiMapList` | 46 |
-| `MultiMapSet_UnitTests.cs` | `MultiMapSet` | 46 |
-| `SortedMultiMap_UnitTests.cs` | `SortedMultiMap` | 49 |
-| `ConcurrentMultiMap_UnitTests.cs` | `ConcurrentMultiMap` | 46 |
-| `MultiMapLock_UnitTests.cs` | `MultiMapLock` | 59 |
-| `MultiMapAsync_UnitTests.cs` | `MultiMapAsync` | 53 |
-| `SimpleMultiMap_UnitTests.cs` | `SimpleMultiMap` | 33 |
-| `MultiMapHelper_UnitTests.cs` | `MultiMapHelper` | 128 |
+| `MultiMapLockTests` | 67 | RW Lock implementation |
+| `MultiMapAsyncTests` | 65 | Async implementation |
+| `ConcurrentMultiMapTests` | 61 | Lock-free concurrent implementation |
+| `SortedMultiMapTests` | 58 | Sorted implementation |
+| `MultiMapSetTests` | 55 | HashSet-based implementation |
+| `MultiMapListTests` | 54 | List-based implementation |
+| `SimpleMultiMapTests` | 33 | Lightweight implementation |
+| **Entity subtotal** | **393** | |
 
-### Coverage Details
+### Test Coverage by Extension Methods
 
-| Class | Line Coverage | Branch Coverage |
+| Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapHelper` | 100% | 100% |
-| `ConcurrentMultiMap` | 100% | 100% |
-| `MultiMapAsync` | 100% | 100% |
-| `MultiMapList` | 100% | 100% |
-| `MultiMapLock` | 100% | 100% |
-| `MultiMapSet` | 100% | 100% |
-| `SimpleMultiMap` | 100% | 100% |
-| `SortedMultiMap` | 100% | 100% |
-| `TestDataHelper` | 0% (demo-only) | 0% (demo-only) |
+| `MultiMapHelperAsyncTests` | 47 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
+| `MultiMapHelperTests` | 28 | `IMultiMap` extensions (primary) |
+| `MultiMapHelperWithMultiMapSetTests` | 28 | Extensions with `MultiMapSet` |
+| `SimpleMultiMapHelperTests` | 28 | `ISimpleMultiMap` extensions |
+| `MultiMapHelperWithMultiMapLockTests` | 12 | Extensions + concurrent stress tests |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | Extensions + concurrent stress tests |
+| `MultiMapHelperWithMultiMapListTests` | 4 | Extensions with `MultiMapList` |
+| `MultiMapHelperWithSortedMultiMapTests` | 4 | Extensions with `SortedMultiMap` |
+| **Helper subtotal** | **163** | |
 
----
+| | |
+|---|---|
+| **Total** | **556 tests** |
+
+### Test Categories
+
+Each implementation is tested across the following categories:
+
+| Category | Description | Examples |
+|---|---|---|
+| **CRUD Operations** | Add, Get, Remove, RemoveKey, Clear | Single/bulk add, remove existing/non-existing keys |
+| **Containment** | ContainsKey, Contains | Positive/negative lookups, after removal |
+| **Enumeration** | Keys, Count, `foreach` | Key enumeration, count accuracy, enumerator behavior |
+| **Edge Cases** | Null keys, empty collections, boundary conditions | Null key handling, operations on empty maps |
+| **Duplicate Handling** | Adding existing key-value pairs | Returns `false` on duplicate (or `true` for `MultiMapList`) |
+| **Concurrency** | Thread-safety under parallel access | Stress tests with `Parallel.For` (concurrent & lock variants) |
+| **Equality & Hashing** | Custom equality comparers, hash collisions | Value type and reference type behavior |
+| **Set Operations** | Union, Intersect, ExceptWith, SymmetricExceptWith | Overlapping/disjoint maps, self-operations, empty inputs |
+
+## Benchmarks
+
+Benchmarks are run with **BenchmarkDotNet v0.15.0** using the `ShortRun` job (3 warmup, 3 iterations) with `CPUUsageDiagnoser`.
+
+**Environment:** .NET 10.0, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
+
+**Benchmark Parameters:** 100 keys x 50 values/key for bulk operations (5,000 pairs); 50 keys x 20 values/key for set operations (1,000 pairs).
+
+### Core Operations
+
+| Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
+|---|---|---|---|---|---|---|
+| **Add** (5,000 pairs) | 75,482 ns | 38,158 ns | 182,034 ns | 855,055 ns | 115,716 ns | 191,115 ns |
+| **Get** (100 keys) | 9,844 ns | — | 55,520 ns | 45,666 ns | 13,094 ns | 14,013 ns |
+| **Remove** (5,000 pairs) | 134,984 ns | 124,452 ns | 351,720 ns | 1,784,457 ns | — | — |
+| **Clear** | 168,179 ns | 127,685 ns | 300,839 ns | 1,019,869 ns | — | — |
+| **Contains** | 36 ns | 33 ns | 223 ns | 26 ns | 15 ns | 28 ns |
+| **ContainsKey** | — | — | — | — | 13 ns | 29 ns |
+| **Count** | 0.008 ns | 0.016 ns | 38,533 ns | 0.012 ns | 10 ns | 29 ns |
+| **GetKeys** | — | — | — | — | 169 ns | 189 ns |
+
+### Set Operations (via `MultiMapHelper`)
+
+| Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
+|---|---|---|---|---|---|---|
+| **Union** | 90,075 ns | 56,717 ns | 183,847 ns | 424,698 ns | 93,975 ns | 115,414 ns |
+| **Intersect** | 91,681 ns | 63,389 ns | 136,178 ns | 440,208 ns | 97,979 ns | 117,744 ns |
+| **ExceptWith** | 87,971 ns | 64,168 ns | 132,836 ns | 559,217 ns | 94,666 ns | 121,110 ns |
+| **SymmetricExceptWith** | 104,517 ns | 85,889 ns | 195,355 ns | 614,454 ns | 106,045 ns | 129,136 ns |
+
+### Key Takeaways
+
+- **Fastest adds**: `MultiMapList` (no uniqueness check) — **2x faster** than `MultiMapSet`
+- **Fastest lookups**: `SortedMultiMap` Contains at 26 ns; `MultiMapLock` Contains at 15 ns
+- **ConcurrentMultiMap Count**: O(k) — 38,533 ns vs O(1) sub-nanosecond for cached implementations
+- **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration
+- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.4x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.5x slower
+- **Async overhead**: `MultiMapAsync` is comparable to `MultiMapLock` for reads; ~1.7x slower for adds due to `SemaphoreSlim`
 
 ## License
 
 This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+## Author
+
+**TigoS** — [GitHub](https://github.com/TigoS/MultiMap)
