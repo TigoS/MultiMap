@@ -69,6 +69,48 @@ public class MultiMapLockBenchmarks
     }
 
     [Benchmark]
+    public void MultiMapLock_Remove()
+    {
+        var map = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"{Consts.KeyPrefix}{k}";
+
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add(key, v);
+            }
+        }
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"{Consts.KeyPrefix}{k}";
+
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Remove(key, v);
+            }
+        }
+    }
+
+    [Benchmark]
+    public void MultiMapLock_Clear()
+    {
+        var map = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+            }
+        }
+
+        map.Clear();
+    }
+
+    [Benchmark]
     public bool MultiMapLock_Contains() => _map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
 
     [Benchmark]

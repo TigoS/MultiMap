@@ -69,6 +69,48 @@ public class MultiMapAsyncBenchmarks
     }
 
     [Benchmark]
+    public void MultiMapAsync_Remove()
+    {
+        var map = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"{Consts.KeyPrefix}{k}";
+
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.AddAsync(key, v).GetAwaiter().GetResult();
+            }
+        }
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            string key = $"{Consts.KeyPrefix}{k}";
+
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.RemoveAsync(key, v).GetAwaiter().GetResult();
+            }
+        }
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_Clear()
+    {
+        var map = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+            }
+        }
+
+        map.ClearAsync().GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
     public bool MultiMapAsync_Contains()
     {
         return _map.ContainsAsync(Consts.Key50Prefix, Consts.KeyOffset).GetAwaiter().GetResult();

@@ -1,5 +1,4 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkSuite;
 using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
 using MultiMap.Helpers;
@@ -133,6 +132,7 @@ public class MultiMapBenchmarks
 
         return map.Add(Consts.Key1Prefix, 1);
     }
+
     [Benchmark]
     public void MultiMapList_Add()
     {
@@ -190,6 +190,22 @@ public class MultiMapBenchmarks
         for (int k = 0; k < Consts.KeyCount; k++)
         {
             foreach (var v in _setMap.Get($"{Consts.KeyPrefix}{k}"))
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
+    public int MultiMapList_Get()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _listMap.Get($"{Consts.KeyPrefix}{k}"))
             {
                 sum += v;
             }
@@ -410,6 +426,107 @@ public class MultiMapBenchmarks
         return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
     }
 
+    [Benchmark]
+    public bool MultiMapList_Contains()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_Contains()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_Contains()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
+    }
+
+    // --- ContainsKey benchmarks ---
+    [Benchmark]
+    public bool MultiMapSet_ContainsKey()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.ContainsKey(Consts.Key50Prefix);
+    }
+
+    [Benchmark]
+    public bool MultiMapList_ContainsKey()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.ContainsKey(Consts.Key50Prefix);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_ContainsKey()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.ContainsKey(Consts.Key50Prefix);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_ContainsKey()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.ContainsKey(Consts.Key50Prefix);
+    }
+
+    // --- GetKeys benchmarks ---
+    [Benchmark]
+    public int MultiMapSet_GetKeys()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Keys.Count();
+    }
+
+    [Benchmark]
+    public int MultiMapList_GetKeys()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Keys.Count();
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_GetKeys()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Keys.Count();
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_GetKeys()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.Keys.Count();
+    }
+
     // --- TryGetValue benchmarks ---
     [Benchmark]
     public bool MultiMapSet_ContainsKey_Get()
@@ -525,33 +642,6 @@ public class MultiMapBenchmarks
         }
 
         return sum;
-    }
-
-    [Benchmark]
-    public bool MultiMapList_Contains()
-    {
-        var map = new MultiMapList<string, int>();
-        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
-
-        return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
-    }
-
-    [Benchmark]
-    public bool ConcurrentMultiMap_Contains()
-    {
-        var map = new ConcurrentMultiMap<string, int>();
-        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
-
-        return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
-    }
-
-    [Benchmark]
-    public bool SortedMultiMap_Contains()
-    {
-        var map = new SortedMultiMap<string, int>();
-        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
-
-        return map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
     }
 
     // --- Helper set-operation benchmarks (MultiMapSet) ---
