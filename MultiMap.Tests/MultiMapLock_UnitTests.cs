@@ -408,6 +408,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Add_ConcurrentAdds_AllUniqueValuesStored()
     {
         const int count = 1000;
@@ -421,6 +422,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Add_ConcurrentDuplicates_OnlyOneStored()
     {
         const int threads = 100;
@@ -434,6 +436,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Remove_ConcurrentRemoves_AllRemoved()
     {
         const int count = 1000;
@@ -450,6 +453,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Add_ConcurrentAddsToDifferentKeys_AllStored()
     {
         const int count = 1000;
@@ -463,6 +467,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void ConcurrentReadsAndWrites_DoNotThrow()
     {
         const int count = 1000;
@@ -626,6 +631,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_RepeatedAddRemoveCycles_CountRemainsAccurate()
     {
         for (int cycle = 0; cycle < 50; cycle++)
@@ -643,6 +649,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ClearAndRebuild_CountResetsCorrectly()
     {
         for (int cycle = 0; cycle < 50; cycle++)
@@ -660,6 +667,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_MixedOperations_CountTracksCorrectly()
     {
         int expected = 0;
@@ -693,6 +701,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_AddRangeAndRemoveKey_CountDecreasesCorrectly()
     {
         for (int cycle = 0; cycle < 40; cycle++)
@@ -712,6 +721,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ConcurrentAddRemoveClear_CountNeverNegative()
     {
         const int iterations = 500;
@@ -745,6 +755,7 @@ public class MultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_EnumeratorSnapshot_CountConsistency()
     {
         const int snapshotCount = 30;

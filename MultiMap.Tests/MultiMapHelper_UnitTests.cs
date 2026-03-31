@@ -744,6 +744,7 @@ public class MultiMapHelperWithMultiMapSetTests
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -763,6 +764,7 @@ public class MultiMapHelperWithMultiMapSetTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -783,6 +785,7 @@ public class MultiMapHelperWithMultiMapSetTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -803,6 +806,7 @@ public class MultiMapHelperWithMultiMapSetTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -827,6 +831,7 @@ public class MultiMapHelperWithMultiMapSetTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -850,6 +855,7 @@ public class MultiMapHelperWithMultiMapSetTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -963,6 +969,7 @@ public class MultiMapHelperWithSortedMultiMapTests
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -982,6 +989,7 @@ public class MultiMapHelperWithSortedMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1002,6 +1010,7 @@ public class MultiMapHelperWithSortedMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1022,6 +1031,7 @@ public class MultiMapHelperWithSortedMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1046,6 +1056,7 @@ public class MultiMapHelperWithSortedMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1069,6 +1080,7 @@ public class MultiMapHelperWithSortedMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1182,6 +1194,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1201,6 +1214,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1221,6 +1235,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1241,6 +1256,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1265,6 +1281,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1288,6 +1305,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ConcurrentHelperOperations_CountNeverNegative()
     {
         for (int i = 0; i < 20; i++)
@@ -1322,6 +1340,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionUnderConcurrentMutation_NoCorruption()
     {
         using var cts = new CancellationTokenSource();
@@ -1359,6 +1378,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1467,6 +1487,7 @@ public class MultiMapHelperWithMultiMapListTests
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1486,6 +1507,7 @@ public class MultiMapHelperWithMultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1506,6 +1528,7 @@ public class MultiMapHelperWithMultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1526,6 +1549,7 @@ public class MultiMapHelperWithMultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1550,6 +1574,7 @@ public class MultiMapHelperWithMultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1573,6 +1598,7 @@ public class MultiMapHelperWithMultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1691,6 +1717,7 @@ public class MultiMapHelperWithMultiMapLockTests
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1710,6 +1737,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1730,6 +1758,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1750,6 +1779,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1774,6 +1804,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -1797,6 +1828,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ConcurrentHelperOperations_CountNeverNegative()
     {
         for (int i = 0; i < 20; i++)
@@ -1831,6 +1863,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_UnionUnderConcurrentMutation_NoCorruption()
     {
         using var cts = new CancellationTokenSource();
@@ -1868,6 +1901,7 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -2789,6 +2823,7 @@ public class MultiMapHelperAsyncTests
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_UnionAsync_RepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -2812,6 +2847,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_IntersectAsync_RepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -2833,6 +2869,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_ExceptWithAsync_RepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -2858,6 +2895,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_SymmetricExceptWithAsync_RepeatedCycles_CountConsistent()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -2883,6 +2921,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
     {
         for (int cycle = 0; cycle < 30; cycle++)
@@ -2908,6 +2947,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_ConcurrentHelperOperations_CountNeverNegative()
     {
         for (int i = 0; i < 20; i++)
@@ -2955,6 +2995,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_UnionAsync_UnderConcurrentMutation_NoCorruption()
     {
         using var cts = new CancellationTokenSource();
@@ -2996,6 +3037,7 @@ public class MultiMapHelperAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
     {
         for (int cycle = 0; cycle < 30; cycle++)

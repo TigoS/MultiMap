@@ -387,6 +387,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task AddAsync_ConcurrentAdds_AllUniqueValuesStored()
     {
         const int count = 1000;
@@ -401,6 +402,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task AddAsync_ConcurrentDuplicates_OnlyOneStored()
     {
         const int threads = 100;
@@ -415,6 +417,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task RemoveAsync_ConcurrentRemoves_AllRemoved()
     {
         const int count = 1000;
@@ -432,6 +435,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task AddAsync_ConcurrentAddsToDifferentKeys_AllStored()
     {
         const int count = 1000;
@@ -446,6 +450,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task ConcurrentReadsAndWrites_DoNotThrow()
     {
         const int count = 1000;
@@ -619,6 +624,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_RepeatedAddRemoveCycles_CountRemainsAccurate()
     {
         for (int cycle = 0; cycle < 50; cycle++)
@@ -636,6 +642,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_ClearAndRebuild_CountResetsCorrectly()
     {
         for (int cycle = 0; cycle < 50; cycle++)
@@ -653,6 +660,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_MixedOperations_CountTracksCorrectly()
     {
         int expected = 0;
@@ -686,6 +694,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_AddRangeAndRemoveKey_CountDecreasesCorrectly()
     {
         for (int cycle = 0; cycle < 40; cycle++)
@@ -705,6 +714,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_ConcurrentAddRemoveClear_CountNeverNegative()
     {
         const int iterations = 500;
@@ -741,6 +751,7 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
     public async Task Stress_AsyncEnumeratorSnapshot_CountConsistency()
     {
         const int snapshotCount = 30;

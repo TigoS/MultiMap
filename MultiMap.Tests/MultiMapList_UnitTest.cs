@@ -476,6 +476,7 @@ public class MultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_RepeatedAddRemoveCycles_CountRemainsAccurate()
     {
         for (int cycle = 0; cycle < 50; cycle++)
@@ -493,6 +494,7 @@ public class MultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_ClearAndRebuild_CountResetsCorrectly()
     {
         for (int cycle = 0; cycle < 50; cycle++)
@@ -511,6 +513,7 @@ public class MultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_MixedOperations_CountTracksCorrectly()
     {
         int expected = 0;
@@ -541,6 +544,7 @@ public class MultiMapListTests
     }
 
     [Test]
+    [Category("Stress")]
     public void Stress_AddRangeAndRemoveKey_CountDecreasesCorrectly()
     {
         int expected = 0;
