@@ -44,7 +44,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Thread-safe variants**: lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Full XML documentation** for IntelliSense support
-- **556 unit tests** with NUnit 4
+- **574 unit tests** with NUnit 4
 
 ## Project Structure
 
@@ -66,7 +66,7 @@ MultiMap/
 │   └── Helpers/
 │       ├── MultiMapHelper.cs    # Set-like extension methods
 │       └── TestDataHelper.cs    # Sample data factory for demos
-├── MultiMap.Tests/              # Unit tests (NUnit 4, 556 tests)
+├── MultiMap.Tests/              # Unit tests (NUnit 4, 574 tests)
 ├── MultiMap.Demo/               # Console demo application
 └── BenchmarkSuite/              # BenchmarkDotNet performance benchmarks
 ```
@@ -384,7 +384,7 @@ C: 3
 
 ## Testing
 
-The library includes **556 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **574 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
 ```shell
 dotnet test
@@ -408,18 +408,18 @@ dotnet test
 | Test Class | Tests | Category |
 |---|---|---|
 | `MultiMapHelperAsyncTests` | 47 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
+| `MultiMapHelperWithMultiMapSetTests` | 34 | Extensions with `MultiMapSet` + stress tests |
 | `MultiMapHelperTests` | 28 | `IMultiMap` extensions (primary) |
-| `MultiMapHelperWithMultiMapSetTests` | 28 | Extensions with `MultiMapSet` |
 | `SimpleMultiMapHelperTests` | 28 | `ISimpleMultiMap` extensions |
 | `MultiMapHelperWithMultiMapLockTests` | 12 | Extensions + concurrent stress tests |
 | `MultiMapHelperWithConcurrentMultiMapTests` | 12 | Extensions + concurrent stress tests |
-| `MultiMapHelperWithMultiMapListTests` | 4 | Extensions with `MultiMapList` |
-| `MultiMapHelperWithSortedMultiMapTests` | 4 | Extensions with `SortedMultiMap` |
-| **Helper subtotal** | **163** | |
+| `MultiMapHelperWithMultiMapListTests` | 10 | Extensions with `MultiMapList` + stress tests |
+| `MultiMapHelperWithSortedMultiMapTests` | 10 | Extensions with `SortedMultiMap` + stress tests |
+| **Helper subtotal** | **181** | |
 
 | | |
 |---|---|
-| **Total** | **556 tests** |
+| **Total** | **574 tests** |
 
 ### Test Categories
 
@@ -440,26 +440,26 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapLockTests` | 67 | 12.1% |
-| `MultiMapAsyncTests` | 65 | 11.7% |
-| `ConcurrentMultiMapTests` | 61 | 11.0% |
-| `SortedMultiMapTests` | 58 | 10.4% |
-| `MultiMapSetTests` | 55 | 9.9% |
-| `MultiMapListTests` | 54 | 9.7% |
-| `SimpleMultiMapTests` | 33 | 5.9% |
-| **Entity subtotal** | **393** | **70.7%** |
-| `MultiMapHelperAsyncTests` | 47 | 8.5% |
-| `MultiMapHelperTests` | 28 | 5.0% |
-| `MultiMapHelperWithMultiMapSetTests` | 28 | 5.0% |
-| `SimpleMultiMapHelperTests` | 28 | 5.0% |
-| `MultiMapHelperWithMultiMapLockTests` | 12 | 2.2% |
-| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 2.2% |
-| `MultiMapHelperWithMultiMapListTests` | 4 | 0.7% |
-| `MultiMapHelperWithSortedMultiMapTests` | 4 | 0.7% |
-| **Helper subtotal** | **163** | **29.3%** |
-| **Total** | **556** | **100%** |
+| `MultiMapLockTests` | 67 | 11.7% |
+| `MultiMapAsyncTests` | 65 | 11.3% |
+| `ConcurrentMultiMapTests` | 61 | 10.6% |
+| `SortedMultiMapTests` | 58 | 10.1% |
+| `MultiMapSetTests` | 55 | 9.6% |
+| `MultiMapListTests` | 54 | 9.4% |
+| `SimpleMultiMapTests` | 33 | 5.7% |
+| **Entity subtotal** | **393** | **68.5%** |
+| `MultiMapHelperAsyncTests` | 47 | 8.2% |
+| `MultiMapHelperWithMultiMapSetTests` | 34 | 5.9% |
+| `MultiMapHelperTests` | 28 | 4.9% |
+| `SimpleMultiMapHelperTests` | 28 | 4.9% |
+| `MultiMapHelperWithMultiMapLockTests` | 12 | 2.1% |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 2.1% |
+| `MultiMapHelperWithMultiMapListTests` | 10 | 1.7% |
+| `MultiMapHelperWithSortedMultiMapTests` | 10 | 1.7% |
+| **Helper subtotal** | **181** | **31.5%** |
+| **Total** | **574** | **100%** |
 
-> **Coverage distribution:** ~71% of tests target the 7 core implementations, while ~29% cover the set-like extension methods across all interface families — including concurrent stress tests that exercise helpers with thread-safe implementations.
+> **Coverage distribution:** ~69% of tests target the 7 core implementations, while ~31% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests that exercise helpers with all implementations.
 
 ## Benchmarks
 
