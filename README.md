@@ -4,6 +4,7 @@
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
+[![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 
 A **.NET 10** library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, async, and simple variants with set-like extension methods.
@@ -28,6 +29,7 @@ A **.NET 10** library providing multiple multimap implementations — collection
   - [Test Coverage by Implementation](#test-coverage-by-implementation)
   - [Test Coverage by Extension Methods](#test-coverage-by-extension-methods)
   - [Test Categories](#test-categories)
+  - [Test Coverage Percentage](#test-coverage-percentage)
 - [Benchmarks](#benchmarks)
 - [License](#license)
 
@@ -433,6 +435,31 @@ Each implementation is tested across the following categories:
 | **Concurrency** | Thread-safety under parallel access | Stress tests with `Parallel.For` (concurrent & lock variants) |
 | **Equality & Hashing** | Custom equality comparers, hash collisions | Value type and reference type behavior |
 | **Set Operations** | Union, Intersect, ExceptWith, SymmetricExceptWith | Overlapping/disjoint maps, self-operations, empty inputs |
+
+### Test Coverage Percentage
+
+| Area | Tests | % of Total |
+|---|---|---|
+| `MultiMapLockTests` | 67 | 12.1% |
+| `MultiMapAsyncTests` | 65 | 11.7% |
+| `ConcurrentMultiMapTests` | 61 | 11.0% |
+| `SortedMultiMapTests` | 58 | 10.4% |
+| `MultiMapSetTests` | 55 | 9.9% |
+| `MultiMapListTests` | 54 | 9.7% |
+| `SimpleMultiMapTests` | 33 | 5.9% |
+| **Entity subtotal** | **393** | **70.7%** |
+| `MultiMapHelperAsyncTests` | 47 | 8.5% |
+| `MultiMapHelperTests` | 28 | 5.0% |
+| `MultiMapHelperWithMultiMapSetTests` | 28 | 5.0% |
+| `SimpleMultiMapHelperTests` | 28 | 5.0% |
+| `MultiMapHelperWithMultiMapLockTests` | 12 | 2.2% |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 2.2% |
+| `MultiMapHelperWithMultiMapListTests` | 4 | 0.7% |
+| `MultiMapHelperWithSortedMultiMapTests` | 4 | 0.7% |
+| **Helper subtotal** | **163** | **29.3%** |
+| **Total** | **556** | **100%** |
+
+> **Coverage distribution:** ~71% of tests target the 7 core implementations, while ~29% cover the set-like extension methods across all interface families — including concurrent stress tests that exercise helpers with thread-safe implementations.
 
 ## Benchmarks
 
