@@ -6,6 +6,7 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 
 A **.NET 10** library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, async, and simple variants with set-like extension methods.
 
@@ -234,7 +235,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.0" />
+<PackageReference Include="MultiMap" Version="1.0.2" />
 ```
 
 ## Usage
