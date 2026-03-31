@@ -740,6 +740,150 @@ public class MultiMapHelperWithMultiMapSetTests
         Assert.That(_other.Contains("a", 1), Is.True);
         Assert.That(_other.Contains("b", 2), Is.True);
     }
+
+    // ── Stress tests ────────────────────────────────────────
+
+    [Test]
+    public void Stress_UnionRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            var source = new MultiMapSet<string, int>();
+            for (int i = 0; i < 10; i++)
+                source.Add($"k{i % 3}", cycle * 10 + i);
+
+            _target.Union(source);
+
+            int enumerated = _target.Count();
+            Assert.That(_target.Count, Is.EqualTo(enumerated),
+                $"Count mismatch after union in cycle {cycle}");
+        }
+
+        Assert.That(_target.Count, Is.EqualTo(300));
+    }
+
+    [Test]
+    public void Stress_IntersectRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("a", i);
+
+            var mask = new MultiMapSet<string, int>();
+            for (int i = 0; i < 5; i++)
+                mask.Add("a", i);
+
+            _target.Intersect(mask);
+
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after intersect in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_ExceptWithRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("a", i);
+
+            var removal = new MultiMapSet<string, int>();
+            for (int i = 0; i < 5; i++)
+                removal.Add("a", i);
+
+            _target.ExceptWith(removal);
+
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after except in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            _target.Add("a", 1);
+            _target.Add("a", 2);
+            _target.Add("b", 3);
+
+            var sym = new MultiMapSet<string, int>();
+            sym.Add("a", 2);
+            sym.Add("c", 4);
+
+            _target.SymmetricExceptWith(sym);
+
+            Assert.That(_target.Contains("a", 1), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Contains("a", 2), Is.False, $"cycle {cycle}");
+            Assert.That(_target.Contains("b", 3), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Contains("c", 4), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Count, Is.EqualTo(3), $"cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 5; i++)
+                _target.Add("a", i);
+
+            var extra = new MultiMapSet<string, int>();
+            for (int i = 5; i < 10; i++)
+                extra.Add("a", i);
+
+            _target.Union(extra);
+            Assert.That(_target.Count, Is.EqualTo(10),
+                $"Count wrong after union in cycle {cycle}");
+
+            _target.ExceptWith(extra);
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after except round-trip in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("x", i);
+
+            var operand = new MultiMapSet<string, int>();
+
+            if (cycle % 2 == 0)
+            {
+                for (int i = 0; i < 5; i++)
+                    operand.Add("x", i);
+
+                _target.Intersect(operand);
+
+                Assert.That(_target.Count, Is.EqualTo(5),
+                    $"Count wrong after intersect in cycle {cycle}");
+            }
+            else
+            {
+                for (int i = 5; i < 15; i++)
+                    operand.Add("x", i);
+
+                _target.SymmetricExceptWith(operand);
+
+                int count = _target.Count;
+                int enumerated = _target.Count();
+                Assert.That(count, Is.EqualTo(enumerated),
+                    $"Count mismatch in cycle {cycle}");
+            }
+        }
+    }
 }
 
 [TestFixture]
@@ -814,6 +958,150 @@ public class MultiMapHelperWithSortedMultiMapTests
         Assert.That(_target.Contains("a", 2), Is.False);
         Assert.That(_target.Contains("b", 3), Is.True);
         Assert.That(_target.Count, Is.EqualTo(2));
+    }
+
+    // ── Stress tests ────────────────────────────────────────
+
+    [Test]
+    public void Stress_UnionRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            var source = new SortedMultiMap<string, int>();
+            for (int i = 0; i < 10; i++)
+                source.Add($"k{i % 3}", cycle * 10 + i);
+
+            _target.Union(source);
+
+            int enumerated = _target.Count();
+            Assert.That(_target.Count, Is.EqualTo(enumerated),
+                $"Count mismatch after union in cycle {cycle}");
+        }
+
+        Assert.That(_target.Count, Is.EqualTo(300));
+    }
+
+    [Test]
+    public void Stress_IntersectRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("a", i);
+
+            var mask = new SortedMultiMap<string, int>();
+            for (int i = 0; i < 5; i++)
+                mask.Add("a", i);
+
+            _target.Intersect(mask);
+
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after intersect in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_ExceptWithRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("a", i);
+
+            var removal = new SortedMultiMap<string, int>();
+            for (int i = 0; i < 5; i++)
+                removal.Add("a", i);
+
+            _target.ExceptWith(removal);
+
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after except in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            _target.Add("a", 1);
+            _target.Add("a", 2);
+            _target.Add("b", 3);
+
+            var sym = new SortedMultiMap<string, int>();
+            sym.Add("a", 2);
+            sym.Add("c", 4);
+
+            _target.SymmetricExceptWith(sym);
+
+            Assert.That(_target.Contains("a", 1), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Contains("a", 2), Is.False, $"cycle {cycle}");
+            Assert.That(_target.Contains("b", 3), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Contains("c", 4), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Count, Is.EqualTo(3), $"cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 5; i++)
+                _target.Add("a", i);
+
+            var extra = new SortedMultiMap<string, int>();
+            for (int i = 5; i < 10; i++)
+                extra.Add("a", i);
+
+            _target.Union(extra);
+            Assert.That(_target.Count, Is.EqualTo(10),
+                $"Count wrong after union in cycle {cycle}");
+
+            _target.ExceptWith(extra);
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after except round-trip in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("x", i);
+
+            var operand = new SortedMultiMap<string, int>();
+
+            if (cycle % 2 == 0)
+            {
+                for (int i = 0; i < 5; i++)
+                    operand.Add("x", i);
+
+                _target.Intersect(operand);
+
+                Assert.That(_target.Count, Is.EqualTo(5),
+                    $"Count wrong after intersect in cycle {cycle}");
+            }
+            else
+            {
+                for (int i = 5; i < 15; i++)
+                    operand.Add("x", i);
+
+                _target.SymmetricExceptWith(operand);
+
+                int count = _target.Count;
+                int enumerated = _target.Count();
+                Assert.That(count, Is.EqualTo(enumerated),
+                    $"Count mismatch in cycle {cycle}");
+            }
+        }
     }
 }
 
@@ -1174,6 +1462,150 @@ public class MultiMapHelperWithMultiMapListTests
         Assert.That(_target.Contains("a", 1), Is.False);
         Assert.That(_target.Contains("b", 2), Is.True);
         Assert.That(_target.Count, Is.EqualTo(1));
+    }
+
+    // ── Stress tests ────────────────────────────────────────
+
+    [Test]
+    public void Stress_UnionRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            var source = new MultiMapList<string, int>();
+            for (int i = 0; i < 10; i++)
+                source.Add($"k{i % 3}", cycle * 10 + i);
+
+            _target.Union(source);
+
+            int enumerated = _target.Count();
+            Assert.That(_target.Count, Is.EqualTo(enumerated),
+                $"Count mismatch after union in cycle {cycle}");
+        }
+
+        Assert.That(_target.Count, Is.EqualTo(300));
+    }
+
+    [Test]
+    public void Stress_IntersectRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("a", i);
+
+            var mask = new MultiMapList<string, int>();
+            for (int i = 0; i < 5; i++)
+                mask.Add("a", i);
+
+            _target.Intersect(mask);
+
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after intersect in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_ExceptWithRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("a", i);
+
+            var removal = new MultiMapList<string, int>();
+            for (int i = 0; i < 5; i++)
+                removal.Add("a", i);
+
+            _target.ExceptWith(removal);
+
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after except in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_SymmetricExceptWithRepeatedCycles_CountConsistent()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            _target.Add("a", 1);
+            _target.Add("a", 2);
+            _target.Add("b", 3);
+
+            var sym = new MultiMapList<string, int>();
+            sym.Add("a", 2);
+            sym.Add("c", 4);
+
+            _target.SymmetricExceptWith(sym);
+
+            Assert.That(_target.Contains("a", 1), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Contains("a", 2), Is.False, $"cycle {cycle}");
+            Assert.That(_target.Contains("b", 3), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Contains("c", 4), Is.True, $"cycle {cycle}");
+            Assert.That(_target.Count, Is.EqualTo(3), $"cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_UnionThenExcept_RoundTrip_CountReturnsToOriginal()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 5; i++)
+                _target.Add("a", i);
+
+            var extra = new MultiMapList<string, int>();
+            for (int i = 5; i < 10; i++)
+                extra.Add("a", i);
+
+            _target.Union(extra);
+            Assert.That(_target.Count, Is.EqualTo(10),
+                $"Count wrong after union in cycle {cycle}");
+
+            _target.ExceptWith(extra);
+            Assert.That(_target.Count, Is.EqualTo(5),
+                $"Count wrong after except round-trip in cycle {cycle}");
+        }
+    }
+
+    [Test]
+    public void Stress_IntersectAndSymmetric_AlternatingCycles_CountTracksCorrectly()
+    {
+        for (int cycle = 0; cycle < 30; cycle++)
+        {
+            _target.Clear();
+            for (int i = 0; i < 10; i++)
+                _target.Add("x", i);
+
+            var operand = new MultiMapList<string, int>();
+
+            if (cycle % 2 == 0)
+            {
+                for (int i = 0; i < 5; i++)
+                    operand.Add("x", i);
+
+                _target.Intersect(operand);
+
+                Assert.That(_target.Count, Is.EqualTo(5),
+                    $"Count wrong after intersect in cycle {cycle}");
+            }
+            else
+            {
+                for (int i = 5; i < 15; i++)
+                    operand.Add("x", i);
+
+                _target.SymmetricExceptWith(operand);
+
+                int count = _target.Count;
+                int enumerated = _target.Count();
+                Assert.That(count, Is.EqualTo(enumerated),
+                    $"Count mismatch in cycle {cycle}");
+            }
+        }
     }
 }
 
