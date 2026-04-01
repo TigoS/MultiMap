@@ -34,6 +34,7 @@ A **.NET 10** library
   - [Test Coverage Percentage](#test-coverage-percentage)
   - [Code Coverage (Coverlet)](#code-coverage-coverlet)
 - [Benchmarks](#benchmarks)
+- [Release Notes](#release-notes)
 - [License](#license)
 
 ## Overview
@@ -548,6 +549,86 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 - **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration
 - **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.1x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.7x slower
 - **Async overhead**: `MultiMapAsync` is comparable to `MultiMapLock` for reads; ~1.7x slower for adds due to `SemaphoreSlim`
+
+## Release Notes
+
+### 1.0.6
+
+**Added**
+
+- `Release Notes` section in README
+
+### 1.0.5
+
+**Changed**
+
+- Refactored `ConcurrentMultiMap` internals from `ConcurrentDictionary<TValue, byte>` to `HashSet<TValue>` with per-key locking
+- `ConcurrentMultiMap.Count` changed from O(k) to O(1) via `Interlocked` counter
+- Added verify-after-lock pattern to prevent count drift under concurrent `RemoveKey`
+- Updated all benchmark data in README
+
+**Fixed**
+
+- Race condition in `ConcurrentMultiMap` where `Add`/`Remove` could operate on orphaned hashsets after concurrent `RemoveKey`, causing `Count` to drift from actual data
+
+### 1.0.4
+
+**Changed**
+
+- Updated NuGet package icon
+
+### 1.0.3
+
+**Added**
+
+- `AddRange` benchmarks
+- More async and stress tests (714 total)
+- Code coverage reporting via Coverlet — 91.5% line coverage
+- NuGet installation instructions in README
+
+**Changed**
+
+- Full README rewrite with comparison tables, usage examples, and benchmark results
+
+### 1.0.2
+
+**Added**
+
+- `Keys` property on `IMultiMap` and all implementations
+- `IMultiMapAsync` interface with full async/cancellation support
+- `MultiMapAsync` implementation using `SemaphoreSlim`
+- Async extension methods: `UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, `SymmetricExceptWithAsync`
+- BenchmarkDotNet benchmark suite
+- Concurrent and sequential stress tests
+- Atomic set-operations for thread-safe and async implementations
+- Demo console application
+
+**Changed**
+
+- `Task` → `ValueTask` for async interface methods (performance)
+- Optimized `MultiMapAsync`, `MultiMapHelper`, and extension methods
+- Renamed set methods for consistency
+
+**Fixed**
+
+- Count vulnerability in `ConcurrentMultiMap`
+- Count regression in `ConcurrentMultiMap` after optimization pass
+
+### 1.0.0
+
+**Added**
+
+- `IMultiMap<TKey, TValue>` synchronous interface
+- `ISimpleMultiMap<TKey, TValue>` simplified interface
+- `MultiMapList` — list-based, allows duplicate values
+- `MultiMapSet` — HashSet-based, unique values per key
+- `SortedMultiMap` — sorted keys and values
+- `ConcurrentMultiMap` — thread-safe concurrent implementation
+- `MultiMapLock` — `ReaderWriterLockSlim`-based
+- `SimpleMultiMap` — lightweight simplified API
+- Set extension methods: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` for `IMultiMap` and `ISimpleMultiMap`
+- Unit tests for all implementations and extension methods
+- NuGet package
 
 ## License
 
