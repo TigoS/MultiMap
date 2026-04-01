@@ -205,12 +205,12 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Implementation | Add | Get (100 keys) | Contains | Count | Relative Add Speed |
 |---|---|---|---|---|---|
-| `MultiMapList` | 34,421 ns | 8,039 ns | 25 ns | 0.004 ns | **1.0x** (baseline) |
-| `MultiMapSet` | 67,784 ns | 9,031 ns | 34 ns | 0.025 ns | 2.0x |
-| `MultiMapLock` | 110,189 ns | 12,673 ns | 14 ns | 9 ns | 3.2x |
-| `ConcurrentMultiMap` | 135,832 ns | 12,917 ns | 158 ns | 0.024 ns | 3.9x |
-| `MultiMapAsync` | 189,770 ns | 14,297 ns | 31 ns | 28 ns | 5.5x |
-| `SortedMultiMap` | 821,434 ns | 42,121 ns | 24 ns | 0.022 ns | 23.9x |
+| `MultiMapList` | 33,087 ns | 7,939 ns | 27 ns | 0.027 ns | **1.0x** (baseline) |
+| `MultiMapSet` | 66,382 ns | 9,197 ns | 33 ns | 0.028 ns | 2.0x |
+| `MultiMapLock` | 114,596 ns | 13,147 ns | 15 ns | 10 ns | 3.5x |
+| `ConcurrentMultiMap` | 140,229 ns | 12,841 ns | 147 ns | 0.028 ns | 4.2x |
+| `MultiMapAsync` | 190,839 ns | 14,267 ns | 32 ns | 30 ns | 5.8x |
+| `SortedMultiMap` | 826,793 ns | 41,874 ns | 24 ns | 0.026 ns | 25.0x |
 
 > **Note:** Performance data from BenchmarkDotNet. See [Benchmarks](#benchmarks) for full details.
 
@@ -520,33 +520,33 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Add** (5,000 pairs) | 67,784 ns | 34,421 ns | 135,832 ns | 821,434 ns | 110,189 ns | 189,770 ns |
-| **AddRange** (5,000 pairs) | 44,595 ns | 4,729 ns | 55,565 ns | 137,967 ns | 46,560 ns | 43,650 ns |
-| **Get** (100 keys) | 9,031 ns | 8,039 ns | 12,917 ns | 42,121 ns | 12,673 ns | 14,297 ns |
-| **Remove** (5,000 pairs) | 128,853 ns | 120,274 ns | 254,912 ns | 1,512,986 ns | 209,114 ns | 357,093 ns |
-| **Clear** | 154,808 ns | 121,023 ns | 240,741 ns | 927,196 ns | 188,679 ns | 246,965 ns |
-| **Contains** | 34 ns | 25 ns | 158 ns | 24 ns | 14 ns | 31 ns |
-| **ContainsKey** | 36 ns | 31 ns | 152 ns | 23 ns | 12 ns | 29 ns |
-| **Count** | 0.025 ns | 0.004 ns | 0.024 ns | 0.022 ns | 9 ns | 28 ns |
-| **GetKeys** | 36 ns | 30 ns | 344 ns | 23 ns | 170 ns | 175 ns |
+| **Add** (5,000 pairs) | 66,382 ns | 33,087 ns | 140,229 ns | 826,793 ns | 114,596 ns | 190,839 ns |
+| **AddRange** (5,000 pairs) | 45,696 ns | 4,618 ns | 60,926 ns | 141,084 ns | 44,983 ns | 44,209 ns |
+| **Get** (100 keys) | 9,197 ns | 7,939 ns | 12,841 ns | 41,874 ns | 13,147 ns | 14,267 ns |
+| **Remove** (5,000 pairs) | 126,430 ns | 121,723 ns | 262,223 ns | 1,509,576 ns | 210,443 ns | 351,489 ns |
+| **Clear** | 159,103 ns | 120,527 ns | 249,991 ns | 935,291 ns | 197,853 ns | 248,076 ns |
+| **Contains** | 33 ns | 27 ns | 147 ns | 24 ns | 15 ns | 32 ns |
+| **ContainsKey** | 31 ns | 26 ns | 142 ns | 21 ns | 13 ns | 27 ns |
+| **Count** | 0.028 ns | 0.027 ns | 0.028 ns | 0.026 ns | 10 ns | 30 ns |
+| **GetKeys** | 32 ns | 29 ns | 336 ns | 24 ns | 164 ns | 187 ns |
 
 ### Set Operations (via `MultiMapHelper`)
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Union** | 78,525 ns | 55,805 ns | 111,079 ns | 389,014 ns | 92,848 ns | 114,322 ns |
-| **Intersect** | 77,675 ns | 61,866 ns | 113,397 ns | 404,521 ns | 93,946 ns | 117,193 ns |
-| **ExceptWith** | 79,739 ns | 59,719 ns | 115,132 ns | 494,990 ns | 86,892 ns | 107,964 ns |
-| **SymmetricExceptWith** | 93,822 ns | 73,679 ns | 137,312 ns | 567,156 ns | 93,046 ns | 113,667 ns |
+| **Union** | 83,740 ns | 57,700 ns | 116,170 ns | 402,100 ns | 98,520 ns | 120,980 ns |
+| **Intersect** | 80,180 ns | 65,440 ns | 113,870 ns | 417,060 ns | 101,160 ns | 123,760 ns |
+| **ExceptWith** | 82,610 ns | 64,520 ns | 115,920 ns | 522,300 ns | 94,700 ns | 115,540 ns |
+| **SymmetricExceptWith** | 100,710 ns | 79,930 ns | 143,950 ns | 600,200 ns | 100,520 ns | 124,160 ns |
 
 ### Key Takeaways
 
-- **AddRange vs Add**: `AddRange` is significantly faster — `MultiMapList` **~7x faster**, `SortedMultiMap` **~6x faster**, `MultiMapLock` **~2.4x faster**, `MultiMapAsync` **~4.3x faster** than individual `Add` calls
+- **AddRange vs Add**: `AddRange` is significantly faster — `MultiMapList` **~7x faster**, `SortedMultiMap` **~6x faster**, `MultiMapLock` **~2.5x faster**, `MultiMapAsync` **~4.3x faster** than individual `Add` calls
 - **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2x faster** than `MultiMapSet`
-- **Fastest lookups**: `SortedMultiMap` Contains at 24 ns; `MultiMapLock` Contains at 14 ns
-- **ConcurrentMultiMap Count**: Now O(1) via `Interlocked` counter — 0.024 ns, on par with non-concurrent implementations
+- **Fastest lookups**: `SortedMultiMap` Contains at 24 ns; `MultiMapLock` Contains at 15 ns
+- **ConcurrentMultiMap Count**: Now O(1) via `Interlocked` counter — 0.028 ns, on par with non-concurrent implementations
 - **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration
-- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.0x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.6x slower
+- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.1x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.7x slower
 - **Async overhead**: `MultiMapAsync` is comparable to `MultiMapLock` for reads; ~1.7x slower for adds due to `SemaphoreSlim`
 
 ## License
