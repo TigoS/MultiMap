@@ -45,7 +45,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **7 multimap implementations** covering a wide range of use cases
 - **3 interfaces** (`IMultiMap`, `IMultiMapAsync`, `ISimpleMultiMap`) for flexibility
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
-- **Thread-safe variants**: lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
+- **Thread-safe variants**: per-key locked (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Full XML documentation** for IntelliSense support
 - **714 unit tests** with NUnit 4
 - **91.5% line coverage** via Coverlet (all 7 implementations at 100%)
@@ -63,7 +63,7 @@ MultiMap/
 │   │   ├── MultiMapList.cs       # List-based (allows duplicates)
 │   │   ├── MultiMapSet.cs        # HashSet-based (unique values)
 │   │   ├── SortedMultiMap.cs     # SortedDictionary + SortedSet
-│   │   ├── ConcurrentMultiMap.cs # Lock-free ConcurrentDictionary-based
+│   │   ├── ConcurrentMultiMap.cs # ConcurrentDictionary + per-key locked HashSet
 │   │   ├── MultiMapLock.cs       # ReaderWriterLockSlim-based
 │   │   ├── MultiMapAsync.cs      # SemaphoreSlim-based async
 │   │   └── SimpleMultiMap.cs     # Lightweight ISimpleMultiMap impl
@@ -138,9 +138,9 @@ Implements `IMultiMap`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **E
 
 Implements `IMultiMap`. Uses `SortedDictionary<TKey, SortedSet<TValue>>`. Keys and values are maintained in sorted order. Ideal for ordered enumeration and range queries.
 
-### `ConcurrentMultiMap<TKey, TValue>` — Lock-Free Concurrent
+### `ConcurrentMultiMap<TKey, TValue>` — Per-Key Locked Concurrent
 
-Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` for lock-free thread safety. Suitable for high-concurrency scenarios. Note: `Count` is computed dynamically by iterating all keys (O(k) complexity).
+Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock` for thread safety and an `Interlocked` counter for O(1) `Count`. A verify-after-lock pattern prevents count drift when concurrent `RemoveKey` invalidates a locked `HashSet`. Suitable for high-concurrency scenarios.
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
@@ -161,7 +161,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `MultiMapList` | `IMultiMap` | ❌ No | ✅ Yes | ❌ No | O(1) |
 | `MultiMapSet` | `IMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
 | `SortedMultiMap` | `IMultiMap` | ❌ No | ❌ No | ✅ Yes | O(1) |
-| `ConcurrentMultiMap` | `IMultiMap` | Lock-free | ❌ No | ❌ No | O(k) |
+| `ConcurrentMultiMap` | `IMultiMap` | Per-key lock | ❌ No | ❌ No | O(1) |
 | `MultiMapLock` | `IMultiMap` | RW Lock | ❌ No | ❌ No | O(1) |
 | `MultiMapAsync` | `IMultiMapAsync` | Semaphore | ❌ No | ❌ No | O(1) |
 | `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | — |
@@ -173,7 +173,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `MultiMapList` | `Dictionary<TKey, List<TValue>>` | `List<TValue>` | O(1) amortized add; allows duplicate values |
 | `MultiMapSet` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | O(1) add/contains; enforces unique values |
 | `SortedMultiMap` | `SortedDictionary<TKey, SortedSet<TValue>>` | `SortedSet<TValue>` | O(log n) operations; keys & values sorted |
-| `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` | `ConcurrentDictionary<TValue, byte>` | Lock-free; byte value used as dummy |
+| `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Per-key `lock`; `Interlocked` counter for O(1) Count |
 | `MultiMapLock` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `ReaderWriterLockSlim` |
 | `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `SemaphoreSlim(1,1)` |
 | `SimpleMultiMap` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Simplified API surface |
@@ -196,7 +196,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | General purpose, unique values | `MultiMapSet` | Fast O(1) lookups with uniqueness guarantee |
 | Duplicate values needed | `MultiMapList` | Only implementation allowing duplicate values per key |
 | Sorted enumeration / range queries | `SortedMultiMap` | Maintains key and value ordering |
-| High-concurrency, many threads | `ConcurrentMultiMap` | Lock-free design scales well with thread count |
+| High-concurrency, many threads | `ConcurrentMultiMap` | Per-key locking scales well with thread count |
 | Read-heavy, occasional writes | `MultiMapLock` | RW lock allows concurrent readers |
 | Async / I/O-bound code | `MultiMapAsync` | `SemaphoreSlim` works with `async`/`await` |
 | Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `Flatten()` and `GetOrDefault` |
@@ -208,7 +208,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `MultiMapList` | 34,421 ns | 8,039 ns | 25 ns | 0.004 ns | **1.0x** (baseline) |
 | `MultiMapSet` | 67,784 ns | 9,031 ns | 34 ns | 0.025 ns | 2.0x |
 | `MultiMapLock` | 110,189 ns | 12,673 ns | 14 ns | 9 ns | 3.2x |
-| `ConcurrentMultiMap` | 168,146 ns | 53,216 ns | 204 ns | 37,655 ns | 4.9x |
+| `ConcurrentMultiMap` | 135,832 ns | 12,917 ns | 158 ns | 0.024 ns | 3.9x |
 | `MultiMapAsync` | 189,770 ns | 14,297 ns | 31 ns | 28 ns | 5.5x |
 | `SortedMultiMap` | 821,434 ns | 42,121 ns | 24 ns | 0.022 ns | 23.9x |
 
@@ -400,7 +400,7 @@ dotnet test
 |---|---|---|
 | `MultiMapAsyncTests` | 92 | Async implementation |
 | `MultiMapLockTests` | 67 | RW Lock implementation |
-| `ConcurrentMultiMapTests` | 61 | Lock-free concurrent implementation |
+| `ConcurrentMultiMapTests` | 61 | Per-key locked concurrent implementation |
 | `SortedMultiMapTests` | 58 | Sorted implementation |
 | `MultiMapSetTests` | 55 | HashSet-based implementation |
 | `MultiMapListTests` | 54 | List-based implementation |
@@ -520,33 +520,33 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Add** (5,000 pairs) | 67,784 ns | 34,421 ns | 168,146 ns | 821,434 ns | 110,189 ns | 189,770 ns |
-| **AddRange** (5,000 pairs) | 44,595 ns | 4,729 ns | 161,466 ns | 137,967 ns | 46,560 ns | 43,650 ns |
-| **Get** (100 keys) | 9,031 ns | 8,039 ns | 53,216 ns | 42,121 ns | 12,673 ns | 14,297 ns |
-| **Remove** (5,000 pairs) | 128,853 ns | 120,274 ns | 330,675 ns | 1,512,986 ns | 209,114 ns | 357,093 ns |
-| **Clear** | 154,808 ns | 121,023 ns | 279,090 ns | 927,196 ns | 188,679 ns | 246,965 ns |
-| **Contains** | 34 ns | 25 ns | 204 ns | 24 ns | 14 ns | 31 ns |
-| **ContainsKey** | 36 ns | 31 ns | 216 ns | 23 ns | 12 ns | 29 ns |
-| **Count** | 0.025 ns | 0.004 ns | 37,655 ns | 0.022 ns | 9 ns | 28 ns |
-| **GetKeys** | 36 ns | 30 ns | 415 ns | 23 ns | 170 ns | 175 ns |
+| **Add** (5,000 pairs) | 67,784 ns | 34,421 ns | 135,832 ns | 821,434 ns | 110,189 ns | 189,770 ns |
+| **AddRange** (5,000 pairs) | 44,595 ns | 4,729 ns | 55,565 ns | 137,967 ns | 46,560 ns | 43,650 ns |
+| **Get** (100 keys) | 9,031 ns | 8,039 ns | 12,917 ns | 42,121 ns | 12,673 ns | 14,297 ns |
+| **Remove** (5,000 pairs) | 128,853 ns | 120,274 ns | 254,912 ns | 1,512,986 ns | 209,114 ns | 357,093 ns |
+| **Clear** | 154,808 ns | 121,023 ns | 240,741 ns | 927,196 ns | 188,679 ns | 246,965 ns |
+| **Contains** | 34 ns | 25 ns | 158 ns | 24 ns | 14 ns | 31 ns |
+| **ContainsKey** | 36 ns | 31 ns | 152 ns | 23 ns | 12 ns | 29 ns |
+| **Count** | 0.025 ns | 0.004 ns | 0.024 ns | 0.022 ns | 9 ns | 28 ns |
+| **GetKeys** | 36 ns | 30 ns | 344 ns | 23 ns | 170 ns | 175 ns |
 
 ### Set Operations (via `MultiMapHelper`)
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Union** | 78,525 ns | 55,805 ns | 148,644 ns | 389,014 ns | 92,848 ns | 114,322 ns |
-| **Intersect** | 77,675 ns | 61,866 ns | 124,562 ns | 404,521 ns | 93,946 ns | 117,193 ns |
-| **ExceptWith** | 79,739 ns | 59,719 ns | 126,684 ns | 494,990 ns | 86,892 ns | 107,964 ns |
-| **SymmetricExceptWith** | 93,822 ns | 73,679 ns | 165,532 ns | 567,156 ns | 93,046 ns | 113,667 ns |
+| **Union** | 78,525 ns | 55,805 ns | 111,079 ns | 389,014 ns | 92,848 ns | 114,322 ns |
+| **Intersect** | 77,675 ns | 61,866 ns | 113,397 ns | 404,521 ns | 93,946 ns | 117,193 ns |
+| **ExceptWith** | 79,739 ns | 59,719 ns | 115,132 ns | 494,990 ns | 86,892 ns | 107,964 ns |
+| **SymmetricExceptWith** | 93,822 ns | 73,679 ns | 137,312 ns | 567,156 ns | 93,046 ns | 113,667 ns |
 
 ### Key Takeaways
 
 - **AddRange vs Add**: `AddRange` is significantly faster — `MultiMapList` **~7x faster**, `SortedMultiMap` **~6x faster**, `MultiMapLock` **~2.4x faster**, `MultiMapAsync` **~4.3x faster** than individual `Add` calls
 - **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2x faster** than `MultiMapSet`
 - **Fastest lookups**: `SortedMultiMap` Contains at 24 ns; `MultiMapLock` Contains at 14 ns
-- **ConcurrentMultiMap Count**: O(k) — 37,655 ns vs O(1) sub-nanosecond for cached implementations
+- **ConcurrentMultiMap Count**: Now O(1) via `Interlocked` counter — 0.024 ns, on par with non-concurrent implementations
 - **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration
-- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.5x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.6x slower
+- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.0x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.6x slower
 - **Async overhead**: `MultiMapAsync` is comparable to `MultiMapLock` for reads; ~1.7x slower for adds due to `SemaphoreSlim`
 
 ## License
