@@ -614,6 +614,12 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 - Count vulnerability in `ConcurrentMultiMap`
 - Count regression in `ConcurrentMultiMap` after optimization pass
 
+### 1.0.1
+
+**Added**
+
+- Initial README with overview, features, and project structure
+
 ### 1.0.0
 
 **Added**
