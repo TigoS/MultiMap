@@ -22,12 +22,12 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
         public static void Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             foreach (var key in other.Keys)
             {
-                target.AddRange(key, other.Get(key));
+                target.AddRange(key, other.GetOrDefault(key));
             }
         }
 
@@ -47,7 +47,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
         public static void Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var keysToRemove = new List<TKey>();
@@ -61,9 +61,9 @@ namespace MultiMap.Helpers
                     continue;
                 }
 
-                var otherValues = other.Get(key);
+                var otherValues = other.GetOrDefault(key);
                 var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
-                foreach (var value in target.Get(key))
+                foreach (var value in target.GetOrDefault(key))
                 {
                     if (!otherSet.Contains(value))
                     {
@@ -96,12 +96,12 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
         public static void ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             foreach (var key in other.Keys)
             {
-                foreach (var value in other.Get(key))
+                foreach (var value in other.GetOrDefault(key))
                 {
                     target.Remove(key, value);
                 }
@@ -124,7 +124,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
         public static void SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
@@ -132,9 +132,9 @@ namespace MultiMap.Helpers
 
             foreach (var key in other.Keys)
             {
-                var targetValues = target.Get(key);
+                var targetValues = target.GetOrDefault(key);
                 var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
-                foreach (var value in other.Get(key))
+                foreach (var value in other.GetOrDefault(key))
                 {
                     if (targetSet.Contains(value))
                     {
@@ -168,7 +168,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
         public static ISimpleMultiMap<TKey, TValue> Union<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             foreach (var kvp in other)
@@ -187,7 +187,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
         public static ISimpleMultiMap<TKey, TValue> Intersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
@@ -224,7 +224,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
         public static ISimpleMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             foreach (var kvp in other)
@@ -244,7 +244,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
         public static ISimpleMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
@@ -300,14 +300,14 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public static async Task UnionAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var keys = await other.GetKeysAsync(cancellationToken);
 
             foreach (var key in keys)
             {
-                var values = await other.GetAsync(key, cancellationToken);
+                var values = await other.GetOrDefaultAsync(key, cancellationToken);
                 await target.AddRangeAsync(key, values, cancellationToken);
             }
         }
@@ -328,7 +328,7 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap that defines the pairs to keep.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public static async Task IntersectAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var keysToRemove = new List<TKey>();
@@ -343,9 +343,9 @@ namespace MultiMap.Helpers
                     continue;
                 }
 
-                var otherValues = await other.GetAsync(key, cancellationToken);
+                var otherValues = await other.GetOrDefaultAsync(key, cancellationToken);
                 var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
-                var values = await target.GetAsync(key, cancellationToken);
+                var values = await target.GetOrDefaultAsync(key, cancellationToken);
                 foreach (var value in values)
                 {
                     if (!otherSet.Contains(value))
@@ -380,13 +380,13 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public static async Task ExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var keys = await other.GetKeysAsync(cancellationToken);
             foreach (var key in keys)
             {
-                var values = await other.GetAsync(key, cancellationToken);
+                var values = await other.GetOrDefaultAsync(key, cancellationToken);
                 foreach (var value in values)
                 {
                     await target.RemoveAsync(key, value, cancellationToken);
@@ -411,7 +411,7 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap to compare against.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public static async Task SymmetricExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull
+            where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
@@ -420,9 +420,9 @@ namespace MultiMap.Helpers
             var otherKeys = await other.GetKeysAsync(cancellationToken);
             foreach (var key in otherKeys)
             {
-                var targetValues = await target.GetAsync(key, cancellationToken);
+                var targetValues = await target.GetOrDefaultAsync(key, cancellationToken);
                 var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
-                var values = await other.GetAsync(key, cancellationToken);
+                var values = await other.GetOrDefaultAsync(key, cancellationToken);
                 foreach (var value in values)
                 {
                     if (targetSet.Contains(value))

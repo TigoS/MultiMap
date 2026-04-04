@@ -14,7 +14,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
-        where TKey : notnull
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;

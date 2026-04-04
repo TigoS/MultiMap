@@ -2774,7 +2774,7 @@ public class MultiMapHelperAsyncTests
 
         int enumerated = 0;
         foreach (var key in await _target.GetKeysAsync())
-            enumerated += (await _target.GetAsync(key)).Count();
+            enumerated += (await _target.GetOrDefaultAsync(key)).Count();
 
         Assert.That(await _target.GetCountAsync(), Is.EqualTo(enumerated));
         Assert.That(await _target.GetCountAsync(), Is.EqualTo(30));
@@ -2837,7 +2837,7 @@ public class MultiMapHelperAsyncTests
 
             int enumerated = 0;
             foreach (var key in await _target.GetKeysAsync())
-                enumerated += (await _target.GetAsync(key)).Count();
+                enumerated += (await _target.GetOrDefaultAsync(key)).Count();
 
             Assert.That(await _target.GetCountAsync(), Is.EqualTo(enumerated),
                 $"Count mismatch after union in cycle {cycle}");
@@ -2888,7 +2888,7 @@ public class MultiMapHelperAsyncTests
             Assert.That(await _target.GetCountAsync(), Is.EqualTo(5),
                 $"Count wrong after except in cycle {cycle}");
 
-            var values = await _target.GetAsync("a");
+            var values = await _target.GetOrDefaultAsync("a");
             Assert.That(values, Is.EquivalentTo(new[] { 5, 6, 7, 8, 9 }),
                 $"Wrong values after except in cycle {cycle}");
         }
@@ -2988,7 +2988,7 @@ public class MultiMapHelperAsyncTests
 
         int verifyCount = 0;
         foreach (var key in await _target.GetKeysAsync())
-            verifyCount += (await _target.GetAsync(key)).Count();
+            verifyCount += (await _target.GetOrDefaultAsync(key)).Count();
 
         Assert.That(count, Is.EqualTo(verifyCount),
             "Count must match sum of per-key values");
@@ -3030,7 +3030,7 @@ public class MultiMapHelperAsyncTests
 
         int verifyCount = 0;
         foreach (var key in await _target.GetKeysAsync())
-            verifyCount += (await _target.GetAsync(key)).Count();
+            verifyCount += (await _target.GetOrDefaultAsync(key)).Count();
 
         Assert.That(count, Is.EqualTo(verifyCount),
             "Final count must match enumerated total");
@@ -3066,7 +3066,7 @@ public class MultiMapHelperAsyncTests
                 await _target.SymmetricExceptWithAsync(operand);
 
                 int count = await _target.GetCountAsync();
-                int enumerated = (await _target.GetAsync("x")).Count();
+                int enumerated = (await _target.GetOrDefaultAsync("x")).Count();
                 Assert.That(count, Is.EqualTo(enumerated),
                     $"Count mismatch in cycle {cycle}");
             }
@@ -3117,7 +3117,7 @@ public class MultiMapHelperAsyncTests
             Assert.That(await _target.ContainsKeyAsync($"k{k}"), Is.False);
         for (int k = 0; k < 10; k += 2)
         {
-            var values = await _target.GetAsync($"k{k}");
+            var values = await _target.GetOrDefaultAsync($"k{k}");
             Assert.That(values.Count(), Is.EqualTo(3));
         }
     }
@@ -3168,7 +3168,7 @@ public class MultiMapHelperAsyncTests
         Assert.That(await _target.GetCountAsync(), Is.EqualTo(20));
         for (int k = 0; k < 10; k++)
         {
-            var values = await _target.GetAsync($"k{k}");
+            var values = await _target.GetOrDefaultAsync($"k{k}");
             Assert.That(values.Count(), Is.EqualTo(2));
         }
     }

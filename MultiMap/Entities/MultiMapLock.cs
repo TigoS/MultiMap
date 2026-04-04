@@ -15,7 +15,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
-        where TKey : notnull
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
@@ -77,6 +77,23 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                if (_dictionary.TryGetValue(key, out var hashset))
+                    return hashset.ToArray();
+
+                throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             _lock.EnterReadLock();
             try
@@ -250,7 +267,7 @@ namespace MultiMap.Entities
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
-                snapshot.Add((key, other.Get(key).ToArray()));
+                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
             }
 
             _lock.EnterWriteLock();
@@ -289,7 +306,7 @@ namespace MultiMap.Entities
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
-                otherIndex[key] = new HashSet<TValue>(other.Get(key));
+                otherIndex[key] = new HashSet<TValue>(other.GetOrDefault(key));
             }
 
             _lock.EnterWriteLock();
@@ -339,7 +356,7 @@ namespace MultiMap.Entities
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
-                snapshot.Add((key, other.Get(key).ToArray()));
+                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
             }
 
             _lock.EnterWriteLock();
@@ -382,7 +399,7 @@ namespace MultiMap.Entities
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
-                snapshot.Add((key, other.Get(key).ToArray()));
+                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
             }
 
             _lock.EnterWriteLock();

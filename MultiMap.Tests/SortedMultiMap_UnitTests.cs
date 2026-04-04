@@ -18,7 +18,7 @@ public class SortedMultiMapTests
     {
         _map.Add("a", 1);
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1 }));
     }
 
     [Test]
@@ -28,7 +28,7 @@ public class SortedMultiMapTests
         _map.Add("a", 2);
         _map.Add("a", 3);
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -37,8 +37,8 @@ public class SortedMultiMapTests
         _map.Add("a", 1);
         _map.Add("b", 2);
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1 }));
-        Assert.That(_map.Get("b"), Is.EqualTo(new[] { 2 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1 }));
+        Assert.That(_map.GetOrDefault("b"), Is.EqualTo(new[] { 2 }));
     }
 
     [Test]
@@ -61,7 +61,7 @@ public class SortedMultiMapTests
         _map.Add("a", 1);
         _map.Add("a", 1);
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1 }));
         Assert.That(_map.Count, Is.EqualTo(1));
     }
 
@@ -70,7 +70,7 @@ public class SortedMultiMapTests
     {
         _map.AddRange("a", new[] { 1, 2, 3 });
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -79,7 +79,7 @@ public class SortedMultiMapTests
         _map.Add("a", 1);
         _map.AddRange("a", new[] { 2, 3 });
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -88,7 +88,7 @@ public class SortedMultiMapTests
         _map.Add("a", 1);
         _map.AddRange("a", Enumerable.Empty<int>());
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1 }));
         Assert.That(_map.Count, Is.EqualTo(1));
     }
 
@@ -97,7 +97,7 @@ public class SortedMultiMapTests
     {
         _map.AddRange("a", new[] { 1, 1, 1 });
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1 }));
         Assert.That(_map.Count, Is.EqualTo(1));
     }
 
@@ -111,9 +111,33 @@ public class SortedMultiMapTests
     }
 
     [Test]
-    public void Get_NonExistentKey_ReturnsEmpty()
+    public void Get_ExistingKey_ReturnsValuesSorted()
     {
-        Assert.That(_map.Get("missing"), Is.Empty);
+        _map.Add("a", 3);
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public void Get_NonExistentKey_ThrowsKeyNotFoundException()
+    {
+        Assert.Throws<KeyNotFoundException>(() => _map.Get("missing"));
+    }
+
+    [Test]
+    public void Get_NonExistentKey_ExceptionContainsKeyName()
+    {
+        var ex = Assert.Throws<KeyNotFoundException>(() => _map.Get("missing"));
+
+        Assert.That(ex!.Message, Does.Contain("missing"));
+    }
+
+    [Test]
+    public void GetOrDefault_NonExistentKey_ReturnsEmpty()
+    {
+        Assert.That(_map.GetOrDefault("missing"), Is.Empty);
     }
 
     [Test]
@@ -194,7 +218,7 @@ public class SortedMultiMapTests
         _map.Add("a", 2);
 
         Assert.That(_map.Remove("a", 1), Is.True);
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 2 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 2 }));
     }
 
     [Test]
@@ -413,7 +437,7 @@ public class SortedMultiMapTests
         _map.Add("a", 1);
         _map.Add("a", 2);
 
-        Assert.That(_map.Get("a"), Is.EqualTo(new[] { 1, 2, 3 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EqualTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -648,7 +672,7 @@ public class SortedMultiMapTests
 
             if (cycle > 0 && cycle % 3 == 0 && _map.ContainsKey("a"))
             {
-                int beforeKeys = _map.Get("a").Count();
+                int beforeKeys = _map.GetOrDefault("a").Count();
                 _map.RemoveKey("a");
                 expected -= beforeKeys;
             }
@@ -672,7 +696,7 @@ public class SortedMultiMapTests
 
         int totalCount = 0;
         foreach (var key in _map.Keys)
-            totalCount += _map.Get(key).Count();
+            totalCount += _map.GetOrDefault(key).Count();
 
         Assert.That(_map.Count, Is.EqualTo(totalCount));
     }

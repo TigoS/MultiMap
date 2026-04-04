@@ -17,7 +17,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
-        where TKey : notnull
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
@@ -151,7 +151,7 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset.ToArray();
 
-            return [];
+            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
 
         private async ValueTask<IEnumerable<TValue>> GetSlowAsync(Task waitTask, TKey key)
@@ -160,6 +160,47 @@ namespace MultiMap.Entities
             try
             {
                 return GetCore(key);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        // ── GetOrDefaultAsync ──────────────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<IEnumerable<TValue>>(GetOrDefaultCore(key));
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return GetOrDefaultSlowAsync(waitTask, key);
+        }
+
+        private IEnumerable<TValue> GetOrDefaultCore(TKey key)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+                return hashset.ToArray();
+
+            return [];
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(Task waitTask, TKey key)
+        {
+            await waitTask;
+            try
+            {
+                return GetOrDefaultCore(key);
             }
             finally
             {
@@ -492,7 +533,7 @@ namespace MultiMap.Entities
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken))
             {
-                snapshot.Add((key, (await other.GetAsync(key, cancellationToken)).ToArray()));
+                snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken)).ToArray()));
             }
 
             await _semaphore.WaitAsync(cancellationToken);
@@ -540,7 +581,7 @@ namespace MultiMap.Entities
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in await other.GetKeysAsync(cancellationToken))
             {
-                otherIndex[key] = new HashSet<TValue>(await other.GetAsync(key, cancellationToken));
+                otherIndex[key] = new HashSet<TValue>(await other.GetOrDefaultAsync(key, cancellationToken));
             }
 
             await _semaphore.WaitAsync(cancellationToken);
@@ -598,7 +639,7 @@ namespace MultiMap.Entities
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken))
             {
-                snapshot.Add((key, (await other.GetAsync(key, cancellationToken)).ToArray()));
+                snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken)).ToArray()));
             }
 
             await _semaphore.WaitAsync(cancellationToken);
@@ -649,7 +690,7 @@ namespace MultiMap.Entities
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken))
             {
-                snapshot.Add((key, (await other.GetAsync(key, cancellationToken)).ToArray()));
+                snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken)).ToArray()));
             }
 
             await _semaphore.WaitAsync(cancellationToken);

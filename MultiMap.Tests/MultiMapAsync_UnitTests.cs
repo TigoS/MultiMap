@@ -26,7 +26,7 @@ public class MultiMapAsyncTests
     {
         await _map.AddAsync("a", 1);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 2);
         await _map.AddAsync("a", 3);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -68,8 +68,8 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 1);
         await _map.AddAsync("b", 2);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(await _map.GetAsync("b"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("b"), Is.EquivalentTo(new[] { 2 }));
     }
 
     [Test]
@@ -77,7 +77,7 @@ public class MultiMapAsyncTests
     {
         await _map.AddRangeAsync("a", new[] { 1, 2, 3 });
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -86,7 +86,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 1);
         await _map.AddRangeAsync("a", new[] { 2, 3 });
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
@@ -95,7 +95,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 1);
         await _map.AddRangeAsync("a", Enumerable.Empty<int>());
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
     }
 
@@ -104,7 +104,7 @@ public class MultiMapAsyncTests
     {
         await _map.AddRangeAsync("a", new[] { 1, 1, 1 });
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
     }
 
@@ -118,17 +118,40 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public async Task GetAsync_NonExistentKey_ReturnsEmpty()
+    public async Task GetAsync_ExistingKey_ReturnsValues()
     {
-        Assert.That(await _map.GetAsync("missing"), Is.Empty);
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+
+        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 2 }));
     }
 
     [Test]
-    public async Task GetAsync_ReturnsSnapshot_NotLiveCollection()
+    public void GetAsync_NonExistentKey_ThrowsKeyNotFoundException()
+    {
+        Assert.ThrowsAsync<KeyNotFoundException>(async () => await _map.GetAsync("missing"));
+    }
+
+    [Test]
+    public async Task GetAsync_NonExistentKey_ExceptionContainsKeyName()
+    {
+        var ex = Assert.ThrowsAsync<KeyNotFoundException>(async () => await _map.GetAsync("missing"));
+
+        Assert.That(ex!.Message, Does.Contain("missing"));
+    }
+
+    [Test]
+    public async Task GetOrDefaultAsync_NonExistentKey_ReturnsEmpty()
+    {
+        Assert.That(await _map.GetOrDefaultAsync("missing"), Is.Empty);
+    }
+
+    [Test]
+    public async Task GetOrDefaultAsync_ReturnsSnapshot_NotLiveCollection()
     {
         await _map.AddAsync("a", 1);
 
-        var snapshot = await _map.GetAsync("a");
+        var snapshot = await _map.GetOrDefaultAsync("a");
         await _map.AddAsync("a", 2);
 
         Assert.That(snapshot, Is.EquivalentTo(new[] { 1 }));
@@ -212,7 +235,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 2);
 
         Assert.That(await _map.RemoveAsync("a", 1), Is.True);
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 2 }));
     }
 
     [Test]
@@ -531,7 +554,7 @@ public class MultiMapAsyncTests
             if (i % 3 == 0)
                 await _map.AddAsync("a", i);
             else if (i % 3 == 1)
-                await _map.GetAsync("a");
+                await _map.GetOrDefaultAsync("a");
             else
                 await _map.ContainsAsync("a", i);
         }).ToArray();
@@ -680,7 +703,7 @@ public class MultiMapAsyncTests
         Assert.That(await map.AddAsync("x", 2), Is.True);
         await map.AddRangeAsync("y", new[] { 10, 20 });
 
-        Assert.That(await map.GetAsync("x"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(await map.GetOrDefaultAsync("x"), Is.EquivalentTo(new[] { 1, 2 }));
         Assert.That(await map.ContainsKeyAsync("x"), Is.True);
         Assert.That(await map.ContainsAsync("x", 1), Is.True);
         Assert.That(await map.GetCountAsync(), Is.EqualTo(4));
@@ -755,7 +778,7 @@ public class MultiMapAsyncTests
 
             if (cycle > 0 && cycle % 3 == 0 && await _map.ContainsKeyAsync("a"))
             {
-                int beforeKeys = (await _map.GetAsync("a")).Count();
+                int beforeKeys = (await _map.GetOrDefaultAsync("a")).Count();
                 await _map.RemoveKeyAsync("a");
                 expected -= beforeKeys;
             }
@@ -779,7 +802,7 @@ public class MultiMapAsyncTests
 
         int totalCount = 0;
         foreach (var key in await _map.GetKeysAsync())
-            totalCount += (await _map.GetAsync(key)).Count();
+            totalCount += (await _map.GetOrDefaultAsync(key)).Count();
 
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(totalCount));
     }
@@ -816,7 +839,7 @@ public class MultiMapAsyncTests
 
         int verifyCount = 0;
         foreach (var key in await _map.GetKeysAsync())
-            verifyCount += (await _map.GetAsync(key)).Count();
+            verifyCount += (await _map.GetOrDefaultAsync(key)).Count();
 
         Assert.That(count, Is.EqualTo(verifyCount));
     }
@@ -869,7 +892,7 @@ public class MultiMapAsyncTests
 
         int verifyCount = 0;
         foreach (var key in await _map.GetKeysAsync())
-            verifyCount += (await _map.GetAsync(key)).Count();
+            verifyCount += (await _map.GetOrDefaultAsync(key)).Count();
 
         Assert.That(finalCount, Is.EqualTo(verifyCount),
             "Final Count does not match sum of per-key values");
@@ -907,12 +930,12 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void GetAsync_CancelledToken_ThrowsOperationCanceledException()
+    public void GetOrDefaultAsync_CancelledToken_ThrowsOperationCanceledException()
     {
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.That(async () => await _map.GetAsync("a", cts.Token),
+        Assert.That(async () => await _map.GetOrDefaultAsync("a", cts.Token),
             Throws.InstanceOf<OperationCanceledException>());
     }
 
@@ -1011,7 +1034,7 @@ public class MultiMapAsyncTests
         bool result = await addTask;
 
         Assert.That(result, Is.True);
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
     [Test]
@@ -1026,18 +1049,18 @@ public class MultiMapAsyncTests
         semaphore.Release();
         await addTask;
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
     [Test]
-    public async Task GetAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    public async Task GetOrDefaultAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
     {
         await _map.AddAsync("a", 1);
 
         var semaphore = GetSemaphore();
         await semaphore.WaitAsync();
 
-        var getTask = _map.GetAsync("a").AsTask();
+        var getTask = _map.GetOrDefaultAsync("a").AsTask();
         Assert.That(getTask.IsCompleted, Is.False);
 
         semaphore.Release();
@@ -1204,9 +1227,9 @@ public class MultiMapAsyncTests
 
         await _map.UnionAsync(other);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 3 }));
-        Assert.That(await _map.GetAsync("b"), Is.EquivalentTo(new[] { 2 }));
-        Assert.That(await _map.GetAsync("c"), Is.EquivalentTo(new[] { 4 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("b"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetOrDefaultAsync("c"), Is.EquivalentTo(new[] { 4 }));
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(4));
     }
 
@@ -1223,7 +1246,7 @@ public class MultiMapAsyncTests
 
         await _map.IntersectAsync(other);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(await _map.ContainsKeyAsync("b"), Is.False);
         Assert.That(await _map.ContainsKeyAsync("c"), Is.False);
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
@@ -1242,7 +1265,7 @@ public class MultiMapAsyncTests
 
         await _map.ExceptWithAsync(other);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 2 }));
         Assert.That(await _map.ContainsKeyAsync("b"), Is.False);
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
     }
@@ -1261,9 +1284,9 @@ public class MultiMapAsyncTests
 
         await _map.SymmetricExceptWithAsync(other);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 1, 3 }));
-        Assert.That(await _map.GetAsync("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(await _map.GetAsync("c"), Is.EquivalentTo(new[] { 4 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("b"), Is.EquivalentTo(new[] { 3 }));
+        Assert.That(await _map.GetOrDefaultAsync("c"), Is.EquivalentTo(new[] { 4 }));
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(4));
     }
 
@@ -1284,7 +1307,7 @@ public class MultiMapAsyncTests
         await _map.ClearAsync();
         await _map.AddAsync("a", 2);
 
-        Assert.That(await _map.GetAsync("a"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 2 }));
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
     }
 
