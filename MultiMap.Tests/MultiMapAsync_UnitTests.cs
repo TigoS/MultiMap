@@ -135,6 +135,77 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public async Task TryGetAsync_ExistingKey_ReturnsTrueWithValues()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+
+        var (found, values) = await _map.TryGetAsync("a");
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public async Task TryGetAsync_NonExistentKey_ReturnsFalseWithEmpty()
+    {
+        var (found, values) = await _map.TryGetAsync("missing");
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public async Task TryGetAsync_AfterRemovingLastValue_ReturnsFalseWithEmpty()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.RemoveAsync("a", 1);
+
+        var (found, values) = await _map.TryGetAsync("a");
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public async Task TryGetAsync_AfterRemoveKey_ReturnsFalseWithEmpty()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.RemoveKeyAsync("a");
+
+        var (found, values) = await _map.TryGetAsync("a");
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public async Task TryGetAsync_AfterClear_ReturnsFalseWithEmpty()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.ClearAsync();
+
+        var (found, values) = await _map.TryGetAsync("a");
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public async Task TryGetAsync_MultipleValuesForSameKey_ReturnsAllValues()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("a", 3);
+
+        var (found, values) = await _map.TryGetAsync("a");
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
     public async Task RemoveAsync_ExistingValue_ReturnsTrue()
     {
         await _map.AddAsync("a", 1);
@@ -846,6 +917,16 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public void TryGetAsync_CancelledToken_ThrowsOperationCanceledException()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.That(async () => await _map.TryGetAsync("a", cts.Token),
+            Throws.InstanceOf<OperationCanceledException>());
+    }
+
+    [Test]
     public void RemoveAsync_CancelledToken_ThrowsOperationCanceledException()
     {
         using var cts = new CancellationTokenSource();
@@ -963,6 +1044,24 @@ public class MultiMapAsyncTests
         var result = await getTask;
 
         Assert.That(result, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task TryGetAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var tryGetTask = _map.TryGetAsync("a").AsTask();
+        Assert.That(tryGetTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        var (found, values) = await tryGetTask;
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EquivalentTo(new[] { 1 }));
     }
 
     [Test]
