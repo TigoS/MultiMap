@@ -31,7 +31,7 @@ public class MultiMapAsyncBenchmarks
     [GlobalCleanup]
     public void Cleanup()
     {
-        _map.Dispose();
+        _map.DisposeAsync().GetAwaiter().GetResult();
     }
 
     [Benchmark]
@@ -49,7 +49,7 @@ public class MultiMapAsyncBenchmarks
             }
         }
 
-        map.Dispose();
+        map.DisposeAsync().GetAwaiter().GetResult();
     }
 
     [Benchmark]
@@ -63,7 +63,7 @@ public class MultiMapAsyncBenchmarks
             map.AddRangeAsync($"{Consts.KeyPrefix}{k}", values).GetAwaiter().GetResult();
         }
 
-        map.Dispose();
+        map.DisposeAsync().GetAwaiter().GetResult();
     }
 
     [Benchmark]
