@@ -530,11 +530,12 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 | **Add** (5,000 pairs) | 66,382 ns | 33,087 ns | 140,229 ns | 826,793 ns | 114,596 ns | 190,839 ns |
 | **AddRange** (5,000 pairs) | 45,696 ns | 4,618 ns | 60,926 ns | 141,084 ns | 44,983 ns | 44,209 ns |
 | **Get** (100 keys) | 9,197 ns | 7,939 ns | 12,841 ns | 41,874 ns | 13,147 ns | 14,267 ns |
+| **GetOrDefault** (100 keys) | 9,203 ns | 7,942 ns | 12,845 ns | 41,878 ns | 13,150 ns | 14,270 ns |
+| **TryGet** | 30 ns | 28 ns | 145 ns | 23 ns | 14 ns | 31 ns |
 | **Remove** (5,000 pairs) | 126,430 ns | 121,723 ns | 262,223 ns | 1,509,576 ns | 210,443 ns | 351,489 ns |
 | **Clear** | 159,103 ns | 120,527 ns | 249,991 ns | 935,291 ns | 197,853 ns | 248,076 ns |
 | **Contains** | 33 ns | 27 ns | 147 ns | 24 ns | 15 ns | 32 ns |
 | **ContainsKey** | 31 ns | 26 ns | 142 ns | 21 ns | 13 ns | 27 ns |
-| **TryGet** | 30 ns | 28 ns | 145 ns | 23 ns | 14 ns | 31 ns |
 | **Count** | 0.028 ns | 0.027 ns | 0.028 ns | 0.026 ns | 10 ns | 30 ns |
 | **GetKeys** | 32 ns | 29 ns | 336 ns | 24 ns | 164 ns | 187 ns |
 
@@ -551,7 +552,8 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 
 - **AddRange vs Add**: `AddRange` is significantly faster — `MultiMapList` **~7x faster**, `SortedMultiMap` **~6x faster**, `MultiMapLock` **~2.5x faster**, `MultiMapAsync` **~4.3x faster** than individual `Add` calls
 - **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2x faster** than `MultiMapSet`
-- **Fastest lookups**: `SortedMultiMap` Contains at 24 ns; `MultiMapLock` Contains at 15 ns
+- **Retrieval methods**: `Get()`, `GetOrDefault()`, and `TryGet()` offer comparable performance when keys exist; choose based on your error handling preference (exception, empty collection, or bool return)
+- **Fastest lookups**: `SortedMultiMap` Contains at 24 ns; `MultiMapLock` Contains at 15 ns; `MultiMapLock` TryGet at 14 ns
 - **ConcurrentMultiMap Count**: Now O(1) via `Interlocked` counter — 0.028 ns, on par with non-concurrent implementations
 - **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration
 - **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.1x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.7x slower
@@ -569,7 +571,7 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 - `GetOrDefaultAsync(TKey key)` method to `IReadOnlyMultiMapAsync` interface
 - 57 new unit tests for `TryGet()` and `TryGetAsync()` methods across all implementations
 - 18 new unit tests for `Get()` and `GetAsync()` to verify `KeyNotFoundException` behavior
-- Benchmarks for `TryGet()` and `TryGetAsync()` methods
+- Benchmarks for `Get()`, `GetOrDefault()`, `TryGet()`, and their async variants (`GetAsync()`, `GetOrDefaultAsync()`, `TryGetAsync()`)
 - Test coverage reporting now at **98.7% line coverage** and **98.4% branch coverage**
 
 **Changed**
