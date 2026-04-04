@@ -95,6 +95,20 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public bool TryGet(TKey key, out IEnumerable<TValue> values)
+        {
+            bool result = _dictionary.TryGetValue(key, out var hashset);
+
+            var tmpValues = result ? hashset ?? [] : [];
+            lock (tmpValues)
+            {
+                values = tmpValues.ToArray();
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
             if (_dictionary.TryGetValue(key, out var hashset))

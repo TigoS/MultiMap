@@ -32,13 +32,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            if (!_dictionary.TryGetValue(key, out var set))
+            if (!_dictionary.TryGetValue(key, out var hashset))
             {
-                set = new SortedSet<TValue>();
-                _dictionary[key] = set;
+                hashset = new SortedSet<TValue>();
+                _dictionary[key] = hashset;
             }
 
-            if (set.Add(value))
+            if (hashset.Add(value))
             {
                 _count++;
                 return true;
@@ -50,15 +50,15 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (!_dictionary.TryGetValue(key, out var set))
+            if (!_dictionary.TryGetValue(key, out var hashset))
             {
-                set = new SortedSet<TValue>();
-                _dictionary[key] = set;
+                hashset = new SortedSet<TValue>();
+                _dictionary[key] = hashset;
             }
 
             foreach (var value in values)
             {
-                if (set.Add(value))
+                if (hashset.Add(value))
                     _count++;
             }
         }
@@ -66,23 +66,33 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-            if (_dictionary.TryGetValue(key, out var set))
-                return set;
+            if (_dictionary.TryGetValue(key, out var hashset))
+                return hashset;
 
             return [];
         }
 
         /// <inheritdoc/>
+        public bool TryGet(TKey key, out IEnumerable<TValue> values)
+        {
+            bool result = _dictionary.TryGetValue(key, out var hashset);
+
+            values = result ? hashset ?? [] : [];
+
+            return result;
+        }
+
+        /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            if (_dictionary.TryGetValue(key, out var set))
+            if (_dictionary.TryGetValue(key, out var hashset))
             {
-                bool removed = set.Remove(value);
+                bool removed = hashset.Remove(value);
 
                 if (removed)
                 {
                     _count--;
-                    if (set.Count == 0)
+                    if (hashset.Count == 0)
                         _dictionary.Remove(key);
                 }
 
@@ -95,9 +105,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            if (_dictionary.TryGetValue(key, out var set))
+            if (_dictionary.TryGetValue(key, out var hashset))
             {
-                _count -= set.Count;
+                _count -= hashset.Count;
                 return _dictionary.Remove(key);
             }
 
@@ -113,7 +123,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-            return _dictionary.TryGetValue(key, out var set) && set.Contains(value);
+            return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
         }
 
         /// <inheritdoc/>

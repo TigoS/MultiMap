@@ -93,6 +93,24 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public bool TryGet(TKey key, out IEnumerable<TValue> values)
+        {
+            _lock.EnterReadLock();
+            try
+            {
+                bool result = _dictionary.TryGetValue(key, out var hashset);
+
+                values = result ? hashset ?? [] : [];
+
+                return result;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
             _lock.EnterWriteLock();
