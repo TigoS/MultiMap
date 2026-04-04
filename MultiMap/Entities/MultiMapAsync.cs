@@ -167,6 +167,48 @@ namespace MultiMap.Entities
             }
         }
 
+        // ── TryGetAsync ──────────────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<(bool found, IEnumerable<TValue> values)>(TryGetCore(key));
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return TryGetSlowAsync(waitTask, key);
+        }
+
+        private (bool found, IEnumerable<TValue> values) TryGetCore(TKey key)
+        {
+            (bool found, IEnumerable<TValue> values) result;
+            result.found = _dictionary.TryGetValue(key, out var hashset);
+            result.values = result.found ? hashset ?? [] : [];
+
+            return result;
+        }
+
+        private async ValueTask<(bool found, IEnumerable<TValue> values)> TryGetSlowAsync(Task waitTask, TKey key)
+        {
+            await waitTask;
+            try
+            {
+                return TryGetCore(key);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         // ── RemoveAsync ───────────────────────────────────────
 
         /// <inheritdoc/>
@@ -682,12 +724,16 @@ namespace MultiMap.Entities
             }
         }
 
-        /// <summary>
-        /// Releases the resources used by the <see cref="MultiMapAsync{TKey, TValue}"/> instance.
-        /// </summary>
+        /// <inheritdoc/>
         public void Dispose()
         {
-            _semaphore?.Dispose();
+            DisposeCore();
+        }
+
+        /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
+        {
+            await DisposeAsyncCore().ConfigureAwait(false);
         }
 
         /// <inheritdoc/>
@@ -701,6 +747,25 @@ namespace MultiMap.Entities
         public override int GetHashCode()
         {
             return HashCode.Combine(_dictionary);
+        }
+
+        /// <summary>
+        /// Releases resources used by the current instance.
+        /// </summary>
+        /// <remarks>Override this method in a derived class to release additional resources. This method is called by the public Dispose pattern implementation to perform actual cleanup of managed or unmanaged resources.</remarks>
+        protected virtual void DisposeCore()
+        {
+            _semaphore?.Dispose();
+        }
+
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
+        /// </summary>
+        /// <remarks>Override this method to release additional resources in a derived class when disposing asynchronously. This method is called by DisposeAsync and should not be called directly.</remarks>
+        /// <returns>A ValueTask that represents the asynchronous dispose operation.</returns>
+        protected virtual async ValueTask DisposeAsyncCore()
+        {
+            DisposeCore();
         }
     }
 }
