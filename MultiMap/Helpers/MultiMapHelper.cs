@@ -113,7 +113,7 @@ namespace MultiMap.Helpers
         /// <paramref name="target"/> or <paramref name="other"/>, but not both.
         /// </summary>
         /// <remarks>
-        /// This method is not atomic. It classifies pairs via <see cref="IMultiMap{TKey, TValue}.Contains"/>
+        /// This method is not atomic. It classifies pairs via <see cref="IReadOnlyMultiMap{TKey, TValue}.Contains"/>
         /// in a read phase, then applies additions and removals in separate write phases. When used with
         /// concurrent implementations, pairs added to <paramref name="target"/> between classification and
         /// mutation may be misclassified, leaving values that should have been removed or failing to add
