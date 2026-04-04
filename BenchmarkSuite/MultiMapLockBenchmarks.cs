@@ -83,6 +83,22 @@ public class MultiMapLockBenchmarks
     }
 
     [Benchmark]
+    public int MultiMapLock_GetOrDefault()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _map.GetOrDefault(_keys[k]))
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
     public void MultiMapLock_Remove()
     {
         var map = new MultiMapLock<string, int>();

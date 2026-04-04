@@ -83,6 +83,22 @@ public class MultiMapAsyncBenchmarks
     }
 
     [Benchmark]
+    public int MultiMapAsync_GetOrDefault()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _map.GetOrDefaultAsync(_keys[k]).GetAwaiter().GetResult())
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
     public void MultiMapAsync_Remove()
     {
         var map = new MultiMapAsync<string, int>();

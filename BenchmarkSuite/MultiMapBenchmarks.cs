@@ -295,6 +295,71 @@ public class MultiMapBenchmarks
         return sum;
     }
 
+    // --- GetOrDefault benchmarks ---
+    [Benchmark]
+    public int MultiMapSet_GetOrDefault()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _setMap.GetOrDefault($"{Consts.KeyPrefix}{k}"))
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
+    public int MultiMapList_GetOrDefault()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _listMap.GetOrDefault($"{Consts.KeyPrefix}{k}"))
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_GetOrDefault()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _concurrentMap.GetOrDefault($"{Consts.KeyPrefix}{k}"))
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_GetOrDefault()
+    {
+        int sum = 0;
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            foreach (var v in _sortedMap.GetOrDefault($"{Consts.KeyPrefix}{k}"))
+            {
+                sum += v;
+            }
+        }
+
+        return sum;
+    }
+
     // --- Remove benchmarks ---
     [Benchmark]
     public void MultiMapSet_Remove()
@@ -583,7 +648,7 @@ public class MultiMapBenchmarks
         var map = new MultiMapSet<string, int>();
         map.Add(Consts.Key50Prefix, Consts.KeyOffset);
 
-        return map.ContainsKey(Consts.Key50Prefix) && map.Get(Consts.Key50Prefix).Contains(Consts.KeyOffset);
+        return map.ContainsKey(Consts.Key50Prefix) && map.GetOrDefault(Consts.Key50Prefix).Contains(Consts.KeyOffset);
     }
 
     [Benchmark]
@@ -591,7 +656,7 @@ public class MultiMapBenchmarks
     {
         var map = new MultiMapList<string, int>();
         map.Add(Consts.Key50Prefix, Consts.KeyOffset);
-        return map.ContainsKey(Consts.Key50Prefix) && map.Get(Consts.Key50Prefix).Contains(Consts.KeyOffset);
+        return map.ContainsKey(Consts.Key50Prefix) && map.GetOrDefault(Consts.Key50Prefix).Contains(Consts.KeyOffset);
     }
 
     [Benchmark]
@@ -600,7 +665,7 @@ public class MultiMapBenchmarks
         var map = new ConcurrentMultiMap<string, int>();
         map.Add(Consts.Key50Prefix, Consts.KeyOffset);
 
-        return map.ContainsKey(Consts.Key50Prefix) && map.Get(Consts.Key50Prefix).Contains(Consts.KeyOffset);
+        return map.ContainsKey(Consts.Key50Prefix) && map.GetOrDefault(Consts.Key50Prefix).Contains(Consts.KeyOffset);
     }
 
     [Benchmark]
@@ -609,7 +674,7 @@ public class MultiMapBenchmarks
         var map = new SortedMultiMap<string, int>();
         map.Add(Consts.Key50Prefix, Consts.KeyOffset);
 
-        return map.ContainsKey(Consts.Key50Prefix) && map.Get(Consts.Key50Prefix).Contains(Consts.KeyOffset);
+        return map.ContainsKey(Consts.Key50Prefix) && map.GetOrDefault(Consts.Key50Prefix).Contains(Consts.KeyOffset);
     }
 
     // --- TryGet benchmarks ---
