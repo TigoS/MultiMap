@@ -117,6 +117,77 @@ public class SortedMultiMapTests
     }
 
     [Test]
+    public void TryGet_ExistingKey_ReturnsTrueWithValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EqualTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGet_NonExistentKey_ReturnsFalseWithEmpty()
+    {
+        bool found = _map.TryGet("missing", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterRemovingLastValue_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Remove("a", 1);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterRemoveKey_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.RemoveKey("a");
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterClear_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Clear();
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_MultipleValuesForSameKey_ReturnsAllValuesSorted()
+    {
+        _map.Add("a", 3);
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EqualTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
     public void Remove_ExistingValue_ReturnsTrue()
     {
         _map.Add("a", 1);
