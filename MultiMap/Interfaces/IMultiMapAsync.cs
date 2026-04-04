@@ -37,6 +37,17 @@ namespace MultiMap.Interfaces
         public Task AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously adds a range of values associated with the specified key.
+        /// </summary>
+        /// <remarks>If the operation is canceled via the provided cancellation token, the method will terminate without adding all values. The behavior when duplicate values are provided depends on the implementation.</remarks>
+        /// <param name="key">The key with which the values will be associated. Cannot be null if the implementation does not support null
+        /// keys.</param>
+        /// <param name="values">An asynchronous sequence of values to add. Cannot be null.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous add operation.</returns>
+        public Task AddRangeAsync(TKey key, IAsyncEnumerable<TValue> values, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Asynchronously removes a specific value from the set associated with the specified key.
         /// If the set becomes empty after removal, the key is also removed.
         /// </summary>
@@ -59,6 +70,23 @@ namespace MultiMap.Interfaces
         /// <see langword="false"/> if the key did not exist.
         /// </returns>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Removes all values associated with the specified key that match the given predicate.
+        /// </summary>
+        /// <param name="key">The key whose associated values are to be evaluated and potentially removed.</param>
+        /// <param name="predicate">A delegate that defines the conditions of the values to remove. Only values for which the predicate returns <see langword="true"/> are removed.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A value task representing the asynchronous operation. The result contains the number of values removed.</returns>
+        public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously removes a collection of key/value pairs from the store.
+        /// </summary>
+        /// <param name="items">The collection of key/value pairs to remove. Each pair specifies a key and its associated value to be removed. Cannot be null.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+        /// <returns>A task that represents the asynchronous remove operation.</returns>
+        public Task RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes all keys and values from the multimap.

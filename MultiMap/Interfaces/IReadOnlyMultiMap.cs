@@ -56,14 +56,45 @@
         public bool Contains(TKey key, TValue value);
 
         /// <summary>
+        /// Gets the number of keys contained in the collection.
+        /// </summary>
+        public int KeyCount { get; }
+
+        /// <summary>
         /// Gets the total number of key-value pairs contained in the collection.
         /// </summary>
         public int Count { get; }
 
         /// <summary>
+        /// Gets the number of values associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key whose associated value count is to be retrieved. Cannot be null.</param>
+        /// <returns>The number of values associated with the specified key. Returns 0 if the key does not exist.</returns>
+        public int GetValuesCount(TKey key);
+
+        /// <summary>
         /// Gets an enumerable collection of keys contained in the collection.
         /// </summary>
         public IEnumerable<TKey> Keys { get; }
+
+        /// <summary>
+        /// Gets a collection containing the values in the dictionary.
+        /// </summary>
+        public IEnumerable<TValue> Values { get; }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the collection.
+        /// </summary>
+        /// <returns>An enumerator that can be used to iterate through the collection of key/value pairs.</returns>
+        public new IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator();
+
+        /// <summary>
+        /// Gets the collection of values associated with the specified key.
+        /// </summary>
+        /// <remarks>The returned collection reflects the current state of the underlying data. Modifying the collection may not affect the original data source, depending on the implementation.</remarks>
+        /// <param name="key">The key whose associated values to retrieve.</param>
+        /// <returns>An enumerable collection of values associated with the specified key. If the key is not found, the collection is empty.</returns>
+        public IEnumerable<TValue> this[TKey key] { get; }
     }
 
 }

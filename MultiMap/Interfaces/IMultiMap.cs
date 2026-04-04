@@ -39,6 +39,13 @@
         public void AddRange(TKey key, IEnumerable<TValue> values);
 
         /// <summary>
+        /// Adds the elements of the specified collection to the current collection.
+        /// </summary>
+        /// <remarks>If any key in the provided collection already exists in the current collection, an exception may be thrown depending on the implementation. The order in which the elements are added is preserved.</remarks>
+        /// <param name="items">The collection of key/value pairs to add. Each key in the collection must be unique and not already present in the current collection.</param>
+        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
+
+        /// <summary>
         /// Removes the entry with the specified key and value from the collection.
         /// </summary>
         /// <remarks>This method removes the entry only if both the key and value match an existing element.
@@ -62,6 +69,22 @@
         /// otherwise, <see langword="false"/>.
         /// </returns>
         public bool RemoveKey(TKey key);
+
+        /// <summary>
+        /// Removes all values associated with the specified key that match the given predicate.
+        /// </summary>
+        /// <remarks>If the key does not exist in the collection, no action is taken and the method returns 0. The predicate is applied only to values associated with the specified key.</remarks>
+        /// <param name="key">The key whose associated values are to be tested and potentially removed.</param>
+        /// <param name="predicate">A delegate that defines the conditions of the values to remove. Only values for which the predicate returns <see langword="true"/> are removed.</param>
+        /// <returns>The number of values removed from the collection.</returns>
+        public int RemoveWhere(TKey key, Predicate<TValue> predicate);
+
+        /// <summary>
+        /// Removes the specified key/value pairs from the collection.
+        /// </summary>
+        /// <remarks>If a specified key does not exist in the collection, it is ignored. The operation does not throw an exception for missing keys.</remarks>
+        /// <param name="items">The collection of key/value pairs to remove from the collection. Each pair specifies a key and its associated value to be removed.</param>
+        public void RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
 
         /// <summary>
         /// Removes all items from the collection.
