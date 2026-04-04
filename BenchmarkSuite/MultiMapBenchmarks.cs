@@ -612,6 +612,52 @@ public class MultiMapBenchmarks
         return map.ContainsKey(Consts.Key50Prefix) && map.Get(Consts.Key50Prefix).Contains(Consts.KeyOffset);
     }
 
+    // --- TryGet benchmarks ---
+    [Benchmark]
+    public bool MultiMapSet_TryGet()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool MultiMapList_TryGet()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_TryGet()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_TryGet()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_TryGet()
+    {
+        var map = new MultiMapLock<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
     // --- Keys enumeration benchmarks ---
     [Benchmark]
     public int MultiMapSet_Keys_Enumeration()

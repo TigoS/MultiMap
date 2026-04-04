@@ -149,6 +149,13 @@ public class MultiMapAsyncBenchmarks
     }
 
     [Benchmark]
+    public bool MultiMapAsync_TryGet()
+    {
+        var (found, values) = _map.TryGetAsync(Consts.Key50Prefix).GetAwaiter().GetResult();
+        return found && values.Contains(Consts.KeyOffset);
+    }
+
+    [Benchmark]
     public void MultiMapAsync_Union()
     {
         var target = new MultiMapAsync<string, int>();
