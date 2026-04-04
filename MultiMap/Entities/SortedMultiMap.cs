@@ -15,7 +15,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
     public class SortedMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
         private readonly SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
@@ -65,6 +65,15 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+                return hashset;
+
+            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset;

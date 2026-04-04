@@ -16,7 +16,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class ConcurrentMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
         private readonly ConcurrentDictionary<TKey, HashSet<TValue>> _dictionary;
@@ -82,6 +82,20 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                lock (hashset)
+                {
+                    return hashset.ToArray();
+                }
+            }
+
+            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
             {
