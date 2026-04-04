@@ -10,7 +10,7 @@
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null.</typeparam>
-    public interface IMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+    public interface IMultiMap<TKey, TValue> : IReadOnlyMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
@@ -39,17 +39,6 @@
         public void AddRange(TKey key, IEnumerable<TValue> values);
 
         /// <summary>
-        /// Retrieves all values associated with the specified key.
-        /// </summary>
-        /// <param name="key">The key for which to retrieve values. Cannot be null.
-        /// If the key does not exist, an empty collection is returned.</param>
-        /// <returns>
-        /// An enumerable collection of values associated with the specified key.
-        /// The collection is empty if the key is not found.
-        /// </returns>
-        public IEnumerable<TValue> Get(TKey key);
-
-        /// <summary>
         /// Removes the entry with the specified key and value from the collection.
         /// </summary>
         /// <remarks>This method removes the entry only if both the key and value match an existing element.
@@ -75,40 +64,8 @@
         public bool RemoveKey(TKey key);
 
         /// <summary>
-        /// Determines whether the collection contains an element with the specified key.
-        /// </summary>
-        /// <param name="key">The key to locate in the collection.
-        /// Cannot be null if the collection does not accept null keys.</param>
-        /// <returns>
-        /// <see langword="true"/> if the collection contains an element with the specified key;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        public bool ContainsKey(TKey key);
-
-        /// <summary>
-        /// Determines whether the collection contains an element with the specified key and value.
-        /// </summary>
-        /// <param name="key">The key to locate in the collection.</param>
-        /// <param name="value">The value to locate in the collection associated with the specified key.</param>
-        /// <returns>
-        /// <see langword="true"/> if an element with the specified key and value exists in the collection;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        public bool Contains(TKey key, TValue value);
-
-        /// <summary>
         /// Removes all items from the collection.
         /// </summary>
         public void Clear();
-
-        /// <summary>
-        /// Gets the total number of key-value pairs contained in the collection.
-        /// </summary>
-        public int Count { get; }
-
-        /// <summary>
-        /// Gets an enumerable collection of keys contained in the collection.
-        /// </summary>
-        public IEnumerable<TKey> Keys { get; }
     }
 }
