@@ -237,6 +237,12 @@ namespace MultiMap.Entities
             }
         }
 
+        public int KeyCount => throw new NotImplementedException();
+
+        public IEnumerable<TValue> Values => throw new NotImplementedException();
+
+        public IEnumerable<TValue> this[TKey key] => throw new NotImplementedException();
+
         /// <inheritdoc/>
         public void Clear()
         {
@@ -480,6 +486,26 @@ namespace MultiMap.Entities
         public void Dispose()
         {
             _lock?.Dispose();
+        }
+
+        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int GetValuesCount(TKey key)
+        {
+            throw new NotImplementedException();
         }
     }
 }
