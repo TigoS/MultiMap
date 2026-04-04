@@ -2315,8 +2315,8 @@ public class MultiMapHelperAsyncTests
     [TearDown]
     public void TearDown()
     {
-        _target.Dispose();
-        _other.Dispose();
+        _target.DisposeAsync().GetAwaiter().GetResult();
+        _other.DisposeAsync().GetAwaiter().GetResult();
     }
 
     // ── UnionAsync ──────────────────────────────────────────
@@ -2833,7 +2833,7 @@ public class MultiMapHelperAsyncTests
                 await source.AddAsync($"k{i % 3}", cycle * 10 + i);
 
             await _target.UnionAsync(source);
-            source.Dispose();
+            await source.DisposeAsync();
 
             int enumerated = 0;
             foreach (var key in await _target.GetKeysAsync())
@@ -2861,7 +2861,7 @@ public class MultiMapHelperAsyncTests
                 await mask.AddAsync("a", i);
 
             await _target.IntersectAsync(mask);
-            mask.Dispose();
+            await mask.DisposeAsync();
 
             Assert.That(await _target.GetCountAsync(), Is.EqualTo(5),
                 $"Count wrong after intersect in cycle {cycle}");
@@ -2883,7 +2883,7 @@ public class MultiMapHelperAsyncTests
                 await removal.AddAsync("a", i);
 
             await _target.ExceptWithAsync(removal);
-            removal.Dispose();
+            await removal.DisposeAsync();
 
             Assert.That(await _target.GetCountAsync(), Is.EqualTo(5),
                 $"Count wrong after except in cycle {cycle}");
@@ -2910,7 +2910,7 @@ public class MultiMapHelperAsyncTests
             await sym.AddAsync("c", 4);
 
             await _target.SymmetricExceptWithAsync(sym);
-            sym.Dispose();
+            await sym.DisposeAsync();
 
             Assert.That(await _target.ContainsAsync("a", 1), Is.True, $"cycle {cycle}");
             Assert.That(await _target.ContainsAsync("a", 2), Is.False, $"cycle {cycle}");
@@ -2939,7 +2939,7 @@ public class MultiMapHelperAsyncTests
                 $"Count wrong after union in cycle {cycle}");
 
             await _target.ExceptWithAsync(extra);
-            extra.Dispose();
+            await extra.DisposeAsync();
 
             Assert.That(await _target.GetCountAsync(), Is.EqualTo(5),
                 $"Count wrong after except round-trip in cycle {cycle}");
@@ -2977,7 +2977,7 @@ public class MultiMapHelperAsyncTests
                     break;
             }
 
-            temp.Dispose();
+            await temp.DisposeAsync();
         }).ToArray();
 
         await Task.WhenAll(tasks);
@@ -3019,7 +3019,7 @@ public class MultiMapHelperAsyncTests
                 await source.AddAsync($"u{i}", round * 100 + i);
 
             await _target.UnionAsync(source);
-            source.Dispose();
+            await source.DisposeAsync();
         }
 
         cts.Cancel();
@@ -3071,7 +3071,7 @@ public class MultiMapHelperAsyncTests
                     $"Count mismatch in cycle {cycle}");
             }
 
-            operand.Dispose();
+            await operand.DisposeAsync();
         }
     }
 
@@ -3245,7 +3245,7 @@ public class MultiMapHelperAsyncTests
         await intersector.AddAsync("a", 2);
 
         await _target.IntersectAsync(intersector);
-        intersector.Dispose();
+        await intersector.DisposeAsync();
 
         Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
         Assert.That(await _target.ContainsAsync("a", 1), Is.True);
@@ -3267,7 +3267,7 @@ public class MultiMapHelperAsyncTests
         Assert.That(await _target.GetCountAsync(), Is.EqualTo(10));
 
         await _target.ExceptWithAsync(extra);
-        extra.Dispose();
+        await extra.DisposeAsync();
 
         Assert.That(await _target.GetCountAsync(), Is.EqualTo(5));
         for (int i = 0; i < 5; i++)

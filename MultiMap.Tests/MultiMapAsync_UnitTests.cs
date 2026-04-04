@@ -18,7 +18,7 @@ public class MultiMapAsyncTests
     [TearDown]
     public void TearDown()
     {
-        _map.Dispose();
+        _map.DisposeAsync().GetAwaiter().GetResult();
     }
 
     [Test]
@@ -382,8 +382,8 @@ public class MultiMapAsyncTests
     [Test]
     public void Dispose_CanBeCalledMultipleTimes()
     {
-        _map.Dispose();
-        Assert.DoesNotThrow(() => _map.Dispose());
+        _map.DisposeAsync().GetAwaiter().GetResult();
+        Assert.DoesNotThrow(() => _map.DisposeAsync().AsTask());
     }
 
     [Test]
@@ -483,7 +483,7 @@ public class MultiMapAsyncTests
 
         Assert.That(_map.Equals(other), Is.False);
 
-        other.Dispose();
+        await other.DisposeAsync();
     }
 
     [Test]
@@ -518,7 +518,7 @@ public class MultiMapAsyncTests
 
         Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
 
-        other.Dispose();
+        await other.DisposeAsync();
     }
 
     [Test]
@@ -529,7 +529,7 @@ public class MultiMapAsyncTests
             .GetField("_semaphore", BindingFlags.NonPublic | BindingFlags.Instance)!;
         field.SetValue(map, null);
 
-        Assert.DoesNotThrow(() => map.Dispose());
+        Assert.DoesNotThrow(() => map.DisposeAsync().AsTask());
     }
 
     [Test]
@@ -1099,7 +1099,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 1);
         await _map.AddAsync("b", 2);
 
-        using var other = new MultiMapAsync<string, int>();
+        await using var other = new MultiMapAsync<string, int>();
         await other.AddAsync("a", 3);
         await other.AddAsync("c", 4);
 
@@ -1118,7 +1118,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 2);
         await _map.AddAsync("b", 3);
 
-        using var other = new MultiMapAsync<string, int>();
+        await using var other = new MultiMapAsync<string, int>();
         await other.AddAsync("a", 1);
         await other.AddAsync("c", 4);
 
@@ -1137,7 +1137,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 2);
         await _map.AddAsync("b", 3);
 
-        using var other = new MultiMapAsync<string, int>();
+        await using var other = new MultiMapAsync<string, int>();
         await other.AddAsync("a", 1);
         await other.AddAsync("b", 3);
 
@@ -1155,7 +1155,7 @@ public class MultiMapAsyncTests
         await _map.AddAsync("a", 2);
         await _map.AddAsync("b", 3);
 
-        using var other = new MultiMapAsync<string, int>();
+        await using var other = new MultiMapAsync<string, int>();
         await other.AddAsync("a", 2);
         await other.AddAsync("a", 3);
         await other.AddAsync("c", 4);
