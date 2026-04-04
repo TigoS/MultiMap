@@ -10,8 +10,8 @@
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the collection. Must not be null.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must not be null.</typeparam>
-    public interface ISimpleMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
-        where TKey : notnull
+    public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
         /// <summary>
@@ -30,29 +30,6 @@
         /// otherwise, <see langword="false"/> if the key already exists in the collection.
         /// </returns>
         public bool Add(TKey key, TValue value);
-
-        /// <summary>
-        /// Retrieves all values associated with the specified key.
-        /// </summary>
-        /// <param name="key">The key for which to retrieve the associated values. Cannot be null.</param>
-        /// <returns>
-        /// An enumerable collection of values associated with the specified key.
-        /// Throws a KeyNotFount exception if the key is not found.
-        /// </returns>
-        /// <exception cref="KeyNotFoundException">
-        /// Thrown when the specified key does not exist in the collection.
-        /// </exception>"
-        public IEnumerable<TValue> Get(TKey key);
-
-        /// <summary>
-        /// Retrieves the collection of values associated with the specified key, or an empty collection if the key does not exist.
-        /// </summary>
-        /// <param name="key">The key whose associated values are to be returned. Cannot be null.</param>
-        /// <returns>
-        /// An enumerable collection of values associated with the specified key.
-        /// If the key is not found, returns an empty collection.
-        /// </returns>
-        public IEnumerable<TValue> GetOrDefault(TKey key);
 
         /// <summary>
         /// Removes the entry with the specified key and value from the collection, if it exists.

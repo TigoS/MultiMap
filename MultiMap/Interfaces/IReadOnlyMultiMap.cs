@@ -8,21 +8,10 @@
     /// The interface guarantees that methods never return null collections; if a key is not present, an empty collection is returned instead. Thread safety and ordering of keys or values depend on the specific implementation.</remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null.</typeparam>
     /// <typeparam name="TValue">The type of values in the multi-map. Must not be null.</typeparam>
-    public interface IReadOnlyMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
-        where TKey : notnull
+    public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
+        where TKey : notnull, IEquatable<TKey>
         where TValue : notnull
     {
-        /// <summary>
-        /// Retrieves all values associated with the specified key.
-        /// </summary>
-        /// <param name="key">The key for which to retrieve values. Cannot be null.
-        /// If the key does not exist, an empty collection is returned.</param>
-        /// <returns>
-        /// An enumerable collection of values associated with the specified key.
-        /// The collection is empty if the key is not found.
-        /// </returns>
-        public IEnumerable<TValue> Get(TKey key);
-
         /// <summary>
         /// Attempts to retrieve the collection of values associated with the specified key.
         /// </summary>
@@ -65,5 +54,4 @@
         /// </summary>
         public IEnumerable<TKey> Keys { get; }
     }
-
 }
