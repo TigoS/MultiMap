@@ -22,6 +22,34 @@
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon>icons8-nuget-48.png</PackageIcon>
+    <Copyright>© 2026 TigoS</Copyright>
+    <PackageReleaseNotes>MultiMap v. 1.0.8
+
+Added:
+
+- `KeyCount` property to `IReadOnlyMultiMap` and all synchronous implementations — O(1) unique key count
+- `Values` property to `IReadOnlyMultiMap` and all synchronous implementations — all values across all keys
+- `GetValuesCount(TKey key)` method to `IReadOnlyMultiMap` — returns 0 if key doesn't exist
+- `this[TKey key]` indexer to `IReadOnlyMultiMap` — convenient dictionary-style access
+- `AddRange(IEnumerable&lt;KeyValuePair&lt;TKey, TValue&gt;&gt;)` overload to `IMultiMap` — bulk insert of key-value pairs
+- `RemoveRange(IEnumerable&lt;KeyValuePair&lt;TKey, TValue&gt;&gt;)` method to `IMultiMap` — bulk removal returning count of removed pairs
+- `RemoveWhere(TKey key, Predicate&lt;TValue&gt;)` method to `IMultiMap` — conditional removal by predicate
+- `GetKeyCountAsync()` method to `IReadOnlyMultiMapAsync` — async equivalent of `KeyCount`
+- `GetValuesCountAsync(TKey key)` method to `IReadOnlyMultiMapAsync` — async equivalent of `GetValuesCount`
+- `GetValuesAsync()` method to `IReadOnlyMultiMapAsync` — async equivalent of `Values`
+- `AddRangeAsync(IEnumerable&lt;KeyValuePair&lt;TKey, TValue&gt;&gt;)` overload to `IMultiMapAsync` — async bulk insert
+- `RemoveRangeAsync(IEnumerable&lt;KeyValuePair&lt;TKey, TValue&gt;&gt;)` method to `IMultiMapAsync` — async bulk removal
+- `RemoveWhereAsync(TKey key, Predicate&lt;TValue&gt;)` method to `IMultiMapAsync` — async conditional removal
+- BenchmarkDotNet benchmarks for all new members across all 6 implementations
+- "New Interface Members" and "Microbenchmarks" benchmark tables in README
+- 252 new unit tests covering all new interface members across all implementations
+
+Changed:
+
+- Test count increased from 771 to 1,023 tests
+- Code coverage: 94.6% line coverage, 89.1% branch coverage, 100% method coverage
+- Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
+- Comprehensive README rewrite: expanded interface documentation, advanced usage examples, migration guide for v1.0.8+, performance comparison tables</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
