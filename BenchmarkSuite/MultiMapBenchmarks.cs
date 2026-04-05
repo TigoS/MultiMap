@@ -81,59 +81,6 @@ public class MultiMapBenchmarks
         }
     }
 
-    // --- MultiMapSet microbenchmarks ---
-    [Benchmark]
-    public int MultiMapSet_Count_AfterAdd()
-    {
-        var map = new MultiMapSet<string, int>();
-        map.Add(Consts.Key1Prefix, 1);
-
-        return map.Count;
-    }
-
-    [Benchmark]
-    public int MultiMapSet_Count_AfterRemove()
-    {
-        var map = new MultiMapSet<string, int>();
-        map.Add(Consts.Key1Prefix, 1);
-        map.Remove(Consts.Key1Prefix, 1);
-
-        return map.Count;
-    }
-
-    [Benchmark]
-    public void MultiMapSet_RemoveKey()
-    {
-        var map = new MultiMapSet<string, int>();
-        map.Add(Consts.Key1Prefix, 1);
-        map.RemoveKey(Consts.Key1Prefix);
-    }
-
-    [Benchmark]
-    public bool MultiMapSet_ContainsKey_Missing()
-    {
-        var map = new MultiMapSet<string, int>();
-
-        return map.ContainsKey(Consts.KeyMissingPrefix);
-    }
-
-    [Benchmark]
-    public bool MultiMapSet_Remove_Missing()
-    {
-        var map = new MultiMapSet<string, int>();
-
-        return map.Remove(Consts.KeyMissingPrefix, 1);
-    }
-
-    [Benchmark]
-    public bool MultiMapSet_Add_Duplicate()
-    {
-        var map = new MultiMapSet<string, int>();
-        map.Add(Consts.Key1Prefix, 1);
-
-        return map.Add(Consts.Key1Prefix, 1);
-    }
-
     [Benchmark]
     public void MultiMapList_Add()
     {
@@ -1126,6 +1073,13 @@ public class MultiMapBenchmarks
     }
 
     [Benchmark]
+    public void MultiMapList_Clear_Empty()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Clear();
+    }
+
+    [Benchmark]
     public bool MultiMapList_ContainsKey_Missing()
     {
         var map = new MultiMapList<string, int>();
@@ -1145,6 +1099,66 @@ public class MultiMapBenchmarks
     public bool MultiMapList_Add_Duplicate()
     {
         var map = new MultiMapList<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+
+        return map.Add(Consts.Key1Prefix, 1);
+    }
+
+    // --- MultiMapSet microbenchmarks ---
+    [Benchmark]
+    public int MultiMapSet_Count_AfterAdd()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+
+        return map.Count;
+    }
+
+    [Benchmark]
+    public int MultiMapSet_Count_AfterRemove()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+        map.Remove(Consts.Key1Prefix, 1);
+
+        return map.Count;
+    }
+
+    [Benchmark]
+    public void MultiMapSet_RemoveKey()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+        map.RemoveKey(Consts.Key1Prefix);
+    }
+
+    [Benchmark]
+    public void MultiMapSet_Clear_Empty()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Clear();
+    }
+
+    [Benchmark]
+    public bool MultiMapSet_ContainsKey_Missing()
+    {
+        var map = new MultiMapSet<string, int>();
+
+        return map.ContainsKey(Consts.KeyMissingPrefix);
+    }
+
+    [Benchmark]
+    public bool MultiMapSet_Remove_Missing()
+    {
+        var map = new MultiMapSet<string, int>();
+
+        return map.Remove(Consts.KeyMissingPrefix, 1);
+    }
+
+    [Benchmark]
+    public bool MultiMapSet_Add_Duplicate()
+    {
+        var map = new MultiMapSet<string, int>();
         map.Add(Consts.Key1Prefix, 1);
 
         return map.Add(Consts.Key1Prefix, 1);
@@ -1236,6 +1250,13 @@ public class MultiMapBenchmarks
         var map = new SortedMultiMap<string, int>();
         map.Add(Consts.Key1Prefix, 1);
         map.RemoveKey(Consts.Key1Prefix);
+    }
+
+    [Benchmark]
+    public void SortedMultimap_Clear_Empty()
+    {
+        var map = new SortedMultiMap<string, int>();
+        map.Clear();
     }
 
     [Benchmark]
