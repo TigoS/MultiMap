@@ -429,8 +429,6 @@ namespace MultiMap.Entities
                 }
             }
 
-            _count -= removedCount;
-
             return removedCount;
         }
 
