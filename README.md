@@ -454,30 +454,30 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapAsyncTests` | 92 | 12.9% |
-| `MultiMapLockTests` | 67 | 9.4% |
-| `ConcurrentMultiMapTests` | 61 | 8.5% |
-| `SortedMultiMapTests` | 58 | 8.1% |
-| `MultiMapSetTests` | 55 | 7.7% |
-| `MultiMapListTests` | 54 | 7.6% |
-| `SimpleMultiMapTests` | 33 | 4.6% |
-| **Entity subtotal** | **420** | **58.8%** |
-| `MultiMapHelperAsyncTests` | 65 | 9.1% |
-| `MultiMapHelperWithMultiMapSetTests` | 34 | 4.8% |
-| `MultiMapHelperTests` | 28 | 3.9% |
-| `SimpleMultiMapHelperTests` | 28 | 3.9% |
-| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 3.4% |
-| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 3.4% |
-| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 3.4% |
-| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 3.2% |
-| `MultiMapHelperWithMultiMapLockTests` | 12 | 1.7% |
-| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 1.7% |
-| `MultiMapHelperWithMultiMapListTests` | 10 | 1.4% |
-| `MultiMapHelperWithSortedMultiMapTests` | 10 | 1.4% |
-| **Helper subtotal** | **294** | **41.2%** |
-| **Total** | **714** | **100%** |
+| `MultiMapAsyncTests` | 135 | 13.8% |
+| `MultiMapLockTests` | 103 | 10.5% |
+| `SortedMultiMapTests` | 127 | 13.0% |
+| `MultiMapSetTests` | 119 | 12.2% |
+| `MultiMapListTests` | 121 | 12.4% |
+| `ConcurrentMultiMapTests` | 112 | 11.5% |
+| `SimpleMultiMapTests` | 33 | 3.4% |
+| **Entity subtotal** | **750** | **76.8%** |
+| `MultiMapHelperAsyncTests` | 65 | 6.6% |
+| `MultiMapHelperWithMultiMapSetTests` | 34 | 3.5% |
+| `MultiMapHelperTests` | 28 | 2.9% |
+| `SimpleMultiMapHelperTests` | 28 | 2.9% |
+| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 2.5% |
+| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 2.5% |
+| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 2.5% |
+| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 2.4% |
+| `MultiMapHelperWithMultiMapLockTests` | 12 | 1.2% |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 1.2% |
+| `MultiMapHelperWithMultiMapListTests` | 10 | 1.0% |
+| `MultiMapHelperWithSortedMultiMapTests` | 10 | 1.0% |
+| **Helper subtotal** | **294** | **30.1%** |
+| **Total** | **978** | **100%** |
 
-> **Coverage distribution:** ~59% of tests target the 7 core implementations, while ~41% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, and deep iteration tests that exercise helpers with all implementations.
+> **Coverage distribution:** ~77% of tests target the 7 core implementations (including new interface member tests), while ~30% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, and deep iteration tests that exercise helpers with all implementations.
 
 ### Code Coverage (Coverlet)
 
@@ -491,8 +491,8 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **98.7%** (MultiMap assembly) |
-| **Branch coverage** | **98.4%** (MultiMap assembly) |
+| **Line coverage** | **90.4%** (MultiMap assembly) |
+| **Branch coverage** | **82.7%** (MultiMap assembly) |
 | **Method coverage** | **100%** (All public methods) |
 
 #### Per-Class Breakdown
@@ -500,7 +500,7 @@ dotnet test --collect:"XPlat Code Coverage"
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
 | `ConcurrentMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
-| `MultiMapAsync<TKey, TValue>` | 100% | 100% | ✅ Full |
+| `MultiMapAsync<TKey, TValue>` | 97.5% | 95.8% | ✅ Full |
 | `MultiMapList<TKey, TValue>` | 100% | 100% | ✅ Full |
 | `MultiMapLock<TKey, TValue>` | 100% | 95.4% | ✅ Full |
 | `MultiMapSet<TKey, TValue>` | 100% | 100% | ✅ Full |
@@ -510,7 +510,8 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Program` | 0% | 0% | ➖ Entry point only |
 
 > **Notes:**
-> - **All 7 entity implementations** achieve **100% line coverage**.
+> - **6 of 7 entity implementations** achieve **100% line coverage**.
+> - `MultiMapAsync` achieves **97.5% line coverage** with minor async edge cases in slow paths.
 > - `MultiMapHelper` achieves **100% line and branch coverage** for all extension methods.
 > - `MultiMapLock` has 95.4% branch coverage due to async/dispose pattern edge cases.
 > - `Program` class (0% coverage) is the application entry point for the Demo project — excluded from quality targets.
