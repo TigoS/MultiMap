@@ -299,7 +299,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.4" />
+<PackageReference Include="MultiMap" Version="1.0.8" />
 ```
 
 ## Usage
@@ -839,85 +839,6 @@ public void DisplayStats(IReadOnlyMultiMap<string, int> map)
 }
 ```
 
-#### New Members to Adopt
-
-##### 1. KeyCount Property
-
-**Before:** Counting keys required materializing the collection
-```csharp
-int keyCount = map.Keys.Count();  // O(k) - enumerates all keys
-```
-
-**After:** Direct O(1) property access
-```csharp
-int keyCount = map.KeyCount;  // O(1) - instant
-```
-
-##### 2. Values Property
-
-**Before:** Getting all values required flattening
-```csharp
-var allValues = map.Flatten().Select(kvp => kvp.Value);
-```
-
-**After:** Direct property access
-```csharp
-IEnumerable<TValue> allValues = map.Values;  // Cleaner and more intuitive
-```
-
-##### 3. GetValuesCount() Method
-
-**Before:** Counting values for a key required materializing the collection
-```csharp
-int count = map.Get("key").Count();  // Could throw if key missing
-```
-
-**After:** Direct count method with safe handling
-```csharp
-int count = map.GetValuesCount("key");  // Returns 0 if key doesn't exist
-```
-
-##### 4. AddRange with KeyValuePair Collection
-
-**Before:** Only AddRange(key, values) was available
-```csharp
-foreach (var kvp in items)
-{
-    map.Add(kvp.Key, kvp.Value);
-}
-```
-
-**After:** Bulk insert with AddRange overload (much faster!)
-```csharp
-var items = new[]
-{
-    new KeyValuePair<string, int>("A", 1),
-    new KeyValuePair<string, int>("B", 2)
-};
-map.AddRange(items);  // 2-7x faster than individual adds
-```
-
-##### 5. RemoveRange Method
-
-**New capability:** Bulk removal with count of removed pairs
-```csharp
-var toRemove = new[]
-{
-    new KeyValuePair<string, int>("A", 1),
-    new KeyValuePair<string, int>("B", 2)
-};
-int removedCount = map.RemoveRange(toRemove);  // Returns number actually removed
-```
-
-##### 6. RemoveWhere Method
-
-**New capability:** Conditional removal with predicate
-```csharp
-// Remove all even numbers associated with "numbers" key
-int removed = map.RemoveWhere("numbers", n => n % 2 == 0);
-Console.WriteLine($"Removed {removed} even numbers");
-```
-
 #### Breaking Changes
 
 **Get() Method Behavior Change (v1.0.7):**
@@ -966,7 +887,7 @@ if (map.TryGet("key", out var values))
 
 1. **Update NuGet package:**
    ```bash
-   dotnet add package MultiMap --version 1.0.8
+   dotnet add package MultiMap --version 1.0.7
    ```
 
 2. **Replace `Get()` calls for optional keys:**
@@ -975,20 +896,192 @@ if (map.TryGet("key", out var values))
 3. **Update method signatures:**
    - Change parameters from `IMultiMap<TKey, TValue>` to `IReadOnlyMultiMap<TKey, TValue>` for methods that only read
 
-4. **Optimize performance:**
-   - Replace `map.Keys.Count()` with `map.KeyCount`
-   - Replace `map.Get(key).Count()` with `map.GetValuesCount(key)`
-   - Replace loops with `AddRange(items)` for bulk inserts
-
-5. **Adopt new bulk operations:**
-   - Use `RemoveRange(items)` instead of loops for bulk removal
-   - Use `RemoveWhere(key, predicate)` for conditional removal
-
 #### Compatibility
 
 All existing code using `IMultiMap`, `ISimpleMultiMap`, and `IMultiMapAsync` interfaces will continue to work, except for code that relied on `Get()` returning empty collections for missing keys. Update those cases to use `GetOrDefault()` or `TryGet()`.
 
+### Upgrading to Version 1.0.8+
+
+Version 1.0.8 adds new properties, methods, and bulk operations to `IReadOnlyMultiMap`, `IMultiMap`, `IReadOnlyMultiMapAsync`, and `IMultiMapAsync`. All additions are **non-breaking** — existing code compiles and runs without changes.
+
+#### Interface Changes
+
+**New members on `IReadOnlyMultiMap<TKey, TValue>`:**
+
+| Member | Type | Description |
+|---|---|---|
+| `KeyCount` | `int` property | Number of unique keys — O(1) |
+| `Values` | `IEnumerable<TValue>` property | All values across all keys |
+| `GetValuesCount(key)` | `int` method | Count of values for a key (returns 0 if key missing) |
+| `this[key]` | Indexer | Convenient value access by key |
+
+**New members on `IMultiMap<TKey, TValue>`:**
+
+| Member | Type | Description |
+|---|---|---|
+| `AddRange(items)` | `void` method | Bulk insert from `IEnumerable<KeyValuePair>` |
+| `RemoveRange(items)` | `int` method | Bulk removal; returns count of removed pairs |
+| `RemoveWhere(key, predicate)` | `int` method | Conditional removal by predicate; returns count removed |
+
+**New members on `IReadOnlyMultiMapAsync<TKey, TValue>`:**
+
+| Member | Type | Description |
+|---|---|---|
+| `GetKeyCountAsync()` | `ValueTask<int>` | Async equivalent of `KeyCount` |
+| `GetValuesCountAsync(key)` | `ValueTask<int>` | Async equivalent of `GetValuesCount` |
+| `GetValuesAsync()` | `ValueTask<IEnumerable<TValue>>` | Async equivalent of `Values` |
+
+**New members on `IMultiMapAsync<TKey, TValue>`:**
+
+| Member | Type | Description |
+|---|---|---|
+| `AddRangeAsync(items)` | `Task` | Async bulk insert from `IEnumerable<KeyValuePair>` |
+| `RemoveRangeAsync(items)` | `ValueTask<int>` | Async bulk removal; returns count removed |
+| `RemoveWhereAsync(key, predicate)` | `ValueTask<int>` | Async conditional removal by predicate |
+
+#### New Members to Adopt
+
+##### 1. KeyCount Property
+
+**Before:** Counting keys required materializing the collection
+```csharp
+int keyCount = map.Keys.Count();  // O(k) - enumerates all keys
+```
+
+**After:** Direct O(1) property access
+```csharp
+int keyCount = map.KeyCount;  // O(1) - instant
+```
+
+##### 2. Values Property
+
+**Before:** Getting all values required flattening
+```csharp
+var allValues = map.Flatten().Select(kvp => kvp.Value);
+```
+
+**After:** Direct property access
+```csharp
+IEnumerable<TValue> allValues = map.Values;  // Cleaner and more intuitive
+```
+
+##### 3. GetValuesCount() Method
+
+**Before:** Counting values for a key required materializing the collection
+```csharp
+int count = map.Get("key").Count();  // Could throw if key missing
+```
+
+**After:** Direct count method with safe handling
+```csharp
+int count = map.GetValuesCount("key");  // Returns 0 if key doesn't exist
+```
+
+##### 4. Indexer Access
+
+**Before:** Only `Get()` or `GetOrDefault()` available
+```csharp
+var values = map.Get("key");  // Throws if key missing
+```
+
+**After:** Familiar indexer syntax
+```csharp
+var values = map["key"];  // Direct access like Dictionary<TKey, TValue>
+```
+
+##### 5. AddRange with KeyValuePair Collection
+
+**Before:** Only `AddRange(key, values)` was available
+```csharp
+foreach (var kvp in items)
+{
+    map.Add(kvp.Key, kvp.Value);
+}
+```
+
+**After:** Bulk insert with AddRange overload (much faster!)
+```csharp
+var items = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("B", 2)
+};
+map.AddRange(items);  // 2-7x faster than individual adds
+```
+
+##### 6. RemoveRange Method
+
+**New capability:** Bulk removal with count of removed pairs
+```csharp
+var toRemove = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("B", 2)
+};
+int removedCount = map.RemoveRange(toRemove);  // Returns number actually removed
+```
+
+##### 7. RemoveWhere Method
+
+**New capability:** Conditional removal with predicate
+```csharp
+// Remove all even numbers associated with "numbers" key
+int removed = map.RemoveWhere("numbers", n => n % 2 == 0);
+Console.WriteLine($"Removed {removed} even numbers");
+```
+
+#### Recommended Upgrade Steps
+
+1. **Update NuGet package:**
+   ```bash
+   dotnet add package MultiMap --version 1.0.8
+   ```
+
+2. **Optimize performance:**
+   - Replace `map.Keys.Count()` with `map.KeyCount`
+   - Replace `map.Get(key).Count()` with `map.GetValuesCount(key)`
+   - Replace loops with `AddRange(items)` for bulk inserts
+
+3. **Adopt new bulk operations:**
+   - Use `RemoveRange(items)` instead of loops for bulk removal
+   - Use `RemoveWhere(key, predicate)` for conditional removal
+
+4. **Use indexer for cleaner code:**
+   - Replace `map.Get(key)` with `map[key]` where appropriate
+
+#### Compatibility
+
+All changes in v1.0.8 are **additive**. Existing code targeting v1.0.7 compiles without modification. If you implement `IMultiMap` or `IMultiMapAsync` directly, you will need to add the new members to your implementation.
+
 ## Release Notes
+
+### 1.0.8
+
+**Added**
+
+- `KeyCount` property to `IReadOnlyMultiMap` and all synchronous implementations — O(1) unique key count
+- `Values` property to `IReadOnlyMultiMap` and all synchronous implementations — all values across all keys
+- `GetValuesCount(TKey key)` method to `IReadOnlyMultiMap` — returns 0 if key doesn't exist
+- `this[TKey key]` indexer to `IReadOnlyMultiMap` — convenient dictionary-style access
+- `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` overload to `IMultiMap` — bulk insert of key-value pairs
+- `RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>>)` method to `IMultiMap` — bulk removal returning count of removed pairs
+- `RemoveWhere(TKey key, Predicate<TValue>)` method to `IMultiMap` — conditional removal by predicate
+- `GetKeyCountAsync()` method to `IReadOnlyMultiMapAsync` — async equivalent of `KeyCount`
+- `GetValuesCountAsync(TKey key)` method to `IReadOnlyMultiMapAsync` — async equivalent of `GetValuesCount`
+- `GetValuesAsync()` method to `IReadOnlyMultiMapAsync` — async equivalent of `Values`
+- `AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>>)` overload to `IMultiMapAsync` — async bulk insert
+- `RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>>)` method to `IMultiMapAsync` — async bulk removal
+- `RemoveWhereAsync(TKey key, Predicate<TValue>)` method to `IMultiMapAsync` — async conditional removal
+- BenchmarkDotNet benchmarks for all new members across all 6 implementations
+- "New Interface Members" and "Microbenchmarks" benchmark tables in README
+- 252 new unit tests covering all new interface members across all implementations
+
+**Changed**
+
+- Test count increased from 771 to **1,023 tests**
+- Code coverage: **94.6% line coverage**, **89.1% branch coverage**, **100% method coverage**
+- Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
+- Comprehensive README rewrite: expanded interface documentation, advanced usage examples, migration guide for v1.0.8+, performance comparison tables
 
 ### 1.0.7
 
