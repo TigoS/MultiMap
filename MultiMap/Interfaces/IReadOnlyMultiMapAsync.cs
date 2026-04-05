@@ -79,6 +79,13 @@
         public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously gets an enumerable collection of keys contained in the multimap.
+        /// </summary>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <returns>An enumerable collection of keys.</returns>
+        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Asynchronously gets the number of values associated with the specified key.
         /// </summary>
         /// <param name="key">The key whose associated value count is to be retrieved.</param>
@@ -87,25 +94,10 @@
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Asynchronously gets an enumerable collection of keys contained in the multimap.
-        /// </summary>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns>An enumerable collection of keys.</returns>
-        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
         /// Asynchronously retrieves a collection of values of type TValue.
         /// </summary>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A ValueTask that represents the asynchronous operation. The result contains an enumerable collection of values of type TValue.</returns>
         public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>
-        /// Returns an asynchronous enumerator that iterates through the collection of key/value pairs.
-        /// </summary>
-        /// <remarks>Enumeration is performed asynchronously and supports cancellation via the provided token. The enumerator should be disposed asynchronously after use.</remarks>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous iteration.</param>
-        /// <returns>An asynchronous enumerator that can be used to iterate through the collection of key/value pairs.</returns>
-        public new IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default);
     }
 }

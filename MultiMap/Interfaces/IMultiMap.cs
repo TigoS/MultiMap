@@ -59,16 +59,13 @@
         public bool Remove(TKey key, TValue value);
 
         /// <summary>
-        /// Removes all values associated with the specified key.
+        /// Removes the specified key/value pairs from the collection.
         /// </summary>
-        /// <remarks>Use this method to remove all entries for a given key.
-        /// If the key does not exist, no action is taken and the method returns false.</remarks>
-        /// <param name="key">The key whose values are to be removed. Cannot be null.</param>
-        /// <returns>
-        /// <see langword="true"/> if the key was found and its values were removed;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        public bool RemoveKey(TKey key);
+        /// <remarks>If a specified key/value pair does not exist in the collection, it is ignored.
+        /// The method does not throw an exception if some or all pairs are not found.</remarks>
+        /// <param name="items">The key/value pairs to remove from the collection. Each pair is matched by key and value; only pairs that exist in the collection are removed. Cannot be null.</param>
+        /// <returns>The number of key/value pairs that were successfully removed from the collection.</returns>
+        public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
 
         /// <summary>
         /// Removes all values associated with the specified key that match the given predicate.
@@ -80,11 +77,16 @@
         public int RemoveWhere(TKey key, Predicate<TValue> predicate);
 
         /// <summary>
-        /// Removes the specified key/value pairs from the collection.
+        /// Removes all values associated with the specified key.
         /// </summary>
-        /// <remarks>If a specified key does not exist in the collection, it is ignored. The operation does not throw an exception for missing keys.</remarks>
-        /// <param name="items">The collection of key/value pairs to remove from the collection. Each pair specifies a key and its associated value to be removed.</param>
-        public void RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
+        /// <remarks>Use this method to remove all entries for a given key.
+        /// If the key does not exist, no action is taken and the method returns false.</remarks>
+        /// <param name="key">The key whose values are to be removed. Cannot be null.</param>
+        /// <returns>
+        /// <see langword="true"/> if the key was found and its values were removed;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        public bool RemoveKey(TKey key);
 
         /// <summary>
         /// Removes all items from the collection.
