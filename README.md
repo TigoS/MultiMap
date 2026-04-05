@@ -787,7 +787,7 @@ Edge-case and diagnostic benchmarks for the four `IMultiMap` implementations in 
 | **ContainsKey + Get** | 38 ns | 34 ns | 179 ns | 44 ns |
 | **Count after Add** | 29 ns | 26 ns | 144 ns | 23 ns |
 | **Count after Remove** | 39 ns | 30 ns | 171 ns | 31 ns |
-| **Clear (empty)** | — | — | 279 ns | — |
+| **Clear (empty)** | 3.59 ns | 3.85 ns | 257 ns | 7.76 ns |
 | **Keys Enumeration** (100 keys) | 7,697 ns | 5,998 ns | 16,213 ns | 91,589 ns |
 
 ### Key Takeaways
