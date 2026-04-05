@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.7%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-94.6%25-brightgreen)]()
 
 A **.NET 10** library
 
@@ -48,8 +48,8 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Thread-safe variants**: per-key locked (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Full XML documentation** for IntelliSense support
-- **771 unit tests** with NUnit 4
-- **98.7% line coverage** via Coverlet (all 7 implementations at 100%)
+- **1023 unit tests** with NUnit 4
+- **94.6% line coverage** via Coverlet (5 of 7 implementations at 100%)
 
 ## Project Structure
 
@@ -394,7 +394,7 @@ C: 3
 
 ## Testing
 
-The library includes **771 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **1023 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
 ```shell
 dotnet test
@@ -404,20 +404,20 @@ dotnet test
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapAsyncTests` | 110 | Async implementation |
-| `MultiMapLockTests` | 76 | RW Lock implementation |
-| `ConcurrentMultiMapTests` | 70 | Per-key locked concurrent implementation |
-| `SortedMultiMapTests` | 67 | Sorted implementation |
-| `MultiMapSetTests` | 64 | HashSet-based implementation |
-| `MultiMapListTests` | 64 | List-based implementation |
+| `MultiMapAsyncTests` | 148 | Async implementation |
+| `ConcurrentMultiMapTests` | 119 | Per-key locked concurrent implementation |
+| `MultiMapSetTests` | 119 | HashSet-based implementation |
+| `SortedMultiMapTests` | 127 | Sorted implementation |
+| `MultiMapListTests` | 121 | List-based implementation |
+| `MultiMapLockTests` | 103 | RW Lock implementation |
 | `SimpleMultiMapTests` | 33 | Lightweight implementation |
-| **Entity subtotal** | **484** | |
+| **Entity subtotal** | **770** | |
 
 ### Test Coverage by Extension Methods
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapHelperAsyncTests` | 65 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
+| `MultiMapHelperAsyncTests` | 95 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
 | `MultiMapHelperWithMultiMapSetTests` | 34 | Extensions with `MultiMapSet` + stress tests |
 | `MultiMapHelperTests` | 28 | `IMultiMap` extensions (primary) |
 | `SimpleMultiMapHelperTests` | 28 | `ISimpleMultiMap` extensions |
@@ -429,11 +429,11 @@ dotnet test
 | `MultiMapHelperWithConcurrentMultiMapTests` | 12 | Extensions + concurrent stress tests |
 | `MultiMapHelperWithMultiMapListTests` | 10 | Extensions with `MultiMapList` + stress tests |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | Extensions with `SortedMultiMap` + stress tests |
-| **Helper subtotal** | **294** | |
+| **Helper subtotal** | **324** | |
 
 | | |
 |---|---|
-| **Total** | **771 tests** |
+| **Total** | **1023 tests** |
 
 ### Test Categories
 
@@ -454,30 +454,30 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapAsyncTests` | 135 | 13.8% |
-| `MultiMapLockTests` | 103 | 10.5% |
-| `SortedMultiMapTests` | 127 | 13.0% |
-| `MultiMapSetTests` | 119 | 12.2% |
-| `MultiMapListTests` | 121 | 12.4% |
-| `ConcurrentMultiMapTests` | 112 | 11.5% |
-| `SimpleMultiMapTests` | 33 | 3.4% |
-| **Entity subtotal** | **750** | **76.8%** |
-| `MultiMapHelperAsyncTests` | 65 | 6.6% |
-| `MultiMapHelperWithMultiMapSetTests` | 34 | 3.5% |
-| `MultiMapHelperTests` | 28 | 2.9% |
-| `SimpleMultiMapHelperTests` | 28 | 2.9% |
-| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 2.5% |
-| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 2.5% |
-| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 2.5% |
-| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 2.4% |
+| `MultiMapAsyncTests` | 148 | 14.5% |
+| `ConcurrentMultiMapTests` | 119 | 11.6% |
+| `MultiMapSetTests` | 119 | 11.6% |
+| `SortedMultiMapTests` | 127 | 12.4% |
+| `MultiMapListTests` | 121 | 11.8% |
+| `MultiMapLockTests` | 103 | 10.1% |
+| `SimpleMultiMapTests` | 33 | 3.2% |
+| **Entity subtotal** | **770** | **75.3%** |
+| `MultiMapHelperAsyncTests` | 95 | 9.3% |
+| `MultiMapHelperWithMultiMapSetTests` | 34 | 3.3% |
+| `MultiMapHelperTests` | 28 | 2.7% |
+| `SimpleMultiMapHelperTests` | 28 | 2.7% |
+| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 2.3% |
+| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 2.3% |
+| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 2.3% |
+| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 2.2% |
 | `MultiMapHelperWithMultiMapLockTests` | 12 | 1.2% |
 | `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 1.2% |
 | `MultiMapHelperWithMultiMapListTests` | 10 | 1.0% |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | 1.0% |
-| **Helper subtotal** | **294** | **30.1%** |
-| **Total** | **978** | **100%** |
+| **Helper subtotal** | **324** | **31.7%** |
+| **Total** | **1023** | **100%** |
 
-> **Coverage distribution:** ~77% of tests target the 7 core implementations (including new interface member tests), while ~30% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, and deep iteration tests that exercise helpers with all implementations.
+> **Coverage distribution:** ~75% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, and slow path contention tests), while ~32% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper.
 
 ### Code Coverage (Coverlet)
 
@@ -491,16 +491,16 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **90.4%** (MultiMap assembly) |
-| **Branch coverage** | **82.7%** (MultiMap assembly) |
+| **Line coverage** | **94.6%** (MultiMap assembly) |
+| **Branch coverage** | **89.1%** (MultiMap assembly) |
 | **Method coverage** | **100%** (All public methods) |
 
 #### Per-Class Breakdown
 
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
-| `MultiMapAsync<TKey, TValue>` | 97.5% | 95.8% | ✅ Full |
+| `ConcurrentMultiMap<TKey, TValue>` | 98.8% | 97.2% | ✅ Full |
+| `MultiMapAsync<TKey, TValue>` | 89.3% | 90.0% | ✅ Full |
 | `MultiMapList<TKey, TValue>` | 100% | 100% | ✅ Full |
 | `MultiMapLock<TKey, TValue>` | 100% | 95.4% | ✅ Full |
 | `MultiMapSet<TKey, TValue>` | 100% | 100% | ✅ Full |
@@ -510,9 +510,10 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Program` | 0% | 0% | ➖ Entry point only |
 
 > **Notes:**
-> - **6 of 7 entity implementations** achieve **100% line coverage**.
-> - `MultiMapAsync` achieves **97.5% line coverage** with minor async edge cases in slow paths.
-> - `MultiMapHelper` achieves **100% line and branch coverage** for all extension methods.
+> - **5 of 7 entity implementations** achieve **100% line coverage**.
+> - `ConcurrentMultiMap` achieves **98.8% line coverage**. Uncovered lines are verify-after-lock race condition paths that are extremely difficult to trigger consistently.
+> - `MultiMapAsync` achieves **89.3% line coverage** with async edge cases in slow paths under high concurrency.
+> - `MultiMapHelper` achieves **100% line and branch coverage** for all extension methods, including async variants.
 > - `MultiMapLock` has 95.4% branch coverage due to async/dispose pattern edge cases.
 > - `Program` class (0% coverage) is the application entry point for the Demo project — excluded from quality targets.
 
