@@ -64,6 +64,15 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            foreach (var item in items)
+            {
+                Add(item.Key, item.Value);
+            }
+        }
+
+        /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
@@ -112,6 +121,40 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            int removedCount = 0;
+            foreach (var item in items)
+            {
+                if (Remove(item.Key, item.Value))
+                {
+                    removedCount++;
+                }
+            }
+
+            return removedCount;
+        }
+
+        /// <inheritdoc/>
+        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
+        {
+            int removedCount = 0;
+            var itemsToRemove = _dictionary.TryGetValue(key, out var list)
+                ? list.Where(value => predicate(value)).Select(value => new KeyValuePair<TKey, TValue>(key, value)).ToList()
+                : [];
+
+            foreach (var item in itemsToRemove)
+            {
+                if (Remove(item.Key, item.Value))
+                {
+                    removedCount++;
+                }
+            }
+
+            return removedCount;
+        }
+
+        /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
@@ -140,6 +183,18 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
+
+        /// <inheritdoc/>
+        public int KeyCount => Keys.Count();
+
+        /// <inheritdoc/>
+        public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(hashset => hashset);
+
+        /// <inheritdoc/>
+        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var hashset) ? hashset.Count() : 0;
+
+        /// <inheritdoc/>
+        public IEnumerable<TValue> this[TKey key] => Get(key);
 
         /// <inheritdoc/>
         public void Clear()

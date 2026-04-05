@@ -126,6 +126,51 @@ namespace MultiMap.Entities
             }
         }
 
+        // ── AddRangeAsync (overload for params array) ─────────
+
+        /// <inheritdoc/>
+        public Task AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return AddRangeCoreAsync(items);
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return AddRangeSlowAsync(waitTask, items);
+        }
+
+        private async Task AddRangeCoreAsync(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            foreach (var item in items)
+            {
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+                hashset ??= new HashSet<TValue>();
+            
+                if (hashset.Add(item.Value))
+                    _count++;
+            }
+        }
+
+        private async Task AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            await waitTask;
+            try
+            {
+                await AddRangeCoreAsync(items);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         // ── GetAsync ──────────────────────────────────────────
 
         /// <inheritdoc/>
@@ -302,6 +347,104 @@ namespace MultiMap.Entities
             }
         }
 
+        // ── RemoveRangeAsync ──────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<int>(RemoveRangeCore(items));
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return RemoveRangeSlowAsync(waitTask, items);
+        }
+
+        private int RemoveRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            int removedCount = 0;
+            foreach (var item in items)
+            {
+                if (RemoveCore(item.Key, item.Value))
+                {
+                    removedCount++;
+                }
+            }
+
+            return removedCount;
+        }
+
+        private async ValueTask<int> RemoveRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            await waitTask;
+            try
+            {
+                return RemoveRangeCore(items);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        // ── RemoveWhereAsync ──────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<int>(RemoveWhereCore(key, predicate));
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return RemoveWhereSlowAsync(waitTask, key, predicate);
+        }
+
+        private int RemoveWhereCore(TKey key, Predicate<TValue> predicate)
+        {
+            int removedCount = 0;
+            var itemsToRemove = _dictionary.TryGetValue(key, out var list)
+                ? list.Where(value => predicate(value)).Select(value => new KeyValuePair<TKey, TValue>(key, value)).ToList()
+                : [];
+
+            foreach (var item in itemsToRemove)
+            {
+                if (RemoveCore(item.Key, item.Value))
+                {
+                    removedCount++;
+                }
+            }
+
+            return removedCount;
+        }
+
+        private async ValueTask<int> RemoveWhereSlowAsync(Task waitTask, TKey key, Predicate<TValue> predicate)
+        {
+            await waitTask;
+            try
+            {
+                return RemoveWhereCore(key, predicate);
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         // ── RemoveKeyAsync ────────────────────────────────────
 
         /// <inheritdoc/>
@@ -446,6 +589,138 @@ namespace MultiMap.Entities
             }
         }
 
+        // ── GetKeysAsync ──────────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<IEnumerable<TKey>>(_dictionary.Keys.ToArray());
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return GetKeysSlowAsync(waitTask);
+        }
+
+        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(Task waitTask)
+        {
+            await waitTask;
+            try
+            {
+                return _dictionary.Keys.ToArray();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        // ── GetKeyCountAsync ──────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<int>(_dictionary.Keys.Count());
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return GetKeysCountSlowAsync(waitTask);
+        }
+
+        private async ValueTask<int> GetKeysCountSlowAsync(Task waitTask)
+        {
+            await waitTask;
+            try
+            {
+                return _dictionary.Keys.Count();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        // ── GetValuesAsync ────────────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<IEnumerable<TValue>>(_dictionary.Values.SelectMany(v => v.ToArray()));
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return GetValuesSlowAsync(waitTask);
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetValuesSlowAsync(Task waitTask)
+        {
+            await waitTask;
+            try
+            {
+                return _dictionary.Values.SelectMany(v => v.ToArray());
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
+        // ── GetValuesCountAsync ───────────────────────────────
+
+        /// <inheritdoc/>
+        public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
+        {
+            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<int>(_dictionary.Values.SelectMany(v => v).Count());
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }
+            return GetValuesCountSlowAsync(waitTask);
+        }
+
+        private async ValueTask<int> GetValuesCountSlowAsync(Task waitTask)
+        {
+            await waitTask;
+            try
+            {
+                return _dictionary.Values.SelectMany(v => v).Count();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         // ── ClearAsync ────────────────────────────────────────
 
         /// <inheritdoc/>
@@ -475,39 +750,6 @@ namespace MultiMap.Entities
             {
                 _dictionary.Clear();
                 _count = 0;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetKeysAsync ──────────────────────────────────────
-
-        /// <inheritdoc/>
-        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
-        {
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (waitTask.IsCompletedSuccessfully)
-            {
-                try
-                {
-                    return new ValueTask<IEnumerable<TKey>>(_dictionary.Keys.ToArray());
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            }
-            return GetKeysSlowAsync(waitTask);
-        }
-
-        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(Task waitTask)
-        {
-            await waitTask;
-            try
-            {
-                return _dictionary.Keys.ToArray();
             }
             finally
             {

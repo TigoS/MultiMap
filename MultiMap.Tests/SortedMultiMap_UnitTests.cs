@@ -700,4 +700,434 @@ public class SortedMultiMapTests
 
         Assert.That(_map.Count, Is.EqualTo(totalCount));
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Tests for newly added interface members
+    // ────────────────────────────────────────────────────────────────────
+
+    #region KeyCount Property Tests
+
+    [Test]
+    public void KeyCount_EmptyMap_ReturnsZero()
+    {
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void KeyCount_AfterAddingSingleKey_ReturnsOne()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void KeyCount_AfterAddingMultipleKeys_ReturnsCorrectCount()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Add("c", 3);
+
+        Assert.That(_map.KeyCount, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void KeyCount_AfterAddingMultipleValuesToSameKey_ReturnsOne()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void KeyCount_AfterRemovingKey_DecreasesCorrectly()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Add("c", 3);
+
+        _map.RemoveKey("b");
+
+        Assert.That(_map.KeyCount, Is.EqualTo(2));
+    }
+
+    #endregion
+
+    #region Values Property Tests
+
+    [Test]
+    public void Values_EmptyMap_ReturnsEmptyCollection()
+    {
+        Assert.That(_map.Values, Is.Empty);
+    }
+
+    [Test]
+    public void Values_SingleKey_ReturnsAllValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        var values = _map.Values.ToArray();
+
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public void Values_MultipleKeys_ReturnsAllValuesFromAllKeys()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 10);
+        _map.Add("b", 20);
+
+        var values = _map.Values.ToArray();
+
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2, 10, 20 }));
+    }
+
+    [Test]
+    public void Values_AfterRemoval_ReflectsChanges()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 10);
+
+        _map.Remove("a", 1);
+
+        var values = _map.Values.ToArray();
+
+        Assert.That(values, Is.EquivalentTo(new[] { 2, 10 }));
+    }
+
+    #endregion
+
+    #region GetValuesCount Method Tests
+
+    [Test]
+    public void GetValuesCount_EmptyMap_ReturnsZero()
+    {
+        Assert.That(_map.GetValuesCount("a"), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void GetValuesCount_SingleValue_ReturnsOne()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.GetValuesCount("a"), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void GetValuesCount_MultipleValues_ReturnsCorrectCount()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        Assert.That(_map.GetValuesCount("a"), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void GetValuesCount_NonExistentKey_ReturnsZero()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.GetValuesCount("b"), Is.EqualTo(0));
+    }
+
+    #endregion
+
+    #region Indexer Tests
+
+    [Test]
+    public void Indexer_ExistingKey_ReturnsValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var values = _map["a"];
+
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Indexer_NonExistentKey_ThrowsKeyNotFoundException()
+    {
+        Assert.Throws<KeyNotFoundException>(() =>
+        {
+            var _ = _map["nonexistent"];
+        });
+    }
+
+    [Test]
+    public void Indexer_AfterRemoval_ReflectsChanges()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        _map.Remove("a", 2);
+
+        var values = _map["a"];
+
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 3 }));
+    }
+
+    #endregion
+
+    #region AddRange with KeyValuePair Tests
+
+    [Test]
+    public void AddRangeKeyValuePairs_EmptyCollection_DoesNotChangeMap()
+    {
+        var items = Enumerable.Empty<KeyValuePair<string, int>>();
+
+        _map.AddRange(items);
+
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_SinglePair_AddsSuccessfully()
+    {
+        var items = new[] { new KeyValuePair<string, int>("a", 1) };
+
+        _map.AddRange(items);
+
+        Assert.That(_map.Contains("a", 1), Is.True);
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_MultiplePairs_AddsAll()
+    {
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("b", 10)
+        };
+
+        _map.AddRange(items);
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(_map.GetOrDefault("b"), Is.EquivalentTo(new[] { 10 }));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_DuplicatePairs_IgnoresDuplicates()
+    {
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 1)
+        };
+
+        _map.AddRange(items);
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_ToExistingMap_AppendsCorrectly()
+    {
+        _map.Add("a", 1);
+
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("b", 10)
+        };
+
+        _map.AddRange(items);
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    #endregion
+
+    #region RemoveRange Tests
+
+    [Test]
+    public void RemoveRange_EmptyCollection_DoesNotChangeMap()
+    {
+        _map.Add("a", 1);
+        var items = Enumerable.Empty<KeyValuePair<string, int>>();
+
+        int removed = _map.RemoveRange(items);
+
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_SinglePair_RemovesSuccessfully()
+    {
+        _map.Add("a", 1);
+        var items = new[] { new KeyValuePair<string, int>("a", 1) };
+
+        int removed = _map.RemoveRange(items);
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveRange_MultiplePairs_RemovesAll()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 10);
+
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 10)
+        };
+
+        int removed = _map.RemoveRange(items);
+
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(_map.Count, Is.EqualTo(1));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
+    }
+
+    [Test]
+    public void RemoveRange_NonExistentPairs_ReturnsZero()
+    {
+        _map.Add("a", 1);
+
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("b", 10),
+            new KeyValuePair<string, int>("c", 20)
+        };
+
+        int removed = _map.RemoveRange(items);
+
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_MixedExistentAndNonExistent_RemovesOnlyExistent()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 999),
+            new KeyValuePair<string, int>("b", 10)
+        };
+
+        int removed = _map.RemoveRange(items);
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_RemovesLastValueForKey_RemovesKey()
+    {
+        _map.Add("a", 1);
+
+        var items = new[] { new KeyValuePair<string, int>("a", 1) };
+
+        _map.RemoveRange(items);
+
+        Assert.That(_map.ContainsKey("a"), Is.False);
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    #endregion
+
+    #region RemoveWhere Tests
+
+    [Test]
+    public void RemoveWhere_EmptyMap_ReturnsZero()
+    {
+        int removed = _map.RemoveWhere("a", v => v > 5);
+
+        Assert.That(removed, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveWhere_NoMatchingValues_ReturnsZero()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        int removed = _map.RemoveWhere("a", v => v > 10);
+
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void RemoveWhere_SomeMatchingValues_RemovesOnlyMatching()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 5);
+        _map.Add("a", 10);
+
+        int removed = _map.RemoveWhere("a", v => v > 5);
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.EqualTo(2));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 5 }));
+    }
+
+    [Test]
+    public void RemoveWhere_AllValuesMatch_RemovesAllAndKey()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        int removed = _map.RemoveWhere("a", v => v > 0);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.ContainsKey("a"), Is.False);
+    }
+
+    [Test]
+    public void RemoveWhere_NonExistentKey_ReturnsZero()
+    {
+        _map.Add("a", 1);
+
+        int removed = _map.RemoveWhere("b", v => v > 0);
+
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveWhere_ComplexPredicate_RemovesCorrectly()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+        _map.Add("a", 4);
+        _map.Add("a", 5);
+
+        int removed = _map.RemoveWhere("a", v => v % 2 == 0);
+
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(_map.Count, Is.EqualTo(3));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 3, 5 }));
+    }
+
+    #endregion
 }

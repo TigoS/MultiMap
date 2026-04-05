@@ -779,4 +779,512 @@ public class ConcurrentMultiMapTests
 
         Assert.That(_map.Count, Is.EqualTo(verifyCount));
     }
+
+    // ── KeyCount Property Tests ──────────────────────────────
+
+    [Test]
+    public void KeyCount_EmptyMap_ReturnsZero()
+    {
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void KeyCount_AfterAddingSingleKey_ReturnsOne()
+    {
+        _map.Add("key1", 1);
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void KeyCount_AfterAddingMultipleKeys_ReturnsCorrectCount()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key2", 2);
+        _map.Add("key3", 3);
+        Assert.That(_map.KeyCount, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void KeyCount_AfterAddingMultipleValuesToSameKey_ReturnsOne()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key1", 3);
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void KeyCount_AfterRemovingKey_DecreasesCorrectly()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key2", 2);
+        _map.RemoveKey("key1");
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void KeyCount_ConcurrentAdditions_IsCorrect()
+    {
+        Parallel.For(0, 100, i => _map.Add($"key{i}", i));
+        Assert.That(_map.KeyCount, Is.EqualTo(100));
+    }
+
+    // ── Values Property Tests ────────────────────────────────
+
+    [Test]
+    public void Values_EmptyMap_ReturnsEmpty()
+    {
+        Assert.That(_map.Values, Is.Empty);
+    }
+
+    [Test]
+    public void Values_WithSingleValue_ReturnsCorrectValue()
+    {
+        _map.Add("key1", 42);
+        Assert.That(_map.Values, Is.EquivalentTo(new[] { 42 }));
+    }
+
+    [Test]
+    public void Values_WithMultipleValuesAcrossKeys_ReturnsAllValues()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key2", 3);
+        _map.Add("key2", 4);
+        Assert.That(_map.Values, Is.EquivalentTo(new[] { 1, 2, 3, 4 }));
+    }
+
+    [Test]
+    public void Values_AfterRemovingValue_ReturnsRemainingValues()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Remove("key1", 1);
+        Assert.That(_map.Values, Is.EquivalentTo(new[] { 2 }));
+    }
+
+    // ── GetValuesCount Method Tests ──────────────────────────
+
+    [Test]
+    public void GetValuesCount_NonExistentKey_ReturnsZero()
+    {
+        Assert.That(_map.GetValuesCount("missing"), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void GetValuesCount_KeyWithSingleValue_ReturnsOne()
+    {
+        _map.Add("key1", 1);
+        Assert.That(_map.GetValuesCount("key1"), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void GetValuesCount_KeyWithMultipleValues_ReturnsCorrectCount()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key1", 3);
+        Assert.That(_map.GetValuesCount("key1"), Is.EqualTo(3));
+    }
+
+    [Test]
+    public void GetValuesCount_AfterRemovingValue_DecreasesCorrectly()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Remove("key1", 1);
+        Assert.That(_map.GetValuesCount("key1"), Is.EqualTo(1));
+    }
+
+    // ── Indexer Tests ─────────────────────────────────────────
+
+    [Test]
+    public void Indexer_ExistingKey_ReturnsValues()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        Assert.That(_map["key1"], Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Indexer_NonExistentKey_ThrowsKeyNotFoundException()
+    {
+        Assert.Throws<KeyNotFoundException>(() => { var _ = _map["missing"].ToList(); });
+    }
+
+    [Test]
+    public void Indexer_AfterAddingValue_ReturnsUpdatedValues()
+    {
+        _map.Add("key1", 1);
+        Assert.That(_map["key1"], Is.EquivalentTo(new[] { 1 }));
+        _map.Add("key1", 2);
+        Assert.That(_map["key1"], Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    // ── AddRange(KeyValuePairs) Tests ────────────────────────
+
+    [Test]
+    public void AddRangeKeyValuePairs_EmptyCollection_DoesNothing()
+    {
+        _map.AddRange([]);
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_SinglePair_AddsCorrectly()
+    {
+        var pairs = new[] { new KeyValuePair<string, int>("key1", 1) };
+        _map.AddRange(pairs);
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_MultiplePairsSameKey_AddsAllValues()
+    {
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key1", 2),
+            new KeyValuePair<string, int>("key1", 3)
+        };
+        _map.AddRange(pairs);
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_MultiplePairsDifferentKeys_AddsCorrectly()
+    {
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 2),
+            new KeyValuePair<string, int>("key3", 3)
+        };
+        _map.AddRange(pairs);
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(_map.Get("key2"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(_map.Get("key3"), Is.EquivalentTo(new[] { 3 }));
+    }
+
+    [Test]
+    public void AddRangeKeyValuePairs_DuplicatePairs_IgnoresDuplicates()
+    {
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key1", 1)
+        };
+        _map.AddRange(pairs);
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void AddRangeKeyValuePairs_ConcurrentCalls_AllPairsAdded()
+    {
+        Parallel.For(0, 50, i =>
+        {
+            var pairs = new[]
+            {
+                new KeyValuePair<string, int>($"key{i}", i * 10),
+                new KeyValuePair<string, int>($"key{i}", i * 10 + 1)
+            };
+            _map.AddRange(pairs);
+        });
+
+        Assert.That(_map.KeyCount, Is.EqualTo(50));
+        Assert.That(_map.Count, Is.EqualTo(100));
+    }
+
+    // ── RemoveRange Tests ─────────────────────────────────────
+
+    [Test]
+    public void RemoveRange_EmptyCollection_ReturnsZero()
+    {
+        _map.Add("key1", 1);
+        int removed = _map.RemoveRange([]);
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_SingleExistingPair_ReturnsOne()
+    {
+        _map.Add("key1", 1);
+        var pairs = new[] { new KeyValuePair<string, int>("key1", 1) };
+        int removed = _map.RemoveRange(pairs);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveRange_SingleNonExistentPair_ReturnsZero()
+    {
+        _map.Add("key1", 1);
+        var pairs = new[] { new KeyValuePair<string, int>("key2", 2) };
+        int removed = _map.RemoveRange(pairs);
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_MultiplePairs_RemovesCorrectCount()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key2", 3);
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 3)
+        };
+        int removed = _map.RemoveRange(pairs);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_MixedExistingAndNonExisting_RemovesOnlyExisting()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key2", 2);
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key3", 3)
+        };
+        int removed = _map.RemoveRange(pairs);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_LastValueOfKey_RemovesKey()
+    {
+        _map.Add("key1", 1);
+        var pairs = new[] { new KeyValuePair<string, int>("key1", 1) };
+        _map.RemoveRange(pairs);
+        Assert.That(_map.ContainsKey("key1"), Is.False);
+    }
+
+    // ── RemoveWhere Tests ─────────────────────────────────────
+
+    [Test]
+    public void RemoveWhere_NonExistentKey_ReturnsZero()
+    {
+        int removed = _map.RemoveWhere("missing", v => v > 0);
+        Assert.That(removed, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveWhere_NoMatchingValues_ReturnsZero()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        int removed = _map.RemoveWhere("key1", v => v > 10);
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void RemoveWhere_SingleMatchingValue_RemovesAndReturnsOne()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key1", 3);
+        int removed = _map.RemoveWhere("key1", v => v == 2);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1, 3 }));
+    }
+
+    [Test]
+    public void RemoveWhere_MultipleMatchingValues_RemovesAll()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key1", 3);
+        _map.Add("key1", 4);
+        int removed = _map.RemoveWhere("key1", v => v > 2);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void RemoveWhere_AllValues_RemovesKeyAndReturnsCount()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        int removed = _map.RemoveWhere("key1", v => true);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(_map.ContainsKey("key1"), Is.False);
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveWhere_ComplexPredicate_RemovesCorrectly()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key1", 3);
+        _map.Add("key1", 4);
+        _map.Add("key1", 5);
+        int removed = _map.RemoveWhere("key1", v => v % 2 == 0);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1, 3, 5 }));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void RemoveWhere_ConcurrentCalls_ThreadSafe()
+    {
+        for (int i = 0; i < 100; i++)
+        {
+            _map.Add("key1", i);
+        }
+
+        int totalRemoved = 0;
+        Parallel.For(0, 10, i =>
+        {
+            int removed = _map.RemoveWhere("key1", v => v % 10 == i);
+            Interlocked.Add(ref totalRemoved, removed);
+        });
+
+        Assert.That(totalRemoved, Is.EqualTo(100));
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    // ── Additional Coverage Tests for Values Property and Edge Cases ──
+
+    [Test]
+    [Category("Concurrency")]
+    public void Values_ConcurrentEnumeration_DoesNotThrow()
+    {
+        // Add values across multiple keys
+        for (int i = 0; i < 20; i++)
+            _map.Add($"key{i % 5}", i);
+
+        Assert.DoesNotThrow(() =>
+        {
+            Parallel.For(0, 10, _ =>
+            {
+                var values = _map.Values.ToList();
+                Assert.That(values, Is.Not.Empty);
+            });
+        });
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Values_WithConcurrentModifications_ReturnsSnapshot()
+    {
+        // Add initial data
+        for (int i = 0; i < 50; i++)
+            _map.Add($"key{i % 10}", i);
+
+        var enumerationComplete = false;
+        var values = new List<int>();
+
+        var enumerationTask = Task.Run(() =>
+        {
+            values.AddRange(_map.Values);
+            enumerationComplete = true;
+        });
+
+        var modificationTask = Task.Run(() =>
+        {
+            for (int i = 0; i < 20; i++)
+            {
+                _map.Add($"newkey{i}", i + 1000);
+                Thread.Sleep(1);
+            }
+        });
+
+        Task.WaitAll(enumerationTask, modificationTask);
+        Assert.That(enumerationComplete, Is.True);
+        Assert.That(values, Is.Not.Empty);
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void GetEnumerator_ConcurrentEnumerations_DoNotInterfere()
+    {
+        for (int i = 0; i < 20; i++)
+            _map.Add($"key{i % 5}", i);
+
+        var lists = new System.Collections.Concurrent.ConcurrentBag<List<KeyValuePair<string, int>>>();
+
+        Parallel.For(0, 10, _ =>
+        {
+            var list = _map.ToList();
+            lists.Add(list);
+        });
+
+        Assert.That(lists.Count, Is.EqualTo(10));
+        foreach (var list in lists)
+        {
+            Assert.That(list.Count, Is.EqualTo(20));
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Values_MultipleKeysWithMultipleValues_ReturnsAllValues()
+    {
+        const int keyCount = 50;
+        const int valuesPerKey = 20;
+
+        for (int k = 0; k < keyCount; k++)
+            for (int v = 0; v < valuesPerKey; v++)
+                _map.Add($"key{k}", k * 100 + v);
+
+        var allValues = _map.Values.ToList();
+        Assert.That(allValues.Count, Is.EqualTo(keyCount * valuesPerKey));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void GetEnumerator_WithConcurrentRemoval_DoesNotThrow()
+    {
+        for (int i = 0; i < 100; i++)
+            _map.Add($"key{i % 10}", i);
+
+        Assert.DoesNotThrow(() =>
+        {
+            var enumerateTask = Task.Run(() =>
+            {
+                foreach (var _ in _map)
+                {
+                    Thread.Sleep(1);
+                }
+            });
+
+            var removeTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    _map.RemoveKey($"key{i}");
+                    Thread.Sleep(2);
+                }
+            });
+
+            Task.WaitAll(enumerateTask, removeTask);
+        });
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Values_RepeatedEnumeration_ConsistentResults()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        var first = _map.Values.ToList();
+        var second = _map.Values.ToList();
+
+        Assert.That(first, Is.EquivalentTo(second));
+    }
 }
+

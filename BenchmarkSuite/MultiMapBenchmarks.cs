@@ -2,6 +2,7 @@ using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
 using MultiMap.Helpers;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace BenchmarkSuite;
@@ -1261,4 +1262,252 @@ public class MultiMapBenchmarks
 
         return map.Add(Consts.Key1Prefix, 1);
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Benchmarks for newly added interface members
+    // ────────────────────────────────────────────────────────────────────
+
+    #region KeyCount Property Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_KeyCount() => _setMap.KeyCount;
+
+    [Benchmark]
+    public int MultiMapList_KeyCount() => _listMap.KeyCount;
+
+    [Benchmark]
+    public int ConcurrentMultiMap_KeyCount() => _concurrentMap.KeyCount;
+
+    [Benchmark]
+    public int SortedMultiMap_KeyCount() => _sortedMap.KeyCount;
+
+    #endregion
+
+    #region Values Property Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_Values()
+    {
+        int count = 0;
+        foreach (var value in _setMap.Values)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int MultiMapList_Values()
+    {
+        int count = 0;
+        foreach (var value in _listMap.Values)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_Values()
+    {
+        int count = 0;
+        foreach (var value in _concurrentMap.Values)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_Values()
+    {
+        int count = 0;
+        foreach (var value in _sortedMap.Values)
+            count++;
+        return count;
+    }
+
+    #endregion
+
+    #region GetValuesCount Method Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_GetValuesCount() => _setMap.GetValuesCount($"{Consts.KeyPrefix}0");
+
+    [Benchmark]
+    public int MultiMapList_GetValuesCount() => _listMap.GetValuesCount($"{Consts.KeyPrefix}0");
+
+    [Benchmark]
+    public int ConcurrentMultiMap_GetValuesCount() => _concurrentMap.GetValuesCount($"{Consts.KeyPrefix}0");
+
+    [Benchmark]
+    public int SortedMultiMap_GetValuesCount() => _sortedMap.GetValuesCount($"{Consts.KeyPrefix}0");
+
+    #endregion
+
+    #region Indexer Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_Indexer() => _setMap[$"{Consts.KeyPrefix}0"].Count();
+
+    [Benchmark]
+    public int MultiMapList_Indexer() => _listMap[$"{Consts.KeyPrefix}0"].Count();
+
+    [Benchmark]
+    public int ConcurrentMultiMap_Indexer() => _concurrentMap[$"{Consts.KeyPrefix}0"].Count();
+
+    [Benchmark]
+    public int SortedMultiMap_Indexer() => _sortedMap[$"{Consts.KeyPrefix}0"].Count();
+
+    #endregion
+
+    #region AddRange KeyValuePair Benchmarks
+
+    [Benchmark]
+    public void MultiMapSet_AddRange_KeyValuePair()
+    {
+        var map = new MultiMapSet<string, int>();
+        var pairs = Enumerable.Range(0, Consts.KeyCount)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        map.AddRange(pairs);
+    }
+
+    [Benchmark]
+    public void MultiMapList_AddRange_KeyValuePair()
+    {
+        var map = new MultiMapList<string, int>();
+        var pairs = Enumerable.Range(0, Consts.KeyCount)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        map.AddRange(pairs);
+    }
+
+    [Benchmark]
+    public void ConcurrentMultiMap_AddRange_KeyValuePair()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        var pairs = Enumerable.Range(0, Consts.KeyCount)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        map.AddRange(pairs);
+    }
+
+    [Benchmark]
+    public void SortedMultiMap_AddRange_KeyValuePair()
+    {
+        var map = new SortedMultiMap<string, int>();
+        var pairs = Enumerable.Range(0, Consts.KeyCount)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        map.AddRange(pairs);
+    }
+
+    #endregion
+
+    #region RemoveRange Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_RemoveRange()
+    {
+        var map = new MultiMapSet<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+
+        var pairs = Enumerable.Range(0, Consts.KeyCount / 2)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        return map.RemoveRange(pairs);
+    }
+
+    [Benchmark]
+    public int MultiMapList_RemoveRange()
+    {
+        var map = new MultiMapList<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+
+        var pairs = Enumerable.Range(0, Consts.KeyCount / 2)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        return map.RemoveRange(pairs);
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_RemoveRange()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+
+        var pairs = Enumerable.Range(0, Consts.KeyCount / 2)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        return map.RemoveRange(pairs);
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_RemoveRange()
+    {
+        var map = new SortedMultiMap<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+
+        var pairs = Enumerable.Range(0, Consts.KeyCount / 2)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        return map.RemoveRange(pairs);
+    }
+
+    #endregion
+
+    #region RemoveWhere Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_RemoveWhere()
+    {
+        var map = new MultiMapSet<string, int>();
+        for (int v = 0; v < Consts.ValuesPerKey * 2; v++)
+            map.Add(Consts.Key1Prefix, v);
+
+        return map.RemoveWhere(Consts.Key1Prefix, v => v % 2 == 0);
+    }
+
+    [Benchmark]
+    public int MultiMapList_RemoveWhere()
+    {
+        var map = new MultiMapList<string, int>();
+        for (int v = 0; v < Consts.ValuesPerKey * 2; v++)
+            map.Add(Consts.Key1Prefix, v);
+
+        return map.RemoveWhere(Consts.Key1Prefix, v => v % 2 == 0);
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_RemoveWhere()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int v = 0; v < Consts.ValuesPerKey * 2; v++)
+            map.Add(Consts.Key1Prefix, v);
+
+        return map.RemoveWhere(Consts.Key1Prefix, v => v % 2 == 0);
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_RemoveWhere()
+    {
+        var map = new SortedMultiMap<string, int>();
+        for (int v = 0; v < Consts.ValuesPerKey * 2; v++)
+            map.Add(Consts.Key1Prefix, v);
+
+        return map.RemoveWhere(Consts.Key1Prefix, v => v % 2 == 0);
+    }
+
+    #endregion
 }

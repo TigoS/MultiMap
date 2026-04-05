@@ -65,6 +65,13 @@
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously retrieves the total number of keys currently stored.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A value task representing the asynchronous operation. The result contains the number of keys stored.</returns>
+        public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Asynchronously gets the total number of values across all keys in the multimap.
         /// </summary>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
@@ -79,10 +86,18 @@
         public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Returns an asynchronous enumerator that iterates through the collection of key/value pairs.
+        /// Asynchronously gets the number of values associated with the specified key.
         /// </summary>
-        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous iteration.</param>
-        /// <returns>An asynchronous enumerator that can be used to iterate through the collection of key/value pairs.</returns>
-        public new IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default);
+        /// <param name="key">The key whose associated value count is to be retrieved.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A value task representing the asynchronous operation. The result contains the number of values associated with the specified key.</returns>
+        public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously retrieves a collection of values of type TValue.
+        /// </summary>
+        /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
+        /// <returns>A ValueTask that represents the asynchronous operation. The result contains an enumerable collection of values of type TValue.</returns>
+        public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default);
     }
 }

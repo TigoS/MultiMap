@@ -1,7 +1,8 @@
-using System.Linq;
 using BenchmarkDotNet.Attributes;
-using MultiMap.Entities;
 using Microsoft.VSDiagnostics;
+using MultiMap.Entities;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BenchmarkSuite;
 
@@ -242,4 +243,70 @@ public class MultiMapAsyncBenchmarks
 
         target.SymmetricExceptWithAsync(other).GetAwaiter().GetResult();
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Benchmarks for newly added interface members
+    // ────────────────────────────────────────────────────────────────────
+
+    #region New Property/Method Benchmarks
+
+    [Benchmark]
+    public int MultiMapAsync_GetKeyCount()
+    {
+        return _map.GetKeyCountAsync().GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_GetValues()
+    {
+        int count = 0;
+        var values = _map.GetValuesAsync().GetAwaiter().GetResult();
+        foreach (var value in values)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_GetValuesCount()
+    {
+        return _map.GetValuesCountAsync(Consts.Key50Prefix).GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_AddRange_KeyValuePair()
+    {
+        var map = new MultiMapAsync<string, int>();
+        var pairs = Enumerable.Range(0, Consts.KeyCount)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        map.AddRangeAsync(pairs).GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_RemoveRange()
+    {
+        var map = new MultiMapAsync<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+
+        var pairs = Enumerable.Range(0, Consts.KeyCount / 2)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        return map.RemoveRangeAsync(pairs).GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_RemoveWhere()
+    {
+        var map = new MultiMapAsync<string, int>();
+        for (int v = 0; v < Consts.ValuesPerKey * 2; v++)
+            map.AddAsync(Consts.Key1Prefix, v).GetAwaiter().GetResult();
+
+        return map.RemoveWhereAsync(Consts.Key1Prefix, v => v % 2 == 0).GetAwaiter().GetResult();
+    }
+
+    #endregion
 }

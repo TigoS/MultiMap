@@ -1,7 +1,8 @@
-using System.Linq;
 using BenchmarkDotNet.Attributes;
-using MultiMap.Entities;
 using Microsoft.VSDiagnostics;
+using MultiMap.Entities;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace BenchmarkSuite;
 
@@ -231,4 +232,75 @@ public class MultiMapLockBenchmarks
         target.Dispose();
         other.Dispose();
     }
+
+    // ────────────────────────────────────────────────────────────────────
+    // Benchmarks for newly added interface members
+    // ────────────────────────────────────────────────────────────────────
+
+    #region New Property/Method Benchmarks
+
+    [Benchmark]
+    public int MultiMapLock_KeyCount()
+    {
+        return _map.KeyCount;
+    }
+
+    [Benchmark]
+    public int MultiMapLock_Values()
+    {
+        int count = 0;
+        foreach (var value in _map.Values)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int MultiMapLock_GetValuesCount()
+    {
+        return _map.GetValuesCount($"{Consts.KeyPrefix}0");
+    }
+
+    [Benchmark]
+    public int MultiMapLock_Indexer()
+    {
+        return _map[$"{Consts.KeyPrefix}0"].Count();
+    }
+
+    [Benchmark]
+    public void MultiMapLock_AddRange_KeyValuePair()
+    {
+        using var map = new MultiMapLock<string, int>();
+        var pairs = Enumerable.Range(0, Consts.KeyCount)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        map.AddRange(pairs);
+    }
+
+    [Benchmark]
+    public int MultiMapLock_RemoveRange()
+    {
+        using var map = new MultiMapLock<string, int>();
+        for (int k = 0; k < Consts.KeyCount; k++)
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+
+        var pairs = Enumerable.Range(0, Consts.KeyCount / 2)
+            .SelectMany(k => Enumerable.Range(0, Consts.ValuesPerKey)
+                .Select(v => new KeyValuePair<string, int>($"{Consts.KeyPrefix}{k}", v)));
+
+        return map.RemoveRange(pairs);
+    }
+
+    [Benchmark]
+    public int MultiMapLock_RemoveWhere()
+    {
+        using var map = new MultiMapLock<string, int>();
+        for (int v = 0; v < Consts.ValuesPerKey * 2; v++)
+            map.Add(Consts.Key1Prefix, v);
+
+        return map.RemoveWhere(Consts.Key1Prefix, v => v % 2 == 0);
+    }
+
+    #endregion
 }
