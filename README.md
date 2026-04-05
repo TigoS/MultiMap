@@ -55,79 +55,128 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 ```
 MultiMap/
-├── MultiMap/                     # Core library (NuGet package)
+├── MultiMap/                           # Core library (NuGet package)
 │   ├── Interfaces/
-│   │   ├── IMultiMap.cs          # Synchronous multimap interface
-│   │   ├── IMultiMapAsync.cs     # Asynchronous multimap interface
-│   │   └── ISimpleMultiMap.cs    # Simplified multimap interface
+│   │   ├── IReadOnlySimpleMultiMap.cs  # Base read-only interface
+│   │   ├── IReadOnlyMultiMap.cs        # Extended read-only with TryGet, Contains, KeyCount
+│   │   ├── IReadOnlyMultiMapAsync.cs   # Async read-only with cancellation support
+│   │   ├── IMultiMap.cs                # Synchronous multimap (extends IReadOnlyMultiMap)
+│   │   ├── IMultiMapAsync.cs           # Async multimap (extends IReadOnlyMultiMapAsync)
+│   │   └── ISimpleMultiMap.cs          # Simplified interface (extends IReadOnlySimpleMultiMap)
 │   ├── Entities/
-│   │   ├── MultiMapList.cs       # List-based (allows duplicates)
-│   │   ├── MultiMapSet.cs        # HashSet-based (unique values)
-│   │   ├── SortedMultiMap.cs     # SortedDictionary + SortedSet
-│   │   ├── ConcurrentMultiMap.cs # ConcurrentDictionary + per-key locked HashSet
-│   │   ├── MultiMapLock.cs       # ReaderWriterLockSlim-based
-│   │   ├── MultiMapAsync.cs      # SemaphoreSlim-based async
-│   │   └── SimpleMultiMap.cs     # Lightweight ISimpleMultiMap impl
+│   │   ├── MultiMapList.cs             # List-based (allows duplicates)
+│   │   ├── MultiMapSet.cs              # HashSet-based (unique values)
+│   │   ├── SortedMultiMap.cs           # SortedDictionary + SortedSet
+│   │   ├── ConcurrentMultiMap.cs       # ConcurrentDictionary + per-key locked HashSet
+│   │   ├── MultiMapLock.cs             # ReaderWriterLockSlim-based
+│   │   ├── MultiMapAsync.cs            # SemaphoreSlim-based async
+│   │   └── SimpleMultiMap.cs           # Lightweight ISimpleMultiMap impl
 │   └── Helpers/
-│       ├── MultiMapHelper.cs     # Set-like extension methods
-│       └── TestDataHelper.cs     # Sample data factory for demos
-├── MultiMap.Tests/               # Unit tests (NUnit 4, 574 tests)
-├── MultiMap.Demo/                # Console demo application
-└── BenchmarkSuite/               # BenchmarkDotNet performance benchmarks
+│       ├── MultiMapHelper.cs           # Set-like extension methods
+│       └── TestDataHelper.cs           # Sample data factory for demos
+├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1023 tests)
+├── MultiMap.Demo/                      # Console demo application
+└── BenchmarkSuite/                     # BenchmarkDotNet performance benchmarks
 ```
 
 ## Interfaces
 
+### Interface Hierarchy
+
+The library follows a hierarchical interface design with three parallel families:
+
+**Read-Only Interfaces:**
+- `IReadOnlySimpleMultiMap<TKey, TValue>` — Base read-only interface with `Get`, `GetOrDefault`
+- `IReadOnlyMultiMap<TKey, TValue>` — Extends `IReadOnlySimpleMultiMap` with `TryGet`, `Contains`, `ContainsKey`, `KeyCount`
+- `IReadOnlyMultiMapAsync<TKey, TValue>` — Async read-only with `GetAsync`, `TryGetAsync`, `ContainsAsync`, etc.
+
+**Mutable Interfaces:**
+- `ISimpleMultiMap<TKey, TValue>` — Extends `IReadOnlySimpleMultiMap` with `Add`, `Remove`, `Clear`
+- `IMultiMap<TKey, TValue>` — Extends `IReadOnlyMultiMap` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `Clear`
+- `IMultiMapAsync<TKey, TValue>` — Extends `IReadOnlyMultiMapAsync` with async mutations and `CancellationToken` support
+
+### `IReadOnlySimpleMultiMap<TKey, TValue>`
+
+The base read-only interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
+
+| Method | Returns | Description |
+|---|---|---|
+| `Get(key)` | `IEnumerable<TValue>` | Returns values; throws `KeyNotFoundException` if not found |
+| `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
+
+### `IReadOnlyMultiMap<TKey, TValue>`
+
+Extended read-only interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
+
+| Method | Returns | Description |
+|---|---|---|
+| `TryGet(key, out values)` | `bool` | Attempts to retrieve values; returns `true` if key exists |
+| `ContainsKey(key)` | `bool` | Checks if a key exists |
+| `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
+| `KeyCount` | `int` | Gets the number of keys (not total pairs) |
+
 ### `IMultiMap<TKey, TValue>`
 
-The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TValue>` and `IEnumerable<KeyValuePair<TKey, TValue>>`.
+The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TValue>`.
 
 | Method | Returns | Description |
 |---|---|---|
 | `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
 | `AddRange(key, values)` | `void` | Adds multiple values for a key |
-| `Get(key)` | `IEnumerable<TValue>` | Returns values for a key; throws `KeyNotFoundException` if not found |
-| `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
-| `TryGet(key, out values)` | `bool` | Attempts to retrieve values; returns `true` if key exists |
+| `AddRange(items)` | `void` | Adds multiple key-value pairs |
 | `Remove(key, value)` | `bool` | Removes a specific key-value pair |
+| `RemoveRange(items)` | `int` | Removes multiple key-value pairs; returns count removed |
+| `RemoveWhere(key, predicate)` | `int` | Removes values matching predicate; returns count removed |
 | `RemoveKey(key)` | `bool` | Removes a key and all its values |
-| `ContainsKey(key)` | `bool` | Checks if a key exists |
-| `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
 | `Clear()` | `void` | Removes all entries |
-| `Count` | `int` | Total number of key-value pairs |
-| `Keys` | `IEnumerable<TKey>` | All keys in the collection |
+
+**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `KeyCount`
+
+### `IReadOnlyMultiMapAsync<TKey, TValue>`
+
+Asynchronous read-only multimap interface. Extends `IAsyncEnumerable<KeyValuePair<TKey, TValue>>`, `IDisposable`, and `IAsyncDisposable`. All methods support `CancellationToken`.
+
+| Method | Returns | Description |
+|---|---|---|
+| `GetAsync(key)` | `ValueTask<IEnumerable<TValue>>` | Retrieves values; throws `KeyNotFoundException` if not found |
+| `GetOrDefaultAsync(key)` | `ValueTask<IEnumerable<TValue>>` | Retrieves values or empty if not found |
+| `TryGetAsync(key)` | `ValueTask<(bool, IEnumerable<TValue>)>` | Attempts to retrieve values; returns tuple with found status and values |
+| `ContainsKeyAsync(key)` | `ValueTask<bool>` | Checks for a key |
+| `ContainsAsync(key, value)` | `ValueTask<bool>` | Checks for a pair |
+| `GetCountAsync()` | `ValueTask<int>` | Gets total count of key-value pairs |
+| `GetKeyCountAsync()` | `ValueTask<int>` | Gets number of keys |
+| `GetKeysAsync()` | `ValueTask<IEnumerable<TKey>>` | Gets all keys |
+| `GetValuesCountAsync(key)` | `ValueTask<int>` | Gets count of values for a key |
 
 ### `IMultiMapAsync<TKey, TValue>`
 
-Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`, `IAsyncEnumerable<KeyValuePair<TKey, TValue>>`, and `IAsyncDisposable`. All methods support `CancellationToken` and return `ValueTask` or `Task`.
+Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`. All methods support `CancellationToken` and return `ValueTask` or `Task`.
 
 | Method | Returns | Description |
 |---|---|---|
 | `AddAsync(key, value)` | `ValueTask<bool>` | Asynchronously adds a key-value pair |
 | `AddRangeAsync(key, values)` | `Task` | Asynchronously adds multiple values |
-| `GetAsync(key)` | `ValueTask<IEnumerable<TValue>>` | Asynchronously retrieves values; throws `KeyNotFoundException` if not found |
-| `GetOrDefaultAsync(key)` | `ValueTask<IEnumerable<TValue>>` | Asynchronously retrieves values or empty if not found |
-| `TryGetAsync(key)` | `ValueTask<(bool, IEnumerable<TValue>)>` | Attempts to retrieve values; returns tuple with found status and values |
+| `AddRangeAsync(items)` | `Task` | Asynchronously adds multiple key-value pairs |
 | `RemoveAsync(key, value)` | `ValueTask<bool>` | Asynchronously removes a pair |
+| `RemoveRangeAsync(items)` | `ValueTask<int>` | Asynchronously removes multiple pairs; returns count removed |
+| `RemoveWhereAsync(key, predicate)` | `ValueTask<int>` | Asynchronously removes values matching predicate; returns count removed |
 | `RemoveKeyAsync(key)` | `ValueTask<bool>` | Asynchronously removes a key |
-| `ContainsKeyAsync(key)` | `ValueTask<bool>` | Asynchronously checks for a key |
-| `ContainsAsync(key, value)` | `ValueTask<bool>` | Asynchronously checks for a pair |
-| `GetCountAsync()` | `ValueTask<int>` | Asynchronously gets total count |
 | `ClearAsync()` | `Task` | Asynchronously clears all entries |
-| `GetKeysAsync()` | `ValueTask<IEnumerable<TKey>>` | Asynchronously gets all keys |
+
+**Inherited from `IReadOnlyMultiMapAsync`:** `GetAsync`, `GetOrDefaultAsync`, `TryGetAsync`, `ContainsKeyAsync`, `ContainsAsync`, `GetCountAsync`, `GetKeyCountAsync`, `GetKeysAsync`, `GetValuesCountAsync`
 
 ### `ISimpleMultiMap<TKey, TValue>`
 
-A simplified multimap interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
+A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
 
 | Method | Returns | Description |
 |---|---|---|
 | `Add(key, value)` | `bool` | Adds a key-value pair |
-| `Get(key)` | `IEnumerable<TValue>` | Returns values; throws `KeyNotFoundException` if not found |
-| `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
 | `Remove(key, value)` | `void` | Removes a specific pair |
 | `Clear(key)` | `void` | Removes all values for a key |
 | `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all pairs as a flat sequence |
+
+**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`
 
 ## Implementations
 
@@ -187,12 +236,18 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Behavior | `IMultiMap` | `IMultiMapAsync` | `ISimpleMultiMap` |
 |---|---|---|---|
+| **Interface Hierarchy** | Extends `IReadOnlyMultiMap` → `IReadOnlySimpleMultiMap` | Extends `IReadOnlyMultiMapAsync` | Extends `IReadOnlySimpleMultiMap` |
 | **Get (missing key)** | `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty | `GetAsync` throws `KeyNotFoundException`; `GetOrDefaultAsync` returns empty | `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty |
 | **TryGet (missing key)** | `TryGet` returns `false` with empty collection | `TryGetAsync` returns `(false, empty)` tuple | Not available |
+| **KeyCount property** | ✅ `KeyCount` property (number of unique keys) | ✅ `GetKeyCountAsync()` method | ❌ Not available |
 | **Add (duplicate)** | Returns `false` | Returns `false` (via `ValueTask<bool>`) | Returns `false` |
+| **AddRange** | `AddRange(key, values)` and `AddRange(items)` | `AddRangeAsync(key, values)` and `AddRangeAsync(items)` | Not available |
 | **Remove return type** | `bool` | `ValueTask<bool>` | `void` |
+| **RemoveRange** | `RemoveRange(items)` returns `int` | `RemoveRangeAsync(items)` returns `ValueTask<int>` | Not available |
+| **RemoveWhere** | `RemoveWhere(key, predicate)` returns `int` | `RemoveWhereAsync(key, predicate)` returns `ValueTask<int>` | Not available |
+| **GetValuesCount** | Not available | `GetValuesCountAsync(key)` returns `ValueTask<int>` | Not available |
 | **Enumeration** | `IEnumerable<KeyValuePair>` | `IAsyncEnumerable<KeyValuePair>` | `IEnumerable<KeyValuePair>` (+ `Flatten()`) |
-| **Disposable** | Only `MultiMapLock` | ✅ Yes (`IAsyncDisposable`) | ❌ No |
+| **Disposable** | Only `MultiMapLock` | ✅ Yes (`IAsyncDisposable` + `IDisposable`) | ❌ No |
 | **CancellationToken** | ❌ No | ✅ Yes (all methods) | ❌ No |
 
 ### When to Use Which Implementation
