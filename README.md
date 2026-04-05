@@ -325,6 +325,106 @@ map.Remove("fruits", 1);
 map.RemoveKey("vegetables");
 ```
 
+### Advanced Usage — New Interface Members
+
+#### Working with KeyCount and Values
+
+```csharp
+using MultiMap.Entities;
+
+var map = new MultiMapSet<string, int>();
+map.Add("A", 1);
+map.Add("A", 2);
+map.Add("B", 3);
+
+// KeyCount returns number of unique keys (not total pairs)
+int keyCount = map.KeyCount;        // 2 (keys: "A", "B")
+int totalCount = map.Count;         // 3 (pairs: A→1, A→2, B→3)
+
+// Values property returns all values across all keys
+IEnumerable<int> allValues = map.Values;  // [1, 2, 3]
+
+// GetValuesCount returns count for a specific key
+int valuesForA = map.GetValuesCount("A");  // 2
+int valuesForB = map.GetValuesCount("B");  // 1
+int noKey = map.GetValuesCount("C");       // 0 (key doesn't exist)
+
+// Indexer provides convenient access to values
+IEnumerable<int> aValues = map["A"];  // [1, 2]
+```
+
+#### Bulk Operations with AddRange and RemoveRange
+
+```csharp
+using MultiMap.Entities;
+
+var map = new MultiMapSet<string, int>();
+
+// AddRange with key-value pairs collection
+var items = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("A", 2),
+    new KeyValuePair<string, int>("B", 3)
+};
+map.AddRange(items);
+
+// RemoveRange returns count of actually removed pairs
+var toRemove = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("C", 99)  // doesn't exist
+};
+int removedCount = map.RemoveRange(toRemove);  // Returns 1 (only A→1 was removed)
+```
+
+#### Conditional Removal with RemoveWhere
+
+```csharp
+using MultiMap.Entities;
+
+var map = new MultiMapSet<string, int>();
+map.AddRange("numbers", [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+
+// Remove all even numbers for the key "numbers"
+int removed = map.RemoveWhere("numbers", n => n % 2 == 0);
+Console.WriteLine($"Removed {removed} even numbers");  // "Removed 5 even numbers"
+
+// map["numbers"] now contains: [1, 3, 5, 7, 9]
+```
+
+#### Retrieval Pattern Options
+
+```csharp
+using MultiMap.Entities;
+
+var map = new MultiMapSet<string, int>();
+map.Add("A", 1);
+
+// Pattern 1: Get (throws on missing key)
+try
+{
+    var values = map.Get("B");
+}
+catch (KeyNotFoundException)
+{
+    Console.WriteLine("Key not found!");
+}
+
+// Pattern 2: GetOrDefault (returns empty on missing key)
+var safe = map.GetOrDefault("B");  // Returns empty collection
+
+// Pattern 3: TryGet (boolean pattern)
+if (map.TryGet("A", out var result))
+{
+    Console.WriteLine($"Found {result.Count()} values");
+}
+else
+{
+    Console.WriteLine("Key not found");
+}
+```
+
 ### Concurrent Usage
 
 ```csharp
@@ -337,6 +437,10 @@ Parallel.For(0, 1000, i =>
 {
     concurrentMap.Add("key", i);
 });
+
+// KeyCount is O(1) with thread-safe reads
+int keys = concurrentMap.KeyCount;
+int total = concurrentMap.Count;
 ```
 
 ### Async Usage
@@ -351,6 +455,52 @@ await asyncMap.AddAsync("key", 2);
 var values = await asyncMap.GetAsync("key");              // [1, 2]
 var count = await asyncMap.GetCountAsync();               // 2
 bool contains = await asyncMap.ContainsAsync("key", 1);   // true
+```
+
+#### Advanced Async Operations
+
+```csharp
+using MultiMap.Entities;
+
+using var map = new MultiMapAsync<string, int>();
+
+// Bulk add with AddRangeAsync
+var items = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("A", 2),
+    new KeyValuePair<string, int>("B", 3)
+};
+await map.AddRangeAsync(items);
+
+// Get key and value counts
+int keyCount = await map.GetKeyCountAsync();       // 2
+int totalCount = await map.GetCountAsync();        // 3
+int aValues = await map.GetValuesCountAsync("A");  // 2
+
+// Bulk remove with RemoveRangeAsync
+var toRemove = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("B", 3)
+};
+int removed = await map.RemoveRangeAsync(toRemove);  // Returns 2
+
+// Conditional removal with RemoveWhereAsync
+await map.AddRangeAsync("numbers", [1, 2, 3, 4, 5, 6]);
+int removedCount = await map.RemoveWhereAsync("numbers", n => n > 3);
+// Removed values: 4, 5, 6
+
+// TryGetAsync pattern
+var (found, values) = await map.TryGetAsync("A");
+if (found)
+{
+    Console.WriteLine($"Found {values.Count()} values");
+}
+
+// All methods support CancellationToken
+using var cts = new CancellationTokenSource();
+await map.AddAsync("key", 100, cts.Token);
 ```
 
 ### Set Operations
