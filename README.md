@@ -236,18 +236,18 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Behavior | `IMultiMap` | `IMultiMapAsync` | `ISimpleMultiMap` |
 |---|---|---|---|
-| **Interface Hierarchy** | Extends `IReadOnlyMultiMap` → `IReadOnlySimpleMultiMap` | Extends `IReadOnlyMultiMapAsync` | Extends `IReadOnlySimpleMultiMap` |
-| **Get (missing key)** | `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty | `GetAsync` throws `KeyNotFoundException`; `GetOrDefaultAsync` returns empty | `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty |
-| **TryGet (missing key)** | `TryGet` returns `false` with empty collection | `TryGetAsync` returns `(false, empty)` tuple | Not available |
+| **Interface Hierarchy** | ✅ Extends `IReadOnlyMultiMap` → `IReadOnlySimpleMultiMap` | ✅ Extends `IReadOnlyMultiMapAsync` | ✅ Extends `IReadOnlySimpleMultiMap` |
+| **Get (missing key)** | ✅ `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty | ✅ `GetAsync` throws `KeyNotFoundException`; `GetOrDefaultAsync` returns empty | ✅ `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty |
+| **TryGet (missing key)** | ✅ `TryGet` returns `false` with empty collection | ✅ `TryGetAsync` returns `(false, empty)` tuple | ❌ Not available |
 | **KeyCount property** | ✅ `KeyCount` property (number of unique keys) | ✅ `GetKeyCountAsync()` method | ❌ Not available |
-| **Add (duplicate)** | Returns `false` | Returns `false` (via `ValueTask<bool>`) | Returns `false` |
-| **AddRange** | `AddRange(key, values)` and `AddRange(items)` | `AddRangeAsync(key, values)` and `AddRangeAsync(items)` | Not available |
-| **Remove return type** | `bool` | `ValueTask<bool>` | `void` |
-| **RemoveRange** | `RemoveRange(items)` returns `int` | `RemoveRangeAsync(items)` returns `ValueTask<int>` | Not available |
-| **RemoveWhere** | `RemoveWhere(key, predicate)` returns `int` | `RemoveWhereAsync(key, predicate)` returns `ValueTask<int>` | Not available |
-| **GetValuesCount** | Not available | `GetValuesCountAsync(key)` returns `ValueTask<int>` | Not available |
-| **Enumeration** | `IEnumerable<KeyValuePair>` | `IAsyncEnumerable<KeyValuePair>` | `IEnumerable<KeyValuePair>` (+ `Flatten()`) |
-| **Disposable** | Only `MultiMapLock` | ✅ Yes (`IAsyncDisposable` + `IDisposable`) | ❌ No |
+| **Add (duplicate)** | ✅ Returns `false` | ✅ Returns `false` (via `ValueTask<bool>`) | ✅ Returns `false` |
+| **AddRange** | ✅ `AddRange(key, values)` and `AddRange(items)` | ✅ `AddRangeAsync(key, values)` and `AddRangeAsync(items)` | ❌ Not available |
+| **Remove return type** | ✅ `bool` | ✅ `ValueTask<bool>` | ✅ `void` |
+| **RemoveRange** | ✅ `RemoveRange(items)` returns `int` | ✅ `RemoveRangeAsync(items)` returns `ValueTask<int>` | ❌ Not available |
+| **RemoveWhere** | ✅ `RemoveWhere(key, predicate)` returns `int` | ✅ `RemoveWhereAsync(key, predicate)` returns `ValueTask<int>` | ❌ Not available |
+| **GetValuesCount** | ❌ Not available | ✅ `GetValuesCountAsync(key)` returns `ValueTask<int>` | ❌ Not available |
+| **Enumeration** | ✅ `IEnumerable<KeyValuePair>` | ✅ `IAsyncEnumerable<KeyValuePair>` | ✅ `IEnumerable<KeyValuePair>` (+ `Flatten()`) |
+| **Disposable** | ⚠️ Only `MultiMapLock` | ✅ Yes (`IAsyncDisposable` + `IDisposable`) | ❌ No |
 | **CancellationToken** | ❌ No | ✅ Yes (all methods) | ❌ No |
 
 ### When to Use Which Implementation
