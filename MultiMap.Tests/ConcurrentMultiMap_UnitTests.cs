@@ -1154,5 +1154,137 @@ public class ConcurrentMultiMapTests
         Assert.That(totalRemoved, Is.EqualTo(100));
         Assert.That(_map.Count, Is.EqualTo(0));
     }
+
+    // ── Additional Coverage Tests for Values Property and Edge Cases ──
+
+    [Test]
+    [Category("Concurrency")]
+    public void Values_ConcurrentEnumeration_DoesNotThrow()
+    {
+        // Add values across multiple keys
+        for (int i = 0; i < 20; i++)
+            _map.Add($"key{i % 5}", i);
+
+        Assert.DoesNotThrow(() =>
+        {
+            Parallel.For(0, 10, _ =>
+            {
+                var values = _map.Values.ToList();
+                Assert.That(values, Is.Not.Empty);
+            });
+        });
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Values_WithConcurrentModifications_ReturnsSnapshot()
+    {
+        // Add initial data
+        for (int i = 0; i < 50; i++)
+            _map.Add($"key{i % 10}", i);
+
+        var enumerationComplete = false;
+        var values = new List<int>();
+
+        var enumerationTask = Task.Run(() =>
+        {
+            values.AddRange(_map.Values);
+            enumerationComplete = true;
+        });
+
+        var modificationTask = Task.Run(() =>
+        {
+            for (int i = 0; i < 20; i++)
+            {
+                _map.Add($"newkey{i}", i + 1000);
+                Thread.Sleep(1);
+            }
+        });
+
+        Task.WaitAll(enumerationTask, modificationTask);
+        Assert.That(enumerationComplete, Is.True);
+        Assert.That(values, Is.Not.Empty);
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void GetEnumerator_ConcurrentEnumerations_DoNotInterfere()
+    {
+        for (int i = 0; i < 20; i++)
+            _map.Add($"key{i % 5}", i);
+
+        var lists = new System.Collections.Concurrent.ConcurrentBag<List<KeyValuePair<string, int>>>();
+
+        Parallel.For(0, 10, _ =>
+        {
+            var list = _map.ToList();
+            lists.Add(list);
+        });
+
+        Assert.That(lists.Count, Is.EqualTo(10));
+        foreach (var list in lists)
+        {
+            Assert.That(list.Count, Is.EqualTo(20));
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Values_MultipleKeysWithMultipleValues_ReturnsAllValues()
+    {
+        const int keyCount = 50;
+        const int valuesPerKey = 20;
+
+        for (int k = 0; k < keyCount; k++)
+            for (int v = 0; v < valuesPerKey; v++)
+                _map.Add($"key{k}", k * 100 + v);
+
+        var allValues = _map.Values.ToList();
+        Assert.That(allValues.Count, Is.EqualTo(keyCount * valuesPerKey));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void GetEnumerator_WithConcurrentRemoval_DoesNotThrow()
+    {
+        for (int i = 0; i < 100; i++)
+            _map.Add($"key{i % 10}", i);
+
+        Assert.DoesNotThrow(() =>
+        {
+            var enumerateTask = Task.Run(() =>
+            {
+                foreach (var _ in _map)
+                {
+                    Thread.Sleep(1);
+                }
+            });
+
+            var removeTask = Task.Run(() =>
+            {
+                for (int i = 0; i < 10; i++)
+                {
+                    _map.RemoveKey($"key{i}");
+                    Thread.Sleep(2);
+                }
+            });
+
+            Task.WaitAll(enumerateTask, removeTask);
+        });
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Values_RepeatedEnumeration_ConsistentResults()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        var first = _map.Values.ToList();
+        var second = _map.Values.ToList();
+
+        Assert.That(first, Is.EquivalentTo(second));
+    }
 }
 

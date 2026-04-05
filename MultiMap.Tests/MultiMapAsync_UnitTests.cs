@@ -1639,5 +1639,317 @@ public class MultiMapAsyncTests
         Assert.CatchAsync<OperationCanceledException>(async () =>
             await _map.RemoveWhereAsync("key1", v => true, cts.Token));
     }
+
+    // ── Slow Path Coverage Tests (Semaphore Contention) ──────────────────
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task GetAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+
+        var tasks = new List<Task<IEnumerable<int>>>();
+
+        // Create contention by spawning many concurrent GetAsync calls
+        for (int i = 0; i < 20; i++)
+        {
+            tasks.Add(_map.GetAsync("key1").AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        // All should succeed and return the same values
+        foreach (var result in results)
+        {
+            Assert.That(result, Is.EquivalentTo(new[] { 1, 2 }));
+        }
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task GetOrDefaultAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+
+        var tasks = new List<Task<IEnumerable<int>>>();
+
+        for (int i = 0; i < 20; i++)
+        {
+            tasks.Add(_map.GetOrDefaultAsync("key1").AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        foreach (var result in results)
+        {
+            Assert.That(result, Is.EquivalentTo(new[] { 1 }));
+        }
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task TryGetAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+
+        var tasks = new List<Task<(bool found, IEnumerable<int> values)>>();
+
+        for (int i = 0; i < 20; i++)
+        {
+            tasks.Add(_map.TryGetAsync("key1").AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        foreach (var (found, values) in results)
+        {
+            Assert.That(found, Is.True);
+            Assert.That(values, Is.EquivalentTo(new[] { 1 }));
+        }
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task AddAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        var tasks = new List<Task<bool>>();
+
+        // Concurrent adds to different keys to create contention
+        for (int i = 0; i < 50; i++)
+        {
+            int value = i;
+            tasks.Add(_map.AddAsync($"key{i % 10}", value).AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        // Most adds should succeed (first occurrence of each key-value pair)
+        Assert.That(results.Count(r => r), Is.GreaterThan(40));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(50));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task AddRangeAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        var tasks = new List<Task>();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int batch = i;
+            var pairs = Enumerable.Range(batch * 10, 10)
+                .Select(v => new KeyValuePair<string, int>($"key{v % 5}", v))
+                .ToList();
+            tasks.Add(_map.AddRangeAsync(pairs));
+        }
+
+        await Task.WhenAll(tasks);
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(100));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task RemoveAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        // Pre-populate
+        for (int i = 0; i < 50; i++)
+            await _map.AddAsync($"key{i % 10}", i);
+
+        var tasks = new List<Task<bool>>();
+
+        for (int i = 0; i < 50; i++)
+        {
+            int value = i;
+            tasks.Add(_map.RemoveAsync($"key{value % 10}", value).AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results.Count(r => r), Is.EqualTo(50));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task RemoveRangeAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        // Pre-populate
+        for (int i = 0; i < 100; i++)
+            await _map.AddAsync($"key{i % 10}", i);
+
+        var tasks = new List<Task<int>>();
+
+        for (int i = 0; i < 10; i++)
+        {
+            int batch = i;
+            var pairs = Enumerable.Range(batch * 10, 10)
+                .Select(v => new KeyValuePair<string, int>($"key{v % 10}", v))
+                .ToList();
+            tasks.Add(_map.RemoveRangeAsync(pairs).AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results.Sum(), Is.EqualTo(100));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task RemoveWhereAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        // Pre-populate
+        for (int i = 0; i < 100; i++)
+            await _map.AddAsync($"key{i % 5}", i);
+
+        var tasks = new List<Task<int>>();
+
+        for (int i = 0; i < 5; i++)
+        {
+            string key = $"key{i}";
+            tasks.Add(_map.RemoveWhereAsync(key, v => v % 2 == 0).AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        // Should have removed approximately half the values
+        Assert.That(results.Sum(), Is.GreaterThan(40));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task RemoveKeyAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        // Pre-populate
+        for (int i = 0; i < 50; i++)
+            await _map.AddAsync($"key{i}", i);
+
+        var tasks = new List<Task<bool>>();
+
+        for (int i = 0; i < 50; i++)
+        {
+            string key = $"key{i}";
+            tasks.Add(_map.RemoveKeyAsync(key).AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results.Count(r => r), Is.EqualTo(50));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task ContainsAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+
+        var tasks = new List<Task<bool>>();
+
+        for (int i = 0; i < 20; i++)
+        {
+            tasks.Add(_map.ContainsAsync("key1", 1).AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results, Has.All.True);
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task ContainsKeyAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+
+        var tasks = new List<Task<bool>>();
+
+        for (int i = 0; i < 20; i++)
+        {
+            tasks.Add(_map.ContainsKeyAsync("key1").AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results, Has.All.True);
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task ClearAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        // Pre-populate
+        for (int i = 0; i < 50; i++)
+            await _map.AddAsync($"key{i}", i);
+
+        var tasks = new List<Task>();
+
+        // Multiple concurrent clears
+        for (int i = 0; i < 5; i++)
+        {
+            tasks.Add(_map.ClearAsync());
+        }
+
+        await Task.WhenAll(tasks);
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public async Task MixedOperations_SlowPath_HighContention_MaintainsConsistency()
+    {
+        const int iterations = 100;
+        var tasks = new List<Task>();
+
+        for (int i = 0; i < iterations; i++)
+        {
+            int value = i;
+            string key = $"key{value % 10}";
+
+            // Mix of different operations to create contention
+            if (value % 5 == 0)
+                tasks.Add(_map.AddAsync(key, value).AsTask());
+            else if (value % 5 == 1)
+                tasks.Add(_map.GetOrDefaultAsync(key).AsTask());
+            else if (value % 5 == 2)
+                tasks.Add(_map.ContainsAsync(key, value).AsTask());
+            else if (value % 5 == 3)
+                tasks.Add(_map.RemoveAsync(key, value).AsTask());
+            else
+                tasks.Add(_map.GetCountAsync().AsTask());
+        }
+
+        // All operations should complete without exception
+        await Task.WhenAll(tasks);
+
+        Assert.Pass("All mixed operations completed successfully");
+    }
+
+    [Test]
+    [Category("Stress")]
+    public async Task GetKeysAsync_SlowPath_UnderContention_ExecutesCorrectly()
+    {
+        // Pre-populate
+        for (int i = 0; i < 20; i++)
+            await _map.AddAsync($"key{i}", i);
+
+        var tasks = new List<Task<IEnumerable<string>>>();
+
+        for (int i = 0; i < 20; i++)
+        {
+            tasks.Add(_map.GetKeysAsync().AsTask());
+        }
+
+        var results = await Task.WhenAll(tasks);
+
+        foreach (var keys in results)
+        {
+            Assert.That(keys.Count(), Is.EqualTo(20));
+        }
+    }
 }
+
 
