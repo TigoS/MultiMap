@@ -215,9 +215,9 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `MultiMapList` | `IMultiMap` | ❌ No | ✅ Yes | ❌ No | O(1) |
 | `MultiMapSet` | `IMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
 | `SortedMultiMap` | `IMultiMap` | ❌ No | ❌ No | ✅ Yes | O(1) |
-| `ConcurrentMultiMap` | `IMultiMap` | Per-key lock | ❌ No | ❌ No | O(1) |
-| `MultiMapLock` | `IMultiMap` | RW Lock | ❌ No | ❌ No | O(1) |
-| `MultiMapAsync` | `IMultiMapAsync` | Semaphore | ❌ No | ❌ No | O(1) |
+| `ConcurrentMultiMap` | `IMultiMap` | ✅ Per-key lock | ❌ No | ❌ No | O(1) |
+| `MultiMapLock` | `IMultiMap` | ✅ RW Lock | ❌ No | ❌ No | O(1) |
+| `MultiMapAsync` | `IMultiMapAsync` | ✅ Semaphore | ❌ No | ❌ No | O(1) |
 | `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | — |
 
 ### Internal Data Structures
