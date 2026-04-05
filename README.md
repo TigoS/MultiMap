@@ -245,7 +245,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | **Remove return type** | ✅ `bool` | ✅ `ValueTask<bool>` | ✅ `void` |
 | **RemoveRange** | ✅ `RemoveRange(items)` returns `int` | ✅ `RemoveRangeAsync(items)` returns `ValueTask<int>` | ❌ Not available |
 | **RemoveWhere** | ✅ `RemoveWhere(key, predicate)` returns `int` | ✅ `RemoveWhereAsync(key, predicate)` returns `ValueTask<int>` | ❌ Not available |
-| **GetValuesCount** | ❌ Not available | ✅ `GetValuesCountAsync(key)` returns `ValueTask<int>` | ❌ Not available |
+| **GetValuesCount** | ✅ `GetValuesCount(key)` returns `int` | ✅ `GetValuesCountAsync(key)` returns `ValueTask<int>` | ❌ Not available |
 | **Enumeration** | ✅ `IEnumerable<KeyValuePair>` | ✅ `IAsyncEnumerable<KeyValuePair>` | ✅ `IEnumerable<KeyValuePair>` (+ `Flatten()`) |
 | **Disposable** | ⚠️ Only `MultiMapLock` | ✅ Yes (`IAsyncDisposable` + `IDisposable`) | ❌ No |
 | **CancellationToken** | ❌ No | ✅ Yes (all methods) | ❌ No |
