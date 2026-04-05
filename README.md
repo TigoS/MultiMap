@@ -766,6 +766,191 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** using `DefaultJob` with `CPU
 - **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.1x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.7x slower
 - **Async overhead**: `MultiMapAsync` is comparable to `MultiMapLock` for reads; ~1.7x slower for adds due to `SemaphoreSlim`
 
+## Migration Guide
+
+### Upgrading to Version 1.0.7+
+
+Version 1.0.7 introduced a new interface hierarchy with read-only base interfaces and several new members. This guide will help you upgrade your code to take advantage of these improvements.
+
+#### Interface Hierarchy Changes
+
+**Before (v1.0.6 and earlier):**
+- 3 interfaces: `ISimpleMultiMap`, `IMultiMap`, `IMultiMapAsync`
+
+**After (v1.0.7+):**
+- 6 interfaces organized in a hierarchy:
+  - `IReadOnlySimpleMultiMap` (base read-only)
+  - `IReadOnlyMultiMap` extends `IReadOnlySimpleMultiMap`
+  - `ISimpleMultiMap` extends `IReadOnlySimpleMultiMap`
+  - `IMultiMap` extends `IReadOnlyMultiMap`
+  - `IReadOnlyMultiMapAsync` (async read-only)
+  - `IMultiMapAsync` extends `IReadOnlyMultiMapAsync`
+
+**Why this matters:** You can now accept read-only interfaces in methods that don't need to modify the map, improving API design and enabling safer contracts.
+
+```csharp
+// OLD: Accepts mutable interface even though it doesn't modify
+public void DisplayStats(IMultiMap<string, int> map)
+{
+    Console.WriteLine($"Keys: {map.Keys.Count()}");
+}
+
+// NEW: Use read-only interface for better intent
+public void DisplayStats(IReadOnlyMultiMap<string, int> map)
+{
+    Console.WriteLine($"Keys: {map.KeyCount}");  // Also faster!
+}
+```
+
+#### New Members to Adopt
+
+##### 1. KeyCount Property
+
+**Before:** Counting keys required materializing the collection
+```csharp
+int keyCount = map.Keys.Count();  // O(k) - enumerates all keys
+```
+
+**After:** Direct O(1) property access
+```csharp
+int keyCount = map.KeyCount;  // O(1) - instant
+```
+
+##### 2. Values Property
+
+**Before:** Getting all values required flattening
+```csharp
+var allValues = map.Flatten().Select(kvp => kvp.Value);
+```
+
+**After:** Direct property access
+```csharp
+IEnumerable<TValue> allValues = map.Values;  // Cleaner and more intuitive
+```
+
+##### 3. GetValuesCount() Method
+
+**Before:** Counting values for a key required materializing the collection
+```csharp
+int count = map.Get("key").Count();  // Could throw if key missing
+```
+
+**After:** Direct count method with safe handling
+```csharp
+int count = map.GetValuesCount("key");  // Returns 0 if key doesn't exist
+```
+
+##### 4. AddRange with KeyValuePair Collection
+
+**Before:** Only AddRange(key, values) was available
+```csharp
+foreach (var kvp in items)
+{
+    map.Add(kvp.Key, kvp.Value);
+}
+```
+
+**After:** Bulk insert with AddRange overload (much faster!)
+```csharp
+var items = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("B", 2)
+};
+map.AddRange(items);  // 2-7x faster than individual adds
+```
+
+##### 5. RemoveRange Method
+
+**New capability:** Bulk removal with count of removed pairs
+```csharp
+var toRemove = new[]
+{
+    new KeyValuePair<string, int>("A", 1),
+    new KeyValuePair<string, int>("B", 2)
+};
+int removedCount = map.RemoveRange(toRemove);  // Returns number actually removed
+```
+
+##### 6. RemoveWhere Method
+
+**New capability:** Conditional removal with predicate
+```csharp
+// Remove all even numbers associated with "numbers" key
+int removed = map.RemoveWhere("numbers", n => n % 2 == 0);
+Console.WriteLine($"Removed {removed} even numbers");
+```
+
+#### Breaking Changes
+
+**Get() Method Behavior Change (v1.0.7):**
+
+**Before (v1.0.6):** `Get()` returned empty collection for missing keys
+```csharp
+var values = map.Get("missing");  // Returned empty collection
+```
+
+**After (v1.0.7):** `Get()` throws `KeyNotFoundException` for missing keys
+```csharp
+// Now throws if key doesn't exist
+try
+{
+    var values = map.Get("missing");
+}
+catch (KeyNotFoundException)
+{
+    // Handle missing key
+}
+```
+
+**Migration strategy:** Use the three retrieval patterns based on your needs:
+
+| Pattern | Use When | Behavior on Missing Key |
+|---|---|---|
+| `Get(key)` | You expect the key to exist | Throws `KeyNotFoundException` |
+| `GetOrDefault(key)` | Missing keys are valid | Returns empty collection |
+| `TryGet(key, out values)` | You need to check existence | Returns `false`, out param is empty |
+
+```csharp
+// Pattern 1: Exception-based (use when key should exist)
+var values = map.Get("key");  // Throws if missing
+
+// Pattern 2: Default-based (use when missing is normal)
+var values = map.GetOrDefault("key");  // Returns empty if missing
+
+// Pattern 3: Try-pattern (use when you need to check)
+if (map.TryGet("key", out var values))
+{
+    // Key was found, use values
+}
+```
+
+#### Recommended Upgrade Steps
+
+1. **Update NuGet package:**
+   ```bash
+   dotnet add package MultiMap --version 1.0.8
+   ```
+
+2. **Replace `Get()` calls for optional keys:**
+   - If the key might not exist, replace `Get(key)` with `GetOrDefault(key)` or `TryGet(key, out values)`
+
+3. **Update method signatures:**
+   - Change parameters from `IMultiMap<TKey, TValue>` to `IReadOnlyMultiMap<TKey, TValue>` for methods that only read
+
+4. **Optimize performance:**
+   - Replace `map.Keys.Count()` with `map.KeyCount`
+   - Replace `map.Get(key).Count()` with `map.GetValuesCount(key)`
+   - Replace loops with `AddRange(items)` for bulk inserts
+
+5. **Adopt new bulk operations:**
+   - Use `RemoveRange(items)` instead of loops for bulk removal
+   - Use `RemoveWhere(key, predicate)` for conditional removal
+
+#### Compatibility
+
+All existing code using `IMultiMap`, `ISimpleMultiMap`, and `IMultiMapAsync` interfaces will continue to work, except for code that relied on `Get()` returning empty collections for missing keys. Update those cases to use `GetOrDefault()` or `TryGet()`.
+
 ## Release Notes
 
 ### 1.0.7
