@@ -1320,4 +1320,324 @@ public class MultiMapAsyncTests
         Assert.That(await _map.RemoveAsync("a", 2), Is.False);
         Assert.That(await _map.GetCountAsync(), Is.EqualTo(2));
     }
+
+    // ── GetKeyCountAsync Tests ────────────────────────────────
+
+    [Test]
+    public async Task GetKeyCountAsync_EmptyMap_ReturnsZero()
+    {
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetKeyCountAsync_AfterAddingSingleKey_ReturnsOne()
+    {
+        await _map.AddAsync("key1", 1);
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetKeyCountAsync_AfterAddingMultipleKeys_ReturnsCorrectCount()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key2", 2);
+        await _map.AddAsync("key3", 3);
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task GetKeyCountAsync_AfterAddingMultipleValuesToSameKey_ReturnsOne()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key1", 3);
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetKeyCountAsync_AfterRemovingKey_DecreasesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key2", 2);
+        await _map.RemoveKeyAsync("key1");
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(1));
+    }
+
+    // ── GetValuesAsync Tests ──────────────────────────────────
+
+    [Test]
+    public async Task GetValuesAsync_EmptyMap_ReturnsEmpty()
+    {
+        var values = await _map.GetValuesAsync();
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetValuesAsync_WithSingleValue_ReturnsCorrectValue()
+    {
+        await _map.AddAsync("key1", 42);
+        var values = await _map.GetValuesAsync();
+        Assert.That(values, Is.EquivalentTo(new[] { 42 }));
+    }
+
+    [Test]
+    public async Task GetValuesAsync_WithMultipleValuesAcrossKeys_ReturnsAllValues()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key2", 3);
+        await _map.AddAsync("key2", 4);
+        var values = await _map.GetValuesAsync();
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2, 3, 4 }));
+    }
+
+    [Test]
+    public async Task GetValuesAsync_AfterRemovingValue_ReturnsRemainingValues()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.RemoveAsync("key1", 1);
+        var values = await _map.GetValuesAsync();
+        Assert.That(values, Is.EquivalentTo(new[] { 2 }));
+    }
+
+    // ── GetValuesCountAsync Tests ─────────────────────────────
+
+    [Test]
+    public async Task GetValuesCountAsync_NonExistentKey_ReturnsZero()
+    {
+        Assert.That(await _map.GetValuesCountAsync("missing"), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task GetValuesCountAsync_KeyWithSingleValue_ReturnsOne()
+    {
+        await _map.AddAsync("key1", 1);
+        Assert.That(await _map.GetValuesCountAsync("key1"), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task GetValuesCountAsync_KeyWithMultipleValues_ReturnsCorrectCount()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key1", 3);
+        Assert.That(await _map.GetValuesCountAsync("key1"), Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task GetValuesCountAsync_AfterRemovingValue_DecreasesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.RemoveAsync("key1", 1);
+        Assert.That(await _map.GetValuesCountAsync("key1"), Is.EqualTo(1));
+    }
+
+    // ── AddRangeAsync(KeyValuePairs) Tests ────────────────────
+
+    [Test]
+    public async Task AddRangeAsyncKeyValuePairs_EmptyCollection_DoesNothing()
+    {
+        await _map.AddRangeAsync([]);
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task AddRangeAsyncKeyValuePairs_SinglePair_AddsCorrectly()
+    {
+        var pairs = new[] { new KeyValuePair<string, int>("key1", 1) };
+        await _map.AddRangeAsync(pairs);
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task AddRangeAsyncKeyValuePairs_MultiplePairsSameKey_AddsAllValues()
+    {
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key1", 2),
+            new KeyValuePair<string, int>("key1", 3)
+        };
+        await _map.AddRangeAsync(pairs);
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public async Task AddRangeAsyncKeyValuePairs_MultiplePairsDifferentKeys_AddsCorrectly()
+    {
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 2),
+            new KeyValuePair<string, int>("key3", 3)
+        };
+        await _map.AddRangeAsync(pairs);
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("key2"), Is.EquivalentTo(new[] { 2 }));
+        Assert.That(await _map.GetOrDefaultAsync("key3"), Is.EquivalentTo(new[] { 3 }));
+    }
+
+    [Test]
+    public async Task AddRangeAsyncKeyValuePairs_DuplicatePairs_IgnoresDuplicates()
+    {
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key1", 1)
+        };
+        await _map.AddRangeAsync(pairs);
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    // ── RemoveRangeAsync Tests ────────────────────────────────
+
+    [Test]
+    public async Task RemoveRangeAsync_EmptyCollection_ReturnsZero()
+    {
+        await _map.AddAsync("key1", 1);
+        int removed = await _map.RemoveRangeAsync([]);
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveRangeAsync_SingleExistingPair_ReturnsOne()
+    {
+        await _map.AddAsync("key1", 1);
+        var pairs = new[] { new KeyValuePair<string, int>("key1", 1) };
+        int removed = await _map.RemoveRangeAsync(pairs);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task RemoveRangeAsync_SingleNonExistentPair_ReturnsZero()
+    {
+        await _map.AddAsync("key1", 1);
+        var pairs = new[] { new KeyValuePair<string, int>("key2", 2) };
+        int removed = await _map.RemoveRangeAsync(pairs);
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveRangeAsync_MultiplePairs_RemovesCorrectCount()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key2", 3);
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 3)
+        };
+        int removed = await _map.RemoveRangeAsync(pairs);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveRangeAsync_MixedExistingAndNonExisting_RemovesOnlyExisting()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key2", 2);
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key3", 3)
+        };
+        int removed = await _map.RemoveRangeAsync(pairs);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveRangeAsync_LastValueOfKey_RemovesKey()
+    {
+        await _map.AddAsync("key1", 1);
+        var pairs = new[] { new KeyValuePair<string, int>("key1", 1) };
+        await _map.RemoveRangeAsync(pairs);
+        Assert.That(await _map.ContainsKeyAsync("key1"), Is.False);
+    }
+
+    // ── RemoveWhereAsync Tests ────────────────────────────────
+
+    [Test]
+    public async Task RemoveWhereAsync_NonExistentKey_ReturnsZero()
+    {
+        int removed = await _map.RemoveWhereAsync("missing", v => v > 0);
+        Assert.That(removed, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_NoMatchingValues_ReturnsZero()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        int removed = await _map.RemoveWhereAsync("key1", v => v > 10);
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_SingleMatchingValue_RemovesAndReturnsOne()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key1", 3);
+        int removed = await _map.RemoveWhereAsync("key1", v => v == 2);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1, 3 }));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_MultipleMatchingValues_RemovesAll()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key1", 3);
+        await _map.AddAsync("key1", 4);
+        int removed = await _map.RemoveWhereAsync("key1", v => v > 2);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_AllValues_RemovesKeyAndReturnsCount()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        int removed = await _map.RemoveWhereAsync("key1", v => true);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(await _map.ContainsKeyAsync("key1"), Is.False);
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_ComplexPredicate_RemovesCorrectly()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key1", 3);
+        await _map.AddAsync("key1", 4);
+        await _map.AddAsync("key1", 5);
+        int removed = await _map.RemoveWhereAsync("key1", v => v % 2 == 0);
+        Assert.That(removed, Is.EqualTo(2));
+        Assert.That(await _map.GetOrDefaultAsync("key1"), Is.EquivalentTo(new[] { 1, 3, 5 }));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_WithCancellationToken_CanBeCancelled()
+    {
+        await _map.AddAsync("key1", 1);
+        var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        Assert.CatchAsync<OperationCanceledException>(async () =>
+            await _map.RemoveWhereAsync("key1", v => true, cts.Token));
+    }
 }
+
