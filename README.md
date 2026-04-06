@@ -77,7 +77,7 @@ MultiMap/
 ├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1045 tests)
 ├── MultiMap.Demo/                      # Console demo application
 │   ├── Program.cs                      # Demo entry point
-│   └── TestDataHelper.cs              # Sample data factory for demos
+│   └── TestDataHelper.cs               # Sample data factory for demos
 └── BenchmarkSuite/                     # BenchmarkDotNet performance benchmarks
 ```
 
@@ -226,7 +226,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `ConcurrentMultiMap` | `IMultiMap` | ✅ Per-key lock | ❌ No | ❌ No | O(1) |
 | `MultiMapLock` | `IMultiMap` | ✅ RW Lock | ❌ No | ❌ No | O(1) |
 | `MultiMapAsync` | `IMultiMapAsync` | ✅ Semaphore | ❌ No | ❌ No | O(1) |
-| `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | — |
+| `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | ➖ |
 
 ### Internal Data Structures
 
