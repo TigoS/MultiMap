@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MultiMap" Version="1.0.8" />
+    <PackageReference Include="MultiMap" Version="1.0.9" />
   </ItemGroup>
 
 </Project>
