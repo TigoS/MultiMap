@@ -14,7 +14,7 @@
     <RepositoryUrl>https://github.com/TigoS/MultiMap</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>https://github.com/TigoS/MultiMap?tab=MIT-1-ov-file</PackageLicenseExpression>
+    <PackageLicenseExpression>https://github.com/TigoS/MultiMap/blob/master/LICENSE.txt</PackageLicenseExpression>
 
     <!-- Generate XML documentation for IntelliSense in consuming projects -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
