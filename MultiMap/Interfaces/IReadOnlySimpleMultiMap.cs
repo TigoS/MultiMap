@@ -16,11 +16,11 @@
         /// <param name="key">The key for which to retrieve the associated values. Cannot be null.</param>
         /// <returns>
         /// An enumerable collection of values associated with the specified key.
-        /// Throws a KeyNotFount exception if the key is not found.
+        /// Throws a <see cref="KeyNotFoundException"/> if the key is not found.
         /// </returns>
         /// <exception cref="KeyNotFoundException">
         /// Thrown when the specified key does not exist in the collection.
-        /// </exception>"
+        /// </exception>
         public IEnumerable<TValue> Get(TKey key);
 
         /// <summary>

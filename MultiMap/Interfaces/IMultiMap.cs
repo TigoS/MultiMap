@@ -18,7 +18,7 @@
         /// Attempts to add the specified key and value to the collection.
         /// </summary>
         /// <remarks>
-        /// If the collection already contains the specified key, the method does not modify the collection and returns false.
+        /// If the collection already contains the specified key-value pair, the method does not modify the collection and returns false.
         /// The behavior regarding null keys or values depends on the specific implementation.
         /// </remarks>
         /// <param name="key">The key to add to the collection.
@@ -27,7 +27,7 @@
         /// May be subject to constraints depending on the collection implementation.</param>
         /// <returns>
         /// <see langword="true"/> if the key and value were added successfully;
-        /// otherwise, <see langword="false"/> if the key already exists in the collection.
+        /// otherwise, <see langword="false"/> if the key-value pair already exists in the collection.
         /// </returns>
         public bool Add(TKey key, TValue value);
 

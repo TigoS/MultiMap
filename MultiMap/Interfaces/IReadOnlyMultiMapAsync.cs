@@ -17,11 +17,11 @@
         /// <param name="key">The key whose associated values are to be retrieved. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The task result contains an enumerable collection of values associated with the specified key.
-        /// Throws a KeyNotFount exception if the key is not found.
+        /// Throws a <see cref="KeyNotFoundException"/> if the key is not found.
         /// </returns>
         /// <exception cref="KeyNotFoundException">
         /// Thrown when the specified key does not exist in the collection.
-        /// </exception>"
+        /// </exception>
         public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>

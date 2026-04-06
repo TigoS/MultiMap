@@ -5,7 +5,9 @@
     /// </summary>
     /// <remarks>This interface allows enumeration of all key-value pairs and provides efficient lookup of values by key.
     /// Implementations are read-only and do not support modification of the collection.
-    /// The interface guarantees that methods never return null collections; if a key is not present, an empty collection is returned instead. Thread safety and ordering of keys or values depend on the specific implementation.</remarks>
+    /// The <see cref="IReadOnlySimpleMultiMap{TKey, TValue}.Get"/> method throws <see cref="KeyNotFoundException"/> if the key is not present;
+    /// use <see cref="IReadOnlySimpleMultiMap{TKey, TValue}.GetOrDefault"/> for safe retrieval that returns an empty collection.
+    /// Thread safety and ordering of keys or values depend on the specific implementation.</remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null.</typeparam>
     /// <typeparam name="TValue">The type of values in the multi-map. Must not be null.</typeparam>
     public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
@@ -80,9 +82,11 @@
         /// <summary>
         /// Gets the collection of values associated with the specified key.
         /// </summary>
-        /// <remarks>The returned collection reflects the current state of the underlying data. Modifying the collection may not affect the original data source, depending on the implementation.</remarks>
+        /// <remarks>This indexer delegates to <see cref="IReadOnlySimpleMultiMap{TKey, TValue}.Get"/>
+        /// and throws <see cref="KeyNotFoundException"/> if the key is not found.</remarks>
         /// <param name="key">The key whose associated values to retrieve.</param>
-        /// <returns>An enumerable collection of values associated with the specified key. If the key is not found, the collection is empty.</returns>
+        /// <returns>An enumerable collection of values associated with the specified key.</returns>
+        /// <exception cref="KeyNotFoundException">Thrown when the specified key does not exist in the collection.</exception>
         public IEnumerable<TValue> this[TKey key] { get; }
     }
 }
