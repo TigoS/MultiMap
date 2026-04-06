@@ -1,6 +1,19 @@
-# Release Notes
+# MultiMap
 
-## 1.0.9
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
+[![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
+[![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
+[![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
+[![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
+[![Coverage](https://img.shields.io/badge/coverage-94.3%25-brightgreen)]()
+
+A **.NET 10** library
+
+## Release Notes
+
+### 1.0.9
 
 **Added**
 
@@ -37,7 +50,7 @@
 - Race condition in `ConcurrentMultiMap.Clear()` under concurrent access causing count drift
 - Misleading test name in `MultiMapAsync` dispose test
 
-## 1.0.8
+### 1.0.8
 
 **Added**
 
@@ -65,7 +78,7 @@
 - Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
 - Comprehensive README rewrite: expanded interface documentation, advanced usage examples, migration guide for v1.0.8+, performance comparison tables
 
-## 1.0.7
+### 1.0.7
 
 **Added**
 
@@ -93,13 +106,13 @@
 
 - Misleading test names that tested `GetOrDefaultAsync` but were named `GetAsync_NonExistentKey_ReturnsEmpty`
 
-## 1.0.6
+### 1.0.6
 
 **Added**
 
 - `Release Notes` section in README
 
-## 1.0.5
+### 1.0.5
 
 **Changed**
 
@@ -112,13 +125,13 @@
 
 - Race condition in `ConcurrentMultiMap` where `Add`/`Remove` could operate on orphaned hashsets after concurrent `RemoveKey`, causing `Count` to drift from actual data
 
-## 1.0.4
+### 1.0.4
 
 **Changed**
 
 - Updated NuGet package icon
 
-## 1.0.3
+### 1.0.3
 
 **Added**
 
@@ -131,7 +144,7 @@
 
 - Full README rewrite with comparison tables, usage examples, and benchmark results
 
-## 1.0.2
+### 1.0.2
 
 **Added**
 
@@ -155,13 +168,13 @@
 - Count vulnerability in `ConcurrentMultiMap`
 - Count regression in `ConcurrentMultiMap` after optimization pass
 
-## 1.0.1
+### 1.0.1
 
 **Added**
 
 - Initial README with overview, features, and project structure
 
-## 1.0.0
+### 1.0.0
 
 **Added**
 

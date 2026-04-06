@@ -1084,7 +1084,7 @@ All changes in v1.0.8 are **additive**. Existing code targeting v1.0.7 compiles 
 
 ## Release Notes
 
-See [Release Notes](ReleaseNotes.md) for the full version history.
+See [Release Notes](https://github.com/TigoS/MultiMap/blob/master/ReleaseNotes.md) for the full version history.
 
 ## License
 
