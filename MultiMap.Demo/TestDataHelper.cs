@@ -1,12 +1,12 @@
-﻿using MultiMap.Entities;
+using MultiMap.Entities;
 using MultiMap.Interfaces;
 
-namespace MultiMap.Helpers
+namespace MultiMap.Demo
 {
     /// <summary>
     /// Provides factory methods for creating sample <see cref="ISimpleMultiMap{TKey, TValue}"/> instances and printing their contents.
     /// </summary>
-    public class TestDataHelper
+    public static class TestDataHelper
     {
         /// <summary>
         /// Creates a sample multimap containing keys "A" (values 1, 2) and "B" (value 3).
