@@ -34,7 +34,7 @@ A **.NET 10** library
   - [Test Coverage Percentage](#test-coverage-percentage)
   - [Code Coverage (Coverlet)](#code-coverage-coverlet)
 - [Benchmarks](#benchmarks)
-- [Release Notes](#releasenotes)
+- [Release Notes](#release-notes)
 - [License](#license)
 
 ## Overview
