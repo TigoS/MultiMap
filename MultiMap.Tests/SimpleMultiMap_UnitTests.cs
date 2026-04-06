@@ -358,4 +358,91 @@ public class SimpleMultiMapTests
 
         Assert.That(fromFlatten, Is.EquivalentTo(fromEnumerator));
     }
+
+    // ── Equals / GetHashCode ──────────────────────────────
+
+    [Test]
+    public void Equals_SameInstance_ReturnsTrue()
+    {
+        Assert.That(_map.Equals(_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_DifferentInstanceSameContent_ReturnsTrue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.True);
+    }
+
+    [Test]
+    public void Equals_DifferentContent_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_DifferentKeys_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_EmptyMaps_ReturnsTrue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+
+        Assert.That(_map.Equals(other), Is.True);
+    }
+
+    [Test]
+    public void Equals_Null_ReturnsFalse()
+    {
+        Assert.That(_map.Equals(null), Is.False);
+    }
+
+    [Test]
+    public void Equals_DifferentType_ReturnsFalse()
+    {
+        Assert.That(_map.Equals("not a map"), Is.False);
+    }
+
+    [Test]
+    public void GetHashCode_SameInstance_ReturnsSameValue()
+    {
+        _map.Add("a", 1);
+
+        int hash1 = _map.GetHashCode();
+        int hash2 = _map.GetHashCode();
+
+        Assert.That(hash1, Is.EqualTo(hash2));
+    }
+
+    [Test]
+    public void GetHashCode_DifferentInstancesSameContent_ReturnsSameValue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+
+        Assert.That(_map.GetHashCode(), Is.EqualTo(other.GetHashCode()));
+    }
+
+    [Test]
+    public void GetHashCode_EmptyMaps_ReturnsSameValue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+
+        Assert.That(_map.GetHashCode(), Is.EqualTo(other.GetHashCode()));
+    }
 }

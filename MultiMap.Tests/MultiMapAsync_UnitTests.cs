@@ -569,13 +569,13 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public async Task Equals_DifferentInstanceSameContent_ReturnsFalse()
+    public async Task Equals_DifferentInstanceSameContent_ReturnsTrue()
     {
         var other = new MultiMapAsync<string, int>();
         await _map.AddAsync("a", 1);
         await other.AddAsync("a", 1);
 
-        Assert.That(_map.Equals(other), Is.False);
+        Assert.That(_map.Equals(other), Is.True);
 
         await other.DisposeAsync();
     }
@@ -604,26 +604,24 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public async Task GetHashCode_DifferentInstances_MayDiffer()
+    public async Task GetHashCode_DifferentInstancesSameContent_ReturnsSameValue()
     {
         var other = new MultiMapAsync<string, int>();
         await _map.AddAsync("a", 1);
         await other.AddAsync("a", 1);
 
-        Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
+        Assert.That(_map.GetHashCode(), Is.EqualTo(other.GetHashCode()));
 
         await other.DisposeAsync();
     }
 
     [Test]
-    public void Dispose_WhenSemaphoreIsNull_DoesNotThrow()
+    public async Task Dispose_DisposesCleanly()
     {
         var map = new MultiMapAsync<string, int>();
-        var field = typeof(MultiMapAsync<string, int>)
-            .GetField("_semaphore", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        field.SetValue(map, null);
+        await map.AddAsync("a", 1);
 
-        Assert.DoesNotThrow(() => map.DisposeAsync().AsTask());
+        Assert.DoesNotThrowAsync(async () => await map.DisposeAsync());
     }
 
     [Test]

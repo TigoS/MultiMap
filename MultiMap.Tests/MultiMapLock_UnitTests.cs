@@ -655,13 +655,13 @@ public class MultiMapLockTests
     }
 
     [Test]
-    public void Equals_DifferentInstanceSameContent_ReturnsFalse()
+    public void Equals_DifferentInstanceSameContent_ReturnsTrue()
     {
         var other = new MultiMapLock<string, int>();
         _map.Add("a", 1);
         other.Add("a", 1);
 
-        Assert.That(_map.Equals(other), Is.False);
+        Assert.That(_map.Equals(other), Is.True);
 
         other.Dispose();
     }
@@ -690,13 +690,13 @@ public class MultiMapLockTests
     }
 
     [Test]
-    public void GetHashCode_DifferentInstances_MayDiffer()
+    public void GetHashCode_DifferentInstancesSameContent_ReturnsSameValue()
     {
         var other = new MultiMapLock<string, int>();
         _map.Add("a", 1);
         other.Add("a", 1);
 
-        Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
+        Assert.That(_map.GetHashCode(), Is.EqualTo(other.GetHashCode()));
 
         other.Dispose();
     }
@@ -714,13 +714,9 @@ public class MultiMapLockTests
     }
 
     [Test]
-    public void Dispose_WhenLockIsNull_DoesNotThrow()
+    public void Dispose_DoesNotThrow()
     {
         var map = new MultiMapLock<string, int>();
-        var field = typeof(MultiMapLock<string, int>)
-            .GetField("_lock", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        field.SetValue(map, null);
-
         Assert.DoesNotThrow(() => map.Dispose());
     }
 

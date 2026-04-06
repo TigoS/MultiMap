@@ -539,13 +539,13 @@ public class MultiMapListTests
     }
 
     [Test]
-    public void Equals_DifferentInstanceSameContent_ReturnsFalse()
+    public void Equals_DifferentInstanceSameContent_ReturnsTrue()
     {
         var other = new MultiMapList<string, int>();
         _map.Add("a", 1);
         other.Add("a", 1);
 
-        Assert.That(_map.Equals(other), Is.False);
+        Assert.That(_map.Equals(other), Is.True);
     }
 
     [Test]
@@ -572,13 +572,13 @@ public class MultiMapListTests
     }
 
     [Test]
-    public void GetHashCode_DifferentInstances_MayDiffer()
+    public void GetHashCode_DifferentInstancesSameContent_ReturnsSameValue()
     {
         var other = new MultiMapList<string, int>();
         _map.Add("a", 1);
         other.Add("a", 1);
 
-        Assert.That(_map.GetHashCode(), Is.Not.EqualTo(other.GetHashCode()));
+        Assert.That(_map.GetHashCode(), Is.EqualTo(other.GetHashCode()));
     }
 
     [Test]
@@ -1049,6 +1049,71 @@ public class MultiMapListTests
         int removed = _map.RemoveWhere("key1", v => v % 2 == 0);
         Assert.That(removed, Is.EqualTo(2));
         Assert.That(_map.Get("key1"), Is.EquivalentTo(new[] { 1, 3, 5 }));
+    }
+
+    // ── Defensive Copy (Snapshot) Tests ───────────────────────
+
+    [Test]
+    public void Get_ReturnsSnapshot_NotLiveCollection()
+    {
+        _map.Add("a", 1);
+
+        var snapshot = _map.Get("a").ToList();
+        _map.Add("a", 2);
+
+        Assert.That(snapshot, Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void GetOrDefault_ReturnsSnapshot_NotLiveCollection()
+    {
+        _map.Add("a", 1);
+
+        var snapshot = _map.GetOrDefault("a").ToList();
+        _map.Add("a", 2);
+
+        Assert.That(snapshot, Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void TryGet_ReturnsSnapshot_NotLiveCollection()
+    {
+        _map.Add("a", 1);
+
+        _map.TryGet("a", out var snapshot);
+        _map.Add("a", 2);
+
+        Assert.That(snapshot, Is.EqualTo(new[] { 1 }));
+    }
+
+    // ── Additional Equals Edge Cases ─────────────────────────
+
+    [Test]
+    public void Equals_DifferentContent_ReturnsFalse()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_DifferentKeys_ReturnsFalse()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_EmptyMaps_ReturnsTrue()
+    {
+        var other = new MultiMapList<string, int>();
+
+        Assert.That(_map.Equals(other), Is.True);
     }
 }
 
