@@ -58,7 +58,9 @@ Fixed
 - Thread-safety issue in `MultiMapLock.RemoveWhere` that reads without acquiring a lock
 - Thread-safety issue in `ConcurrentMultiMap.RemoveWhere` that reads without per-key lock
 - Race condition in `ConcurrentMultiMap.Clear()` under concurrent access causing count drift
-- Misleading test name in `MultiMapAsync` dispose test</PackageReleaseNotes>
+- Misleading test name in `MultiMapAsync` dispose test
+
+See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/ReleaseNotes.md</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
