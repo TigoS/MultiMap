@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-94.6%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-94.3%25-brightgreen)]()
 
 A **.NET 10** library
 
@@ -48,8 +48,9 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Thread-safe variants**: per-key locked (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Full XML documentation** for IntelliSense support
-- **1023 unit tests** with NUnit 4
-- **94.6% line coverage** via Coverlet (5 of 7 implementations at 100%)
+- **1045 unit tests** with NUnit 4
+- **94.3% line coverage, 92.6% branch coverage** via Coverlet
+- **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 
 ## Project Structure
 
@@ -72,10 +73,11 @@ MultiMap/
 │   │   ├── MultiMapAsync.cs            # SemaphoreSlim-based async
 │   │   └── SimpleMultiMap.cs           # Lightweight ISimpleMultiMap impl
 │   └── Helpers/
-│       ├── MultiMapHelper.cs           # Set-like extension methods
-│       └── TestDataHelper.cs           # Sample data factory for demos
-├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1023 tests)
+│       └── MultiMapHelper.cs           # Set-like extension methods
+├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1045 tests)
 ├── MultiMap.Demo/                      # Console demo application
+│   ├── Program.cs                      # Demo entry point
+│   └── TestDataHelper.cs              # Sample data factory for demos
 └── BenchmarkSuite/                     # BenchmarkDotNet performance benchmarks
 ```
 
@@ -108,12 +110,18 @@ The base read-only interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
 
 Extended read-only interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
 
-| Method | Returns | Description |
+| Member | Returns | Description |
 |---|---|---|
 | `TryGet(key, out values)` | `bool` | Attempts to retrieve values; returns `true` if key exists |
 | `ContainsKey(key)` | `bool` | Checks if a key exists |
 | `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
-| `KeyCount` | `int` | Gets the number of keys (not total pairs) |
+| `KeyCount` | `int` | Gets the number of unique keys |
+| `Count` | `int` | Gets the total number of key-value pairs |
+| `Keys` | `IEnumerable<TKey>` | Gets all keys |
+| `Values` | `IEnumerable<TValue>` | Gets all values across all keys |
+| `GetValuesCount(key)` | `int` | Gets count of values for a key (0 if missing) |
+| `this[key]` | `IEnumerable<TValue>` | Indexer — convenient value access by key |
+| `GetEnumerator()` | `IEnumerator<KeyValuePair>` | Enumerates all key-value pairs |
 
 ### `IMultiMap<TKey, TValue>`
 
@@ -130,7 +138,7 @@ The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TV
 | `RemoveKey(key)` | `bool` | Removes a key and all its values |
 | `Clear()` | `void` | Removes all entries |
 
-**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `KeyCount`
+**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `KeyCount`, `Count`, `Keys`, `Values`, `GetValuesCount`, `this[key]`
 
 ### `IReadOnlyMultiMapAsync<TKey, TValue>`
 
@@ -266,12 +274,13 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Implementation | Add | Get (100 keys) | Contains | Count | Relative Add Speed |
 |---|---|---|---|---|---|
-| `MultiMapList` | 58,270 ns | 12,334 ns | 27 ns | < 1 ns | **1.0x** (baseline) |
-| `MultiMapSet` | 128,527 ns | 14,103 ns | 36 ns | < 1 ns | 2.2x |
-| `MultiMapAsync` | 198,333 ns | 13,804 ns | 28 ns | 28 ns | 3.4x |
-| `MultiMapLock` | 202,264 ns | 19,906 ns | 25 ns | 16 ns | 3.5x |
-| `ConcurrentMultiMap` | 247,160 ns | 21,862 ns | 143 ns | < 1 ns | 4.2x |
-| `SortedMultiMap` | 1,539,825 ns | 66,734 ns | 23 ns | < 1 ns | 26.4x |
+| `MultiMapList` | 34,239 ns | 8,031 ns | 28 ns | < 1 ns | **1.0x** (baseline) |
+| `MultiMapSet` | 72,331 ns | 8,845 ns | 34 ns | < 1 ns | 2.1x |
+| `SimpleMultiMap` | 126,326 ns | 11,543 ns | — | — | 3.7x |
+| `ConcurrentMultiMap` | 181,554 ns | 12,559 ns | 165 ns | < 1 ns | 5.3x |
+| `MultiMapLock` | 203,122 ns | 13,985 ns | 25 ns | 16 ns | 5.9x |
+| `MultiMapAsync` | 290,558 ns | 21,917 ns | 40 ns | 33 ns | 8.5x |
+| `SortedMultiMap` | 829,766 ns | 40,506 ns | 24 ns | < 1 ns | 24.2x |
 
 > **Note:** Performance data from BenchmarkDotNet. See [Benchmarks](#benchmarks) for full details.
 
@@ -299,7 +308,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.8" />
+<PackageReference Include="MultiMap" Version="1.0.9" />
 ```
 
 ## Usage
@@ -599,7 +608,7 @@ C: 3
 
 ## Testing
 
-The library includes **1023 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **1045 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
 ```shell
 dotnet test
@@ -610,22 +619,23 @@ dotnet test
 | Test Class | Tests | Category |
 |---|---|---|
 | `MultiMapAsyncTests` | 148 | Async implementation |
-| `ConcurrentMultiMapTests` | 119 | Per-key locked concurrent implementation |
-| `MultiMapSetTests` | 119 | HashSet-based implementation |
-| `SortedMultiMapTests` | 127 | Sorted implementation |
-| `MultiMapListTests` | 121 | List-based implementation |
-| `MultiMapLockTests` | 103 | RW Lock implementation |
-| `SimpleMultiMapTests` | 33 | Lightweight implementation |
-| **Entity subtotal** | **770** | |
+| `ConcurrentMultiMapTests` | 112 | Per-key locked concurrent implementation |
+| `MultiMapLockTests` | 112 | RW Lock implementation |
+| `MultiMapListTests` | 108 | List-based implementation |
+| `MultiMapSetTests` | 103 | HashSet-based implementation |
+| `SortedMultiMapTests` | 100 | Sorted implementation |
+| `SimpleMultiMapTests` | 43 | Lightweight implementation |
+| **Entity subtotal** | **726** | |
 
 ### Test Coverage by Extension Methods
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapHelperAsyncTests` | 95 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
+| `MultiMapHelperAsyncTests` | 65 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
 | `MultiMapHelperWithMultiMapSetTests` | 34 | Extensions with `MultiMapSet` + stress tests |
 | `MultiMapHelperTests` | 28 | `IMultiMap` extensions (primary) |
 | `SimpleMultiMapHelperTests` | 28 | `ISimpleMultiMap` extensions |
+| `MultiMapHelperExtensionAsyncTests` | 25 | Async helper extension edge cases |
 | `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | Edge cases with `SortedMultiMap` |
 | `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | Edge cases with `ConcurrentMultiMap` |
 | `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | Edge cases with `MultiMapLock` |
@@ -634,11 +644,11 @@ dotnet test
 | `MultiMapHelperWithConcurrentMultiMapTests` | 12 | Extensions + concurrent stress tests |
 | `MultiMapHelperWithMultiMapListTests` | 10 | Extensions with `MultiMapList` + stress tests |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | Extensions with `SortedMultiMap` + stress tests |
-| **Helper subtotal** | **324** | |
+| **Helper subtotal** | **319** | |
 
 | | |
 |---|---|
-| **Total** | **1023 tests** |
+| **Total** | **1045 tests** |
 
 ### Test Categories
 
@@ -659,30 +669,31 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapAsyncTests` | 148 | 14.5% |
-| `ConcurrentMultiMapTests` | 119 | 11.6% |
-| `MultiMapSetTests` | 119 | 11.6% |
-| `SortedMultiMapTests` | 127 | 12.4% |
-| `MultiMapListTests` | 121 | 11.8% |
-| `MultiMapLockTests` | 103 | 10.1% |
-| `SimpleMultiMapTests` | 33 | 3.2% |
-| **Entity subtotal** | **770** | **75.3%** |
-| `MultiMapHelperAsyncTests` | 95 | 9.3% |
+| `MultiMapAsyncTests` | 148 | 14.2% |
+| `ConcurrentMultiMapTests` | 112 | 10.7% |
+| `MultiMapLockTests` | 112 | 10.7% |
+| `MultiMapListTests` | 108 | 10.3% |
+| `MultiMapSetTests` | 103 | 9.9% |
+| `SortedMultiMapTests` | 100 | 9.6% |
+| `SimpleMultiMapTests` | 43 | 4.1% |
+| **Entity subtotal** | **726** | **69.5%** |
+| `MultiMapHelperAsyncTests` | 65 | 6.2% |
 | `MultiMapHelperWithMultiMapSetTests` | 34 | 3.3% |
 | `MultiMapHelperTests` | 28 | 2.7% |
 | `SimpleMultiMapHelperTests` | 28 | 2.7% |
+| `MultiMapHelperExtensionAsyncTests` | 25 | 2.4% |
 | `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 2.3% |
 | `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 2.3% |
 | `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 2.3% |
 | `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 2.2% |
-| `MultiMapHelperWithMultiMapLockTests` | 12 | 1.2% |
-| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 1.2% |
+| `MultiMapHelperWithMultiMapLockTests` | 12 | 1.1% |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 1.1% |
 | `MultiMapHelperWithMultiMapListTests` | 10 | 1.0% |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | 1.0% |
-| **Helper subtotal** | **324** | **31.7%** |
-| **Total** | **1023** | **100%** |
+| **Helper subtotal** | **319** | **30.5%** |
+| **Total** | **1045** | **100%** |
 
-> **Coverage distribution:** ~75% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, and slow path contention tests), while ~32% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper.
+> **Coverage distribution:** ~70% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, and slow path contention tests), while ~30% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper.
 
 ### Code Coverage (Coverlet)
 
@@ -696,30 +707,30 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **94.6%** (MultiMap assembly) |
-| **Branch coverage** | **89.1%** (MultiMap assembly) |
+| **Line coverage** | **94.3%** (MultiMap assembly) |
+| **Branch coverage** | **92.6%** (MultiMap assembly) |
 | **Method coverage** | **100%** (All public methods) |
 
 #### Per-Class Breakdown
 
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 98.8% | 97.2% | ✅ Full |
-| `MultiMapAsync<TKey, TValue>` | 89.3% | 90.0% | ✅ Full |
-| `MultiMapList<TKey, TValue>` | 100% | 100% | ✅ Full |
-| `MultiMapLock<TKey, TValue>` | 100% | 95.4% | ✅ Full |
-| `MultiMapSet<TKey, TValue>` | 100% | 100% | ✅ Full |
-| `SimpleMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
-| `SortedMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
+| `ConcurrentMultiMap<TKey, TValue>` | 96.9% | 86.4% | ✅ Full |
+| `MultiMapAsync<TKey, TValue>` | 97.1% | 92.4% | ✅ Full |
+| `MultiMapList<TKey, TValue>` | 97.6% | 90.7% | ✅ Full |
+| `MultiMapLock<TKey, TValue>` | 99.2% | 96.0% | ✅ Full |
+| `MultiMapSet<TKey, TValue>` | 97.7% | 91.7% | ✅ Full |
+| `SimpleMultiMap<TKey, TValue>` | 98.4% | 96.2% | ✅ Full |
+| `SortedMultiMap<TKey, TValue>` | 97.8% | 91.7% | ✅ Full |
 | `MultiMapHelper` | 100% | 100% | ✅ Full |
 | `Program` | 0% | 0% | ➖ Entry point only |
 
 > **Notes:**
-> - **5 of 7 entity implementations** achieve **100% line coverage**.
-> - `ConcurrentMultiMap` achieves **98.8% line coverage**. Uncovered lines are verify-after-lock race condition paths that are extremely difficult to trigger consistently.
-> - `MultiMapAsync` achieves **89.3% line coverage** with async edge cases in slow paths under high concurrency.
+> - All 7 entity implementations achieve **96%+ line coverage**.
+> - `MultiMapLock` leads with **99.2% line coverage** and **96.0% branch coverage**.
+> - `ConcurrentMultiMap` achieves **96.9% line coverage**. Uncovered lines are verify-after-lock race condition paths that are extremely difficult to trigger consistently.
+> - `MultiMapAsync` achieves **97.1% line coverage** with async edge cases in slow paths under high concurrency.
 > - `MultiMapHelper` achieves **100% line and branch coverage** for all extension methods, including async variants.
-> - `MultiMapLock` has 95.4% branch coverage due to async/dispose pattern edge cases.
 > - `Program` class (0% coverage) is the application entry point for the Demo project — excluded from quality targets.
 
 ## Benchmarks
@@ -734,17 +745,17 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** with `CPUUsageDiagnoser`.
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Add** (5,000 pairs) | 128,527 ns | 58,270 ns | 247,160 ns | 1,539,825 ns | 202,264 ns | 198,333 ns |
-| **AddRange** (key, values) | 82,139 ns | 7,999 ns | 97,471 ns | 230,223 ns | 83,230 ns | 49,518 ns |
-| **Get** (100 keys) | 14,103 ns | 12,334 ns | 21,862 ns | 66,734 ns | 19,906 ns | 13,804 ns |
-| **GetOrDefault** (100 keys) | 14,192 ns | 12,843 ns | 22,509 ns | 72,187 ns | 19,899 ns | 14,058 ns |
-| **TryGet** | 63 ns | 54 ns | 262 ns | 42 ns | 109 ns | 30 ns |
-| **Remove** (5,000 pairs) | 121,539 ns | 124,712 ns | 252,655 ns | 1,713,777 ns | 363,367 ns | 359,317 ns |
-| **Clear** | 153,711 ns | 117,408 ns | 229,211 ns | 992,824 ns | 288,222 ns | 244,770 ns |
-| **Contains** | 36 ns | 27 ns | 143 ns | 23 ns | 25 ns | 28 ns |
-| **ContainsKey** | 31 ns | 26 ns | 139 ns | 22 ns | 23 ns | 28 ns |
-| **Count** / **GetCount** | < 1 ns | < 1 ns | < 1 ns | < 1 ns | 16 ns | 28 ns |
-| **GetKeys** | 60 ns | 48 ns | 544 ns | 43 ns | 336 ns | 194 ns |
+| **Add** (5,000 pairs) | 72,331 ns | 34,239 ns | 181,554 ns | 829,766 ns | 203,122 ns | 290,558 ns |
+| **AddRange** (key, values) | 44,503 ns | 4,677 ns | 58,813 ns | 135,734 ns | 83,066 ns | 82,674 ns |
+| **Get** (100 keys) | 8,845 ns | 8,031 ns | 12,559 ns | 40,506 ns | 13,985 ns | 21,917 ns |
+| **GetOrDefault** (100 keys) | 8,701 ns | 8,434 ns | 13,149 ns | 43,170 ns | 19,995 ns | 21,840 ns |
+| **TryGet** | 36 ns | 29 ns | 163 ns | 24 ns | 68 ns | 122 ns |
+| **Remove** (5,000 pairs) | 123,370 ns | 112,941 ns | 351,468 ns | 1,713,694 ns | 379,655 ns | 515,439 ns |
+| **Clear** | 157,012 ns | 119,122 ns | 247,484 ns | 949,403 ns | 291,700 ns | 365,615 ns |
+| **Contains** | 34 ns | 28 ns | 165 ns | 24 ns | 25 ns | 40 ns |
+| **ContainsKey** | 34 ns | 27 ns | 152 ns | 23 ns | 23 ns | 37 ns |
+| **Count** / **GetCount** | < 1 ns | < 1 ns | < 1 ns | < 1 ns | 16 ns | 33 ns |
+| **GetKeys** | 31 ns | 27 ns | 336 ns | 24 ns | 321 ns | 335 ns |
 
 ### New Interface Members
 
@@ -752,28 +763,28 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **KeyCount** / **GetKeyCountAsync** | 0.36 ns | 0.33 ns | 987 ns | 0.12 ns | 327 ns | 28 ns |
-| **Values** / **GetValuesAsync** | 12,069 ns | 11,535 ns | 16,435 ns | 37,411 ns | 10,586 ns | 15,007 ns |
-| **GetValuesCount** / **GetValuesCountAsync** | 3.67 ns | 3.49 ns | 14.52 ns | 118 ns | 14 ns | 221 ns |
-| **Indexer** (`this[key]`) | 3.69 ns | 3.63 ns | 59 ns | 113 ns | 67 ns | — |
-| **AddRange(items)** / **AddRangeAsync(items)** | 244,890 ns | 197,502 ns | 308,306 ns | 983,963 ns | 285,335 ns | 241,920 ns |
-| **RemoveRange** / **RemoveRangeAsync** | 274,189 ns | 244,911 ns | 368,309 ns | 1,412,023 ns | 331,751 ns | 371,435 ns |
-| **RemoveWhere** / **RemoveWhereAsync** | 2,052 ns | 1,854 ns | 4,004 ns | 3,642 ns | 3,545 ns | 4,618 ns |
+| **KeyCount** / **GetKeyCountAsync** | 0.25 ns | 0.03 ns | 740 ns | 0.05 ns | 17 ns | 35 ns |
+| **Values** / **GetValuesAsync** | 11,741 ns | 11,283 ns | 16,044 ns | 35,865 ns | 18,195 ns | 18,229 ns |
+| **GetValuesCount** / **GetValuesCountAsync** | 3.5 ns | 3.6 ns | 14 ns | 114 ns | 25 ns | 39 ns |
+| **Indexer** (`this[key]`) | 4.0 ns | 3.8 ns | 59 ns | 117 ns | 106 ns | — |
+| **AddRange(items)** / **AddRangeAsync(items)** | 241,677 ns | 191,969 ns | 275,766 ns | 1,129,768 ns | 353,910 ns | 264,718 ns |
+| **RemoveRange** / **RemoveRangeAsync** | 269,777 ns | 241,100 ns | 378,457 ns | 1,581,737 ns | 456,169 ns | 383,420 ns |
+| **RemoveWhere** / **RemoveWhereAsync** | 1,441 ns | 663 ns | 4,208 ns | 3,374 ns | 4,287 ns | 4,048 ns |
 
 > **Notes:**
-> - **KeyCount**: `ConcurrentMultiMap` (~987 ns) must enumerate all keys in the `ConcurrentDictionary`, while `MultiMapSet`/`MultiMapList`/`SortedMultiMap` expose a direct O(1) property (< 1 ns). `MultiMapLock` acquires a read lock (~327 ns). `MultiMapAsync` acquires a semaphore (~28 ns).
+> - **KeyCount**: `ConcurrentMultiMap` (~740 ns) must enumerate all keys in the `ConcurrentDictionary`, while `MultiMapSet`/`MultiMapList`/`SortedMultiMap` expose a direct O(1) property (< 1 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns).
 > - **Indexer**: Not available for `MultiMapAsync` (async API uses `GetAsync` instead).
-> - **AddRange(items)**: The KVP overload is ~3x slower than `AddRange(key, values)` because it groups items by key and processes multiple keys across the map.
-> - **RemoveWhere**: Very efficient (1.9–4.6 μs) compared to `RemoveRange` (245 μs–1,412 μs) because it operates on a single key's value set.
+> - **AddRange(items)**: The KVP overload is ~3–5x slower than `AddRange(key, values)` because it groups items by key and processes multiple keys across the map.
+> - **RemoveWhere**: Very efficient (0.7–4.3 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.
 
 ### Set Operations (via `MultiMapHelper`)
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Union** | 119,600 ns | 83,050 ns | 170,410 ns | 700,060 ns | 160,768 ns | 122,223 ns |
-| **Intersect** | 108,690 ns | 98,090 ns | 180,960 ns | 676,260 ns | 154,151 ns | 122,718 ns |
-| **ExceptWith** | 114,410 ns | 95,820 ns | 185,800 ns | 943,490 ns | 142,395 ns | 119,316 ns |
-| **SymmetricExceptWith** | 148,150 ns | 122,280 ns | 225,560 ns | 1,013,870 ns | 155,785 ns | 125,698 ns |
+| **Union** | 79,720 ns | 57,160 ns | 119,920 ns | 438,700 ns | 150,521 ns | 189,794 ns |
+| **Intersect** | 78,230 ns | 64,400 ns | 124,010 ns | 437,430 ns | 152,191 ns | 192,079 ns |
+| **ExceptWith** | 80,460 ns | 63,790 ns | 131,950 ns | 572,490 ns | 142,321 ns | 183,657 ns |
+| **SymmetricExceptWith** | 94,070 ns | 78,500 ns | 154,350 ns | 685,100 ns | 149,055 ns | 189,629 ns |
 
 ### Microbenchmarks
 
@@ -781,27 +792,45 @@ Edge-case and diagnostic benchmarks for the four `IMultiMap` implementations in 
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap |
 |---|---|---|---|---|
-| **Add (duplicate)** | 35 ns | 31 ns | 156 ns | 30 ns |
-| **Remove (missing key)** | 5 ns | 6 ns | 89 ns | 8 ns |
-| **ContainsKey (missing)** | 4 ns | 4 ns | 90 ns | 9 ns |
-| **ContainsKey + Get** | 38 ns | 34 ns | 179 ns | 44 ns |
-| **Count after Add** | 29 ns | 26 ns | 144 ns | 23 ns |
-| **Count after Remove** | 39 ns | 30 ns | 171 ns | 31 ns |
-| **Clear (empty)** | 3.59 ns | 3.85 ns | 257 ns | 7.76 ns |
-| **Keys Enumeration** (100 keys) | 7,697 ns | 5,998 ns | 16,213 ns | 91,589 ns |
+| **Add (duplicate)** | 36 ns | 32 ns | 165 ns | 29 ns |
+| **Remove (missing key)** | 5 ns | 5 ns | 91 ns | 8 ns |
+| **ContainsKey (missing)** | 4 ns | 5 ns | 80 ns | 8 ns |
+| **ContainsKey + Get** | 34 ns | 28 ns | 156 ns | 23 ns |
+| **Count after Add** | 30 ns | 23 ns | 142 ns | 19 ns |
+| **Count after Remove** | 39 ns | 29 ns | 191 ns | 29 ns |
+| **Clear (empty)** | 3.77 ns | 3.55 ns | 288 ns | 8.44 ns |
+| **RemoveKey** | 36 ns | 27 ns | 184 ns | 24 ns |
+| **Keys Enumeration** (100 keys) | 4,198 ns | 3,576 ns | 9,989 ns | 53,122 ns |
+
+### SimpleMultiMap Operations
+
+Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
+
+| Operation | SimpleMultiMap |
+|---|---|
+| **Add** (5,000 pairs) | 126,326 ns |
+| **Add (duplicate)** | 60 ns |
+| **Get** (100 keys) | 11,543 ns |
+| **GetOrDefault** (100 keys) | 11,595 ns |
+| **GetOrDefault (missing)** (100 keys) | 3,164 ns |
+| **Remove** (5,000 pairs) | 208,127 ns |
+| **Clear** (100 keys) | 163,286 ns |
+| **Flatten** | 16,087 ns |
+| **Enumerate** | 28,855 ns |
 
 ### Key Takeaways
 
-- **AddRange vs Add**: `AddRange(key, values)` is significantly faster — `MultiMapList` **~7.3x**, `SortedMultiMap` **~6.7x**, `MultiMapAsync` **~4.0x**, `MultiMapLock` **~2.4x** faster than individual `Add` calls
-- **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2.2x faster** than `MultiMapSet`
+- **AddRange vs Add**: `AddRange(key, values)` is significantly faster — `MultiMapList` **~7.3x**, `SortedMultiMap` **~6.1x**, `MultiMapAsync` **~3.5x**, `MultiMapLock` **~2.4x** faster than individual `Add` calls
+- **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2.1x faster** than `MultiMapSet`
 - **Retrieval methods**: `Get()`, `GetOrDefault()`, and `TryGet()` offer comparable performance when keys exist; choose based on your error handling preference (exception, empty collection, or bool return)
-- **KeyCount**: O(1) for `MultiMapSet`/`MultiMapList`/`SortedMultiMap` (< 1 ns). `ConcurrentMultiMap` enumerates keys (~987 ns). `MultiMapLock` acquires a read lock (~327 ns). `MultiMapAsync` acquires a semaphore (~28 ns)
-- **GetValuesCount**: Ultra-fast for non-concurrent implementations (3–4 ns) vs `SortedMultiMap` (118 ns tree lookup) and `MultiMapAsync` (221 ns with semaphore overhead)
-- **RemoveWhere vs RemoveRange**: `RemoveWhere` operates on a single key (1.9–4.6 μs) and is **~130x faster** than `RemoveRange` across multiple keys (245 μs–1,412 μs)
+- **KeyCount**: O(1) for `MultiMapSet`/`MultiMapList`/`SortedMultiMap` (< 1 ns). `ConcurrentMultiMap` enumerates keys (~740 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns)
+- **GetValuesCount**: Ultra-fast for non-concurrent implementations (3–4 ns) vs `SortedMultiMap` (114 ns tree lookup) and `MultiMapAsync` (39 ns with semaphore overhead)
+- **RemoveWhere vs RemoveRange**: `RemoveWhere` operates on a single key (0.7–4.3 μs) and is **~130–365x faster** than `RemoveRange` across multiple keys (241 μs–1,582 μs)
 - **ConcurrentMultiMap Count**: O(1) via `Interlocked` counter — sub-nanosecond, on par with non-concurrent implementations
-- **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration. Keys Enumeration is **~15x slower** (91.6 μs vs 6.0 μs for `MultiMapList`)
-- **Thread-safe overhead**: `ConcurrentMultiMap` is ~1.9x slower than `MultiMapSet` for adds; `MultiMapLock` is ~1.6x slower
-- **Async vs Lock**: `MultiMapAsync` and `MultiMapLock` have comparable add performance (~198 μs vs ~202 μs). `MultiMapAsync` is slightly faster for reads (13.8 μs vs 19.9 μs for `Get`)
+- **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration. Keys Enumeration is **~15x slower** (53.1 μs vs 3.6 μs for `MultiMapList`)
+- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.5x slower than `MultiMapSet` for adds; `MultiMapLock` is ~2.8x slower
+- **Async vs Lock**: `MultiMapLock` is faster than `MultiMapAsync` for adds (~203 μs vs ~291 μs) and reads (~14 μs vs ~22 μs for `Get`). Choose `MultiMapAsync` when you need `async`/`await` compatibility
+- **SimpleMultiMap**: Lightweight alternative with performance between `MultiMapSet` and `MultiMapLock` — `Add` at 126 μs, `Get` at 11.5 μs
 
 ## Migration Guide
 
@@ -1055,6 +1084,43 @@ All changes in v1.0.8 are **additive**. Existing code targeting v1.0.7 compiles 
 
 ## Release Notes
 
+### 1.0.9
+
+**Added**
+
+- Value-based `Equals()`/`GetHashCode()` implementations across all 7 multimap entities — objects with identical key-value content are now structurally equal
+- `IComparable<TKey>` and `IComparable<TValue>` generic constraints on `SortedMultiMap<TKey, TValue>` for compile-time safety
+- SimpleMultiMap benchmark suite (9 benchmarks) in `SimpleMultiMapBenchmarks.cs`
+- Defensive copy (snapshot) tests for `Get`, `GetOrDefault`, and `TryGet` across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, and `MultiMapLock` — ensures callers receive a point-in-time snapshot, not a live reference
+- Equals edge-case tests (`DifferentContent`, `DifferentKeys`, `EmptyMaps`) for `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap`
+- 10 new unit tests for `SimpleMultiMap` Equals/GetHashCode behavior
+
+**Changed**
+
+- Test count increased from 1,023 to **1,045 tests**
+- Code coverage: **94.3% line coverage**, **92.6% branch coverage**, **100% method coverage**
+- `Get`, `GetOrDefault`, and `TryGet` now return defensive `.ToArray()` copies across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap` — prevents callers from observing mutations after retrieval
+- `ConcurrentMultiMap.Equals` uses deterministic dual-lock ordering via `RuntimeHelpers.GetHashCode` to prevent deadlocks when comparing two instances
+- `MultiMapAsync` now uses `ConfigureAwait(false)` on all `await` calls to avoid unnecessary synchronization context captures
+- `MultiMapLock.AddRange` and `MultiMapLock.RemoveRange` now execute under a single write lock for atomicity
+- `ConcurrentMultiMap.Clear()` now acquires a global lock to prevent count drift during concurrent clears
+- `ConcurrentMultiMap.RemoveWhere` now locks the per-key set during predicate evaluation
+- `MultiMapLock.RemoveWhere` now acquires a write lock for the entire operation
+- `MultiMapLock.TryGet` now returns a snapshot copy instead of a live `HashSet` reference
+- Optimized `RemoveWhere` across `MultiMapSet`, `MultiMapList`, and `SortedMultiMap` to use `RemoveAll`/`RemoveWhere` instead of manual iteration
+- `ConcurrentMultiMap.KeyCount` changed from O(k) enumeration to O(1) via cached `_keyCount` field
+- `TestDataHelper` moved from `MultiMap/Helpers/` to `MultiMap.Demo/` — no longer part of the NuGet package
+- Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
+
+**Fixed**
+
+- `MultiMapAsync.GetValuesCountAsync` was ignoring the `key` parameter and always returning the total count instead of the per-key count
+- Thread-safety issue in `MultiMapLock.TryGet` that returned a live mutable reference to the internal `HashSet`
+- Thread-safety issue in `MultiMapLock.RemoveWhere` that reads without acquiring a lock
+- Thread-safety issue in `ConcurrentMultiMap.RemoveWhere` that reads without per-key lock
+- Race condition in `ConcurrentMultiMap.Clear()` under concurrent access causing count drift
+- Misleading test name in `MultiMapAsync` dispose test
+
 ### 1.0.8
 
 **Added**
@@ -1079,7 +1145,7 @@ All changes in v1.0.8 are **additive**. Existing code targeting v1.0.7 compiles 
 **Changed**
 
 - Test count increased from 771 to **1,023 tests**
-- Code coverage: **94.6% line coverage**, **89.1% branch coverage**, **100% method coverage**
+- Code coverage: **94.3% line coverage**, **92.6% branch coverage**, **100% method coverage**
 - Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
 - Comprehensive README rewrite: expanded interface documentation, advanced usage examples, migration guide for v1.0.8+, performance comparison tables
 
