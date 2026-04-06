@@ -1088,7 +1088,9 @@ See [Release Notes](ReleaseNotes.md) for the full version history.
 
 ## License
 
-This project is licensed under the [MIT License](https://github.com/TigoS/MultiMap?tab=MIT-1-ov-file).
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT).
+
+See [LICENSE](https://github.com/TigoS/MultiMap?tab=MIT-1-ov-file) for details.
 
 ## Author
 
