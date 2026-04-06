@@ -34,7 +34,7 @@ A **.NET 10** library
   - [Test Coverage Percentage](#test-coverage-percentage)
   - [Code Coverage (Coverlet)](#code-coverage-coverlet)
 - [Benchmarks](#benchmarks)
-- [Release Notes](ReleaseNotes.md)
+- [Release Notes](#releasenotes)
 - [License](#license)
 
 ## Overview
@@ -1084,7 +1084,7 @@ All changes in v1.0.8 are **additive**. Existing code targeting v1.0.7 compiles 
 
 ## Release Notes
 
-See [ReleaseNotes.md](ReleaseNotes.md) for the full version history.
+See [Release Notes](ReleaseNotes.md) for the full version history.
 
 ## License
 
