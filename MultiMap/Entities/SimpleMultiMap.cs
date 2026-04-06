@@ -40,7 +40,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset;
+                return hashset.ToArray();
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -49,7 +49,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset;
+                return hashset.ToArray();
 
             return [];
         }
@@ -87,10 +87,56 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return Flatten().GetEnumerator();
+            foreach (var kvp in _dictionary)
+            {
+                foreach (var value in kvp.Value)
+                {
+                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                }
+            }
         }
 
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj)
+        {
+            if (obj is not SimpleMultiMap<TKey, TValue> other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (_dictionary.Count != other._dictionary.Count)
+                return false;
+
+            foreach (var kvp in _dictionary)
+            {
+                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
+                    return false;
+
+                if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public override int GetHashCode()
+        {
+            int hash = 0;
+            foreach (var kvp in _dictionary)
+            {
+                int valueHash = 0;
+                foreach (var value in kvp.Value)
+                {
+                    valueHash ^= value.GetHashCode();
+                }
+                hash ^= HashCode.Combine(kvp.Key, valueHash);
+            }
+            return hash;
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace MultiMap.Entities
@@ -78,9 +79,21 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            foreach (var item in items)
+            _lock.EnterWriteLock();
+            try
             {
-                Add(item.Key, item.Value);
+                foreach (var item in items)
+                {
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+                    hashset ??= new HashSet<TValue>();
+
+                    if (hashset.Add(item.Value))
+                        _count++;
+                }
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
             }
         }
 
@@ -126,7 +139,7 @@ namespace MultiMap.Entities
             {
                 bool result = _dictionary.TryGetValue(key, out var hashset);
 
-                values = result ? hashset ?? [] : [];
+                values = result ? hashset?.ToArray() ?? [] : [];
 
                 return result;
             }
@@ -167,35 +180,52 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            int removedCount = 0;
-            foreach (var item in items)
+            _lock.EnterWriteLock();
+            try
             {
-                if (Remove(item.Key, item.Value))
+                int removedCount = 0;
+                foreach (var item in items)
                 {
-                    removedCount++;
+                    if (_dictionary.TryGetValue(item.Key, out var hashset))
+                    {
+                        if (hashset.Remove(item.Value))
+                        {
+                            _count--;
+                            removedCount++;
+                            if (hashset.Count == 0)
+                                _dictionary.Remove(item.Key);
+                        }
+                    }
                 }
+                return removedCount;
             }
-
-            return removedCount;
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
         }
 
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-            int removedCount = 0;
-            var itemsToRemove = _dictionary.TryGetValue(key, out var list)
-                ? list.Where(value => predicate(value)).Select(value => new KeyValuePair<TKey, TValue>(key, value)).ToList()
-                : [];
-
-            foreach (var item in itemsToRemove)
+            _lock.EnterWriteLock();
+            try
             {
-                if (Remove(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                    return 0;
 
-            return removedCount;
+                int removedCount = hashset.RemoveWhere(predicate);
+                _count -= removedCount;
+
+                if (hashset.Count == 0)
+                    _dictionary.Remove(key);
+
+                return removedCount;
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
         }
 
         /// <inheritdoc/>
@@ -281,7 +311,21 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int KeyCount => Keys.Count();
+        public int KeyCount
+        {
+            get
+            {
+                _lock.EnterReadLock();
+                try
+                {
+                    return _dictionary.Count;
+                }
+                finally
+                {
+                    _lock.ExitReadLock();
+                }
+            }
+        }
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Values
@@ -306,7 +350,7 @@ namespace MultiMap.Entities
             _lock.EnterReadLock();
             try
             {
-                return _dictionary.TryGetValue(key, out var hashset) ? hashset.Count() : 0;
+                return _dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0;
             }
             finally
             {
@@ -544,14 +588,74 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            return obj is MultiMapLock<TKey, TValue> map &&
-                   EqualityComparer<Dictionary<TKey, HashSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
+            if (obj is not MultiMapLock<TKey, TValue> other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
+            var second = ReferenceEquals(first, this) ? other : this;
+
+            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
+
+            first._lock.EnterReadLock();
+            try
+            {
+                second._lock.EnterReadLock();
+                try
+                {
+                    if (_dictionary.Count != other._dictionary.Count)
+                        return false;
+
+                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                }
+                finally
+                {
+                    second._lock.ExitReadLock();
+                }
+            }
+            finally
+            {
+                first._lock.ExitReadLock();
+            }
+
+            foreach (var kvp in thisSnapshot)
+            {
+                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    return false;
+
+                if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(_dictionary);
+            _lock.EnterReadLock();
+            try
+            {
+                int hash = 0;
+                foreach (var kvp in _dictionary)
+                {
+                    int valueHash = 0;
+                    foreach (var value in kvp.Value)
+                    {
+                        valueHash ^= value.GetHashCode();
+                    }
+                    hash ^= HashCode.Combine(kvp.Key, valueHash);
+                }
+                return hash;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -559,7 +663,7 @@ namespace MultiMap.Entities
         /// </summary>
         public void Dispose()
         {
-            _lock?.Dispose();
+            _lock.Dispose();
         }
     }
 }

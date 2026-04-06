@@ -15,8 +15,8 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
     public class SortedMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
+        where TValue : notnull, IComparable<TValue>
     {
         private readonly SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
         private int _count;
@@ -76,7 +76,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset;
+                return hashset.ToArray();
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -85,7 +85,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset;
+                return hashset.ToArray();
 
             return [];
         }
@@ -95,7 +95,7 @@ namespace MultiMap.Entities
         {
             bool result = _dictionary.TryGetValue(key, out var hashset);
 
-            values = result ? hashset ?? [] : [];
+            values = result ? hashset?.ToArray() ?? [] : [];
 
             return result;
         }
@@ -138,18 +138,14 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-            int removedCount = 0;
-            var itemsToRemove = _dictionary.TryGetValue(key, out var list)
-                ? list.Where(value => predicate(value)).Select(value => new KeyValuePair<TKey, TValue>(key, value)).ToList()
-                : [];
+            if (!_dictionary.TryGetValue(key, out var sortedSet))
+                return 0;
 
-            foreach (var item in itemsToRemove)
-            {
-                if (Remove(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
+            int removedCount = sortedSet.RemoveWhere(predicate);
+            _count -= removedCount;
+
+            if (sortedSet.Count == 0)
+                _dictionary.Remove(key);
 
             return removedCount;
         }
@@ -185,13 +181,13 @@ namespace MultiMap.Entities
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
-        public int KeyCount => Keys.Count();
+        public int KeyCount => _dictionary.Count;
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(hashset => hashset);
 
         /// <inheritdoc/>
-        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var hashset) ? hashset.Count() : 0;
+        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0;
 
         /// <inheritdoc/>
         public IEnumerable<TValue> this[TKey key] => Get(key);
@@ -221,14 +217,41 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            return obj is SortedMultiMap<TKey, TValue> map &&
-                   EqualityComparer<SortedDictionary<TKey, SortedSet<TValue>>>.Default.Equals(_dictionary, map._dictionary);
+            if (obj is not SortedMultiMap<TKey, TValue> other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (_count != other._count || _dictionary.Count != other._dictionary.Count)
+                return false;
+
+            foreach (var kvp in _dictionary)
+            {
+                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
+                    return false;
+
+                if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(_dictionary);
+            int hash = 0;
+            foreach (var kvp in _dictionary)
+            {
+                int valueHash = 0;
+                foreach (var value in kvp.Value)
+                {
+                    valueHash ^= value.GetHashCode();
+                }
+                hash ^= HashCode.Combine(kvp.Key, valueHash);
+            }
+            return hash;
         }
     }
 }

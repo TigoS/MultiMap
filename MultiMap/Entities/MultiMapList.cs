@@ -68,7 +68,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var list))
-                return list;
+                return list.ToArray();
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -77,7 +77,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var list))
-                return list;
+                return list.ToArray();
 
             return [];
         }
@@ -87,7 +87,7 @@ namespace MultiMap.Entities
         {
             bool result = _dictionary.TryGetValue(key, out var list);
 
-            values = result ? list ?? [] : [];
+            values = result ? list?.ToArray() ?? [] : [];
 
             return result;
         }
@@ -125,24 +125,20 @@ namespace MultiMap.Entities
                 }
             }
 
-             return removedCount;
-        }
+                 return removedCount;
+             }
 
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-            int removedCount = 0;
-            var itemsToRemove = _dictionary.TryGetValue(key, out var list)
-                ? list.Where(value => predicate(value)).Select(value => new KeyValuePair<TKey, TValue>(key, value)).ToList()
-                : [];
+            if (!_dictionary.TryGetValue(key, out var list))
+                return 0;
 
-            foreach (var item in itemsToRemove)
-            {
-                if (Remove(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
+            int removedCount = list.RemoveAll(predicate);
+            _count -= removedCount;
+
+            if (list.Count == 0)
+                _dictionary.Remove(key);
 
             return removedCount;
         }
@@ -178,13 +174,13 @@ namespace MultiMap.Entities
         public IEnumerable<TKey> Keys => _dictionary.Keys;
 
         /// <inheritdoc/>
-        public int KeyCount => Keys.Count();
+        public int KeyCount => _dictionary.Count;
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(list => list);
 
         /// <inheritdoc/>
-        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var list) ? list.Count() : 0;
+        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var list) ? list.Count : 0;
 
         /// <inheritdoc/>
         public IEnumerable<TValue> this[TKey key] => Get(key);
@@ -214,14 +210,42 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            return obj is MultiMapList<TKey, TValue> map &&
-                   EqualityComparer<Dictionary<TKey, List<TValue>>>.Default.Equals(_dictionary, map._dictionary);
+            if (obj is not MultiMapList<TKey, TValue> other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (_count != other._count || _dictionary.Count != other._dictionary.Count)
+                return false;
+
+            foreach (var kvp in _dictionary)
+            {
+                if (!other._dictionary.TryGetValue(kvp.Key, out var otherList))
+                    return false;
+
+                if (!kvp.Value.SequenceEqual(otherList))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            return HashCode.Combine(_dictionary);
+            int hash = 0;
+            foreach (var kvp in _dictionary)
+            {
+                var entryHash = new HashCode();
+                entryHash.Add(kvp.Key);
+                foreach (var value in kvp.Value)
+                {
+                    entryHash.Add(value);
+                }
+                hash ^= entryHash.ToHashCode();
+            }
+            return hash;
         }
     }
 }
