@@ -1253,7 +1253,7 @@ public class MultiMapBenchmarks
     }
 
     [Benchmark]
-    public void SortedMultimap_Clear_Empty()
+    public void SortedMultiMap_Clear_Empty()
     {
         var map = new SortedMultiMap<string, int>();
         map.Clear();
