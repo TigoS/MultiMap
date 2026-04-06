@@ -13,6 +13,12 @@ A **.NET 10** library
 
 ## Release Notes
 
+### 1.0.10
+
+**Fixed**
+
+- Broken **ReleaseNotes** and **README** references for NuGet package
+
 ### 1.0.9
 
 **Added**
