@@ -1092,9 +1092,9 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
-            await DisposeAsyncCore().ConfigureAwait(false);
+            return DisposeAsyncCore();
         }
 
         /// <inheritdoc/>

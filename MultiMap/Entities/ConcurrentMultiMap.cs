@@ -341,7 +341,7 @@ namespace MultiMap.Entities
             {
                 lock (second._globalLock)
                 {
-                    if (_dictionary.Count != other._dictionary.Count)
+                    if (_count != other._count || _dictionary.Count != other._dictionary.Count)
                         return false;
 
                     thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
