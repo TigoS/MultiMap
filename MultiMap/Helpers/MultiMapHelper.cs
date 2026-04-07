@@ -303,12 +303,12 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
-            var keys = await other.GetKeysAsync(cancellationToken);
+            var keys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var key in keys)
             {
-                var values = await other.GetOrDefaultAsync(key, cancellationToken);
-                await target.AddRangeAsync(key, values, cancellationToken);
+                var values = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
+                await target.AddRangeAsync(key, values, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -334,18 +334,18 @@ namespace MultiMap.Helpers
             var keysToRemove = new List<TKey>();
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
 
-            var targetKeys = await target.GetKeysAsync(cancellationToken);
+            var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
             {
-                if (!await other.ContainsKeyAsync(key, cancellationToken))
+                if (!await other.ContainsKeyAsync(key, cancellationToken).ConfigureAwait(false))
                 {
                     keysToRemove.Add(key);
                     continue;
                 }
 
-                var otherValues = await other.GetOrDefaultAsync(key, cancellationToken);
+                var otherValues = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
-                var values = await target.GetOrDefaultAsync(key, cancellationToken);
+                var values = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
                     if (!otherSet.Contains(value))
@@ -357,12 +357,12 @@ namespace MultiMap.Helpers
 
             foreach (var key in keysToRemove)
             {
-                await target.RemoveKeyAsync(key, cancellationToken);
+                await target.RemoveKeyAsync(key, cancellationToken).ConfigureAwait(false);
             }
 
             foreach (var kvp in valuesToRemove)
             {
-                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
+                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken).ConfigureAwait(false);
             }
         }
 
@@ -383,13 +383,13 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull
         {
-            var keys = await other.GetKeysAsync(cancellationToken);
+            var keys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in keys)
             {
-                var values = await other.GetOrDefaultAsync(key, cancellationToken);
+                var values = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
-                    await target.RemoveAsync(key, value, cancellationToken);
+                    await target.RemoveAsync(key, value, cancellationToken).ConfigureAwait(false);
                 }
             }
         }
@@ -417,12 +417,12 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
-            var otherKeys = await other.GetKeysAsync(cancellationToken);
+            var otherKeys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in otherKeys)
             {
-                var targetValues = await target.GetOrDefaultAsync(key, cancellationToken);
+                var targetValues = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
-                var values = await other.GetOrDefaultAsync(key, cancellationToken);
+                var values = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
                     if (targetSet.Contains(value))
@@ -438,12 +438,12 @@ namespace MultiMap.Helpers
 
             foreach (var kvp in toRemove)
             {
-                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken);
+                await target.RemoveAsync(kvp.Key, kvp.Value, cancellationToken).ConfigureAwait(false);
             }
 
             foreach (var kvp in toAdd)
             {
-                await target.AddAsync(kvp.Key, kvp.Value, cancellationToken);
+                await target.AddAsync(kvp.Key, kvp.Value, cancellationToken).ConfigureAwait(false);
             }
         }
     }
