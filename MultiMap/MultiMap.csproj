@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFrameworks>net10.0;net8.0;netstandard2.0</TargetFrameworks>
+    <LangVersion>14.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -9,7 +10,7 @@
     <PackageId>MultiMap</PackageId>
     <Version>1.0.10</Version>
     <Authors>TigoS</Authors>
-    <Description>A .NET 10 library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods.</Description>
+    <Description>A .NET library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 8, and .NET Standard 2.0.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
     <RepositoryUrl>https://github.com/TigoS/MultiMap</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -52,7 +53,7 @@ Changed
 - `MultiMapLock.RemoveWhere` now acquires a write lock for the entire operation
 - `MultiMapLock.TryGet` now returns a snapshot copy instead of a live `HashSet` reference
 - Optimized `RemoveWhere` across `MultiMapSet`, `MultiMapList`, and `SortedMultiMap` to use `RemoveAll`/`RemoveWhere` instead of manual iteration
-- `ConcurrentMultiMap.KeyCount` changed from O(k) enumeration to O(1) via cached `_keyCount` field
+- `ConcurrentMultiMap.KeyCount` simplified to use `ConcurrentDictionary.Count` directly
 - `TestDataHelper` moved from `MultiMap/Helpers/` to `MultiMap.Demo/` — no longer part of the NuGet package
 - Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
 
@@ -79,6 +80,11 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Re
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
   </ItemGroup>
 
 </Project>
