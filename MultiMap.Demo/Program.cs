@@ -23,7 +23,7 @@ TestDataHelper.PrintMultiMap("EXCEPT WITH 1", multiMap1);
 
 multiMap1 = TestDataHelper.CreateSampleMultiMap1();
 multiMap1 = multiMap2.ExceptWith(multiMap1);
-MultiMap.Demo.TestDataHelper.PrintMultiMap("EXCEPT WITH 2", multiMap1);
+TestDataHelper.PrintMultiMap("EXCEPT WITH 2", multiMap1);
 
 multiMap1 = TestDataHelper.CreateSampleMultiMap1();
 multiMap2 = TestDataHelper.CreateSampleMultiMap2();
