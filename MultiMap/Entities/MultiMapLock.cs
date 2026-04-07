@@ -1,7 +1,9 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
 using System.Runtime.CompilerServices;
+#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
+#endif
 
 namespace MultiMap.Entities
 {
@@ -22,6 +24,7 @@ namespace MultiMap.Entities
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly ReaderWriterLockSlim _lock;
         private int _count;
+        private int _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class.
@@ -32,14 +35,29 @@ namespace MultiMap.Entities
             _lock = new ReaderWriterLockSlim();
         }
 
+        private void ThrowIfDisposed()
+        {
+            if (Volatile.Read(ref _disposed) != 0)
+                throw new ObjectDisposedException(GetType().FullName);
+        }
+
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
+#if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
                 hashset ??= new HashSet<TValue>();
+#else
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                {
+                    hashset = new HashSet<TValue>();
+                    _dictionary[key] = hashset;
+                }
+#endif
 
                 if (hashset.Add(value))
                 {
@@ -58,11 +76,20 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
+#if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
                 hashset ??= new HashSet<TValue>();
+#else
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                {
+                    hashset = new HashSet<TValue>();
+                    _dictionary[key] = hashset;
+                }
+#endif
 
                 foreach (var value in values)
                 {
@@ -79,13 +106,22 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
                 foreach (var item in items)
                 {
+#if NET6_0_OR_GREATER
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
                     hashset ??= new HashSet<TValue>();
+#else
+                    if (!_dictionary.TryGetValue(item.Key, out var hashset))
+                    {
+                        hashset = new HashSet<TValue>();
+                        _dictionary[item.Key] = hashset;
+                    }
+#endif
 
                     if (hashset.Add(item.Value))
                         _count++;
@@ -100,6 +136,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -117,6 +154,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -134,6 +172,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -152,6 +191,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
@@ -180,6 +220,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
@@ -208,6 +249,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
@@ -231,6 +273,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
@@ -251,6 +294,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -265,6 +309,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -281,6 +326,7 @@ namespace MultiMap.Entities
         {
             get
             {
+                ThrowIfDisposed();
                 _lock.EnterReadLock();
                 try
                 {
@@ -298,6 +344,7 @@ namespace MultiMap.Entities
         {
             get
             {
+                ThrowIfDisposed();
                 _lock.EnterReadLock();
                 try
                 {
@@ -315,6 +362,7 @@ namespace MultiMap.Entities
         {
             get
             {
+                ThrowIfDisposed();
                 _lock.EnterReadLock();
                 try
                 {
@@ -332,6 +380,7 @@ namespace MultiMap.Entities
         {
             get
             {
+                ThrowIfDisposed();
                 _lock.EnterReadLock();
                 try
                 {
@@ -347,6 +396,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -364,6 +414,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void Clear()
         {
+            ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
@@ -388,6 +439,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are added to this instance.</param>
         public void Union(IMultiMap<TKey, TValue> other)
         {
+            ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -399,8 +451,16 @@ namespace MultiMap.Entities
             {
                 foreach (var (key, values) in snapshot)
                 {
+#if NET6_0_OR_GREATER
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
                     hashset ??= new HashSet<TValue>();
+#else
+                    if (!_dictionary.TryGetValue(key, out var hashset))
+                    {
+                        hashset = new HashSet<TValue>();
+                        _dictionary[key] = hashset;
+                    }
+#endif
 
                     foreach (var value in values)
                     {
@@ -427,6 +487,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map that defines the pairs to keep.</param>
         public void Intersect(IMultiMap<TKey, TValue> other)
         {
+            ThrowIfDisposed();
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
@@ -477,6 +538,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
         public void ExceptWith(IMultiMap<TKey, TValue> other)
         {
+            ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -520,6 +582,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map to compare against.</param>
         public void SymmetricExceptWith(IMultiMap<TKey, TValue> other)
         {
+            ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -531,8 +594,16 @@ namespace MultiMap.Entities
             {
                 foreach (var (key, values) in snapshot)
                 {
+#if NET6_0_OR_GREATER
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
                     hashset ??= new HashSet<TValue>();
+#else
+                    if (!_dictionary.TryGetValue(key, out var hashset))
+                    {
+                        hashset = new HashSet<TValue>();
+                        _dictionary[key] = hashset;
+                    }
+#endif
 
                     foreach (var value in values)
                     {
@@ -560,6 +631,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
+            ThrowIfDisposed();
             List<KeyValuePair<TKey, TValue>> snapshot;
 
             _lock.EnterReadLock();
@@ -593,6 +665,9 @@ namespace MultiMap.Entities
 
             if (ReferenceEquals(this, other))
                 return true;
+
+            ThrowIfDisposed();
+            other.ThrowIfDisposed();
 
             var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
             var second = ReferenceEquals(first, this) ? other : this;
@@ -637,6 +712,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int GetHashCode()
         {
+            ThrowIfDisposed();
             _lock.EnterReadLock();
             try
             {
@@ -663,6 +739,9 @@ namespace MultiMap.Entities
         /// </summary>
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
+                return;
+
             _lock.Dispose();
         }
     }

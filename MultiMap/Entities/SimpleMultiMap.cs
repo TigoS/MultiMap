@@ -1,6 +1,8 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
+#endif
 
 namespace MultiMap.Entities
 {
@@ -30,8 +32,16 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Add(TKey key, TValue value)
         {
+#if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>();
+#else
+            if (!_dictionary.TryGetValue(key, out var hashset))
+            {
+                hashset = new HashSet<TValue>();
+                _dictionary[key] = hashset;
+            }
+#endif
 
             return hashset.Add(value);
         }
@@ -73,16 +83,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        public IEnumerable<KeyValuePair<TKey, TValue>> Flatten()
-        {
-            foreach (var kvp in _dictionary)
-            {
-                foreach (var value in kvp.Value)
-                {
-                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-                }
-            }
-        }
+        public IEnumerable<KeyValuePair<TKey, TValue>> Flatten() => this;
 
         /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()

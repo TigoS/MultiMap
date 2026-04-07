@@ -1,6 +1,8 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
+#endif
 
 namespace MultiMap.Entities
 {
@@ -33,8 +35,16 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
+#if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>();
+#else
+            if (!_dictionary.TryGetValue(key, out var hashset))
+            {
+                hashset = new HashSet<TValue>();
+                _dictionary[key] = hashset;
+            }
+#endif
 
             if (hashset.Add(value))
             {
@@ -48,8 +58,16 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
+#if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>();
+#else
+            if (!_dictionary.TryGetValue(key, out var hashset))
+            {
+                hashset = new HashSet<TValue>();
+                _dictionary[key] = hashset;
+            }
+#endif
 
             foreach (var value in values)
             {

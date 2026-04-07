@@ -1,6 +1,8 @@
 ﻿using MultiMap.Interfaces;
 using System.Collections;
+#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
+#endif
 
 namespace MultiMap.Entities
 {
@@ -35,8 +37,16 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
+#if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
             list ??= new List<TValue>();
+#else
+            if (!_dictionary.TryGetValue(key, out var list))
+            {
+                list = new List<TValue>();
+                _dictionary[key] = list;
+            }
+#endif
 
             list.Add(value);
             _count++;
@@ -47,8 +57,16 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
+#if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
             list ??= new List<TValue>();
+#else
+            if (!_dictionary.TryGetValue(key, out var list))
+            {
+                list = new List<TValue>();
+                _dictionary[key] = list;
+            }
+#endif
 
             int before = list.Count;
             list.AddRange(values);
@@ -125,8 +143,8 @@ namespace MultiMap.Entities
                 }
             }
 
-                 return removedCount;
-             }
+            return removedCount;
+        }
 
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
