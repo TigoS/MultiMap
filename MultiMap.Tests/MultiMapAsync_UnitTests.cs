@@ -1948,6 +1948,104 @@ public class MultiMapAsyncTests
             Assert.That(keys.Count(), Is.EqualTo(20));
         }
     }
+
+    // ── Dispose Guard Tests ──────────────────────────────────
+
+    [Test]
+    public void AddAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.AddAsync("a", 1));
+    }
+
+    [Test]
+    public void AddRangeAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.AddRangeAsync("a", new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void GetAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetAsync("a"));
+    }
+
+    [Test]
+    public void GetOrDefaultAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetOrDefaultAsync("a"));
+    }
+
+    [Test]
+    public void TryGetAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.TryGetAsync("a"));
+    }
+
+    [Test]
+    public void RemoveAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.RemoveAsync("a", 1));
+    }
+
+    [Test]
+    public void RemoveKeyAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.RemoveKeyAsync("a"));
+    }
+
+    [Test]
+    public void ContainsKeyAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ContainsKeyAsync("a"));
+    }
+
+    [Test]
+    public void ContainsAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ContainsAsync("a", 1));
+    }
+
+    [Test]
+    public void GetCountAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetCountAsync());
+    }
+
+    [Test]
+    public void GetKeysAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetKeysAsync());
+    }
+
+    [Test]
+    public void ClearAsync_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ClearAsync());
+    }
 }
 
 

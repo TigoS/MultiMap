@@ -1389,4 +1389,112 @@ public class MultiMapLockTests
     }
 
     #endregion
+
+    #region Dispose Guard Tests
+
+    [Test]
+    public void Add_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.Add("a", 1));
+    }
+
+    [Test]
+    public void AddRange_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.AddRange("a", new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Get_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.Get("a"));
+    }
+
+    [Test]
+    public void GetOrDefault_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.GetOrDefault("a"));
+    }
+
+    [Test]
+    public void TryGet_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.TryGet("a", out _));
+    }
+
+    [Test]
+    public void Remove_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.Remove("a", 1));
+    }
+
+    [Test]
+    public void RemoveKey_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.RemoveKey("a"));
+    }
+
+    [Test]
+    public void ContainsKey_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.ContainsKey("a"));
+    }
+
+    [Test]
+    public void Contains_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.Contains("a", 1));
+    }
+
+    [Test]
+    public void Count_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => { var _ = _map.Count; });
+    }
+
+    [Test]
+    public void Keys_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => { var _ = _map.Keys; });
+    }
+
+    [Test]
+    public void GetEnumerator_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.GetEnumerator());
+    }
+
+    [Test]
+    public void Clear_AfterDispose_ThrowsObjectDisposedException()
+    {
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.Clear());
+    }
+
+    #endregion
 }
