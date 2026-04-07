@@ -43,7 +43,7 @@ A **.NET 10** library
 - `MultiMapLock.RemoveWhere` now acquires a write lock for the entire operation
 - `MultiMapLock.TryGet` now returns a snapshot copy instead of a live `HashSet` reference
 - Optimized `RemoveWhere` across `MultiMapSet`, `MultiMapList`, and `SortedMultiMap` to use `RemoveAll`/`RemoveWhere` instead of manual iteration
-- `ConcurrentMultiMap.KeyCount` changed from O(k) enumeration to O(1) via cached `_keyCount` field
+- `ConcurrentMultiMap.KeyCount` simplified to use `ConcurrentDictionary.Count` directly
 - `TestDataHelper` moved from `MultiMap/Helpers/` to `MultiMap.Demo/` — no longer part of the NuGet package
 - Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
 
