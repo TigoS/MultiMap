@@ -1,7 +1,7 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
@@ -9,9 +9,41 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![Coverage](https://img.shields.io/badge/coverage-94.3%25-brightgreen)]()
 
-A **.NET 10** library
+A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Release Notes
+
+### 1.0.11
+
+**Added**
+
+- `IEqualityComparer<TValue>` constructor overloads on `MultiMapSet`, `MultiMapLock`, `MultiMapAsync`, `ConcurrentMultiMap`, and `SimpleMultiMap` — enables custom value comparison (e.g., case-insensitive strings)
+- Initial capacity constructor overloads on all 6 entity types (`MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) for memory pre-allocation
+- Combined capacity + comparer constructor overloads where applicable
+- 35 new unit tests covering constructor overloads, comparer behavior, and case-insensitive scenarios
+- Multi-target support: the NuGet package now ships assemblies for `.NET 10`, `.NET 8`, and `.NET Standard 2.0`
+- Dispose guards (`ObjectDisposedException`) on every public member of `MultiMapLock` and `MultiMapAsync` after disposal
+- 25 new dispose-guard unit tests (13 for `MultiMapLock`, 12 for `MultiMapAsync`)
+- Conditional `Microsoft.Bcl.AsyncInterfaces` and `Microsoft.Bcl.HashCode` package references for `netstandard2.0`
+- `#if NET6_0_OR_GREATER` guards for `CollectionsMarshal` fast-path optimizations across 5 entity files
+- `#if NETSTANDARD2_0` polyfill for `Task.IsCompletedSuccessfully` in `MultiMapAsync`
+
+**Changed**
+
+- Test count increased from 1,070 to **1,105 tests**
+- `MultiMapHelper.Intersect`, `ExceptWith`, and `SymmetricExceptWith` (sync and async) now use batch `RemoveRange`/`AddRange` instead of individual `Remove`/`Add` calls for reduced method call overhead
+- Test count increased from 1,045 to **1,070 tests**
+- `ConcurrentMultiMap.Equals` now includes `_count` fast-exit comparison for consistency with other implementations
+- `SortedMultiMap` variable names standardized: `hashset` → `sortedSet` across all methods for consistency with `SortedSet<T>` usage
+- `MultiMapAsync.DisposeAsync` no longer allocates an unnecessary `async` state machine — returns `ValueTask` directly
+- `BenchmarkSuite.csproj` now includes `ImplicitUsings` and `Nullable` properties for consistency with other projects
+- README and ReleaseNotes updated to reflect multi-targeting and dispose safety features
+
+**Fixed**
+
+- `ConcurrentMultiMap.Keys` now returns a `.ToArray()` snapshot instead of exposing the live `ConcurrentDictionary` key collection — prevents enumeration errors under concurrent modification
+- `MultiMapLock.Equals` and `MultiMapAsync.Equals` now include a `_count` fast-exit comparison before iterating keys and values — short-circuits unequal maps early
+- `ConcurrentMultiMap.Equals` could return `true` for maps with different total counts but same key count (missing `_count` comparison)
 
 ### 1.0.10
 
