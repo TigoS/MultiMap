@@ -1130,4 +1130,15 @@ public class SortedMultiMapTests
     }
 
     #endregion
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesReverseKeyOrder()
+    {
+        var map = new SortedMultiMap<string, int>(Comparer<string>.Create((a, b) => string.Compare(b, a, StringComparison.Ordinal)));
+        map.Add("a", 1);
+        map.Add("b", 2);
+        map.Add("c", 3);
+
+        Assert.That(map.Keys.ToArray(), Is.EqualTo(new[] { "c", "b", "a" }));
+    }
 }

@@ -1115,5 +1115,49 @@ public class MultiMapListTests
 
         Assert.That(_map.Equals(other), Is.True);
     }
+
+    [Test]
+    public void Constructor_WithCapacity_WorksCorrectly()
+    {
+        var map = new MultiMapList<string, int>(100);
+        map.Add("a", 1);
+
+        Assert.That(map.Get("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithCapacity_BehavesLikeDefault()
+    {
+        var map = new MultiMapList<string, int>(50);
+        map.Add("x", 10);
+        map.Add("x", 20);
+        map.Add("y", 30);
+
+        Assert.That(map.Count, Is.EqualTo(3));
+        Assert.That(map.KeyCount, Is.EqualTo(2));
+        Assert.That(map.Get("x"), Is.EqualTo(new[] { 10, 20 }));
+    }
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        var map = new MultiMapList<string, int>(StringComparer.OrdinalIgnoreCase);
+        map.Add("Key", 1);
+        map.Add("key", 2);
+
+        Assert.That(map.KeyCount, Is.EqualTo(1));
+        Assert.That(map.Get("KEY"), Is.EqualTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        var map = new MultiMapList<string, int>(100, StringComparer.OrdinalIgnoreCase);
+        map.Add("Key", 1);
+        map.Add("key", 2);
+
+        Assert.That(map.KeyCount, Is.EqualTo(1));
+        Assert.That(map.Get("KEY"), Is.EqualTo(new[] { 1, 2 }));
+    }
 }
 

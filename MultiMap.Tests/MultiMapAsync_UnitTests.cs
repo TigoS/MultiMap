@@ -2046,6 +2046,134 @@ public class MultiMapAsyncTests
 
         Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ClearAsync());
     }
+
+    [Test]
+    public async Task Constructor_WithCapacity_WorksCorrectly()
+    {
+        var map = new MultiMapAsync<string, int>(100);
+        await map.AddAsync("a", 1);
+
+        Assert.That(await map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
+    {
+        var map = new MultiMapAsync<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("key", "Hello");
+        bool added = await map.AddAsync("key", "hello");
+
+        Assert.That(added, Is.False);
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Constructor_WithCapacityAndValueComparer_WorksCorrectly()
+    {
+        var map = new MultiMapAsync<string, string>(100, valueComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("key", "Hello");
+        bool added = await map.AddAsync("key", "hello");
+
+        Assert.That(added, Is.False);
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Equals_DifferentValueCount_SameKeys_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await other.AddAsync("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task AddAsync_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
+    {
+        var map = new MultiMapAsync<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("key", "ABC");
+        await map.AddAsync("key", "abc");
+        await map.AddAsync("key", "Abc");
+
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await map.GetValuesCountAsync("key"), Is.EqualTo(1));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task ContainsAsync_WithCaseInsensitiveComparer_FindsValueIgnoringCase()
+    {
+        var map = new MultiMapAsync<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("key", "Hello");
+
+        Assert.That(await map.ContainsAsync("key", "hello"), Is.True);
+        Assert.That(await map.ContainsAsync("key", "HELLO"), Is.True);
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task AddRangeAsync_WithValueComparer_RespectsComparer()
+    {
+        var map = new MultiMapAsync<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddRangeAsync("key", new[] { "Hello", "hello", "HELLO" });
+
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await map.GetValuesCountAsync("key"), Is.EqualTo(1));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Constructor_WithKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        var map = new MultiMapAsync<string, int>(keyComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("Key", 1);
+        await map.AddAsync("key", 2);
+
+        Assert.That(await map.GetKeyCountAsync(), Is.EqualTo(1));
+        Assert.That(await map.GetAsync("KEY"), Is.EquivalentTo(new[] { 1, 2 }));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Constructor_WithCapacityAndKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        var map = new MultiMapAsync<string, int>(100, keyComparer: StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("Key", 1);
+        await map.AddAsync("key", 2);
+
+        Assert.That(await map.GetKeyCountAsync(), Is.EqualTo(1));
+        Assert.That(await map.GetAsync("KEY"), Is.EquivalentTo(new[] { 1, 2 }));
+
+        await map.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Constructor_WithCapacityKeyComparerAndValueComparer_WorksCorrectly()
+    {
+        var map = new MultiMapAsync<string, string>(100, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        await map.AddAsync("Key", "Hello");
+        await map.AddAsync("key", "hello");
+
+        Assert.That(await map.GetKeyCountAsync(), Is.EqualTo(1));
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await map.GetAsync("KEY"), Is.EquivalentTo(new[] { "Hello" }));
+
+        await map.DisposeAsync();
+    }
 }
 
 

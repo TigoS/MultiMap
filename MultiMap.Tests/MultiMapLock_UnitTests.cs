@@ -1497,4 +1497,125 @@ public class MultiMapLockTests
     }
 
     #endregion
+
+    [Test]
+    public void Constructor_WithCapacity_WorksCorrectly()
+    {
+        using var map = new MultiMapLock<string, int>(100);
+        map.Add("a", 1);
+
+        Assert.That(map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
+    {
+        using var map = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        bool added = map.Add("key", "hello");
+
+        Assert.That(added, Is.False);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndValueComparer_WorksCorrectly()
+    {
+        using var map = new MultiMapLock<string, string>(100, valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        bool added = map.Add("key", "hello");
+
+        Assert.That(added, Is.False);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Equals_DifferentValueCount_SameKeys_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
+    {
+        using var map = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "ABC");
+        map.Add("key", "abc");
+        map.Add("key", "Abc");
+
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.GetValuesCount("key"), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Contains_WithCaseInsensitiveComparer_FindsValueIgnoringCase()
+    {
+        using var map = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+
+        Assert.That(map.Contains("key", "hello"), Is.True);
+        Assert.That(map.Contains("key", "HELLO"), Is.True);
+    }
+
+    [Test]
+    public void AddRange_WithValueComparer_RespectsComparer()
+    {
+        using var map = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.AddRange("key", new[] { "Hello", "hello", "HELLO" });
+
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.GetValuesCount("key"), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Remove_WithCaseInsensitiveComparer_RemovesIgnoringCase()
+    {
+        using var map = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        bool removed = map.Remove("key", "hello");
+
+        Assert.That(removed, Is.True);
+        Assert.That(map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        using var map = new MultiMapLock<string, int>(keyComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("Key", 1);
+        map.Add("key", 2);
+
+        Assert.That(map.KeyCount, Is.EqualTo(1));
+        Assert.That(map.Get("KEY"), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        using var map = new MultiMapLock<string, int>(100, keyComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("Key", 1);
+        map.Add("key", 2);
+
+        Assert.That(map.KeyCount, Is.EqualTo(1));
+        Assert.That(map.Get("KEY"), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityKeyComparerAndValueComparer_WorksCorrectly()
+    {
+        using var map = new MultiMapLock<string, string>(100, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("Key", "Hello");
+        map.Add("key", "hello");
+
+        Assert.That(map.KeyCount, Is.EqualTo(1));
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.Get("KEY"), Is.EquivalentTo(new[] { "Hello" }));
+    }
 }

@@ -445,4 +445,44 @@ public class SimpleMultiMapTests
 
         Assert.That(_map.GetHashCode(), Is.EqualTo(other.GetHashCode()));
     }
+
+    [Test]
+    public void Constructor_WithCapacity_WorksCorrectly()
+    {
+        var map = new SimpleMultiMap<string, int>(100);
+        map.Add("a", 1);
+
+        Assert.That(map.Get("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
+    {
+        var map = new SimpleMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        map.Add("key", "hello");
+
+        Assert.That(map.Flatten().Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndValueComparer_WorksCorrectly()
+    {
+        var map = new SimpleMultiMap<string, string>(100, StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        map.Add("key", "hello");
+
+        Assert.That(map.Flatten().Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
+    {
+        var map = new SimpleMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "ABC");
+        map.Add("key", "abc");
+        map.Add("key", "Abc");
+
+        Assert.That(map.Flatten().Count(), Is.EqualTo(1));
+    }
 }

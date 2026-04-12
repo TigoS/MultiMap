@@ -1286,5 +1286,255 @@ public class ConcurrentMultiMapTests
 
         Assert.That(first, Is.EquivalentTo(second));
     }
+
+    [Test]
+    public void Keys_ReturnsSnapshot_NotLiveCollection()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var keys = _map.Keys;
+        _map.Add("c", 3);
+
+        Assert.That(keys, Is.EquivalentTo(new[] { "a", "b" }));
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyAndCapacity_WorksCorrectly()
+    {
+        var map = new ConcurrentMultiMap<string, int>(4, 100);
+        map.Add("a", 1);
+
+        Assert.That(map.Get("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
+    {
+        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        bool added = map.Add("key", "hello");
+
+        Assert.That(added, Is.False);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyCapacityAndValueComparer_WorksCorrectly()
+    {
+        var map = new ConcurrentMultiMap<string, string>(4, 100, StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        bool added = map.Add("key", "hello");
+
+        Assert.That(added, Is.False);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
+    {
+        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "ABC");
+        map.Add("key", "abc");
+        map.Add("key", "Abc");
+
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.GetValuesCount("key"), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Contains_WithCaseInsensitiveComparer_FindsValueIgnoringCase()
+    {
+        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+
+        Assert.That(map.Contains("key", "hello"), Is.True);
+        Assert.That(map.Contains("key", "HELLO"), Is.True);
+    }
+
+    [Test]
+    public void AddRange_WithValueComparer_RespectsComparer()
+    {
+        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        map.AddRange("key", new[] { "Hello", "hello", "HELLO" });
+
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.GetValuesCount("key"), Is.EqualTo(1));
+    }
+
+    // ── AddRange ICollection branch coverage ─────────────────
+
+    [Test]
+    public void AddRange_WithListValues_UsesICollectionPath()
+    {
+        var values = new List<int> { 1, 2, 3 };
+        _map.AddRange("a", values);
+
+        Assert.That(_map.Get("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+        Assert.That(_map.Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void AddRange_WithNonCollectionEnumerable_UsesToArrayFallback()
+    {
+        var values = Enumerable.Range(1, 3).Select(x => x);
+        _map.AddRange("a", values);
+
+        Assert.That(_map.Get("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+        Assert.That(_map.Count, Is.EqualTo(3));
+    }
+
+    // ── Equals branch coverage ───────────────────────────────
+
+    [Test]
+    public void Equals_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new ConcurrentMultiMap<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_SameKeyCountDifferentKeys_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new ConcurrentMultiMap<string, int>();
+        other.Add("b", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_SameKeysDifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new ConcurrentMultiMap<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    // ── Verify-after-lock stale hashset coverage ─────────────
+
+    [Test]
+    [Category("Stress")]
+    public void Remove_ConcurrentWithRemoveKeyAndReAdd_HandlesStaleHashset()
+    {
+        const int iterations = 5000;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            _map.Add("a", 1);
+            _map.Add("a", 2);
+
+            using var barrier = new Barrier(2);
+
+            var t1 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.Remove("a", 1);
+            });
+
+            var t2 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.RemoveKey("a");
+                _map.Add("a", 3);
+            });
+
+            Task.WaitAll(t1, t2);
+
+            Assert.That(_map.Count, Is.GreaterThanOrEqualTo(0));
+
+            int verifyCount = 0;
+            foreach (var key in _map.Keys)
+                verifyCount += _map.GetOrDefault(key).Count();
+
+            Assert.That(_map.Count, Is.EqualTo(verifyCount));
+            _map.Clear();
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void RemoveWhere_ConcurrentWithRemoveKeyAndReAdd_HandlesStaleHashset()
+    {
+        const int iterations = 5000;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            _map.Add("a", 1);
+            _map.Add("a", 2);
+
+            using var barrier = new Barrier(2);
+
+            var t1 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.RemoveWhere("a", v => v == 1);
+            });
+
+            var t2 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.RemoveKey("a");
+                _map.Add("a", 3);
+            });
+
+            Task.WaitAll(t1, t2);
+
+            Assert.That(_map.Count, Is.GreaterThanOrEqualTo(0));
+
+            int verifyCount = 0;
+            foreach (var key in _map.Keys)
+                verifyCount += _map.GetOrDefault(key).Count();
+
+            Assert.That(_map.Count, Is.EqualTo(verifyCount));
+            _map.Clear();
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void AddRange_ConcurrentWithRemoveKey_HandlesStaleHashset()
+    {
+        const int iterations = 5000;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            _map.Add("a", 100);
+
+            using var barrier = new Barrier(2);
+
+            var t1 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.AddRange("a", new[] { i * 2, i * 2 + 1 });
+            });
+
+            var t2 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.RemoveKey("a");
+            });
+
+            Task.WaitAll(t1, t2);
+
+            Assert.That(_map.Count, Is.GreaterThanOrEqualTo(0));
+
+            int verifyCount = 0;
+            foreach (var key in _map.Keys)
+                verifyCount += _map.GetOrDefault(key).Count();
+
+            Assert.That(_map.Count, Is.EqualTo(verifyCount));
+            _map.Clear();
+        }
+    }
 }
 
