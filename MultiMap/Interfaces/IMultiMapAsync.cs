@@ -11,7 +11,7 @@ namespace MultiMap.Interfaces
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null.</typeparam>
     public interface IMultiMapAsync<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
+        where TKey : notnull
         where TValue : notnull
     {
         /// <summary>

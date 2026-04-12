@@ -11,7 +11,7 @@
     /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null.</typeparam>
     /// <typeparam name="TValue">The type of values in the multi-map. Must not be null.</typeparam>
     public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
+        where TKey : notnull
         where TValue : notnull
     {
         /// <summary>
