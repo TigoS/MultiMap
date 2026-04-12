@@ -187,7 +187,7 @@ public class MultiMapBaseTests
     public void Get_ReturnsSnapshot_NotLiveCollection()
     {
         _map.Add("a", 1);
-        var result = _map.Get("a");
+        var result = _map.Get("a").ToList();
         _map.Add("a", 2);
 
         Assert.That(result, Is.EquivalentTo(new[] { 1 }));

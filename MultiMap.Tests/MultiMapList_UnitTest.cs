@@ -1081,9 +1081,10 @@ public class MultiMapListTests
         _map.Add("a", 1);
 
         _map.TryGet("a", out var snapshot);
+        var materialized = snapshot.ToList();
         _map.Add("a", 2);
 
-        Assert.That(snapshot, Is.EqualTo(new[] { 1 }));
+        Assert.That(materialized, Is.EqualTo(new[] { 1 }));
     }
 
     // ── Additional Equals Edge Cases ─────────────────────────
