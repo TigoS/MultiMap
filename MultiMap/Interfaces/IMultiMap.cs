@@ -36,14 +36,16 @@
         /// </summary>
         /// <param name="key">The key to which the values will be added.</param>
         /// <param name="values">The collection of values to add to the key. Cannot be null.</param>
-        public void AddRange(TKey key, IEnumerable<TValue> values);
+        /// <returns>The number of values that were actually added (excluding duplicates or already-existing values).</returns>
+        public int AddRange(TKey key, IEnumerable<TValue> values);
 
         /// <summary>
         /// Adds the elements of the specified collection to the current collection.
         /// </summary>
-        /// <remarks>If any key in the provided collection already exists in the current collection, an exception may be thrown depending on the implementation. The order in which the elements are added is preserved.</remarks>
-        /// <param name="items">The collection of key/value pairs to add. Each key in the collection must be unique and not already present in the current collection.</param>
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
+        /// <remarks>The order in which the elements are added is preserved. Duplicate key-value pairs that already exist are ignored.</remarks>
+        /// <param name="items">The collection of key/value pairs to add.</param>
+        /// <returns>The number of key/value pairs that were actually added (excluding duplicates or already-existing pairs).</returns>
+        public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
 
         /// <summary>
         /// Removes the entry with the specified key and value from the collection.

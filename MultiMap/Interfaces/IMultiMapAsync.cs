@@ -33,16 +33,16 @@ namespace MultiMap.Interfaces
         /// <param name="key">The key to associate the values with.</param>
         /// <param name="values">The values to add.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns>A task that represents the asynchronous operation.</returns>
-        public Task AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
+        /// <returns>A task that represents the asynchronous operation. The result contains the number of values that were actually added.</returns>
+        public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously adds a collection of key/value pairs to the data store.
         /// </summary>
         /// <param name="items">The collection of key/value pairs to add. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
-        /// <returns>A task that represents the asynchronous add operation.</returns>
-        public Task AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
+        /// <returns>A task that represents the asynchronous operation. The result contains the number of key/value pairs that were actually added.</returns>
+        public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes a specific value from the set associated with the specified key.
