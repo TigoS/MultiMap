@@ -1217,6 +1217,64 @@ namespace MultiMap.Entities
             return true;
         }
 
+        /// <summary>
+        /// Asynchronously determines whether the current instance and the specified object are equal by comparing their key-value mappings.
+        /// </summary>
+        /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
+        /// If either instance has been disposed, an exception is thrown.</remarks>
+        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
+        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
+        public async ValueTask<bool> EqualsAsync(object? obj)
+        {
+            if (obj is not MultiMapAsync<TKey, TValue> other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            ThrowIfDisposed();
+            other.ThrowIfDisposed();
+
+            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
+            var second = ReferenceEquals(first, this) ? other : this;
+
+            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
+
+            await first._semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await second._semaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
+                        return false;
+
+                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                }
+                finally
+                {
+                    second._semaphore.Release();
+                }
+            }
+            finally
+            {
+                first._semaphore.Release();
+            }
+
+            foreach (var kvp in thisSnapshot)
+            {
+                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    return false;
+
+                if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
+        }
+
         /// <inheritdoc/>
         public override int GetHashCode()
         {
