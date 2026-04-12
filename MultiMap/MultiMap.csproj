@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>1.0.10</Version>
+    <Version>1.0.11</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 8, and .NET Standard 2.0.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
@@ -23,48 +23,24 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon>icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>1.0.10
-
-Fixed
-
-- Broken **ReleaseNotes** and **README** references for NuGet package
-
-1.0.9
+    <PackageReleaseNotes>1.0.11
 
 Added
 
-- Value-based `Equals()`/`GetHashCode()` implementations across all 7 multimap entities — objects with identical key-value content are now structurally equal
-- `IComparable&lt;TKey&gt;` and `IComparable&lt;TValue&gt;` generic constraints on `SortedMultiMap&lt;TKey, TValue&gt;` for compile-time safety
-- SimpleMultiMap benchmark suite (9 benchmarks) in `SimpleMultiMapBenchmarks.cs`
-- Defensive copy (snapshot) tests for `Get`, `GetOrDefault`, and `TryGet` across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, and `MultiMapLock` — ensures callers receive a point-in-time snapshot, not a live reference
-- Equals edge-case tests (`DifferentContent`, `DifferentKeys`, `EmptyMaps`) for `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap`
-- 10 new unit tests for `SimpleMultiMap` Equals/GetHashCode behavior
+- Multi-target support: the NuGet package now ships assemblies for .NET 10, .NET 8, and .NET Standard 2.0
+- Dispose guards (ObjectDisposedException) on every public member of MultiMapLock and MultiMapAsync after disposal
+- 25 new dispose-guard unit tests (13 for MultiMapLock, 12 for MultiMapAsync)
 
 Changed
 
-- Test count increased from 1,023 to 1,045 tests
-- Code coverage: 94.3% line coverage, 92.6% branch coverage, 100% method coverage
-- `Get`, `GetOrDefault`, and `TryGet` now return defensive `.ToArray()` copies across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap` — prevents callers from observing mutations after retrieval
-- `ConcurrentMultiMap.Equals` uses deterministic dual-lock ordering via `RuntimeHelpers.GetHashCode` to prevent deadlocks when comparing two instances
-- `MultiMapAsync` now uses `ConfigureAwait(false)` on all `await` calls to avoid unnecessary synchronization context captures
-- `MultiMapLock.AddRange` and `MultiMapLock.RemoveRange` now execute under a single write lock for atomicity
-- `ConcurrentMultiMap.Clear()` now acquires a global lock to prevent count drift during concurrent clears
-- `ConcurrentMultiMap.RemoveWhere` now locks the per-key set during predicate evaluation
-- `MultiMapLock.RemoveWhere` now acquires a write lock for the entire operation
-- `MultiMapLock.TryGet` now returns a snapshot copy instead of a live `HashSet` reference
-- Optimized `RemoveWhere` across `MultiMapSet`, `MultiMapList`, and `SortedMultiMap` to use `RemoveAll`/`RemoveWhere` instead of manual iteration
-- `ConcurrentMultiMap.KeyCount` simplified to use `ConcurrentDictionary.Count` directly
-- `TestDataHelper` moved from `MultiMap/Helpers/` to `MultiMap.Demo/` — no longer part of the NuGet package
-- Updated all benchmark data with fresh BenchmarkDotNet v0.15.0 results
+- Test count increased from 1,045 to 1,070 tests
+- ConcurrentMultiMap.Equals now includes _count fast-exit comparison for consistency
+- SortedMultiMap variable names standardized: hashset → sortedSet
+- MultiMapAsync.DisposeAsync no longer allocates an unnecessary async state machine
 
 Fixed
 
-- `MultiMapAsync.GetValuesCountAsync` was ignoring the `key` parameter and always returning the total count instead of the per-key count
-- Thread-safety issue in `MultiMapLock.TryGet` that returned a live mutable reference to the internal `HashSet`
-- Thread-safety issue in `MultiMapLock.RemoveWhere` that reads without acquiring a lock
-- Thread-safety issue in `ConcurrentMultiMap.RemoveWhere` that reads without per-key lock
-- Race condition in `ConcurrentMultiMap.Clear()` under concurrent access causing count drift
-- Misleading test name in `MultiMapAsync` dispose test
+- ConcurrentMultiMap.Equals could return true for maps with different total counts but same key count
 
 See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
