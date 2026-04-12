@@ -1,11 +1,7 @@
-﻿using MultiMap.Interfaces;
-using System.Collections;
-
-namespace MultiMap.Entities
+﻿namespace MultiMap.Entities
 {
     /// <summary>
-    /// Represents a collection that associates each key with a sorted set of values,
-    /// allowing multiple values per key and maintaining both keys and values in sorted order.
+    /// Represents a collection that associates each key with a sorted set of values, allowing multiple values per key and maintaining both keys and values in sorted order.
     /// </summary>
     /// <remarks>
     /// The keys and values are stored in sorted order according to their natural comparer or a specified comparer.
@@ -14,19 +10,16 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
-    public class SortedMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
+    public class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
         where TKey : notnull, IComparable<TKey>
         where TValue : notnull, IComparable<TValue>
     {
-        private readonly SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
-        private int _count;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class.
         /// </summary>
         public SortedMultiMap()
+            : base(new SortedDictionary<TKey, SortedSet<TValue>>())
         {
-            _dictionary = new SortedDictionary<TKey, SortedSet<TValue>>();
         }
 
         /// <summary>
@@ -34,194 +27,18 @@ namespace MultiMap.Entities
         /// </summary>
         /// <param name="keyComparer">The comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         public SortedMultiMap(IComparer<TKey>? keyComparer)
+            : base(new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer))
         {
-            _dictionary = new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer);
         }
 
         /// <inheritdoc/>
-        public bool Add(TKey key, TValue value)
-        {
-            if (!_dictionary.TryGetValue(key, out var sortedSet))
-            {
-                sortedSet = new SortedSet<TValue>();
-                _dictionary[key] = sortedSet;
-            }
-
-            if (sortedSet.Add(value))
-            {
-                _count++;
-                return true;
-            }
-
-            return false;
-        }
+        protected override SortedSet<TValue> CreateCollection() => new SortedSet<TValue>();
 
         /// <inheritdoc/>
-        public void AddRange(TKey key, IEnumerable<TValue> values)
-        {
-            if (!_dictionary.TryGetValue(key, out var sortedSet))
-            {
-                sortedSet = new SortedSet<TValue>();
-                _dictionary[key] = sortedSet;
-            }
-
-            foreach (var value in values)
-            {
-                if (sortedSet.Add(value))
-                    _count++;
-            }
-        }
+        protected override bool AddToCollection(SortedSet<TValue> collection, TValue value) => collection.Add(value);
 
         /// <inheritdoc/>
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            foreach (var item in items)
-            {
-                Add(item.Key, item.Value);
-            }
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> Get(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var sortedSet))
-                return sortedSet.ToArray();
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> GetOrDefault(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var sortedSet))
-                return sortedSet.ToArray();
-
-            return [];
-        }
-
-        /// <inheritdoc/>
-        public bool TryGet(TKey key, out IEnumerable<TValue> values)
-        {
-            bool result = _dictionary.TryGetValue(key, out var sortedSet);
-
-            values = result ? sortedSet?.ToArray() ?? [] : [];
-
-            return result;
-        }
-
-        /// <inheritdoc/>
-        public bool Remove(TKey key, TValue value)
-        {
-            if (_dictionary.TryGetValue(key, out var sortedSet))
-            {
-                bool removed = sortedSet.Remove(value);
-
-                if (removed)
-                {
-                    _count--;
-                    if (sortedSet.Count == 0)
-                        _dictionary.Remove(key);
-                }
-
-                return removed;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            int removedCount = 0;
-            foreach (var item in items)
-            {
-                if (Remove(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
-        {
-            if (!_dictionary.TryGetValue(key, out var sortedSet))
-                return 0;
-
-            int removedCount = sortedSet.RemoveWhere(predicate);
-            _count -= removedCount;
-
-            if (sortedSet.Count == 0)
-                _dictionary.Remove(key);
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public bool RemoveKey(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var sortedSet))
-            {
-                _count -= sortedSet.Count;
-                return _dictionary.Remove(key);
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public bool ContainsKey(TKey key)
-        {
-            return _dictionary.ContainsKey(key);
-        }
-
-        /// <inheritdoc/>
-        public bool Contains(TKey key, TValue value)
-        {
-            return _dictionary.TryGetValue(key, out var sortedSet) && sortedSet.Contains(value);
-        }
-
-        /// <inheritdoc/>
-        public int Count => Volatile.Read(ref _count);
-
-        /// <inheritdoc/>
-        public IEnumerable<TKey> Keys => _dictionary.Keys;
-
-        /// <inheritdoc/>
-        public int KeyCount => _dictionary.Count;
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(sortedSet => sortedSet);
-
-        /// <inheritdoc/>
-        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var sortedSet) ? sortedSet.Count : 0;
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> this[TKey key] => Get(key);
-
-        /// <inheritdoc/>
-        public void Clear()
-        {
-            _dictionary.Clear();
-            _count = 0;
-        }
-
-        /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-        {
-            foreach (var kvp in _dictionary)
-            {
-                foreach (var value in kvp.Value)
-                {
-                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        protected override int RemoveWhereFromCollection(SortedSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
         /// <inheritdoc/>
         public override bool Equals(object? obj)

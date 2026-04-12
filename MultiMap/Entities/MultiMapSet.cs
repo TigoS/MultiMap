@@ -1,6 +1,4 @@
-﻿using MultiMap.Interfaces;
-using System.Collections;
-#if NET6_0_OR_GREATER
+﻿#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
 
@@ -17,20 +15,18 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values in the multimap. Must be non-nullable.</typeparam>
-    public class MultiMapSet<TKey, TValue> : IMultiMap<TKey, TValue>
+    public class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;
-        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class.
         /// </summary>
         public MultiMapSet()
+            : base(new Dictionary<TKey, HashSet<TValue>>())
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
         }
 
         /// <summary>
@@ -38,8 +34,8 @@ namespace MultiMap.Entities
         /// </summary>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapSet(IEqualityComparer<TKey>? keyComparer)
+            : base(new Dictionary<TKey, HashSet<TValue>>(keyComparer))
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
         }
 
         /// <summary>
@@ -47,8 +43,8 @@ namespace MultiMap.Entities
         /// </summary>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapSet(IEqualityComparer<TValue>? valueComparer)
+            : base(new Dictionary<TKey, HashSet<TValue>>())
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
             _valueComparer = valueComparer;
         }
 
@@ -57,8 +53,8 @@ namespace MultiMap.Entities
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         public MultiMapSet(int capacity)
+            : base(new Dictionary<TKey, HashSet<TValue>>(capacity))
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
         }
 
         /// <summary>
@@ -67,8 +63,8 @@ namespace MultiMap.Entities
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapSet(int capacity, IEqualityComparer<TKey>? keyComparer)
+            : base(new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer))
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
         }
 
         /// <summary>
@@ -77,8 +73,8 @@ namespace MultiMap.Entities
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapSet(int capacity, IEqualityComparer<TValue>? valueComparer)
+            : base(new Dictionary<TKey, HashSet<TValue>>(capacity))
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
             _valueComparer = valueComparer;
         }
 
@@ -89,24 +85,26 @@ namespace MultiMap.Entities
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapSet(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+            : base(new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer))
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
             _valueComparer = valueComparer;
         }
 
         /// <inheritdoc/>
-        public bool Add(TKey key, TValue value)
-        {
+        protected override HashSet<TValue> CreateCollection() => new HashSet<TValue>(_valueComparer);
+
+        /// <inheritdoc/>
+        protected override bool AddToCollection(HashSet<TValue> collection, TValue value) => collection.Add(value);
+
+        /// <inheritdoc/>
+        protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
+
 #if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+        /// <inheritdoc/>
+        public override bool Add(TKey key, TValue value)
+        {
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
 
             if (hashset.Add(value))
             {
@@ -118,18 +116,10 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public void AddRange(TKey key, IEnumerable<TValue> values)
+        public override void AddRange(TKey key, IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
 
             foreach (var value in values)
             {
@@ -137,157 +127,7 @@ namespace MultiMap.Entities
                     _count++;
             }
         }
-
-        /// <inheritdoc/>
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            foreach (var item in items)
-            {
-                Add(item.Key, item.Value);
-            }
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> Get(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToArray();
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> GetOrDefault(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToArray();
-
-            return [];
-        }
-
-        /// <inheritdoc/>
-        public bool TryGet(TKey key, out IEnumerable<TValue> values)
-        {
-            bool result = _dictionary.TryGetValue(key, out var hashset);
-
-            values = result ? hashset?.ToArray() ?? [] : [];
-
-            return result;
-        }
-
-        /// <inheritdoc/>
-        public bool Remove(TKey key, TValue value)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-            {
-                bool removed = hashset.Remove(value);
-
-                if (removed)
-                {
-                    _count--;
-                    if (hashset.Count == 0)
-                        _dictionary.Remove(key);
-                }
-
-                return removed;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            int removedCount = 0;
-            foreach (var item in items)
-            {
-                if (Remove(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
-        {
-            if (!_dictionary.TryGetValue(key, out var hashset))
-                return 0;
-
-            int removedCount = hashset.RemoveWhere(predicate);
-            _count -= removedCount;
-
-            if (hashset.Count == 0)
-                _dictionary.Remove(key);
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public bool RemoveKey(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-            {
-                _count -= hashset.Count;
-                return _dictionary.Remove(key);
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public bool ContainsKey(TKey key)
-        {
-            return _dictionary.ContainsKey(key);
-        }
-
-        /// <inheritdoc/>
-        public bool Contains(TKey key, TValue value)
-        {
-            return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
-        }
-
-        /// <inheritdoc/>
-        public int Count => Volatile.Read(ref _count);
-
-        /// <inheritdoc/>
-        public IEnumerable<TKey> Keys => _dictionary.Keys;
-
-        /// <inheritdoc/>
-        public int KeyCount => _dictionary.Count;
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(hashset => hashset);
-
-        /// <inheritdoc/>
-        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0;
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> this[TKey key] => Get(key);
-
-        /// <inheritdoc/>
-        public void Clear()
-        {
-            _dictionary.Clear();
-            _count = 0;
-        }
-
-        /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-        {
-            foreach (var kvp in _dictionary)
-            {
-                foreach (var value in kvp.Value)
-                {
-                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+#endif
 
         /// <inheritdoc/>
         public override bool Equals(object? obj)

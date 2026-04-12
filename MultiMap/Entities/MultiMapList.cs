@@ -1,6 +1,4 @@
-﻿using MultiMap.Interfaces;
-using System.Collections;
-#if NET6_0_OR_GREATER
+﻿#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
 
@@ -17,21 +15,18 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapList<TKey, TValue> : IMultiMap<TKey, TValue>
+    public class MultiMapList<TKey, TValue> : MultiMapBase<TKey, TValue, List<TValue>>
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly Dictionary<TKey, List<TValue>> _dictionary;
-        private int _count;
-
         /// <summary>
         /// Initializes a new instance of the MultiMapList class with an empty mapping.
         /// </summary>
         /// <remarks>Use this constructor to create a MultiMapList that starts with no key-value associations.
         /// The internal dictionary is initialized and ready for adding keys and values.</remarks>
         public MultiMapList()
+            : base(new Dictionary<TKey, List<TValue>>())
         {
-            _dictionary = new Dictionary<TKey, List<TValue>>();
         }
 
         /// <summary>
@@ -39,8 +34,8 @@ namespace MultiMap.Entities
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         public MultiMapList(int capacity)
+            : base(new Dictionary<TKey, List<TValue>>(capacity))
         {
-            _dictionary = new Dictionary<TKey, List<TValue>>(capacity);
         }
 
         /// <summary>
@@ -48,8 +43,8 @@ namespace MultiMap.Entities
         /// </summary>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapList(IEqualityComparer<TKey>? keyComparer)
+            : base(new Dictionary<TKey, List<TValue>>(keyComparer))
         {
-            _dictionary = new Dictionary<TKey, List<TValue>>(keyComparer);
         }
 
         /// <summary>
@@ -58,35 +53,42 @@ namespace MultiMap.Entities
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapList(int capacity, IEqualityComparer<TKey>? keyComparer)
+            : base(new Dictionary<TKey, List<TValue>>(capacity, keyComparer))
         {
-            _dictionary = new Dictionary<TKey, List<TValue>>(capacity, keyComparer);
         }
 
         /// <inheritdoc/>
-        public bool Add(TKey key, TValue value)
+        protected override List<TValue> CreateCollection() => new List<TValue>();
+
+        /// <inheritdoc/>
+        protected override bool AddToCollection(List<TValue> collection, TValue value)
         {
+            collection.Add(value);
+            return true;
+        }
+
+        /// <inheritdoc/>
+        protected override int RemoveWhereFromCollection(List<TValue> collection, Predicate<TValue> predicate) => collection.RemoveAll(predicate);
+
 #if NET6_0_OR_GREATER
-            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+        /// <inheritdoc/>
+        public override bool Add(TKey key, TValue value)
+        {
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
             list ??= new List<TValue>();
-#else
-            if (!_dictionary.TryGetValue(key, out var list))
-            {
-                list = new List<TValue>();
-                _dictionary[key] = list;
-            }
-#endif
 
             list.Add(value);
             _count++;
 
             return true;
         }
+#endif
 
         /// <inheritdoc/>
-        public void AddRange(TKey key, IEnumerable<TValue> values)
+        public override void AddRange(TKey key, IEnumerable<TValue> values)
         {
 #if NET6_0_OR_GREATER
-            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
             list ??= new List<TValue>();
 #else
             if (!_dictionary.TryGetValue(key, out var list))
@@ -100,158 +102,6 @@ namespace MultiMap.Entities
             list.AddRange(values);
             _count += list.Count - before;
         }
-
-        /// <inheritdoc/>
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            foreach (var item in items)
-            {
-                Add(item.Key, item.Value);
-            }
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> Get(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var list))
-                return list.ToArray();
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
-        }
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> GetOrDefault(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var list))
-                return list.ToArray();
-
-            return [];
-        }
-
-        /// <inheritdoc/>
-        public bool TryGet(TKey key, out IEnumerable<TValue> values)
-        {
-            bool result = _dictionary.TryGetValue(key, out var list);
-
-            values = result ? list?.ToArray() ?? [] : [];
-
-            return result;
-        }
-
-
-        /// <inheritdoc/>
-        public bool Remove(TKey key, TValue value)
-        {
-            if (_dictionary.TryGetValue(key, out var list))
-            {
-                bool removed = list.Remove(value);
-
-                if (removed)
-                {
-                    _count--;
-                    if (list.Count == 0)
-                        _dictionary.Remove(key);
-                }
-
-                return removed;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            int removedCount = 0;
-            foreach (var item in items)
-            {
-                if (Remove(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
-        {
-            if (!_dictionary.TryGetValue(key, out var list))
-                return 0;
-
-            int removedCount = list.RemoveAll(predicate);
-            _count -= removedCount;
-
-            if (list.Count == 0)
-                _dictionary.Remove(key);
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public bool RemoveKey(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var list))
-            {
-                _count -= list.Count;
-                return _dictionary.Remove(key);
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public bool ContainsKey(TKey key)
-        {
-            return _dictionary.ContainsKey(key);
-        }
-
-        /// <inheritdoc/>
-        public bool Contains(TKey key, TValue value)
-        {
-            return _dictionary.TryGetValue(key, out var list) && list.Contains(value);
-        }
-
-        /// <inheritdoc/>
-        public int Count => Volatile.Read(ref _count);
-
-        /// <inheritdoc/>
-        public IEnumerable<TKey> Keys => _dictionary.Keys;
-
-        /// <inheritdoc/>
-        public int KeyCount => _dictionary.Count;
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(list => list);
-
-        /// <inheritdoc/>
-        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var list) ? list.Count : 0;
-
-        /// <inheritdoc/>
-        public IEnumerable<TValue> this[TKey key] => Get(key);
-
-        /// <inheritdoc/>
-        public void Clear()
-        {
-            _dictionary.Clear();
-            _count = 0;
-        }
-
-        /// <inheritdoc/>
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-        {
-            foreach (var kvp in _dictionary)
-            {
-                foreach (var value in kvp.Value)
-                {
-                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-                }
-            }
-        }
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
         public override bool Equals(object? obj)
