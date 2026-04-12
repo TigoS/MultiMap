@@ -94,7 +94,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public void AddRange(TKey key, IEnumerable<TValue> values)
+        public int AddRange(TKey key, IEnumerable<TValue> values)
         {
             var items = values as ICollection<TValue> ?? values.ToArray();
 
@@ -107,24 +107,32 @@ namespace MultiMap.Entities
                     if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
                         continue;
 
+                    int added = 0;
                     foreach (var value in items)
                     {
                         if (hashset.Add(value))
+                        {
                             Interlocked.Increment(ref _count);
+                            added++;
+                        }
                     }
 
-                    return;
+                    return added;
                 }
             }
         }
 
         /// <inheritdoc/>
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            int added = 0;
             foreach (var item in items)
             {
-                Add(item.Key, item.Value);
+                if (Add(item.Key, item.Value))
+                    added++;
             }
+
+            return added;
         }
 
         /// <inheritdoc/>

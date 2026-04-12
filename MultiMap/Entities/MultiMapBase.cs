@@ -51,6 +51,14 @@ namespace MultiMap.Entities
         /// </summary>
         protected abstract int RemoveWhereFromCollection(TCollection collection, Predicate<TValue> predicate);
 
+        /// <summary>
+        /// Returns a read-only view of the values in <paramref name="collection"/>.
+        /// The default implementation creates a snapshot via <see cref="Enumerable.ToArray{TSource}"/>;
+        /// subclasses backed by <see cref="List{T}"/> can override to return
+        /// <see cref="List{T}.AsReadOnly"/> for a zero-copy wrapper.
+        /// </summary>
+        protected virtual IEnumerable<TValue> ToReadOnly(TCollection collection) => collection.ToArray();
+
         /// <inheritdoc/>
         public virtual bool Add(TKey key, TValue value)
         {
@@ -70,7 +78,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public virtual void AddRange(TKey key, IEnumerable<TValue> values)
+        public virtual int AddRange(TKey key, IEnumerable<TValue> values)
         {
             if (!_dictionary.TryGetValue(key, out var collection))
             {
@@ -78,27 +86,37 @@ namespace MultiMap.Entities
                 _dictionary[key] = collection;
             }
 
+            int added = 0;
             foreach (var value in values)
             {
                 if (AddToCollection(collection, value))
+                {
                     _count++;
+                    added++;
+                }
             }
+
+            return added;
         }
 
         /// <inheritdoc/>
-        public virtual void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        public virtual int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            int added = 0;
             foreach (var item in items)
             {
-                Add(item.Key, item.Value);
+                if (Add(item.Key, item.Value))
+                    added++;
             }
+
+            return added;
         }
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var collection))
-                return collection.ToArray();
+                return ToReadOnly(collection);
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -107,7 +125,7 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var collection))
-                return collection.ToArray();
+                return ToReadOnly(collection);
 
             return [];
         }
@@ -117,7 +135,7 @@ namespace MultiMap.Entities
         {
             bool result = _dictionary.TryGetValue(key, out var collection);
 
-            values = result ? collection?.ToArray() ?? [] : [];
+            values = result ? ToReadOnly(collection!) : [];
 
             return result;
         }

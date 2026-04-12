@@ -116,16 +116,22 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public override void AddRange(TKey key, IEnumerable<TValue> values)
+        public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>(_valueComparer);
 
+            int added = 0;
             foreach (var value in values)
             {
                 if (hashset.Add(value))
+                {
                     _count++;
+                    added++;
+                }
             }
+
+            return added;
         }
 #endif
 

@@ -142,7 +142,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public void AddRange(TKey key, IEnumerable<TValue> values)
+        public int AddRange(TKey key, IEnumerable<TValue> values)
         {
             ThrowIfDisposed();
             _lock.EnterWriteLock();
@@ -159,11 +159,17 @@ namespace MultiMap.Entities
                 }
 #endif
 
+                int added = 0;
                 foreach (var value in values)
                 {
                     if (hashset.Add(value))
+                    {
                         _count++;
+                        added++;
+                    }
                 }
+
+                return added;
             }
             finally
             {
@@ -172,12 +178,13 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
             {
+                int added = 0;
                 foreach (var item in items)
                 {
 #if NET6_0_OR_GREATER
@@ -192,8 +199,13 @@ namespace MultiMap.Entities
 #endif
 
                     if (hashset.Add(item.Value))
+                    {
                         _count++;
+                        added++;
+                    }
                 }
+
+                return added;
             }
             finally
             {

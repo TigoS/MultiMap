@@ -70,6 +70,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(List<TValue> collection, Predicate<TValue> predicate) => collection.RemoveAll(predicate);
 
+        /// <inheritdoc/>
+        protected override IEnumerable<TValue> ToReadOnly(List<TValue> collection) => collection.AsReadOnly();
+
 #if NET6_0_OR_GREATER
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
@@ -85,7 +88,7 @@ namespace MultiMap.Entities
 #endif
 
         /// <inheritdoc/>
-        public override void AddRange(TKey key, IEnumerable<TValue> values)
+        public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
 #if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
@@ -100,7 +103,10 @@ namespace MultiMap.Entities
 
             int before = list.Count;
             list.AddRange(values);
-            _count += list.Count - before;
+            int added = list.Count - before;
+            _count += added;
+
+            return added;
         }
 
         /// <inheritdoc/>

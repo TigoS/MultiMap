@@ -178,7 +178,7 @@ namespace MultiMap.Entities
         // ── AddRangeAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
+        public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
@@ -186,8 +186,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    AddRangeCore(key, values);
-                    return Task.CompletedTask;
+                    return Task.FromResult(AddRangeCore(key, values));
                 }
                 finally
                 {
@@ -197,7 +196,7 @@ namespace MultiMap.Entities
             return AddRangeSlowAsync(waitTask, key, values);
         }
 
-        private void AddRangeCore(TKey key, IEnumerable<TValue> values)
+        private int AddRangeCore(TKey key, IEnumerable<TValue> values)
         {
 #if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
@@ -210,19 +209,25 @@ namespace MultiMap.Entities
             }
 #endif
 
+            int added = 0;
             foreach (var value in values)
             {
                 if (hashset.Add(value))
+                {
                     _count++;
+                    added++;
+                }
             }
+
+            return added;
         }
 
-        private async Task AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
+        private async Task<int> AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
         {
             await waitTask.ConfigureAwait(false);
             try
             {
-                AddRangeCore(key, values);
+                return AddRangeCore(key, values);
             }
             finally
             {
@@ -233,7 +238,7 @@ namespace MultiMap.Entities
         // ── AddRangeAsync (overload for params array) ─────────
 
         /// <inheritdoc/>
-        public Task AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
+        public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
@@ -241,8 +246,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    AddRangeCore(items);
-                    return Task.CompletedTask;
+                    return Task.FromResult(AddRangeCore(items));
                 }
                 finally
                 {
@@ -252,8 +256,9 @@ namespace MultiMap.Entities
             return AddRangeSlowAsync(waitTask, items);
         }
 
-        private void AddRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        private int AddRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            int added = 0;
             foreach (var item in items)
             {
 #if NET6_0_OR_GREATER
@@ -268,16 +273,21 @@ namespace MultiMap.Entities
 #endif
 
                 if (hashset.Add(item.Value))
+                {
                     _count++;
+                    added++;
+                }
             }
+
+            return added;
         }
 
-        private async Task AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
+        private async Task<int> AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             await waitTask.ConfigureAwait(false);
             try
             {
-                AddRangeCore(items);
+                return AddRangeCore(items);
             }
             finally
             {
