@@ -1,15 +1,15 @@
 ﻿# MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET 10](https://img.shields.io/badge/.NET-10.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-94.3%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-96.7%25-brightgreen)]()
 
-A **.NET 10** library
+A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Table of Contents
 
@@ -45,11 +45,15 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 - **7 multimap implementations** covering a wide range of use cases
 - **3 interfaces** (`IMultiMap`, `IMultiMapAsync`, `ISimpleMultiMap`) for flexibility
+- **Multi-target**: .NET 10, .NET 8, and .NET Standard 2.0
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Thread-safe variants**: per-key locked (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
+- **Dispose safety**: `MultiMapLock` and `MultiMapAsync` throw `ObjectDisposedException` after disposal
+- **Custom value comparers**: `IEqualityComparer<TValue>` constructor overloads on all `HashSet`-based implementations
+- **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
-- **1045 unit tests** with NUnit 4
-- **94.3% line coverage, 92.6% branch coverage** via Coverlet
+- **1125 unit tests** with NUnit 4
+- **96.7% line coverage, 95.3% branch coverage** via Coverlet
 - **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 
 ## Project Structure
@@ -74,7 +78,7 @@ MultiMap/
 │   │   └── SimpleMultiMap.cs           # Lightweight ISimpleMultiMap impl
 │   └── Helpers/
 │       └── MultiMapHelper.cs           # Set-like extension methods
-├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1045 tests)
+├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1125 tests)
 ├── MultiMap.Demo/                      # Console demo application
 │   ├── Program.cs                      # Demo entry point
 │   └── TestDataHelper.cs               # Sample data factory for demos
@@ -192,29 +196,43 @@ A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`
 
 Implements `IMultiMap`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized.
 
+**Constructors:** `MultiMapList()`, `MultiMapList(int capacity)`
+
 ### `MultiMapSet<TKey, TValue>` — HashSet-Based
 
 Implements `IMultiMap`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios requiring fast lookups and unique value semantics.
+
+**Constructors:** `MultiMapSet()`, `MultiMapSet(int capacity)`, `MultiMapSet(IEqualityComparer<TValue> valueComparer)`, `MultiMapSet(int capacity, IEqualityComparer<TValue> valueComparer)`
 
 ### `SortedMultiMap<TKey, TValue>` — Sorted
 
 Implements `IMultiMap`. Uses `SortedDictionary<TKey, SortedSet<TValue>>`. Keys and values are maintained in sorted order. Ideal for ordered enumeration and range queries.
 
+**Constructors:** `SortedMultiMap()`
+
 ### `ConcurrentMultiMap<TKey, TValue>` — Per-Key Locked Concurrent
 
-Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock` for thread safety and an `Interlocked` counter for O(1) `Count`. A verify-after-lock pattern prevents count drift when concurrent `RemoveKey` invalidates a locked `HashSet`. Suitable for high-concurrency scenarios.
+Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock` for thread safety and an `Interlocked` counter for O(1) `Count`. A verify-after-lock pattern prevents count drift when concurrent `RemoveKey` invalidates a locked `HashSet`. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
+
+**Constructors:** `ConcurrentMultiMap()`, `ConcurrentMultiMap(int capacity)`, `ConcurrentMultiMap(IEqualityComparer<TValue> valueComparer)`, `ConcurrentMultiMap(int capacity, IEqualityComparer<TValue> valueComparer)`
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
 Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow concurrent reads with exclusive writes. Good for read-heavy workloads with occasional writes.
 
+**Constructors:** `MultiMapLock()`, `MultiMapLock(int capacity)`, `MultiMapLock(IEqualityComparer<TValue> valueComparer)`, `MultiMapLock(int capacity, IEqualityComparer<TValue> valueComparer)`
+
 ### `MultiMapAsync<TKey, TValue>` — Async-Safe
 
 Implements `IMultiMapAsync` and `IAsyncEnumerable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios.
 
+**Constructors:** `MultiMapAsync()`, `MultiMapAsync(int capacity)`, `MultiMapAsync(IEqualityComparer<TValue> valueComparer)`, `MultiMapAsync(int capacity, IEqualityComparer<TValue> valueComparer)`
+
 ### `SimpleMultiMap<TKey, TValue>` — Lightweight
 
 Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection.
+
+**Constructors:** `SimpleMultiMap()`, `SimpleMultiMap(int capacity)`, `SimpleMultiMap(IEqualityComparer<TValue> valueComparer)`, `SimpleMultiMap(int capacity, IEqualityComparer<TValue> valueComparer)`
 
 ## Comparison Table
 
@@ -308,7 +326,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.9" />
+<PackageReference Include="MultiMap" Version="1.0.11" />
 ```
 
 ## Usage
@@ -608,7 +626,7 @@ C: 3
 
 ## Testing
 
-The library includes **1045 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **1125 unit tests** written with **NUnit 4**, covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
 ```shell
 dotnet test
@@ -618,14 +636,14 @@ dotnet test
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapAsyncTests` | 148 | Async implementation |
-| `ConcurrentMultiMapTests` | 112 | Per-key locked concurrent implementation |
-| `MultiMapLockTests` | 112 | RW Lock implementation |
-| `MultiMapListTests` | 108 | List-based implementation |
-| `MultiMapSetTests` | 103 | HashSet-based implementation |
-| `SortedMultiMapTests` | 100 | Sorted implementation |
-| `SimpleMultiMapTests` | 43 | Lightweight implementation |
-| **Entity subtotal** | **726** | |
+| `MultiMapAsyncTests` | 170 | Async implementation |
+| `ConcurrentMultiMapTests` | 127 | Per-key locked concurrent implementation |
+| `MultiMapLockTests` | 136 | RW Lock implementation |
+| `MultiMapListTests` | 112 | List-based implementation |
+| `MultiMapSetTests` | 113 | HashSet-based implementation |
+| `SortedMultiMapTests` | 101 | Sorted implementation |
+| `SimpleMultiMapTests` | 47 | Lightweight implementation |
+| **Entity subtotal** | **806** | |
 
 ### Test Coverage by Extension Methods
 
@@ -648,7 +666,7 @@ dotnet test
 
 | | |
 |---|---|
-| **Total** | **1045 tests** |
+| **Total** | **1125 tests** |
 
 ### Test Categories
 
@@ -669,31 +687,31 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapAsyncTests` | 148 | 14.2% |
-| `ConcurrentMultiMapTests` | 112 | 10.7% |
-| `MultiMapLockTests` | 112 | 10.7% |
-| `MultiMapListTests` | 108 | 10.3% |
-| `MultiMapSetTests` | 103 | 9.9% |
-| `SortedMultiMapTests` | 100 | 9.6% |
-| `SimpleMultiMapTests` | 43 | 4.1% |
-| **Entity subtotal** | **726** | **69.5%** |
-| `MultiMapHelperAsyncTests` | 65 | 6.2% |
-| `MultiMapHelperWithMultiMapSetTests` | 34 | 3.3% |
-| `MultiMapHelperTests` | 28 | 2.7% |
-| `SimpleMultiMapHelperTests` | 28 | 2.7% |
-| `MultiMapHelperExtensionAsyncTests` | 25 | 2.4% |
-| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 2.3% |
-| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 2.3% |
-| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 2.3% |
-| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 2.2% |
+| `MultiMapAsyncTests` | 170 | 15.1% |
+| `ConcurrentMultiMapTests` | 127 | 11.3% |
+| `MultiMapLockTests` | 136 | 12.1% |
+| `MultiMapListTests` | 112 | 10.0% |
+| `MultiMapSetTests` | 113 | 10.0% |
+| `SortedMultiMapTests` | 101 | 9.0% |
+| `SimpleMultiMapTests` | 47 | 4.2% |
+| **Entity subtotal** | **806** | **71.6%** |
+| `MultiMapHelperAsyncTests` | 65 | 5.8% |
+| `MultiMapHelperWithMultiMapSetTests` | 34 | 3.0% |
+| `MultiMapHelperTests` | 28 | 2.5% |
+| `SimpleMultiMapHelperTests` | 28 | 2.5% |
+| `MultiMapHelperExtensionAsyncTests` | 25 | 2.2% |
+| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 2.1% |
+| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 2.1% |
+| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 2.1% |
+| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 2.0% |
 | `MultiMapHelperWithMultiMapLockTests` | 12 | 1.1% |
 | `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 1.1% |
-| `MultiMapHelperWithMultiMapListTests` | 10 | 1.0% |
-| `MultiMapHelperWithSortedMultiMapTests` | 10 | 1.0% |
-| **Helper subtotal** | **319** | **30.5%** |
-| **Total** | **1045** | **100%** |
+| `MultiMapHelperWithMultiMapListTests` | 10 | 0.9% |
+| `MultiMapHelperWithSortedMultiMapTests` | 10 | 0.9% |
+| **Helper subtotal** | **319** | **28.4%** |
+| **Total** | **1125** | **100%** |
 
-> **Coverage distribution:** ~70% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, and slow path contention tests), while ~30% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper.
+> **Coverage distribution:** ~72% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), while ~28% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper.
 
 ### Code Coverage (Coverlet)
 
@@ -707,29 +725,30 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **94.3%** (MultiMap assembly) |
-| **Branch coverage** | **92.6%** (MultiMap assembly) |
+| **Line coverage** | **96.7%** (MultiMap assembly) |
+| **Branch coverage** | **95.3%** (MultiMap assembly) |
 | **Method coverage** | **100%** (All public methods) |
 
 #### Per-Class Breakdown
 
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 96.9% | 86.4% | ✅ Full |
-| `MultiMapAsync<TKey, TValue>` | 97.1% | 92.4% | ✅ Full |
-| `MultiMapList<TKey, TValue>` | 97.6% | 90.7% | ✅ Full |
-| `MultiMapLock<TKey, TValue>` | 99.2% | 96.0% | ✅ Full |
-| `MultiMapSet<TKey, TValue>` | 97.7% | 91.7% | ✅ Full |
-| `SimpleMultiMap<TKey, TValue>` | 98.4% | 96.2% | ✅ Full |
-| `SortedMultiMap<TKey, TValue>` | 97.8% | 91.7% | ✅ Full |
+| `ConcurrentMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
+| `MultiMapAsync<TKey, TValue>` | 91.3% | 92.4% | ✅ Full |
+| `MultiMapList<TKey, TValue>` | 99.3% | 93.3% | ✅ Full |
+| `MultiMapLock<TKey, TValue>` | 99.6% | 97.0% | ✅ Full |
+| `MultiMapSet<TKey, TValue>` | 99.4% | 93.9% | ✅ Full |
+| `SimpleMultiMap<TKey, TValue>` | 98.8% | 96.7% | ✅ Full |
+| `SortedMultiMap<TKey, TValue>` | 98.0% | 90.9% | ✅ Full |
 | `MultiMapHelper` | 100% | 100% | ✅ Full |
 | `Program` | 0% | 0% | ➖ Entry point only |
 
 > **Notes:**
-> - All 7 entity implementations achieve **96%+ line coverage**.
-> - `MultiMapLock` leads with **99.2% line coverage** and **96.0% branch coverage**.
-> - `ConcurrentMultiMap` achieves **96.9% line coverage**. Uncovered lines are verify-after-lock race condition paths that are extremely difficult to trigger consistently.
-> - `MultiMapAsync` achieves **97.1% line coverage** with async edge cases in slow paths under high concurrency.
+> - All 7 entity implementations achieve **90%+ line coverage**, with 6 of 7 exceeding **98%**.
+> - `ConcurrentMultiMap` achieves **100% line and branch coverage** — all verify-after-lock race condition paths are fully exercised.
+> - `MultiMapLock` leads non-concurrent implementations with **99.6% line coverage** and **97.0% branch coverage**.
+> - `MultiMapSet` achieves **99.4% line coverage** and `MultiMapList` achieves **99.3% line coverage**.
+> - `MultiMapAsync` achieves **91.3% line coverage** — the async state machine overhead inflates uncovered line counts, though branch coverage remains strong at **92.4%**.
 > - `MultiMapHelper` achieves **100% line and branch coverage** for all extension methods, including async variants.
 > - `Program` class (0% coverage) is the application entry point for the Demo project — excluded from quality targets.
 
