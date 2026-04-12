@@ -2098,6 +2098,173 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public async Task Equals_DifferentKeys_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("b", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Equals_BothEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(_map.Equals(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task Equals_SameKeysDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+
+        Assert.That(_map.Equals(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    // ── EqualsAsync Tests ─────────────────────────────────────
+
+    [Test]
+    public async Task EqualsAsync_SameInstance_ReturnsTrue()
+    {
+        Assert.That(await _map.EqualsAsync(_map), Is.True);
+    }
+
+    [Test]
+    public async Task EqualsAsync_DifferentInstanceSameContent_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.EqualsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_Null_ReturnsFalse()
+    {
+        Assert.That(await _map.EqualsAsync(null), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_DifferentType_ReturnsFalse()
+    {
+        Assert.That(await _map.EqualsAsync("not a map"), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_BothEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(await _map.EqualsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_DifferentValueCount_SameKeys_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.EqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_DifferentKeys_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("b", 1);
+
+        Assert.That(await _map.EqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_SameKeysDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+
+        Assert.That(await _map.EqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_MultipleKeysAndValues_SameContent_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+        await _map.AddAsync("c", 4);
+        await _map.AddAsync("c", 5);
+
+        await other.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+        await other.AddAsync("b", 3);
+        await other.AddAsync("c", 4);
+        await other.AddAsync("c", 5);
+
+        Assert.That(await _map.EqualsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_OneEmptyOneNonEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.EqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public void EqualsAsync_DisposedThis_ThrowsObjectDisposedException()
+    {
+        var other = new MultiMapAsync<string, int>();
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
+
+        other.Dispose();
+    }
+
+    [Test]
+    public async Task EqualsAsync_DisposedOther_ThrowsObjectDisposedException()
+    {
+        var other = new MultiMapAsync<string, int>();
+        other.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
+    }
+
+    [Test]
     public async Task AddAsync_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
     {
         var map = new MultiMapAsync<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
