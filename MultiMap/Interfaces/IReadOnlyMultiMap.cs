@@ -22,6 +22,9 @@
         /// <param name="key">The key whose associated values are to be retrieved.</param>
         /// <param name="values">When this method returns, contains the collection of values associated with the specified key, if the key is found; otherwise, an empty collection.</param>
         /// <returns>true if the key was found and values were retrieved; otherwise, false.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public bool TryGet(TKey key, out IEnumerable<TValue> values);
 
         /// <summary>
@@ -33,6 +36,9 @@
         /// <see langword="true"/> if the collection contains an element with the specified key;
         /// otherwise, <see langword="false"/>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public bool ContainsKey(TKey key);
 
         /// <summary>
@@ -44,6 +50,9 @@
         /// <see langword="true"/> if an element with the specified key and value exists in the collection;
         /// otherwise, <see langword="false"/>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
         public bool Contains(TKey key, TValue value);
 
         /// <summary>
@@ -71,6 +80,9 @@
         /// </summary>
         /// <param name="key">The key whose associated value count is to be retrieved. Cannot be null.</param>
         /// <returns>The number of values associated with the specified key. Returns 0 if the key does not exist.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public int GetValuesCount(TKey key);
 
         /// <summary>
@@ -86,6 +98,9 @@
         /// and throws <see cref="KeyNotFoundException"/> if the key is not found.</remarks>
         /// <param name="key">The key whose associated values to retrieve.</param>
         /// <returns>An enumerable collection of values associated with the specified key.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         /// <exception cref="KeyNotFoundException">Thrown when the specified key does not exist in the collection.</exception>
         public IEnumerable<TValue> this[TKey key] { get; }
     }

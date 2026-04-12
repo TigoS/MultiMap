@@ -24,6 +24,9 @@ namespace MultiMap.Interfaces
         /// <see langword="true"/> if the value was added successfully;
         /// <see langword="false"/> if it already existed for the key.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -34,6 +37,9 @@ namespace MultiMap.Interfaces
         /// <param name="values">The values to add.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The result contains the number of values that were actually added.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="values"/> is <see langword="null"/>.
+        /// </exception>
         public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -42,6 +48,9 @@ namespace MultiMap.Interfaces
         /// <param name="items">The collection of key/value pairs to add. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation. The result contains the number of key/value pairs that were actually added.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="items"/> is <see langword="null"/>.
+        /// </exception>
         public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -55,6 +64,9 @@ namespace MultiMap.Interfaces
         /// <see langword="true"/> if the value was successfully removed;
         /// <see langword="false"/> if the key or value was not found.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -63,6 +75,9 @@ namespace MultiMap.Interfaces
         /// <param name="items">The collection of key/value pairs to remove from the collection.Each pair specifies a key and its associated value to be removed.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A ValueTask representing the asynchronous operation. The result contains the number of key/value pairs that were successfully removed.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="items"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -72,6 +87,9 @@ namespace MultiMap.Interfaces
         /// <param name="predicate">A delegate that defines the conditions of the values to remove. Only values for which the predicate returns <see langword="true"/> are removed.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
         /// <returns>A value task representing the asynchronous operation. The result contains the number of values removed.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="predicate"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -83,6 +101,9 @@ namespace MultiMap.Interfaces
         /// <see langword="true"/> if the key was found and removed;
         /// <see langword="false"/> if the key did not exist.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>

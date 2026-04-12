@@ -29,6 +29,9 @@
         /// <see langword="true"/> if the key and value were added successfully;
         /// otherwise, <see langword="false"/> if the key-value pair already exists in the collection.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
         public bool Add(TKey key, TValue value);
 
         /// <summary>
@@ -37,6 +40,9 @@
         /// <param name="key">The key to which the values will be added.</param>
         /// <param name="values">The collection of values to add to the key. Cannot be null.</param>
         /// <returns>The number of values that were actually added (excluding duplicates or already-existing values).</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="values"/> is <see langword="null"/>.
+        /// </exception>
         public int AddRange(TKey key, IEnumerable<TValue> values);
 
         /// <summary>
@@ -45,6 +51,9 @@
         /// <remarks>The order in which the elements are added is preserved. Duplicate key-value pairs that already exist are ignored.</remarks>
         /// <param name="items">The collection of key/value pairs to add.</param>
         /// <returns>The number of key/value pairs that were actually added (excluding duplicates or already-existing pairs).</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="items"/> is <see langword="null"/>.
+        /// </exception>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
 
         /// <summary>
@@ -58,6 +67,9 @@
         /// <see langword="true"/> if the element was found and removed;
         /// otherwise, <see langword="false"/>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
         public bool Remove(TKey key, TValue value);
 
         /// <summary>
@@ -67,6 +79,9 @@
         /// The method does not throw an exception if some or all pairs are not found.</remarks>
         /// <param name="items">The key/value pairs to remove from the collection. Each pair is matched by key and value; only pairs that exist in the collection are removed. Cannot be null.</param>
         /// <returns>The number of key/value pairs that were successfully removed from the collection.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="items"/> is <see langword="null"/>.
+        /// </exception>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
 
         /// <summary>
@@ -76,6 +91,9 @@
         /// <param name="key">The key whose associated values are to be tested and potentially removed.</param>
         /// <param name="predicate">A delegate that defines the conditions of the values to remove. Only values for which the predicate returns <see langword="true"/> are removed.</param>
         /// <returns>The number of values removed from the collection.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="predicate"/> is <see langword="null"/>.
+        /// </exception>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate);
 
         /// <summary>
@@ -88,6 +106,9 @@
         /// <see langword="true"/> if the key was found and its values were removed;
         /// otherwise, <see langword="false"/>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public bool RemoveKey(TKey key);
 
         /// <summary>

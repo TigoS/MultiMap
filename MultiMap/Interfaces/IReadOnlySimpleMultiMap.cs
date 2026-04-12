@@ -18,6 +18,9 @@
         /// An enumerable collection of values associated with the specified key.
         /// Throws a <see cref="KeyNotFoundException"/> if the key is not found.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         /// <exception cref="KeyNotFoundException">
         /// Thrown when the specified key does not exist in the collection.
         /// </exception>
@@ -31,6 +34,9 @@
         /// An enumerable collection of values associated with the specified key.
         /// If the key is not found, returns an empty collection.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public IEnumerable<TValue> GetOrDefault(TKey key);
     }
 }

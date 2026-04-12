@@ -29,6 +29,9 @@
         /// <see langword="true"/> if the key and value were added successfully;
         /// otherwise, <see langword="false"/> if the key already exists in the collection.
         /// </returns>
+        /// <exception cref="KeyNotFoundException">
+        /// Thrown when the specified key or value does not exist in the collection.
+        /// </exception>
         public bool Add(TKey key, TValue value);
 
         /// <summary>
@@ -36,12 +39,18 @@
         /// </summary>
         /// <param name="key">The key of the entry to remove. Cannot be null.</param>
         /// <param name="value">The value associated with the key to remove.</param>
+        /// <exception cref="KeyNotFoundException">
+        /// Thrown when the specified key or value does not exist in the collection.
+        /// </exception>
         public void Remove(TKey key, TValue value);
 
         /// <summary>
         /// Removes all values associated with the specified key.
         /// </summary>
         /// <param name="key">The key whose associated values are to be cleared. Cannot be null.</param>
+        /// <exception cref="KeyNotFoundException">
+        /// Thrown when the specified key does not exist in the collection.
+        /// </exception>
         public void Clear(TKey key);
 
         /// <summary>

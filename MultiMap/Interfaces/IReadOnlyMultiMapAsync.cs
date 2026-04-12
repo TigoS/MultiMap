@@ -19,6 +19,9 @@
         /// <returns>A task that represents the asynchronous operation. The task result contains an enumerable collection of values associated with the specified key.
         /// Throws a <see cref="KeyNotFoundException"/> if the key is not found.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         /// <exception cref="KeyNotFoundException">
         /// Thrown when the specified key does not exist in the collection.
         /// </exception>
@@ -33,6 +36,9 @@
         /// A task that represents the asynchronous operation. The task result contains an enumerable collection of values associated with the specified key,
         /// or an empty sequence if the key does not exist.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -41,6 +47,9 @@
         /// <param name="key">The key whose associated values are to be retrieved.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A value task that represents the asynchronous operation. The result contains a tuple where <see langword="found"/> is <see langword="true"/> if values are found for the specified key; otherwise, <see langword="false"/>. <see langword="values"/> contains the associated values if found, or an empty collection if not.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -51,6 +60,9 @@
         /// <returns>
         /// <see langword="true"/> if the multimap contains the key; otherwise, <see langword="false"/>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -62,6 +74,9 @@
         /// <returns>
         /// <see langword="true"/> if the key exists and contains the specified value; otherwise, <see langword="false"/>.
         /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -91,6 +106,9 @@
         /// <param name="key">The key whose associated value count is to be retrieved.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>A value task representing the asynchronous operation. The result contains the number of values associated with the specified key.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default);
 
         /// <summary>
