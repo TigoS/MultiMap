@@ -810,8 +810,15 @@ namespace MultiMap.Entities
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 return;
 
-            //Clear();
-            _lock.Dispose();
+            try
+            {
+                _dictionary.Clear();
+                _count = 0;
+            }
+            finally
+            {
+                _lock.Dispose();
+            }
         }
     }
 }

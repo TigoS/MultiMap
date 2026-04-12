@@ -1251,8 +1251,15 @@ namespace MultiMap.Entities
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 return;
 
-            //using var _ = ClearAsync();
-            _semaphore.Dispose();
+            try
+            {
+                _dictionary.Clear();
+                _count = 0;
+            }
+            finally
+            {
+                _semaphore.Dispose();
+            }
         }
 
         /// <summary>
