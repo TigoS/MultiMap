@@ -112,6 +112,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -144,6 +147,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(TKey key, IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -180,6 +186,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -216,6 +224,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             _lock.EnterReadLock();
             try
@@ -234,6 +244,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             _lock.EnterReadLock();
             try
@@ -252,6 +264,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             _lock.EnterReadLock();
             try
@@ -271,6 +285,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -300,6 +317,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -329,6 +348,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -353,6 +375,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             _lock.EnterWriteLock();
             try
@@ -374,6 +398,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             _lock.EnterReadLock();
             try
@@ -389,6 +415,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ThrowIfDisposed();
             _lock.EnterReadLock();
             try
@@ -476,6 +505,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             _lock.EnterReadLock();
             try
@@ -519,6 +550,8 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are added to this instance.</param>
         public void Union(IMultiMap<TKey, TValue> other)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
@@ -567,6 +600,8 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map that defines the pairs to keep.</param>
         public void Intersect(IMultiMap<TKey, TValue> other)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
@@ -618,6 +653,8 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
         public void ExceptWith(IMultiMap<TKey, TValue> other)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
@@ -662,6 +699,8 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map to compare against.</param>
         public void SymmetricExceptWith(IMultiMap<TKey, TValue> other)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)

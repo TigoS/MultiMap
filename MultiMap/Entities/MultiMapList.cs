@@ -63,12 +63,21 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override bool AddToCollection(List<TValue> collection, TValue value)
         {
+            if (collection is null) throw new ArgumentNullException(nameof(collection));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             collection.Add(value);
             return true;
         }
 
         /// <inheritdoc/>
-        protected override int RemoveWhereFromCollection(List<TValue> collection, Predicate<TValue> predicate) => collection.RemoveAll(predicate);
+        protected override int RemoveWhereFromCollection(List<TValue> collection, Predicate<TValue> predicate)
+        {
+            if (collection is null) throw new ArgumentNullException(nameof(collection));
+            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+
+            return collection.RemoveAll(predicate);
+        }
 
         /// <inheritdoc/>
         protected override IEnumerable<TValue> ToReadOnly(List<TValue> collection) => collection.AsReadOnly();
@@ -77,6 +86,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
             list ??= new List<TValue>();
 
@@ -90,6 +102,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
 #if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
             list ??= new List<TValue>();

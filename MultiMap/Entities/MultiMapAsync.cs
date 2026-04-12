@@ -124,6 +124,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -180,6 +183,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -240,6 +246,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -300,6 +308,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -342,6 +352,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -384,6 +396,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -427,6 +441,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -480,6 +497,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -528,6 +547,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -576,6 +598,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -621,6 +645,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -655,6 +681,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -826,6 +855,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             ThrowIfDisposed();
             Task waitTask = _semaphore.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
@@ -907,6 +938,8 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task UnionAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
@@ -964,6 +997,8 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task IntersectAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
@@ -1023,6 +1058,8 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task ExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
@@ -1075,6 +1112,8 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task SymmetricExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             ThrowIfDisposed();
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))

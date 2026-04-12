@@ -66,6 +66,9 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Add(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
 #if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>(_valueComparer);
@@ -83,6 +86,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerable<TValue> Get(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset.ToArray();
 
@@ -92,6 +97,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset.ToArray();
 
@@ -101,6 +108,9 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public void Remove(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             if (_dictionary.TryGetValue(key, out var hashset))
             {
                 hashset.Remove(value);
@@ -113,6 +123,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public void Clear(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             _dictionary.Remove(key);
         }
 

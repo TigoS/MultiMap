@@ -31,7 +31,7 @@ namespace MultiMap.Entities
         /// <param name="dictionary">The dictionary to use as the underlying storage for the multimap. Must not be null.</param>
         protected MultiMapBase(IDictionary<TKey, TCollection> dictionary)
         {
-            _dictionary = dictionary;
+            _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
         }
 
         /// <summary>
@@ -40,8 +40,7 @@ namespace MultiMap.Entities
         protected abstract TCollection CreateCollection();
 
         /// <summary>
-        /// Adds a single value to <paramref name="collection"/>,
-        /// returning <see langword="true"/> when the value was actually inserted.
+        /// Adds a single value to <paramref name="collection"/>, returning <see langword="true"/> when the value was actually inserted.
         /// </summary>
         protected abstract bool AddToCollection(TCollection collection, TValue value);
 
@@ -53,15 +52,16 @@ namespace MultiMap.Entities
 
         /// <summary>
         /// Returns a read-only view of the values in <paramref name="collection"/>.
-        /// The default implementation creates a snapshot via <see cref="Enumerable.ToArray{TSource}"/>;
-        /// subclasses backed by <see cref="List{T}"/> can override to return
-        /// <see cref="List{T}.AsReadOnly"/> for a zero-copy wrapper.
+        /// The default implementation creates a snapshot via <see cref="Enumerable.ToArray{TSource}"/>; subclasses backed by <see cref="List{T}"/> can override to return <see cref="List{T}.AsReadOnly"/> for a zero-copy wrapper.
         /// </summary>
         protected virtual IEnumerable<TValue> ToReadOnly(TCollection collection) => collection.ToArray();
 
         /// <inheritdoc/>
         public virtual bool Add(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             if (!_dictionary.TryGetValue(key, out var collection))
             {
                 collection = CreateCollection();
@@ -80,6 +80,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public virtual int AddRange(TKey key, IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
             if (!_dictionary.TryGetValue(key, out var collection))
             {
                 collection = CreateCollection();
@@ -102,6 +105,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public virtual int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             int added = 0;
             foreach (var item in items)
             {
@@ -115,6 +120,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var collection))
                 return ToReadOnly(collection);
 
@@ -124,6 +131,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var collection))
                 return ToReadOnly(collection);
 
@@ -133,6 +142,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             bool result = _dictionary.TryGetValue(key, out var collection);
 
             values = result ? ToReadOnly(collection!) : [];
@@ -143,6 +154,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             if (_dictionary.TryGetValue(key, out var collection))
             {
                 bool removed = collection.Remove(value);
@@ -163,6 +177,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             int removedCount = 0;
             foreach (var item in items)
             {
@@ -178,6 +194,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+
             if (!_dictionary.TryGetValue(key, out var collection))
                 return 0;
 
@@ -193,6 +212,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var collection))
             {
                 _count -= collection.Count;
@@ -205,12 +226,17 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             return _dictionary.ContainsKey(key);
         }
 
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             return _dictionary.TryGetValue(key, out var collection) && collection.Contains(value);
         }
 
@@ -227,7 +253,12 @@ namespace MultiMap.Entities
         public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(c => c);
 
         /// <inheritdoc/>
-        public int GetValuesCount(TKey key) => _dictionary.TryGetValue(key, out var collection) ? collection.Count : 0;
+        public int GetValuesCount(TKey key)
+        {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
+            return _dictionary.TryGetValue(key, out var collection) ? collection.Count : 0;
+        }
 
         /// <inheritdoc/>
         public IEnumerable<TValue> this[TKey key] => Get(key);

@@ -73,6 +73,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             while (true)
             {
                 var hashset = _dictionary.GetOrAdd(key, _ => CreateValueSet());
@@ -96,6 +99,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(TKey key, IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (values is null) throw new ArgumentNullException(nameof(values));
+
             var items = values as ICollection<TValue> ?? values.ToArray();
 
             while (true)
@@ -125,6 +131,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             int added = 0;
             foreach (var item in items)
             {
@@ -138,6 +146,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var hashset))
             {
                 lock (hashset)
@@ -152,6 +162,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var hashset))
             {
                 lock (hashset)
@@ -166,6 +178,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var hashset))
             {
                 lock (hashset)
@@ -182,6 +196,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             if (!_dictionary.TryGetValue(key, out var hashset))
                 return false;
 
@@ -208,6 +225,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
             int removedCount = 0;
 
             foreach (var item in items)
@@ -222,6 +241,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+
             if (!_dictionary.TryGetValue(key, out var hashset))
                 return 0;
 
@@ -246,6 +268,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryRemove(key, out var hashset))
             {
                 lock (hashset)
@@ -261,12 +285,17 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             return _dictionary.ContainsKey(key);
         }
 
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
             if (_dictionary.TryGetValue(key, out var hashset))
             {
                 lock (hashset)
@@ -279,7 +308,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => Volatile.Read(ref _count);
+        public int Count => _count;
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys.ToArray();
@@ -311,6 +340,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
             if (_dictionary.TryGetValue(key, out var hashset))
             {
                 lock (hashset)
