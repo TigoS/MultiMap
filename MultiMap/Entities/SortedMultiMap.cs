@@ -15,7 +15,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
     public class SortedMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
+        where TKey : notnull, IComparable<TKey>
         where TValue : notnull, IComparable<TValue>
     {
         private readonly SortedDictionary<TKey, SortedSet<TValue>> _dictionary;
@@ -27,6 +27,15 @@ namespace MultiMap.Entities
         public SortedMultiMap()
         {
             _dictionary = new SortedDictionary<TKey, SortedSet<TValue>>();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class with the specified comparer for keys.
+        /// </summary>
+        /// <param name="keyComparer">The comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public SortedMultiMap(IComparer<TKey>? keyComparer)
+        {
+            _dictionary = new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer);
         }
 
         /// <inheritdoc/>
@@ -175,7 +184,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _count;
+        public int Count => Volatile.Read(ref _count);
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
@@ -223,7 +232,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (_count != other._count || _dictionary.Count != other._dictionary.Count)
+            if (Count != other.Count || KeyCount != other.KeyCount)
                 return false;
 
             foreach (var kvp in _dictionary)

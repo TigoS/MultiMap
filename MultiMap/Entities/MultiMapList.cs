@@ -18,7 +18,7 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapList<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
+        where TKey : notnull
         where TValue : notnull
     {
         private readonly Dictionary<TKey, List<TValue>> _dictionary;
@@ -32,6 +32,34 @@ namespace MultiMap.Entities
         public MultiMapList()
         {
             _dictionary = new Dictionary<TKey, List<TValue>>();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the MultiMapList class with the specified initial capacity for keys.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        public MultiMapList(int capacity)
+        {
+            _dictionary = new Dictionary<TKey, List<TValue>>(capacity);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapList{TKey, TValue}"/> class with the specified equality comparer for keys.
+        /// </summary>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapList(IEqualityComparer<TKey>? keyComparer)
+        {
+            _dictionary = new Dictionary<TKey, List<TValue>>(keyComparer);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapList{TKey, TValue}"/> class with the specified initial capacity for keys.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapList(int capacity, IEqualityComparer<TKey>? keyComparer)
+        {
+            _dictionary = new Dictionary<TKey, List<TValue>>(capacity, keyComparer);
         }
 
         /// <inheritdoc/>
@@ -186,7 +214,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => _count;
+        public int Count => Volatile.Read(ref _count);
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
@@ -234,7 +262,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (_count != other._count || _dictionary.Count != other._dictionary.Count)
+            if (Count != other.Count || KeyCount != other.KeyCount)
                 return false;
 
             foreach (var kvp in _dictionary)

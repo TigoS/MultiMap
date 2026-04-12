@@ -17,11 +17,12 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class ConcurrentMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
+        where TKey : notnull
         where TValue : notnull
     {
         private readonly ConcurrentDictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly object _globalLock = new();
+        private readonly IEqualityComparer<TValue>? _valueComparer;
         private int _count;
 
         /// <summary>
@@ -32,18 +33,58 @@ namespace MultiMap.Entities
             _dictionary = new ConcurrentDictionary<TKey, HashSet<TValue>>();
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class
+        /// with the specified initial capacity for keys.
+        /// </summary>
+        /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        public ConcurrentMultiMap(int concurrencyLevel, int capacity)
+        {
+            _dictionary = new ConcurrentDictionary<TKey, HashSet<TValue>>(concurrencyLevel, capacity);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class
+        /// with the specified initial capacity for keys and equality comparer for values.
+        /// </summary>
+        /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new ConcurrentDictionary<TKey, HashSet<TValue>>(concurrencyLevel, capacity);
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class
+        /// with the specified equality comparer for values.
+        /// </summary>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public ConcurrentMultiMap(IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new ConcurrentDictionary<TKey, HashSet<TValue>>();
+            _valueComparer = valueComparer;
+        }
+
+        private HashSet<TValue> CreateValueSet() => new(_valueComparer);
+
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            lock (_globalLock)
+            while (true)
             {
-                var hashset = _dictionary.GetOrAdd(key, static _ => new HashSet<TValue>());
+                var hashset = _dictionary.GetOrAdd(key, _ => CreateValueSet());
 
                 lock (hashset)
                 {
+                    if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                        continue;
+
                     if (hashset.Add(value))
                     {
-                        _count++;
+                        Interlocked.Increment(ref _count);
                         return true;
                     }
 
@@ -55,17 +96,24 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(TKey key, IEnumerable<TValue> values)
         {
-            lock (_globalLock)
+            var items = values as ICollection<TValue> ?? values.ToArray();
+
+            while (true)
             {
-                var hashset = _dictionary.GetOrAdd(key, static _ => new HashSet<TValue>());
+                var hashset = _dictionary.GetOrAdd(key, _ => CreateValueSet());
 
                 lock (hashset)
                 {
-                    foreach (var value in values)
+                    if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                        continue;
+
+                    foreach (var value in items)
                     {
                         if (hashset.Add(value))
-                            _count++;
+                            Interlocked.Increment(ref _count);
                     }
+
+                    return;
                 }
             }
         }
@@ -73,18 +121,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public void AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            lock (_globalLock)
+            foreach (var item in items)
             {
-                foreach (var item in items)
-                {
-                    var hashset = _dictionary.GetOrAdd(item.Key, static _ => new HashSet<TValue>());
-
-                    lock (hashset)
-                    {
-                        if (hashset.Add(item.Value))
-                            _count++;
-                    }
-                }
+                Add(item.Key, item.Value);
             }
         }
 
@@ -135,50 +174,61 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            lock (_globalLock)
+            if (!_dictionary.TryGetValue(key, out var hashset))
+                return false;
+
+            lock (hashset)
             {
-                if (_dictionary.TryGetValue(key, out var hashset))
+                if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                    return false;
+
+                if (!hashset.Remove(value))
+                    return false;
+
+                Interlocked.Decrement(ref _count);
+
+                if (hashset.Count == 0)
                 {
-                    lock (hashset)
-                    {
-                        if (hashset.Remove(value))
-                        {
-                            _count--;
-
-                            if (hashset.Count == 0)
-                                _dictionary.TryRemove(key, out _);
-
-                            return true;
-                        }
-                    }
+                    ((ICollection<KeyValuePair<TKey, HashSet<TValue>>>)_dictionary)
+                        .Remove(new KeyValuePair<TKey, HashSet<TValue>>(key, hashset));
                 }
 
-                return false;
+                return true;
             }
         }
 
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            lock (_globalLock)
-            {
-                int removedCount = 0;
-                foreach (var item in items)
-                {
-                    if (_dictionary.TryGetValue(item.Key, out var hashset))
-                    {
-                        lock (hashset)
-                        {
-                            if (hashset.Remove(item.Value))
-                            {
-                                _count--;
-                                removedCount++;
+            int removedCount = 0;
 
-                                if (hashset.Count == 0)
-                                    _dictionary.TryRemove(item.Key, out _);
-                            }
-                        }
-                    }
+            foreach (var item in items)
+            {
+                if (Remove(item.Key, item.Value))
+                    removedCount++;
+            }
+
+            return removedCount;
+        }
+
+        /// <inheritdoc/>
+        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
+        {
+            if (!_dictionary.TryGetValue(key, out var hashset))
+                return 0;
+
+            lock (hashset)
+            {
+                if (!_dictionary.TryGetValue(key, out var current) || !ReferenceEquals(current, hashset))
+                    return 0;
+
+                int removedCount = hashset.RemoveWhere(predicate);
+                Interlocked.Add(ref _count, -removedCount);
+
+                if (hashset.Count == 0)
+                {
+                    ((ICollection<KeyValuePair<TKey, HashSet<TValue>>>)_dictionary)
+                        .Remove(new KeyValuePair<TKey, HashSet<TValue>>(key, hashset));
                 }
 
                 return removedCount;
@@ -186,42 +236,18 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int RemoveWhere(TKey key, Predicate<TValue> predicate)
-        {
-            lock (_globalLock)
-            {
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                    return 0;
-
-                lock (hashset)
-                {
-                    int removedCount = hashset.RemoveWhere(predicate);
-                    _count -= removedCount;
-
-                    if (hashset.Count == 0)
-                        _dictionary.TryRemove(key, out _);
-
-                    return removedCount;
-                }
-            }
-        }
-
-        /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            lock (_globalLock)
+            if (_dictionary.TryRemove(key, out var hashset))
             {
-                if (_dictionary.TryRemove(key, out var hashset))
+                lock (hashset)
                 {
-                    lock (hashset)
-                    {
-                        _count -= hashset.Count;
-                    }
-                    return true;
+                    Interlocked.Add(ref _count, -hashset.Count);
                 }
-
-                return false;
+                return true;
             }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -248,7 +274,7 @@ namespace MultiMap.Entities
         public int Count => Volatile.Read(ref _count);
 
         /// <inheritdoc/>
-        public IEnumerable<TKey> Keys => _dictionary.Keys;
+        public IEnumerable<TKey> Keys => _dictionary.Keys.ToArray();
 
         /// <inheritdoc/>
         public int KeyCount => _dictionary.Count;
@@ -297,24 +323,21 @@ namespace MultiMap.Entities
             lock (_globalLock)
             {
                 _dictionary.Clear();
-                _count = 0;
+                Interlocked.Exchange(ref _count, 0);
             }
         }
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            foreach (var kvp in _dictionary)
+            lock (_globalLock)
             {
-                TValue[] snapshot;
-                lock (kvp.Value)
+                foreach (var kvp in _dictionary)
                 {
-                    snapshot = [.. kvp.Value];
-                }
-
-                foreach (var value in snapshot)
-                {
-                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                    foreach (var value in kvp.Value.ToArray())
+                    {
+                        yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                    }
                 }
             }
         }
@@ -331,23 +354,26 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            lock (first._globalLock)
+            var thisSnapshot = new Dictionary<TKey, HashSet<TValue>>();
+            foreach (var kvp in _dictionary)
             {
-                lock (second._globalLock)
+                lock (kvp.Value)
                 {
-                    if (_count != other._count || _dictionary.Count != other._dictionary.Count)
-                        return false;
-
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    thisSnapshot[kvp.Key] = new HashSet<TValue>(kvp.Value, _valueComparer);
                 }
             }
+
+            var otherSnapshot = new Dictionary<TKey, HashSet<TValue>>();
+            foreach (var kvp in other._dictionary)
+            {
+                lock (kvp.Value)
+                {
+                    otherSnapshot[kvp.Key] = new HashSet<TValue>(kvp.Value, other._valueComparer);
+                }
+            }
+
+            if (Count != other.Count || KeyCount != other.KeyCount)
+                return false;
 
             foreach (var kvp in thisSnapshot)
             {
@@ -364,9 +390,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int GetHashCode()
         {
+            int hash = 0;
             lock (_globalLock)
             {
-                int hash = 0;
                 foreach (var kvp in _dictionary)
                 {
                     int valueHash = 0;
@@ -376,8 +402,8 @@ namespace MultiMap.Entities
                     }
                     hash ^= HashCode.Combine(kvp.Key, valueHash);
                 }
-                return hash;
             }
+            return hash;
         }
     }
 }

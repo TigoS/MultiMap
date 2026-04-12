@@ -19,11 +19,12 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
     public class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
+        where TKey : notnull
         where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly SemaphoreSlim _semaphore;
+        private readonly IEqualityComparer<TValue>? _valueComparer;
         private int _count;
         private int _disposed;
 
@@ -34,6 +35,73 @@ namespace MultiMap.Entities
         {
             _dictionary = new Dictionary<TKey, HashSet<TValue>>();
             _semaphore = new SemaphoreSlim(1, 1);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified equality comparer for keys.
+        /// </summary>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapAsync(IEqualityComparer<TKey>? keyComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+            _semaphore = new SemaphoreSlim(1, 1);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified equality comparer for values.
+        /// </summary>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapAsync(IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
+            _semaphore = new SemaphoreSlim(1, 1);
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        public MultiMapAsync(int capacity)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
+            _semaphore = new SemaphoreSlim(1, 1);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
+            _semaphore = new SemaphoreSlim(1, 1);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for values.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapAsync(int capacity, IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
+            _semaphore = new SemaphoreSlim(1, 1);
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
+            _semaphore = new SemaphoreSlim(1, 1);
+            _valueComparer = valueComparer;
         }
 
         private void ThrowIfDisposed()
@@ -76,11 +144,11 @@ namespace MultiMap.Entities
         {
 #if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-            hashset ??= new HashSet<TValue>();
+            hashset ??= new HashSet<TValue>(_valueComparer);
 #else
             if (!_dictionary.TryGetValue(key, out var hashset))
             {
-                hashset = new HashSet<TValue>();
+                hashset = new HashSet<TValue>(_valueComparer);
                 _dictionary[key] = hashset;
             }
 #endif
@@ -133,11 +201,11 @@ namespace MultiMap.Entities
         {
 #if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-            hashset ??= new HashSet<TValue>();
+            hashset ??= new HashSet<TValue>(_valueComparer);
 #else
             if (!_dictionary.TryGetValue(key, out var hashset))
             {
-                hashset = new HashSet<TValue>();
+                hashset = new HashSet<TValue>(_valueComparer);
                 _dictionary[key] = hashset;
             }
 #endif
@@ -190,11 +258,11 @@ namespace MultiMap.Entities
             {
 #if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
-                hashset ??= new HashSet<TValue>();
+                hashset ??= new HashSet<TValue>(_valueComparer);
 #else
                 if (!_dictionary.TryGetValue(item.Key, out var hashset))
                 {
-                    hashset = new HashSet<TValue>();
+                    hashset = new HashSet<TValue>(_valueComparer);
                     _dictionary[item.Key] = hashset;
                 }
 #endif
@@ -853,11 +921,11 @@ namespace MultiMap.Entities
             {
 #if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                hashset ??= new HashSet<TValue>();
+                hashset ??= new HashSet<TValue>(_valueComparer);
 #else
                 if (!_dictionary.TryGetValue(key, out var hashset))
                 {
-                    hashset = new HashSet<TValue>();
+                    hashset = new HashSet<TValue>(_valueComparer);
                     _dictionary[key] = hashset;
                 }
 #endif
@@ -1021,11 +1089,11 @@ namespace MultiMap.Entities
             {
 #if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                hashset ??= new HashSet<TValue>();
+                hashset ??= new HashSet<TValue>(_valueComparer);
 #else
                 if (!_dictionary.TryGetValue(key, out var hashset))
                 {
-                    hashset = new HashSet<TValue>();
+                    hashset = new HashSet<TValue>(_valueComparer);
                     _dictionary[key] = hashset;
                 }
 #endif
@@ -1121,7 +1189,7 @@ namespace MultiMap.Entities
                 second._semaphore.Wait();
                 try
                 {
-                    if (_dictionary.Count != other._dictionary.Count)
+                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
                         return false;
 
                     thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
@@ -1183,6 +1251,7 @@ namespace MultiMap.Entities
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 return;
 
+            //using var _ = ClearAsync();
             _semaphore.Dispose();
         }
 
