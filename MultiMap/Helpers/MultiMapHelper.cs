@@ -25,6 +25,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             foreach (var key in other.Keys)
             {
                 target.AddRange(key, other.GetOrDefault(key));
@@ -50,6 +53,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var keysToRemove = new List<TKey>();
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
             var targetEnumerator = target.GetEnumerator();
@@ -96,6 +102,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var itemsToRemove = new List<KeyValuePair<TKey, TValue>>();
             var otherEnumerator = other.GetEnumerator();
 
@@ -127,6 +136,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
             var otherEnumerator = other.GetEnumerator();
@@ -164,6 +176,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             foreach (var kvp in other)
             {
                 target.Add(kvp.Key, kvp.Value);
@@ -183,6 +198,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var otherLookup = new Dictionary<TKey, ISet<TValue>>();
 
@@ -220,6 +238,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             foreach (var kvp in other)
             {
                 target.Remove(kvp.Key, kvp.Value);
@@ -240,6 +261,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
@@ -296,6 +320,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var keys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
 
             foreach (var key in keys)
@@ -324,6 +351,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var keysToRemove = new List<TKey>();
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
 
@@ -373,6 +403,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var itemsToRemove = new List<KeyValuePair<TKey, TValue>>();
 
             var keys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
@@ -408,6 +441,9 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
+            if (target is null) throw new ArgumentNullException(nameof(target));
+            if (other is null) throw new ArgumentNullException(nameof(other));
+
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
