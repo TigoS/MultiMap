@@ -34,6 +34,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - Conditional `Microsoft.Bcl.AsyncInterfaces` and `Microsoft.Bcl.HashCode` package references for `netstandard2.0`
 - `#if NET6_0_OR_GREATER` guards for `CollectionsMarshal` fast-path optimizations across 5 entity files
 - `#if NETSTANDARD2_0` polyfill for `Task.IsCompletedSuccessfully` in `MultiMapAsync`
+- Test project now multi-targets `net10.0` and `net8.0` — validates `#if NET6_0_OR_GREATER` code paths (e.g., `CollectionsMarshal` optimizations, `IsCompletedSuccessfully` polyfill) on both target frameworks
 
 **Changed**
 
@@ -47,8 +48,8 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `SortedMultiMap` variable names standardized: `hashset` → `sortedSet` across all methods for consistency with `SortedSet<T>` usage
 - `MultiMapAsync.DisposeAsync` no longer allocates an unnecessary `async` state machine — returns `ValueTask` directly
 - `BenchmarkSuite.csproj` now includes `ImplicitUsings` and `Nullable` properties for consistency with other projects
-- Test count increased from 1,070 to **1,354 tests**
-- Code coverage improved: **99.5% line coverage** (from 94.3%), **84.8% branch coverage** (from 82.9%), **98.1% method coverage** (from 95.3%)
+- Test count increased from 1,070 to **1,354 tests** across **2 target frameworks** (net10.0, net8.0) — **2,708 total test executions**
+- Code coverage improved: **99.5% line coverage** (from 94.3%), **84.8% branch coverage** (from 82.9%), **98.2% method coverage** (from 95.3%)
 - README and ReleaseNotes updated to reflect multi-targeting and dispose safety features
 
 **Fixed**
