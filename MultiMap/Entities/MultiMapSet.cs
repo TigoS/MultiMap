@@ -94,22 +94,10 @@ namespace MultiMap.Entities
         protected override HashSet<TValue> CreateCollection() => new HashSet<TValue>(_valueComparer);
 
         /// <inheritdoc/>
-        protected override bool AddToCollection(HashSet<TValue> collection, TValue value)
-        {
-            if (collection is null) throw new ArgumentNullException(nameof(collection));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-
-            return collection.Add(value);
-        }
+        protected override bool AddToCollection(HashSet<TValue> collection, TValue value) => collection.Add(value);
 
         /// <inheritdoc/>
-        protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate)
-        {
-            if (collection is null) throw new ArgumentNullException(nameof(collection));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-
-            return collection.RemoveWhere(predicate);
-        }
+        protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
 #if NET6_0_OR_GREATER
         /// <inheritdoc/>

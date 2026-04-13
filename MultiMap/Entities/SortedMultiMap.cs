@@ -35,22 +35,10 @@
         protected override SortedSet<TValue> CreateCollection() => new SortedSet<TValue>();
 
         /// <inheritdoc/>
-        protected override bool AddToCollection(SortedSet<TValue> collection, TValue value)
-        {
-            if (collection is null) throw new ArgumentNullException(nameof(collection));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-
-            return collection.Add(value);
-        }
+        protected override bool AddToCollection(SortedSet<TValue> collection, TValue value) => collection.Add(value);
 
         /// <inheritdoc/>
-        protected override int RemoveWhereFromCollection(SortedSet<TValue> collection, Predicate<TValue> predicate)
-        {
-            if (collection is null) throw new ArgumentNullException(nameof(collection));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-
-            return collection.RemoveWhere(predicate);
-        }
+        protected override int RemoveWhereFromCollection(SortedSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
         /// <inheritdoc/>
         public override bool Equals(object? obj)

@@ -63,21 +63,12 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override bool AddToCollection(List<TValue> collection, TValue value)
         {
-            if (collection is null) throw new ArgumentNullException(nameof(collection));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-
             collection.Add(value);
             return true;
         }
 
         /// <inheritdoc/>
-        protected override int RemoveWhereFromCollection(List<TValue> collection, Predicate<TValue> predicate)
-        {
-            if (collection is null) throw new ArgumentNullException(nameof(collection));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-
-            return collection.RemoveAll(predicate);
-        }
+        protected override int RemoveWhereFromCollection(List<TValue> collection, Predicate<TValue> predicate) => collection.RemoveAll(predicate);
 
         /// <inheritdoc/>
         protected override IEnumerable<TValue> ToReadOnly(List<TValue> collection) => collection.AsReadOnly();
