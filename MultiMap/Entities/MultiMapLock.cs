@@ -835,21 +835,37 @@ namespace MultiMap.Entities
             _lock.EnterReadLock();
             try
             {
-                int hash = 0;
-                foreach (var kvp in _dictionary)
+                unchecked
                 {
-                    int valueHash = 0;
-                    foreach (var value in kvp.Value)
+                    int hash = 0;
+                    foreach (var kvp in _dictionary)
                     {
-                        valueHash ^= value.GetHashCode();
+                        int valueHash = 0;
+                        foreach (var value in kvp.Value)
+                        {
+                            valueHash += Scramble(value.GetHashCode());
+                        }
+                        hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
                     }
-                    hash ^= HashCode.Combine(kvp.Key, valueHash);
+                    return hash;
                 }
-                return hash;
             }
             finally
             {
                 _lock.ExitReadLock();
+            }
+
+            static int Scramble(int h)
+            {
+                unchecked
+                {
+                    h ^= h >> 16;
+                    h *= -2048144789;
+                    h ^= h >> 13;
+                    h *= -1028477387;
+                    h ^= h >> 16;
+                }
+                return h;
             }
         }
 

@@ -142,18 +142,34 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            int hash = 0;
-            foreach (var kvp in _dictionary)
+            unchecked
             {
-                var entryHash = new HashCode();
-                entryHash.Add(kvp.Key);
-                foreach (var value in kvp.Value)
+                int hash = 0;
+                foreach (var kvp in _dictionary)
                 {
-                    entryHash.Add(value);
+                    var entryHash = new HashCode();
+                    entryHash.Add(kvp.Key);
+                    foreach (var value in kvp.Value)
+                    {
+                        entryHash.Add(value);
+                    }
+                    hash += Scramble(entryHash.ToHashCode());
                 }
-                hash ^= entryHash.ToHashCode();
+                return hash;
             }
-            return hash;
+
+            static int Scramble(int h)
+            {
+                unchecked
+                {
+                    h ^= h >> 16;
+                    h *= -2048144789;
+                    h ^= h >> 13;
+                    h *= -1028477387;
+                    h ^= h >> 16;
+                }
+                return h;
+            }
         }
     }
 }
