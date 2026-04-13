@@ -1118,6 +1118,17 @@ public class MultiMapListTests
     }
 
     [Test]
+    public void Equals_DifferentValueCount_SameKeys_ReturnsFalse()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
     public void Constructor_WithCapacity_WorksCorrectly()
     {
         var map = new MultiMapList<string, int>(100);

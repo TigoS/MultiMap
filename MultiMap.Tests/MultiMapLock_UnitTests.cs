@@ -1543,6 +1543,30 @@ public class MultiMapLockTests
     }
 
     [Test]
+    public void Equals_DifferentKeys_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Equals_SameKeysDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
     public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
     {
         using var map = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);

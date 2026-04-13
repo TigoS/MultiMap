@@ -1211,6 +1211,135 @@ public class MultiMapAsyncTests
         Assert.That(result, Is.EquivalentTo(new[] { "a", "b" }));
     }
 
+    [Test]
+    public async Task AddRangeAsync_KVP_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var items = new[] { new KeyValuePair<string, int>("a", 1), new KeyValuePair<string, int>("b", 2) };
+        var addTask = _map.AddRangeAsync(items);
+        Assert.That(addTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        int result = await addTask;
+
+        Assert.That(result, Is.EqualTo(2));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task GetAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var getTask = _map.GetAsync("a").AsTask();
+        Assert.That(getTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        var result = await getTask;
+
+        Assert.That(result, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task RemoveRangeAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var items = new[] { new KeyValuePair<string, int>("a", 1), new KeyValuePair<string, int>("b", 3) };
+        var removeTask = _map.RemoveRangeAsync(items).AsTask();
+        Assert.That(removeTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        int result = await removeTask;
+
+        Assert.That(result, Is.EqualTo(2));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task RemoveWhereAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("a", 3);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var removeTask = _map.RemoveWhereAsync("a", v => v % 2 == 0).AsTask();
+        Assert.That(removeTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        int result = await removeTask;
+
+        Assert.That(result, Is.EqualTo(1));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task GetKeysCountAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var countTask = _map.GetKeyCountAsync().AsTask();
+        Assert.That(countTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        int result = await countTask;
+
+        Assert.That(result, Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task GetValuesAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var valuesTask = _map.GetValuesAsync().AsTask();
+        Assert.That(valuesTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        var result = await valuesTask;
+
+        Assert.That(result, Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public async Task GetValuesCountAsync_SlowPath_WhenSemaphoreIsHeld_CompletesAfterRelease()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+
+        var semaphore = GetSemaphore();
+        await semaphore.WaitAsync();
+
+        var countTask = _map.GetValuesCountAsync("a").AsTask();
+        Assert.That(countTask.IsCompleted, Is.False);
+
+        semaphore.Release();
+        int result = await countTask;
+
+        Assert.That(result, Is.EqualTo(2));
+    }
+
     // ── Set Operation Direct Tests ────────────────────────────
 
     [Test]

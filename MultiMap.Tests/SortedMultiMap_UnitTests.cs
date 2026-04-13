@@ -591,6 +591,45 @@ public class SortedMultiMapTests
     }
 
     [Test]
+    public void Equals_DifferentValueCount_SameKeys_ReturnsFalse()
+    {
+        var other = new SortedMultiMap<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_DifferentKeys_ReturnsFalse()
+    {
+        var other = new SortedMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_SameKeysDifferentValues_ReturnsFalse()
+    {
+        var other = new SortedMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_EmptyMaps_ReturnsTrue()
+    {
+        var other = new SortedMultiMap<string, int>();
+
+        Assert.That(_map.Equals(other), Is.True);
+    }
+
+    [Test]
     public void GetHashCode_SameInstance_ReturnsSameValue()
     {
         _map.Add("a", 1);

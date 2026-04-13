@@ -398,6 +398,17 @@ public class SimpleMultiMapTests
     }
 
     [Test]
+    public void Equals_DifferentValueCount_SameKeys_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
     public void Equals_EmptyMaps_ReturnsTrue()
     {
         var other = new SimpleMultiMap<string, int>();
