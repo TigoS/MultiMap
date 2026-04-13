@@ -10,7 +10,7 @@
     /// Thread safety and ordering of keys or values depend on the specific implementation.</remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null.</typeparam>
     /// <typeparam name="TValue">The type of values in the multi-map. Must not be null.</typeparam>
-    public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
+    public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>
         where TKey : notnull
         where TValue : notnull
     {
@@ -59,11 +59,6 @@
         /// Gets the number of keys contained in the collection.
         /// </summary>
         public int KeyCount { get; }
-
-        /// <summary>
-        /// Gets the total number of key-value pairs contained in the collection.
-        /// </summary>
-        public int Count { get; }
 
         /// <summary>
         /// Gets an enumerable collection of keys contained in the collection.
