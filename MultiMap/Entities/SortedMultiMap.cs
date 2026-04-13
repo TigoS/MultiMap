@@ -1,4 +1,6 @@
-﻿namespace MultiMap.Entities
+﻿using MultiMap.Helpers;
+
+namespace MultiMap.Entities
 {
     /// <summary>
     /// Represents a collection that associates each key with a sorted set of values, allowing multiple values per key and maintaining both keys and values in sorted order.
@@ -66,34 +68,6 @@
 
         /// <inheritdoc/>
         public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hash = 0;
-                foreach (var kvp in _dictionary)
-                {
-                    int valueHash = 0;
-                    foreach (var value in kvp.Value)
-                    {
-                        valueHash += Scramble(value.GetHashCode());
-                    }
-                    hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
-                }
-                return hash;
-            }
-
-            static int Scramble(int h)
-            {
-                unchecked
-                {
-                    h ^= h >> 16;
-                    h *= -2048144789;
-                    h ^= h >> 13;
-                    h *= -1028477387;
-                    h ^= h >> 16;
-                }
-                return h;
-            }
-        }
+            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, SortedSet<TValue>>(_dictionary);
     }
 }

@@ -1,6 +1,7 @@
 ﻿#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
+using MultiMap.Helpers;
 
 namespace MultiMap.Entities
 {
@@ -167,34 +168,6 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override int GetHashCode()
-        {
-            unchecked
-            {
-                int hash = 0;
-                foreach (var kvp in _dictionary)
-                {
-                    int valueHash = 0;
-                    foreach (var value in kvp.Value)
-                    {
-                        valueHash += Scramble(value.GetHashCode());
-                    }
-                    hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
-                }
-                return hash;
-            }
-
-            static int Scramble(int h)
-            {
-                unchecked
-                {
-                    h ^= h >> 16;
-                    h *= -2048144789;
-                    h ^= h >> 13;
-                    h *= -1028477387;
-                    h ^= h >> 16;
-                }
-                return h;
-            }
-        }
+            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
     }
 }

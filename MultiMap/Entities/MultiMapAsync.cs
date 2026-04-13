@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using MultiMap.Helpers;
+using System.Runtime.CompilerServices;
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
@@ -1331,37 +1332,11 @@ namespace MultiMap.Entities
             _semaphore.Wait();
             try
             {
-                unchecked
-                {
-                    int hash = 0;
-                    foreach (var kvp in _dictionary)
-                    {
-                        int valueHash = 0;
-                        foreach (var value in kvp.Value)
-                        {
-                            valueHash += Scramble(value.GetHashCode());
-                        }
-                        hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
-                    }
-                    return hash;
-                }
+                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
             }
             finally
             {
                 _semaphore.Release();
-            }
-
-            static int Scramble(int h)
-            {
-                unchecked
-                {
-                    h ^= h >> 16;
-                    h *= -2048144789;
-                    h ^= h >> 13;
-                    h *= -1028477387;
-                    h ^= h >> 16;
-                }
-                return h;
             }
         }
 

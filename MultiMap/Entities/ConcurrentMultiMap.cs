@@ -1,4 +1,5 @@
-﻿using MultiMap.Interfaces;
+﻿using MultiMap.Helpers;
+using MultiMap.Interfaces;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
@@ -369,16 +370,21 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
+            List<KeyValuePair<TKey, TValue>> snapshot;
+
             lock (_globalLock)
             {
+                snapshot = new List<KeyValuePair<TKey, TValue>>(_count);
                 foreach (var kvp in _dictionary)
                 {
                     foreach (var value in kvp.Value.ToArray())
                     {
-                        yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                        snapshot.Add(new KeyValuePair<TKey, TValue>(kvp.Key, value));
                     }
                 }
             }
+
+            return snapshot.GetEnumerator();
         }
 
         /// <inheritdoc/>
@@ -394,24 +400,28 @@ namespace MultiMap.Entities
                 return true;
 
             var thisSnapshot = new Dictionary<TKey, HashSet<TValue>>();
+            int thisCount = 0;
             foreach (var kvp in _dictionary)
             {
                 lock (kvp.Value)
                 {
                     thisSnapshot[kvp.Key] = new HashSet<TValue>(kvp.Value, _valueComparer);
+                    thisCount += kvp.Value.Count;
                 }
             }
 
             var otherSnapshot = new Dictionary<TKey, HashSet<TValue>>();
+            int otherCount = 0;
             foreach (var kvp in other._dictionary)
             {
                 lock (kvp.Value)
                 {
                     otherSnapshot[kvp.Key] = new HashSet<TValue>(kvp.Value, other._valueComparer);
+                    otherCount += kvp.Value.Count;
                 }
             }
 
-            if (Count != other.Count || KeyCount != other.KeyCount)
+            if (thisCount != otherCount || thisSnapshot.Count != otherSnapshot.Count)
                 return false;
 
             foreach (var kvp in thisSnapshot)
@@ -431,33 +441,7 @@ namespace MultiMap.Entities
         {
             lock (_globalLock)
             {
-                unchecked
-                {
-                    int hash = 0;
-                    foreach (var kvp in _dictionary)
-                    {
-                        int valueHash = 0;
-                        foreach (var value in kvp.Value)
-                        {
-                            valueHash += Scramble(value.GetHashCode());
-                        }
-                        hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
-                    }
-                    return hash;
-                }
-            }
-
-            static int Scramble(int h)
-            {
-                unchecked
-                {
-                    h ^= h >> 16;
-                    h *= -2048144789;
-                    h ^= h >> 13;
-                    h *= -1028477387;
-                    h ^= h >> 16;
-                }
-                return h;
+                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
             }
         }
     }

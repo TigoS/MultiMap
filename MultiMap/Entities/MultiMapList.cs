@@ -1,6 +1,7 @@
 ﻿#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
+using MultiMap.Helpers;
 
 namespace MultiMap.Entities
 {
@@ -153,22 +154,9 @@ namespace MultiMap.Entities
                     {
                         entryHash.Add(value);
                     }
-                    hash += Scramble(entryHash.ToHashCode());
+                    hash += MultiMapHelper.Scramble(entryHash.ToHashCode());
                 }
                 return hash;
-            }
-
-            static int Scramble(int h)
-            {
-                unchecked
-                {
-                    h ^= h >> 16;
-                    h *= -2048144789;
-                    h ^= h >> 13;
-                    h *= -1028477387;
-                    h ^= h >> 16;
-                }
-                return h;
             }
         }
     }

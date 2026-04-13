@@ -1,4 +1,5 @@
-﻿using MultiMap.Interfaces;
+﻿using MultiMap.Helpers;
+using MultiMap.Interfaces;
 using System.Collections;
 using System.Runtime.CompilerServices;
 #if NET6_0_OR_GREATER
@@ -835,37 +836,11 @@ namespace MultiMap.Entities
             _lock.EnterReadLock();
             try
             {
-                unchecked
-                {
-                    int hash = 0;
-                    foreach (var kvp in _dictionary)
-                    {
-                        int valueHash = 0;
-                        foreach (var value in kvp.Value)
-                        {
-                            valueHash += Scramble(value.GetHashCode());
-                        }
-                        hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
-                    }
-                    return hash;
-                }
+                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
             }
             finally
             {
                 _lock.ExitReadLock();
-            }
-
-            static int Scramble(int h)
-            {
-                unchecked
-                {
-                    h ^= h >> 16;
-                    h *= -2048144789;
-                    h ^= h >> 13;
-                    h *= -1028477387;
-                    h ^= h >> 16;
-                }
-                return h;
             }
         }
 

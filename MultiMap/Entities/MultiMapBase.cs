@@ -35,7 +35,7 @@ namespace MultiMap.Entities
         }
 
         /// <summary>
-        /// Creates a new empty value collection for a key.x
+        /// Creates a new empty value collection for a key.
         /// </summary>
         protected abstract TCollection CreateCollection();
 
@@ -241,7 +241,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count => Volatile.Read(ref _count);
+        public int Count => _count;
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys => _dictionary.Keys;
