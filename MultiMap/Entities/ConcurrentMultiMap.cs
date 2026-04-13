@@ -400,6 +400,9 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
+            if (_count != other._count)
+                return false;
+
             var thisSnapshot = new Dictionary<TKey, HashSet<TValue>>();
             int thisCount = 0;
             foreach (var kvp in _dictionary)
