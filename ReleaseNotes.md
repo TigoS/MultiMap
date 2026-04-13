@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-94.3%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-99.5%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -17,26 +17,38 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 **Added**
 
+- `MultiMapBase<TKey, TValue, TCollection>` abstract base class — shared dictionary-backed implementation for `MultiMapSet`, `MultiMapList`, and `SortedMultiMap` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, `GetEnumerator`, `Equals`, and `GetHashCode`
+- `IEqualityComparer<TKey>` (keyComparer) constructor overloads on `MultiMapSet` (3 new), `MultiMapList` (2 new), `SortedMultiMap` (1 new), `MultiMapLock` (3 new), and `MultiMapAsync` (3 new)
+- `ArgumentNullException` guards on all public methods across 7 implementation files (76 total guards) — null keys, values, predicates, and enumerables are now rejected immediately
+- `<exception cref="ArgumentNullException">` XML documentation tags on all 5 mutable interface files (27 tags total)
 - `IEqualityComparer<TValue>` constructor overloads on `MultiMapSet`, `MultiMapLock`, `MultiMapAsync`, `ConcurrentMultiMap`, and `SimpleMultiMap` — enables custom value comparison (e.g., case-insensitive strings)
 - Initial capacity constructor overloads on all 6 entity types (`MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) for memory pre-allocation
 - Combined capacity + comparer constructor overloads where applicable
-- 35 new unit tests covering constructor overloads, comparer behavior, and case-insensitive scenarios
-- Multi-target support: the NuGet package now ships assemblies for `.NET 10`, `.NET 8`, and `.NET Standard 2.0`
 - Dispose guards (`ObjectDisposedException`) on every public member of `MultiMapLock` and `MultiMapAsync` after disposal
+- 198 `MultiMapBase` unit tests verifying the shared contract across all 3 subclass fixtures (`MultiMapSet`, `MultiMapList`, `SortedMultiMap`)
+- 15 `EqualsAsync` unit tests for `MultiMapAsync`
+- 16 coverage gap unit tests across 6 test files
+- 35 new unit tests covering constructor overloads, comparer behavior, and case-insensitive scenarios
 - 25 new dispose-guard unit tests (13 for `MultiMapLock`, 12 for `MultiMapAsync`)
+- Multi-target support: the NuGet package now ships assemblies for `.NET 10`, `.NET 8`, and `.NET Standard 2.0`
 - Conditional `Microsoft.Bcl.AsyncInterfaces` and `Microsoft.Bcl.HashCode` package references for `netstandard2.0`
 - `#if NET6_0_OR_GREATER` guards for `CollectionsMarshal` fast-path optimizations across 5 entity files
 - `#if NETSTANDARD2_0` polyfill for `Task.IsCompletedSuccessfully` in `MultiMapAsync`
 
 **Changed**
 
-- Test count increased from 1,070 to **1,105 tests**
+- **Breaking:** `AddRange` return type changed from `void` to `int` across all implementations and interfaces — now returns the count of successfully added pairs
+- **Breaking:** `AddRangeAsync` return type changed from `Task` to `Task<int>` across `IMultiMapAsync` and `MultiMapAsync`
+- `MultiMapList.Get` now returns zero-copy `ReadOnlyCollection<TValue>` via `AsReadOnly()` instead of `.ToArray()` allocation
+- `GetHashCode()` rewritten across all 7 implementations — replaced collision-prone XOR aggregation with MurmurHash3 finalizer scramble + unchecked addition for better hash distribution
+- `MultiMapBase` code deduplication: `MultiMapSet` (−48%), `MultiMapList` (−52%), `SortedMultiMap` (−68%) code reduction
 - `MultiMapHelper.Intersect`, `ExceptWith`, and `SymmetricExceptWith` (sync and async) now use batch `RemoveRange`/`AddRange` instead of individual `Remove`/`Add` calls for reduced method call overhead
-- Test count increased from 1,045 to **1,070 tests**
 - `ConcurrentMultiMap.Equals` now includes `_count` fast-exit comparison for consistency with other implementations
 - `SortedMultiMap` variable names standardized: `hashset` → `sortedSet` across all methods for consistency with `SortedSet<T>` usage
 - `MultiMapAsync.DisposeAsync` no longer allocates an unnecessary `async` state machine — returns `ValueTask` directly
 - `BenchmarkSuite.csproj` now includes `ImplicitUsings` and `Nullable` properties for consistency with other projects
+- Test count increased from 1,070 to **1,354 tests**
+- Code coverage improved: **99.5% line coverage** (from 94.3%), **84.8% branch coverage** (from 82.9%), **98.1% method coverage** (from 95.3%)
 - README and ReleaseNotes updated to reflect multi-targeting and dispose safety features
 
 **Fixed**
@@ -44,6 +56,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `ConcurrentMultiMap.Keys` now returns a `.ToArray()` snapshot instead of exposing the live `ConcurrentDictionary` key collection — prevents enumeration errors under concurrent modification
 - `MultiMapLock.Equals` and `MultiMapAsync.Equals` now include a `_count` fast-exit comparison before iterating keys and values — short-circuits unequal maps early
 - `ConcurrentMultiMap.Equals` could return `true` for maps with different total counts but same key count (missing `_count` comparison)
+- `GetHashCode()` used collision-prone XOR aggregation that produced identical hashes for maps with different key orderings — replaced with MurmurHash3 scramble
 
 ### 1.0.10
 

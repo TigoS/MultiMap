@@ -69,6 +69,7 @@ MultiMap/
 │   │   ├── IMultiMapAsync.cs           # Async multimap (extends IReadOnlyMultiMapAsync)
 │   │   └── ISimpleMultiMap.cs          # Simplified interface (extends IReadOnlySimpleMultiMap)
 │   ├── Entities/
+│   │   ├── MultiMapBase.cs             # Abstract base class for non-concurrent multimaps
 │   │   ├── MultiMapList.cs             # List-based (allows duplicates)
 │   │   ├── MultiMapSet.cs              # HashSet-based (unique values)
 │   │   ├── SortedMultiMap.cs           # SortedDictionary + SortedSet
@@ -93,12 +94,12 @@ The library follows a hierarchical interface design with three parallel families
 
 **Read-Only Interfaces:**
 - `IReadOnlySimpleMultiMap<TKey, TValue>` — Base read-only interface with `Get`, `GetOrDefault`
-- `IReadOnlyMultiMap<TKey, TValue>` — Extends `IReadOnlySimpleMultiMap` with `TryGet`, `Contains`, `ContainsKey`, `KeyCount`
+- `IReadOnlyMultiMap<TKey, TValue>` — Extends `IReadOnlySimpleMultiMap` with `TryGet`, `Contains`, `ContainsKey`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, `this[key]`
 - `IReadOnlyMultiMapAsync<TKey, TValue>` — Async read-only with `GetAsync`, `TryGetAsync`, `ContainsAsync`, etc.
 
 **Mutable Interfaces:**
 - `ISimpleMultiMap<TKey, TValue>` — Extends `IReadOnlySimpleMultiMap` with `Add`, `Remove`, `Clear`
-- `IMultiMap<TKey, TValue>` — Extends `IReadOnlyMultiMap` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `Clear`
+- `IMultiMap<TKey, TValue>` — Extends `IReadOnlyMultiMap` with `Add`, `AddRange`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`
 - `IMultiMapAsync<TKey, TValue>` — Extends `IReadOnlyMultiMapAsync` with async mutations and `CancellationToken` support
 
 ### `IReadOnlySimpleMultiMap<TKey, TValue>`
@@ -134,8 +135,8 @@ The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TV
 | Method | Returns | Description |
 |---|---|---|
 | `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
-| `AddRange(key, values)` | `void` | Adds multiple values for a key |
-| `AddRange(items)` | `void` | Adds multiple key-value pairs |
+| `AddRange(key, values)` | `int` | Adds multiple values for a key; returns count added |
+| `AddRange(items)` | `int` | Adds multiple key-value pairs; returns count added |
 | `Remove(key, value)` | `bool` | Removes a specific key-value pair |
 | `RemoveRange(items)` | `int` | Removes multiple key-value pairs; returns count removed |
 | `RemoveWhere(key, predicate)` | `int` | Removes values matching predicate; returns count removed |
@@ -159,6 +160,7 @@ Asynchronous read-only multimap interface. Extends `IAsyncEnumerable<KeyValuePai
 | `GetKeyCountAsync()` | `ValueTask<int>` | Gets number of keys |
 | `GetKeysAsync()` | `ValueTask<IEnumerable<TKey>>` | Gets all keys |
 | `GetValuesCountAsync(key)` | `ValueTask<int>` | Gets count of values for a key |
+| `GetValuesAsync()` | `ValueTask<IEnumerable<TValue>>` | Gets all values across all keys |
 
 ### `IMultiMapAsync<TKey, TValue>`
 
@@ -167,15 +169,15 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 | Method | Returns | Description |
 |---|---|---|
 | `AddAsync(key, value)` | `ValueTask<bool>` | Asynchronously adds a key-value pair |
-| `AddRangeAsync(key, values)` | `Task` | Asynchronously adds multiple values |
-| `AddRangeAsync(items)` | `Task` | Asynchronously adds multiple key-value pairs |
+| `AddRangeAsync(key, values)` | `Task<int>` | Asynchronously adds multiple values; returns count added |
+| `AddRangeAsync(items)` | `Task<int>` | Asynchronously adds multiple key-value pairs; returns count added |
 | `RemoveAsync(key, value)` | `ValueTask<bool>` | Asynchronously removes a pair |
 | `RemoveRangeAsync(items)` | `ValueTask<int>` | Asynchronously removes multiple pairs; returns count removed |
 | `RemoveWhereAsync(key, predicate)` | `ValueTask<int>` | Asynchronously removes values matching predicate; returns count removed |
 | `RemoveKeyAsync(key)` | `ValueTask<bool>` | Asynchronously removes a key |
 | `ClearAsync()` | `Task` | Asynchronously clears all entries |
 
-**Inherited from `IReadOnlyMultiMapAsync`:** `GetAsync`, `GetOrDefaultAsync`, `TryGetAsync`, `ContainsKeyAsync`, `ContainsAsync`, `GetCountAsync`, `GetKeyCountAsync`, `GetKeysAsync`, `GetValuesCountAsync`
+**Inherited from `IReadOnlyMultiMapAsync`:** `GetAsync`, `GetOrDefaultAsync`, `TryGetAsync`, `ContainsKeyAsync`, `ContainsAsync`, `GetCountAsync`, `GetKeyCountAsync`, `GetKeysAsync`, `GetValuesCountAsync`, `GetValuesAsync`
 
 ### `ISimpleMultiMap<TKey, TValue>`
 
@@ -192,47 +194,51 @@ A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`
 
 ## Implementations
 
+### `MultiMapBase<TKey, TValue, TCollection>` — Abstract Base Class
+
+Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `CreateCollection()`, `AddToCollection()`, and `RemoveWhereFromCollection()` to plug in their specific collection type. On .NET 6+ subclasses may also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup.
+
 ### `MultiMapList<TKey, TValue>` — List-Based
 
-Implements `IMultiMap`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized.
+Extends `MultiMapBase<TKey, TValue, List<TValue>>`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized. On .NET 6+ uses `CollectionsMarshal` for optimized `Add`/`AddRange`. Returns a zero-copy `ReadOnlyCollection<TValue>` from `Get`.
 
-**Constructors:** `MultiMapList()`, `MultiMapList(int capacity)`
+**Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`
 
 ### `MultiMapSet<TKey, TValue>` — HashSet-Based
 
-Implements `IMultiMap`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios requiring fast lookups and unique value semantics.
+Extends `MultiMapBase<TKey, TValue, HashSet<TValue>>`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios requiring fast lookups and unique value semantics. On .NET 6+ uses `CollectionsMarshal` for optimized `Add`/`AddRange`.
 
-**Constructors:** `MultiMapSet()`, `MultiMapSet(int capacity)`, `MultiMapSet(IEqualityComparer<TValue> valueComparer)`, `MultiMapSet(int capacity, IEqualityComparer<TValue> valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `SortedMultiMap<TKey, TValue>` — Sorted
 
-Implements `IMultiMap`. Uses `SortedDictionary<TKey, SortedSet<TValue>>`. Keys and values are maintained in sorted order. Ideal for ordered enumeration and range queries.
+Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<TKey, SortedSet<TValue>>`. Keys and values are maintained in sorted order. Ideal for ordered enumeration and range queries. Requires `TKey : IComparable<TKey>` and `TValue : IComparable<TValue>`.
 
-**Constructors:** `SortedMultiMap()`
+**Constructors:** `()`, `(IComparer<TKey>? keyComparer)`
 
 ### `ConcurrentMultiMap<TKey, TValue>` — Per-Key Locked Concurrent
 
 Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock` for thread safety and an `Interlocked` counter for O(1) `Count`. A verify-after-lock pattern prevents count drift when concurrent `RemoveKey` invalidates a locked `HashSet`. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
 
-**Constructors:** `ConcurrentMultiMap()`, `ConcurrentMultiMap(int capacity)`, `ConcurrentMultiMap(IEqualityComparer<TValue> valueComparer)`, `ConcurrentMultiMap(int capacity, IEqualityComparer<TValue> valueComparer)`
+**Constructors:** `()`, `(int concurrencyLevel, int capacity)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
 Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow concurrent reads with exclusive writes. Good for read-heavy workloads with occasional writes.
 
-**Constructors:** `MultiMapLock()`, `MultiMapLock(int capacity)`, `MultiMapLock(IEqualityComparer<TValue> valueComparer)`, `MultiMapLock(int capacity, IEqualityComparer<TValue> valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `MultiMapAsync<TKey, TValue>` — Async-Safe
 
-Implements `IMultiMapAsync` and `IAsyncEnumerable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios.
+Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios.
 
-**Constructors:** `MultiMapAsync()`, `MultiMapAsync(int capacity)`, `MultiMapAsync(IEqualityComparer<TValue> valueComparer)`, `MultiMapAsync(int capacity, IEqualityComparer<TValue> valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `SimpleMultiMap<TKey, TValue>` — Lightweight
 
 Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection.
 
-**Constructors:** `SimpleMultiMap()`, `SimpleMultiMap(int capacity)`, `SimpleMultiMap(IEqualityComparer<TValue> valueComparer)`, `SimpleMultiMap(int capacity, IEqualityComparer<TValue> valueComparer)`
+**Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`
 
 ## Comparison Table
 
@@ -975,7 +981,7 @@ Version 1.0.8 adds new properties, methods, and bulk operations to `IReadOnlyMul
 
 | Member | Type | Description |
 |---|---|---|
-| `AddRange(items)` | `void` method | Bulk insert from `IEnumerable<KeyValuePair>` |
+| `AddRange(items)` | `int` method | Bulk insert from `IEnumerable<KeyValuePair>`; returns count added |
 | `RemoveRange(items)` | `int` method | Bulk removal; returns count of removed pairs |
 | `RemoveWhere(key, predicate)` | `int` method | Conditional removal by predicate; returns count removed |
 
@@ -991,7 +997,7 @@ Version 1.0.8 adds new properties, methods, and bulk operations to `IReadOnlyMul
 
 | Member | Type | Description |
 |---|---|---|
-| `AddRangeAsync(items)` | `Task` | Async bulk insert from `IEnumerable<KeyValuePair>` |
+| `AddRangeAsync(items)` | `Task<int>` | Async bulk insert from `IEnumerable<KeyValuePair>`; returns count added |
 | `RemoveRangeAsync(items)` | `ValueTask<int>` | Async bulk removal; returns count removed |
 | `RemoveWhereAsync(key, predicate)` | `ValueTask<int>` | Async conditional removal by predicate |
 
@@ -1108,6 +1114,57 @@ Console.WriteLine($"Removed {removed} even numbers");
 #### Compatibility
 
 All changes in v1.0.8 are **additive**. Existing code targeting v1.0.7 compiles without modification. If you implement `IMultiMap` or `IMultiMapAsync` directly, you will need to add the new members to your implementation.
+
+### Upgrading to Version 1.0.11+
+
+Version 1.0.11 changes the return types of `AddRange` and `AddRangeAsync` to report how many pairs were actually added. This is a **source-breaking change** if you relied on the previous `void`/`Task` signatures.
+
+#### Breaking Changes
+
+**`AddRange` return type changed from `void` to `int` (v1.0.11):**
+
+**Before (v1.0.8–1.0.10):** `AddRange` returned `void`
+```csharp
+map.AddRange(items);  // No return value
+```
+
+**After (v1.0.11):** `AddRange` returns `int` — the count of successfully added pairs
+```csharp
+int added = map.AddRange(items);  // Returns number of pairs actually added
+```
+
+**`AddRangeAsync` return type changed from `Task` to `Task<int>` (v1.0.11):**
+
+**Before (v1.0.8–1.0.10):** `AddRangeAsync` returned `Task`
+```csharp
+await map.AddRangeAsync(items);  // No return value
+```
+
+**After (v1.0.11):** `AddRangeAsync` returns `Task<int>` — the count of successfully added pairs
+```csharp
+int added = await map.AddRangeAsync(items);  // Returns number of pairs actually added
+```
+
+> **Note:** The `AddRange(key, values)` and `AddRangeAsync(key, values)` overloads already returned `int` and are unchanged.
+
+#### Recommended Upgrade Steps
+
+1. **Update NuGet package:**
+   ```bash
+   dotnet add package MultiMap --version 1.0.11
+   ```
+
+2. **Update call sites:**
+   - If you ignored the return value, no changes needed — the call still compiles
+   - If you assigned the result or passed it to a method expecting `void`/`Task`, update to handle the `int`/`Task<int>` return type
+
+3. **If you implement `IMultiMap` or `IMultiMapAsync` directly:**
+   - Change your `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` signature from `void` to `int`
+   - Change your `AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>>)` signature from `Task` to `Task<int>`
+
+#### Compatibility
+
+All other APIs remain unchanged. The only breaking changes are the `AddRange` and `AddRangeAsync` return types on the `IEnumerable<KeyValuePair>` overloads.
 
 ## Release Notes
 
