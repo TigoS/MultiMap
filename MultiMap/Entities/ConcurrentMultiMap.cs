@@ -370,17 +370,18 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            List<KeyValuePair<TKey, TValue>> snapshot;
-
-            lock (_globalLock)
+            var snapshot = new List<KeyValuePair<TKey, TValue>>(_count);
+            foreach (var kvp in _dictionary)
             {
-                snapshot = new List<KeyValuePair<TKey, TValue>>(_count);
-                foreach (var kvp in _dictionary)
+                TValue[] values;
+                lock (kvp.Value)
                 {
-                    foreach (var value in kvp.Value.ToArray())
-                    {
-                        snapshot.Add(new KeyValuePair<TKey, TValue>(kvp.Key, value));
-                    }
+                    values = [.. kvp.Value];
+                }
+
+                foreach (var value in values)
+                {
+                    snapshot.Add(new KeyValuePair<TKey, TValue>(kvp.Key, value));
                 }
             }
 
@@ -439,9 +440,22 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int GetHashCode()
         {
-            lock (_globalLock)
+            unchecked
             {
-                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
+                int hash = 0;
+                foreach (var kvp in _dictionary)
+                {
+                    int valueHash = 0;
+                    lock (kvp.Value)
+                    {
+                        foreach (var value in kvp.Value)
+                        {
+                            valueHash += MultiMapHelper.Scramble(value.GetHashCode());
+                        }
+                    }
+                    hash += MultiMapHelper.Scramble(HashCode.Combine(kvp.Key, valueHash));
+                }
+                return hash;
             }
         }
     }
