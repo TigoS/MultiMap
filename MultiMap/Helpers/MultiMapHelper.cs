@@ -1,4 +1,5 @@
 ﻿using MultiMap.Interfaces;
+using System.Runtime.CompilerServices;
 
 namespace MultiMap.Helpers
 {
@@ -58,12 +59,9 @@ namespace MultiMap.Helpers
 
             var keysToRemove = new List<TKey>();
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
-            var targetEnumerator = target.GetEnumerator();
 
-            while (targetEnumerator.MoveNext())
+            foreach (var kvp in target)
             {
-                var kvp = targetEnumerator.Current;
-
                 if (!other.ContainsKey(kvp.Key))
                 {
                     keysToRemove.Add(kvp.Key);
@@ -106,11 +104,9 @@ namespace MultiMap.Helpers
             if (other is null) throw new ArgumentNullException(nameof(other));
 
             var itemsToRemove = new List<KeyValuePair<TKey, TValue>>();
-            var otherEnumerator = other.GetEnumerator();
 
-            while (otherEnumerator.MoveNext())
+            foreach (var kvp in other)
             {
-                var kvp = otherEnumerator.Current;
                 itemsToRemove.Add(new KeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
             }
 
@@ -141,14 +137,12 @@ namespace MultiMap.Helpers
 
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
-            var otherEnumerator = other.GetEnumerator();
 
-            while (otherEnumerator.MoveNext())
+            foreach (var kvp in other)
             {
-                var kvp = otherEnumerator.Current;
                 var targetValues = target.GetOrDefault(kvp.Key);
                 var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
-                
+
                 if (targetSet.Contains(kvp.Value))
                 {
                     toRemove.Add(new KeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
@@ -468,6 +462,55 @@ namespace MultiMap.Helpers
 
             await target.RemoveRangeAsync(toRemove, cancellationToken).ConfigureAwait(false);
             await target.AddRangeAsync(toAdd, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Scrambles a hash code to improve distribution and reduce collisions.
+        /// </summary>
+        /// <param name="h">The hash code to scramble.</param>
+        /// <returns>The scrambled hash code.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static int Scramble(int h)
+        {
+            unchecked
+            {
+                h ^= h >> 16;
+                h *= -2048144789;
+                h ^= h >> 13;
+                h *= -1028477387;
+                h ^= h >> 16;
+            }
+            return h;
+        }
+
+        /// <summary>
+        /// Computes an order-independent hash code for a dictionary of key-to-collection entries.
+        /// </summary>
+        /// <typeparam name="TKey">The type of keys.</typeparam>
+        /// <typeparam name="TValue">The type of values in each collection.</typeparam>
+        /// <typeparam name="TCollection">The collection type that implements <see cref="IEnumerable{TValue}"/>.</typeparam>
+        /// <param name="entries">The key-collection pairs to compute the hash for.</param>
+        /// <returns>A hash code that is independent of the enumeration order of keys and values.</returns>
+        internal static int ComputeUnorderedHash<TKey, TValue, TCollection>(
+            IEnumerable<KeyValuePair<TKey, TCollection>> entries)
+            where TKey : notnull
+            where TValue : notnull
+            where TCollection : IEnumerable<TValue>
+        {
+            unchecked
+            {
+                int hash = 0;
+                foreach (var kvp in entries)
+                {
+                    int valueHash = 0;
+                    foreach (var value in kvp.Value)
+                    {
+                        valueHash += Scramble(value.GetHashCode());
+                    }
+                    hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
+                }
+                return hash;
+            }
         }
     }
 }
