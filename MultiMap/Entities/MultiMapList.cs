@@ -110,7 +110,10 @@ namespace MultiMap.Entities
 #endif
 
             int before = list.Count;
-            list.AddRange(values);
+
+            // Prevent null values in the enumerable silently enter the list,
+            // violating the TValue : notnull constraint at runtime.
+            list.AddRange(values.Where(v => v != null));
             int added = list.Count - before;
             _count += added;
 
@@ -126,7 +129,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (Count != other.Count || KeyCount != other.KeyCount)
+            if (Count != other.Count || _dictionary.Count != other._dictionary.Count)
                 return false;
 
             foreach (var kvp in _dictionary)
