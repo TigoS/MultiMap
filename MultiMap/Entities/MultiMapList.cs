@@ -16,7 +16,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapList<TKey, TValue> : MultiMapBase<TKey, TValue, List<TValue>>
+    public sealed class MultiMapList<TKey, TValue> : MultiMapBase<TKey, TValue, List<TValue>>
         where TKey : notnull
         where TValue : notnull
     {

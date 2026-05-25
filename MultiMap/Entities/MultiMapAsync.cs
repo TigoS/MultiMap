@@ -19,7 +19,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
+    public sealed class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
@@ -1212,7 +1212,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask DisposeAsync()
         {
-            return DisposeAsyncCore();
+            DisposeCore();
+
+            return default;
         }
 
         /// <inheritdoc/>
@@ -1343,8 +1345,8 @@ namespace MultiMap.Entities
         /// <summary>
         /// Releases resources used by the current instance.
         /// </summary>
-        /// <remarks>Override this method in a derived class to release additional resources. This method is called by the public Dispose pattern implementation to perform actual cleanup of managed or unmanaged resources.</remarks>
-        protected virtual void DisposeCore()
+        /// <remarks>This method is called by the public Dispose and DisposeAsync pattern implementations to perform actual cleanup of managed or unmanaged resources.</remarks>
+        private void DisposeCore()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
                 return;
@@ -1358,17 +1360,6 @@ namespace MultiMap.Entities
             {
                 _semaphore.Dispose();
             }
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
-        /// </summary>
-        /// <remarks>Override this method to release additional resources in a derived class when disposing asynchronously. This method is called by DisposeAsync and should not be called directly.</remarks>
-        /// <returns>A ValueTask that represents the asynchronous dispose operation.</returns>
-        protected virtual ValueTask DisposeAsyncCore()
-        {
-            DisposeCore();
-            return default;
         }
     }
 }

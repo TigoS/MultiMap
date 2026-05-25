@@ -12,7 +12,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
-    public class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
+    public sealed class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
         where TKey : notnull, IComparable<TKey>
         where TValue : notnull, IComparable<TValue>
     {

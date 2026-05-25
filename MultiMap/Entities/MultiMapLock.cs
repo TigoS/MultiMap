@@ -18,7 +18,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
+    public sealed class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
         where TKey : notnull
         where TValue : notnull
     {
