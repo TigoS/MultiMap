@@ -14,11 +14,11 @@ namespace MultiMap.Entities
     /// Use this class to store and access sets of values for each key, where duplicate values per key are not allowed.
     /// The map is suitable for scenarios where one-to-many relationships are required, such as grouping items or indexing data.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;

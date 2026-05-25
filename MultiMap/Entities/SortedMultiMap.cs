@@ -1,4 +1,5 @@
 ﻿using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -10,11 +11,11 @@ namespace MultiMap.Entities
     /// This type is useful when you need to maintain multiple values per key and require predictable ordering for both keys and values.
     /// Thread safety is not guaranteed; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IComparable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IComparable{TValue}"/>.</typeparam>
     public sealed class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
-        where TKey : notnull, IComparable<TKey>
-        where TValue : notnull, IComparable<TValue>
+        where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
+        where TValue : notnull, IEquatable<TValue>, IComparable<TValue>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class.
@@ -61,6 +62,48 @@ namespace MultiMap.Entities
 
                 if (!kvp.Value.SetEquals(otherSet))
                     return false;
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            if (KeyCount != other.KeyCount)
+            {
+                return false;
+            }
+
+            foreach (var key in Keys)
+            {
+                if (!other.ContainsKey(key))
+                {
+                    return false;
+                }
+
+                var thisValues = this[key];
+                var otherValues = other[key];
+
+                if (thisValues.Count() != otherValues.Count())
+                {
+                    return false;
+                }
+
+                if (!thisValues.SequenceEqual(otherValues))
+                {
+                    return false;
+                }
             }
 
             return true;

@@ -16,11 +16,11 @@ namespace MultiMap.Entities
     /// It is suitable for scenarios where multiple threads need to add, remove, or query key-value associations without external synchronization.
     /// Dispose the instance when no longer needed to release resources.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public sealed class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly ReaderWriterLockSlim _lock;
@@ -827,6 +827,51 @@ namespace MultiMap.Entities
             }
 
             return true;
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            ThrowIfDisposed();
+
+            _lock.EnterReadLock();
+            try
+            {
+                ThrowIfDisposed();
+
+                if (_dictionary.Count != other.KeyCount)
+                    return false;
+
+                foreach (var key in _dictionary.Keys)
+                {
+                    if (!other.ContainsKey(key))
+                        return false;
+
+                    var thisValues = _dictionary[key];
+                    var otherValuesCount = other.GetValuesCount(key);
+
+                    if (thisValues.Count != otherValuesCount)
+                        return false;
+
+                    foreach (var value in thisValues)
+                    {
+                        if (!other.Contains(key, value))
+                            return false;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
         }
 
         /// <inheritdoc/>

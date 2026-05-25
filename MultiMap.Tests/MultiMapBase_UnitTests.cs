@@ -4,43 +4,21 @@ using MultiMap.Interfaces;
 namespace MultiMap.Tests;
 
 /// <summary>
-/// Provides factory methods and type name for each concrete MultiMapBase subclass.
-/// Used by <see cref="MultiMapBaseTests{TMap}"/> via <see cref="TestFixtureSourceAttribute"/>.
+/// Tests the <see cref="MultiMapBase{TKey,TValue,TCollection}"/> contract through all concrete subclasses: MultiMapSet, MultiMapList, and SortedMultiMap.
 /// </summary>
-public static class MultiMapBaseTestSources
+/// <remarks>
+/// Uses abstract subclasses rather than <see cref="TestFixtureSourceAttribute"/> so that NUnit discovers fixtures via metadata reflection only — no code is executed during discovery, avoiding assembly-load failures under Application Control policies.
+/// </remarks>
+public abstract class MultiMapBaseTests
 {
-    public static IEnumerable<TestFixtureData> AllTypes()
-    {
-        yield return new TestFixtureData(typeof(MultiMapSet<string, int>))
-            .SetArgDisplayNames("MultiMapSet");
-
-        yield return new TestFixtureData(typeof(MultiMapList<string, int>))
-            .SetArgDisplayNames("MultiMapList");
-
-        yield return new TestFixtureData(typeof(SortedMultiMap<string, int>))
-            .SetArgDisplayNames("SortedMultiMap");
-    }
-}
-
-/// <summary>
-/// Tests the <see cref="MultiMapBase{TKey,TValue,TCollection}"/> contract through all
-/// concrete subclasses: MultiMapSet, MultiMapList, and SortedMultiMap.
-/// </summary>
-[TestFixtureSource(typeof(MultiMapBaseTestSources), nameof(MultiMapBaseTestSources.AllTypes))]
-public class MultiMapBaseTests
-{
-    private readonly Type _mapType;
     private IMultiMap<string, int> _map = null!;
 
-    public MultiMapBaseTests(Type mapType)
-    {
-        _mapType = mapType;
-    }
+    protected abstract IMultiMap<string, int> CreateMap();
 
     [SetUp]
     public void SetUp()
     {
-        _map = (IMultiMap<string, int>)Activator.CreateInstance(_mapType)!;
+        _map = CreateMap();
     }
 
     // ── Add ───────────────────────────────────────────────────
@@ -705,4 +683,22 @@ public class MultiMapBaseTests
         Assert.That(items, Does.Contain(new KeyValuePair<string, int>("a", 1)));
         Assert.That(items, Does.Contain(new KeyValuePair<string, int>("b", 2)));
     }
+}
+
+[TestFixture]
+public sealed class MultiMapSetBaseTests : MultiMapBaseTests
+{
+    protected override IMultiMap<string, int> CreateMap() => new MultiMapSet<string, int>();
+}
+
+[TestFixture]
+public sealed class MultiMapListBaseTests : MultiMapBaseTests
+{
+    protected override IMultiMap<string, int> CreateMap() => new MultiMapList<string, int>();
+}
+
+[TestFixture]
+public sealed class SortedMultiMapBaseTests : MultiMapBaseTests
+{
+    protected override IMultiMap<string, int> CreateMap() => new SortedMultiMap<string, int>();
 }

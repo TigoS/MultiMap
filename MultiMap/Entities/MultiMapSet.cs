@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 #endif
 using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -14,11 +15,11 @@ namespace MultiMap.Entities
     /// Values associated with a key are unordered and duplicates are not allowed.
     /// The class is not thread-safe; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multimap. Must be non-nullable.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public sealed class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly IEqualityComparer<TValue>? _valueComparer;
 
@@ -161,6 +162,44 @@ namespace MultiMap.Entities
 
                 if (!kvp.Value.SetEquals(otherSet))
                     return false;
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (KeyCount != other.KeyCount)
+                return false;
+
+            foreach (var key in Keys)
+            {
+                if (!other.ContainsKey(key))
+                    return false;
+
+                var thisValuesCount = GetValuesCount(key);
+                var otherValuesCount = other.GetValuesCount(key);
+
+                if (thisValuesCount != otherValuesCount)
+                    return false;
+
+                var thisValues = this[key];
+                var otherValues = other[key];
+
+                // Compare values as sets
+                var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
+                foreach (var value in thisValues)
+                {
+                    if (!otherValuesSet.Contains(value))
+                        return false;
+                }
             }
 
             return true;

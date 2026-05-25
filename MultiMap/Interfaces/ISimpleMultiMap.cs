@@ -8,11 +8,11 @@
     /// The interface does not specify whether keys or values can be null; this depends on the specific implementation.
     /// The collection supports enumeration of all key-value pairs.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the collection. Must not be null.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must not be null.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the collection. Must not be null and must implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must not be null and must implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Attempts to add the specified key and value to the collection.

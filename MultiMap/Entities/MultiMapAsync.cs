@@ -17,11 +17,11 @@ namespace MultiMap.Entities
     /// Enumerating the collection produces a snapshot of the current state, so changes made during enumeration are not reflected.
     /// This class is useful for managing associations where each key can have multiple distinct values, such as grouping or indexing tasks in asynchronous workflows.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public sealed class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly SemaphoreSlim _semaphore;
@@ -1325,6 +1325,69 @@ namespace MultiMap.Entities
             }
 
             return true;
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            ThrowIfDisposed();
+
+            // Wait for both semaphores to compare safely
+            _semaphore.Wait();
+            try
+            {
+                // Get counts synchronously from this instance
+                int thisKeyCount = _dictionary.Count;
+                int thisCount = _count;
+
+                // Get counts from other instance
+                int otherKeyCount = other.GetKeyCountAsync(CancellationToken.None).GetAwaiter().GetResult();
+                int otherCount = other.GetCountAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+                // Quick check: if counts differ, they're not equal
+                if (thisKeyCount != otherKeyCount || thisCount != otherCount)
+                    return false;
+
+                // Compare each key and its values
+                foreach (var kvp in _dictionary)
+                {
+                    var key = kvp.Key;
+                    var thisValues = kvp.Value;
+
+                    // Check if other contains the key
+                    var (found, otherValues) = other.TryGetAsync(key, CancellationToken.None).GetAwaiter().GetResult();
+                    if (!found)
+                        return false;
+
+                    // Convert otherValues to HashSet for comparison
+                    var otherValuesSet = otherValues is HashSet<TValue> hs
+                        ? hs
+                        : new HashSet<TValue>(otherValues, _valueComparer);
+
+                    // Check if value counts match
+                    if (thisValues.Count != otherValuesSet.Count)
+                        return false;
+
+                    // Check if all values in thisValues are in otherValuesSet
+                    foreach (var value in thisValues)
+                    {
+                        if (!otherValuesSet.Contains(value))
+                            return false;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         /// <inheritdoc/>

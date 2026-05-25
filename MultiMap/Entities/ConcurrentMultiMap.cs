@@ -14,11 +14,11 @@ namespace MultiMap.Entities
     /// Each key maps to a set of unique values, and all operations are safe for concurrent access.
     /// This class is useful for managing collections where keys can have multiple associated values and thread safety is required.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{T}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public sealed class ConcurrentMultiMap<TKey, TValue> : IMultiMap<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly ConcurrentDictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly object _globalLock = new();
@@ -433,6 +433,45 @@ namespace MultiMap.Entities
                     return false;
 
                 if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            // Quick check: different key counts means not equal
+            if (KeyCount != other.KeyCount)
+                return false;
+
+            // Check all keys and their values
+            foreach (var key in Keys)
+            {
+                // Check if the other map contains the key
+                if (!other.ContainsKey(key))
+                    return false;
+
+                // Get values from both maps
+                var thisValues = GetOrDefault(key).ToList();
+                var otherValues = other[key].ToList();
+
+                // Check if value counts match
+                if (thisValues.Count != otherValues.Count)
+                    return false;
+
+                // Compare values as sets (order doesn't matter)
+                var thisSet = new HashSet<TValue>(thisValues, _valueComparer);
+                var otherSet = new HashSet<TValue>(otherValues, _valueComparer);
+
+                if (!thisSet.SetEquals(otherSet))
                     return false;
             }
 

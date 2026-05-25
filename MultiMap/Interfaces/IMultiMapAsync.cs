@@ -8,11 +8,11 @@ namespace MultiMap.Interfaces
     /// Implementations are expected to be thread-safe and suitable for concurrent scenarios.
     /// The interface supports asynchronous enumeration of all key-value pairs via <see cref="IAsyncEnumerable{T}"/>.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public interface IMultiMapAsync<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Asynchronously adds a value to the set associated with the specified key.

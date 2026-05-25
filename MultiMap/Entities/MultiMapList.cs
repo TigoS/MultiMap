@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 #endif
 using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -14,11 +15,11 @@ namespace MultiMap.Entities
     /// Keys and values must be non-null. Thread safety is not guaranteed;
     /// external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public sealed class MultiMapList<TKey, TValue> : MultiMapBase<TKey, TValue, List<TValue>>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Initializes a new instance of the MultiMapList class with an empty mapping.
@@ -134,6 +135,33 @@ namespace MultiMap.Entities
                     return false;
 
                 if (!kvp.Value.SequenceEqual(otherList))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <inheritdoc/>
+        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (KeyCount != other.KeyCount)
+                return false;
+
+            foreach (var key in Keys)
+            {
+                if (!other.ContainsKey(key))
+                    return false;
+
+                var thisValues = this[key];
+                var otherValues = other[key];
+
+                if (!thisValues.SequenceEqual(otherValues))
                     return false;
             }
 
