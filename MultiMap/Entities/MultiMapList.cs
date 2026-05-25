@@ -150,7 +150,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (KeyCount != other.KeyCount)
+            if (_dictionary.Count != other.KeyCount)
                 return false;
 
             foreach (var key in Keys)
