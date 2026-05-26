@@ -494,7 +494,16 @@ namespace MultiMap.Entities
                 _lock.EnterReadLock();
                 try
                 {
-                    return _dictionary.Values.SelectMany(hashset => hashset).ToArray();
+                    var result = new TValue[_count];
+                    var index = 0;
+                    foreach (var hashset in _dictionary.Values)
+                    {
+                        foreach (var value in hashset)
+                        {
+                            result[index++] = value;
+                        }
+                    }
+                    return result;
                 }
                 finally
                 {
