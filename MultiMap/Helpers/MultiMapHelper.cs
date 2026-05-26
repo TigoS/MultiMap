@@ -138,10 +138,16 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
 
+            var targetLookup = new Dictionary<TKey, ISet<TValue>>();
+
             foreach (var kvp in other)
             {
-                var targetValues = target.GetOrDefault(kvp.Key);
-                var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
+                if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
+                {
+                    var raw = target.GetOrDefault(kvp.Key);
+                    targetSet = raw as ISet<TValue> ?? new HashSet<TValue>(raw);
+                    targetLookup[kvp.Key] = targetSet;
+                }
 
                 if (targetSet.Contains(kvp.Value))
                 {
