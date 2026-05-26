@@ -39,10 +39,14 @@
         /// </summary>
         /// <param name="key">The key of the entry to remove. Cannot be null.</param>
         /// <param name="value">The value associated with the key to remove.</param>
+        /// <returns>
+        /// <see langword="true"/> if the entry was successfully removed;
+        /// otherwise, <see langword="false"/> if the entry does not exist.
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
         /// </exception>
-        public void Remove(TKey key, TValue value);
+        public bool Remove(TKey key, TValue value);
 
         /// <summary>
         /// Removes all values associated with the specified key.

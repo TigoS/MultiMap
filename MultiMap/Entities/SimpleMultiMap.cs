@@ -107,7 +107,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        public void Remove(TKey key, TValue value)
+        public bool Remove(TKey key, TValue value)
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
@@ -117,8 +117,10 @@ namespace MultiMap.Entities
                 hashset.Remove(value);
 
                 if (hashset.Count == 0)
-                    _dictionary.Remove(key);
+                    return _dictionary.Remove(key);
             }
+
+            return false;
         }
 
         /// <inheritdoc />
