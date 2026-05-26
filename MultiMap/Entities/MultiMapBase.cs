@@ -250,7 +250,85 @@ namespace MultiMap.Entities
         public int KeyCount => _dictionary.Count;
 
         /// <inheritdoc/>
-        public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(c => c);
+        public IEnumerable<TValue> Values => new ValuesCollection(_dictionary.Values);
+
+        /// <summary>
+        /// A lightweight, allocation-free view over all values in a multi-map's inner dictionary.
+        /// Enumerating with <c>foreach</c> on the concrete type uses <see cref="ValuesEnumerator"/>
+        /// directly, avoiding boxing of the struct enumerator.
+        /// </summary>
+        private sealed class ValuesCollection : IEnumerable<TValue>
+        {
+            private readonly ICollection<TCollection> _collections;
+
+            internal ValuesCollection(ICollection<TCollection> collections) => _collections = collections;
+
+            /// <summary>Returns a struct enumerator; <c>foreach</c> on the concrete type calls this without boxing.</summary>
+            public ValuesEnumerator GetEnumerator() => new ValuesEnumerator(_collections);
+
+            IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
+
+        /// <summary>
+        /// A struct enumerator that walks every value in every inner collection without
+        /// allocating a heap iterator object.
+        /// </summary>
+        public struct ValuesEnumerator : IEnumerator<TValue>
+        {
+            private IEnumerator<TCollection> _outerEnumerator;
+            private IEnumerator<TValue>? _innerEnumerator;
+            private TValue _current;
+
+            internal ValuesEnumerator(ICollection<TCollection> collections)
+            {
+                _outerEnumerator = collections.GetEnumerator();
+                _innerEnumerator = null;
+                _current = default!;
+            }
+
+            /// <inheritdoc/>
+            public TValue Current => _current;
+
+            object IEnumerator.Current => _current;
+
+            /// <inheritdoc/>
+            public bool MoveNext()
+            {
+                while (true)
+                {
+                    if (_innerEnumerator != null && _innerEnumerator.MoveNext())
+                    {
+                        _current = _innerEnumerator.Current;
+                        return true;
+                    }
+
+                    _innerEnumerator?.Dispose();
+                    _innerEnumerator = null;
+
+                    if (!_outerEnumerator.MoveNext())
+                        return false;
+
+                    _innerEnumerator = _outerEnumerator.Current.GetEnumerator();
+                }
+            }
+
+            /// <inheritdoc/>
+            public void Reset()
+            {
+                _outerEnumerator.Reset();
+                _innerEnumerator?.Dispose();
+                _innerEnumerator = null;
+                _current = default!;
+            }
+
+            /// <inheritdoc/>
+            public void Dispose()
+            {
+                _innerEnumerator?.Dispose();
+                _outerEnumerator.Dispose();
+            }
+        }
 
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
