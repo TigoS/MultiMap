@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-99.5%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-96.2%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -52,8 +52,8 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Custom value comparers**: `IEqualityComparer<TValue>` constructor overloads on all `HashSet`-based implementations
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
-- **2,708 test executions** (1,354 tests × 2 target frameworks) with NUnit 4
-- **99.5% line coverage, 84.8% branch coverage** via Coverlet
+- **2,932 test executions** (1,466 tests × 2 target frameworks) with NUnit 4
+- **96.2% line coverage, 81.2% branch coverage** via Coverlet
 - **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 
 ## Project Structure
@@ -632,7 +632,7 @@ C: 3
 
 ## Testing
 
-The library includes **1,354 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,708 total test executions**), covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **1,466 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,932 total test executions**), covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
 ```shell
 dotnet test
@@ -642,10 +642,11 @@ dotnet test
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapAsyncTests` | 192 | Async implementation |
+| `MultiMapAsyncTests` | 213 | Async implementation |
+| `MultiMapAsync_GenericInterfaceEqualsTests` | 6 | Generic-interface async equality path |
 | `ConcurrentMultiMapTests` | 127 | Lock-free concurrent implementation |
-| `MultiMapLockTests` | 138 | RW Lock implementation |
-| `MultiMapListTests` | 113 | List-based implementation |
+| `MultiMapLockTests` | 142 | RW Lock implementation |
+| `MultiMapListTests` | 120 | List-based implementation |
 | `MultiMapSetTests` | 114 | HashSet-based implementation |
 | `SortedMultiMapTests` | 105 | Sorted implementation |
 | `SimpleMultiMapTests` | 48 | Lightweight implementation |
@@ -664,7 +665,7 @@ dotnet test
 |---|---|---|
 | `MultiMapHelperAsyncTests` | 65 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
 | `MultiMapHelperWithMultiMapSetTests` | 34 | Extensions with `MultiMapSet` + stress tests |
-| `MultiMapHelperTests` | 28 | `IMultiMap` extensions (primary) |
+| `MultiMapHelperTests` | 30 | `IMultiMap` extensions (primary) |
 | `SimpleMultiMapHelperTests` | 28 | `ISimpleMultiMap` extensions |
 | `MultiMapHelperExtensionAsyncTests` | 25 | Async helper extension edge cases |
 | `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | Edge cases with `SortedMultiMap` |
@@ -679,7 +680,7 @@ dotnet test
 
 | | |
 |---|---|
-| **Total** | **1,354 tests × 2 TFMs = 2,708 executions** |
+| **Total** | **1,409 tests × 2 TFMs = 2,818 executions** |
 
 ### Test Categories
 
@@ -724,9 +725,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.7% |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | 0.7% |
 | **Helper subtotal** | **319** | **23.6%** |
-| **Total** | **1,354 × 2 TFMs** | **2,708 executions** |
+| **Total** | **1,466 × 2 TFMs** | **2,932 executions** |
 
-> **Coverage distribution:** ~62% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15% verify the shared `MultiMapBase` contract across all 3 subclass fixtures, and ~24% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper. All 1,354 tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
+> **Coverage distribution:** ~63% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15% verify the shared `MultiMapBase` contract across all 3 subclass fixtures, and ~22% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper. All 1,409 tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
 
 ### Code Coverage (Coverlet)
 
@@ -740,31 +741,34 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **99.5%** (1,427/1,434 lines) |
-| **Branch coverage** | **84.8%** (731/862 branches) |
-| **Method coverage** | **98.2%** (218/222 methods) |
+| **Line coverage** | **96.2%** (1,530/1,591 lines) |
+| **Branch coverage** | **81.2%** (827/1,018 branches) |
+| **Method coverage** | **97.9%** (236/241 methods) |
 
 #### Per-Class Breakdown
 
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 99.5% | 83.6% | ✅ Full |
-| `MultiMapAsync<TKey, TValue>` | 100% | 88.7% | ✅ Full |
-| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 77.4% | ✅ Full |
-| `MultiMapList<TKey, TValue>` | 94.0% | 86.7% | ✅ Near-full |
-| `MultiMapLock<TKey, TValue>` | 100% | 85.1% | ✅ Full |
-| `MultiMapSet<TKey, TValue>` | 96.2% | 87.5% | ✅ Near-full |
-| `SimpleMultiMap<TKey, TValue>` | 98.3% | 80.0% | ✅ Full |
+| `ConcurrentMultiMap<TKey, TValue>` | 89.5% | 74.2% | ✅ Near-full |
+| `MultiMapAsync<TKey, TValue>` | 93.7% | 78.1% | ✅ Near-full |
+| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 75.6% | ✅ Full |
+| `MultiMapBase/ValuesCollection` | 100% | 100% | ✅ Full |
+| `MultiMapBase/ValuesEnumerator` | 100% | 83.3% | ✅ Full |
+| `MultiMapList<TKey, TValue>` | 86.6% | 81.5% | ✅ Near-full |
+| `MultiMapLock<TKey, TValue>` | 100% | 86.4% | ✅ Full |
+| `MultiMapSet<TKey, TValue>` | 84.9% | 68.8% | ✅ Near-full |
+| `SimpleMultiMap<TKey, TValue>` | 98.1% | 77.8% | ✅ Full |
 | `SortedMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
 | `MultiMapHelper` | 100% | 81.0% | ✅ Full |
 
 > **Notes:**
-> - **5 of 9 classes achieve 100% line coverage**: `MultiMapAsync`, `MultiMapBase`, `MultiMapLock`, `SortedMultiMap`, and `MultiMapHelper`.
-> - `SortedMultiMap` achieves **100% line and 100% branch coverage** — the only class with perfect branch coverage.
-> - `ConcurrentMultiMap` at **99.5% line coverage** — the single uncovered line is a `continue` in a race-condition retry loop, extremely difficult to trigger deterministically.
-> - `MultiMapList` (94.0%) and `MultiMapSet` (96.2%) have uncovered lines in `CreateCollection`/`AddToCollection` methods — these are dead code on .NET 10 and .NET 8 where `CollectionsMarshal` is used instead.
+> - **6 of 11 tracked classes achieve 100% line coverage**: `MultiMapBase`, `MultiMapLock`, `SortedMultiMap`, and `MultiMapHelper`; `ValuesCollection` and `ValuesEnumerator` (nested) also reach 100% line coverage.
+> - `ValuesCollection` and `SortedMultiMap` achieve **100% line and 100% branch coverage**.
+> - `MultiMapLock` reaches **100% line coverage** with **86.4% branch coverage** after targeted equality tests.
+> - `ConcurrentMultiMap` at **89.5% line coverage** — uncovered lines include a `continue` in a race-condition retry loop and a few async state-machine branches that are structurally unreachable in Release mode.
+> - `MultiMapList` (86.6%) and `MultiMapSet` (84.9%) have uncovered lines in `CreateCollection`/`AddToCollection` methods — these are dead code on .NET 10 and .NET 8 where `CollectionsMarshal` is used instead.
 > - Branch coverage numbers reflect Coverlet's granular condition tracking, including async state machine branches and null-coalescing paths that are structurally unreachable in certain target frameworks.
-> - Overall **99.5% line coverage** across the entire assembly with **1,354 tests × 2 target frameworks** (2,708 total executions).
+> - Overall **96.2% line coverage** across the entire assembly with **1,466 tests × 2 target frameworks** (2,932 total executions).
 
 ## Benchmarks
 
