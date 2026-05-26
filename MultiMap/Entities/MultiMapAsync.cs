@@ -1240,6 +1240,12 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
+            if (SynchronizationContext.Current != null)
+                throw new InvalidOperationException(
+                    $"Calling {nameof(Equals)} on {nameof(MultiMapAsync<TKey, TValue>)} from a thread with a " +
+                    $"{nameof(SynchronizationContext)} (e.g. a UI thread) can deadlock. " +
+                    $"Use {nameof(EqualsAsync)} instead.");
+
             ThrowIfDisposed();
             other.ThrowIfDisposed();
 
@@ -1253,64 +1259,6 @@ namespace MultiMap.Entities
             try
             {
                 second._semaphore.Wait();
-                try
-                {
-                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
-                        return false;
-
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                }
-                finally
-                {
-                    second._semaphore.Release();
-                }
-            }
-            finally
-            {
-                first._semaphore.Release();
-            }
-
-            foreach (var kvp in thisSnapshot)
-            {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Asynchronously determines whether the current instance and the specified object are equal by comparing their key-value mappings.
-        /// </summary>
-        /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
-        /// If either instance has been disposed, an exception is thrown.</remarks>
-        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
-        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
-        public async ValueTask<bool> EqualsAsync(object? obj)
-        {
-            if (obj is not MultiMapAsync<TKey, TValue> other)
-                return false;
-
-            if (ReferenceEquals(this, other))
-                return true;
-
-            ThrowIfDisposed();
-            other.ThrowIfDisposed();
-
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            await first._semaphore.WaitAsync().ConfigureAwait(false);
-            try
-            {
-                await second._semaphore.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
@@ -1402,6 +1350,169 @@ namespace MultiMap.Entities
             {
                 _semaphore.Release();
             }
+        }
+
+        /// <summary>
+        /// Asynchronously determines whether the current instance and the specified object are equal by comparing their key-value mappings.
+        /// </summary>
+        /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
+        /// If either instance has been disposed, an exception is thrown.</remarks>
+        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
+        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
+        public async ValueTask<bool> EqualsAsync(object? obj)
+        {
+            if (obj is not MultiMapAsync<TKey, TValue> other)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            ThrowIfDisposed();
+            other.ThrowIfDisposed();
+
+            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
+            var second = ReferenceEquals(first, this) ? other : this;
+
+            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
+
+            await first._semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await second._semaphore.WaitAsync().ConfigureAwait(false);
+                try
+                {
+                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
+                        return false;
+
+                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                }
+                finally
+                {
+                    second._semaphore.Release();
+                }
+            }
+            finally
+            {
+                first._semaphore.Release();
+            }
+
+            foreach (var kvp in thisSnapshot)
+            {
+                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    return false;
+
+                if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Asynchronously determines whether the current instance and the specified <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> are equal by comparing their key-value mappings.
+        /// </summary>
+        /// <remarks>
+        /// When <paramref name="other"/> is another <see cref="MultiMapAsync{TKey, TValue}"/>, both semaphores are acquired atomically (lock-ordering by identity hash code to prevent deadlock) and a pair of snapshots is taken before any comparison work is done outside the locks. For any other <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> implementation, a snapshot of this instance is taken under its own semaphore, and the comparison is then performed asynchronously against the other instance using its public async API.
+        /// </remarks>
+        /// <param name="other">The map to compare with the current instance.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <returns>
+        /// A <see cref="ValueTask{TResult}"/> whose result is <see langword="true"/> if both maps contain the same keys with the same associated value sets; otherwise <see langword="false"/>.
+        /// </returns>
+        public async ValueTask<bool> EqualsAsync(IReadOnlyMultiMapAsync<TKey, TValue>? other, CancellationToken cancellationToken = default)
+        {
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            ThrowIfDisposed();
+
+            // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
+            if (other is MultiMapAsync<TKey, TValue> concreteOther)
+            {
+                concreteOther.ThrowIfDisposed();
+
+                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
+                var second = ReferenceEquals(first, this) ? concreteOther : this;
+
+                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
+
+                await first._semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    await second._semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
+                            _dictionary.Count != concreteOther._dictionary.Count)
+                            return false;
+
+                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    }
+                    finally
+                    {
+                        second._semaphore.Release();
+                    }
+                }
+                finally
+                {
+                    first._semaphore.Release();
+                }
+
+                foreach (var kvp in thisSnapshot)
+                {
+                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                        return false;
+
+                    if (!kvp.Value.SetEquals(otherSet))
+                        return false;
+                }
+
+                return true;
+            }
+
+            // General path: snapshot this instance, then compare asynchronously via the interface API.
+            Dictionary<TKey, HashSet<TValue>> snapshot;
+            int thisCount;
+
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                thisCount = _count;
+                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+
+            int otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);
+            int otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
+
+            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
+                return false;
+
+            foreach (var kvp in snapshot)
+            {
+                var (found, otherValues) = await other.TryGetAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
+                if (!found)
+                    return false;
+
+                var otherSet = otherValues is HashSet<TValue> hs
+                    ? hs
+                    : new HashSet<TValue>(otherValues, _valueComparer);
+
+                if (!kvp.Value.SetEquals(otherSet))
+                    return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc/>
