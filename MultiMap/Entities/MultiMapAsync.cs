@@ -828,7 +828,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return new ValueTask<IEnumerable<TValue>>(_dictionary.Values.SelectMany(v => v).ToArray());
+                    return new ValueTask<IEnumerable<TValue>>(GetValuesCore());
                 }
                 finally
                 {
@@ -838,12 +838,26 @@ namespace MultiMap.Entities
             return GetValuesSlowAsync(waitTask);
         }
 
+        private TValue[] GetValuesCore()
+        {
+            var result = new TValue[_count];
+            var index = 0;
+            foreach (var hashset in _dictionary.Values)
+            {
+                foreach (var value in hashset)
+                {
+                    result[index++] = value;
+                }
+            }
+            return result;
+        }
+
         private async ValueTask<IEnumerable<TValue>> GetValuesSlowAsync(Task waitTask)
         {
             await waitTask.ConfigureAwait(false);
             try
             {
-                return _dictionary.Values.SelectMany(v => v).ToArray();
+                return GetValuesCore();
             }
             finally
             {
