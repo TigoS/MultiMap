@@ -137,7 +137,10 @@ namespace MultiMap.Entities
                 if (!other._dictionary.TryGetValue(kvp.Key, out var otherList))
                     return false;
 
-                if (!kvp.Value.SequenceEqual(otherList))
+                if (kvp.Value.Count != otherList.Count)
+                    return false;
+
+                if (!kvp.Value.OrderBy(v => v).SequenceEqual(otherList.OrderBy(v => v)))
                     return false;
             }
 
@@ -164,7 +167,7 @@ namespace MultiMap.Entities
                 var thisValues = this[key];
                 var otherValues = other[key];
 
-                if (!thisValues.SequenceEqual(otherValues))
+                if (!thisValues.OrderBy(v => v).SequenceEqual(otherValues.OrderBy(v => v)))
                     return false;
             }
 
