@@ -371,6 +371,50 @@ public class MultiMapHelperTests
         Assert.That(_other.Contains("a", 1), Is.True);
         Assert.That(_other.Contains("b", 2), Is.True);
     }
+
+    [Test]
+    public void SymmetricExceptWith_MultipleValuesPerKey_CachesPerKeyLookup()
+    {
+        // 'other' has two entries under key "a" — exercises the targetLookup cache path
+        // where the second kvp for "a" must reuse the cached set instead of re-querying.
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _target.Add("a", 3);
+        _other.Add("a", 2); // overlap  → remove
+        _other.Add("a", 4); // not in target → add
+        _other.Add("b", 5); // new key → add
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Contains("a", 1), Is.True);  // only in target  → kept
+        Assert.That(_target.Contains("a", 2), Is.False); // in both          → removed
+        Assert.That(_target.Contains("a", 3), Is.True);  // only in target  → kept
+        Assert.That(_target.Contains("a", 4), Is.True);  // only in other   → added
+        Assert.That(_target.Contains("b", 5), Is.True);  // only in other   → added
+        Assert.That(_target.Count, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void SymmetricExceptWith_AllValuesUnderSameKeyInOther_UsesCache()
+    {
+        // All five entries in 'other' share the same key — the cache is hit four times.
+        _target.Add("x", 10);
+        _target.Add("x", 20);
+        _target.Add("x", 30);
+        _other.Add("x", 10); // overlap  → remove
+        _other.Add("x", 20); // overlap  → remove
+        _other.Add("x", 40); // only in other → add
+        _other.Add("x", 50); // only in other → add
+
+        _target.SymmetricExceptWith(_other);
+
+        Assert.That(_target.Contains("x", 10), Is.False);
+        Assert.That(_target.Contains("x", 20), Is.False);
+        Assert.That(_target.Contains("x", 30), Is.True);
+        Assert.That(_target.Contains("x", 40), Is.True);
+        Assert.That(_target.Contains("x", 50), Is.True);
+        Assert.That(_target.Count, Is.EqualTo(3));
+    }
 }
 
 [TestFixture]

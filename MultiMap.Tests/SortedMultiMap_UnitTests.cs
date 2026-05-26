@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Tests;
 
@@ -1179,5 +1180,142 @@ public class SortedMultiMapTests
         map.Add("c", 3);
 
         Assert.That(map.Keys.ToArray(), Is.EqualTo(new[] { "c", "b", "a" }));
+    }
+
+    // ── Equals(object?) self-reference ─────────────────────────────────────────
+
+    [Test]
+    public void Equals_Object_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((object)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_Object_SameContent_DifferentInstance_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((object)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((object)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((object)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentKeys_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("z", 1);
+
+        Assert.That(_map.Equals((object)other), Is.False);
+    }
+
+    // ── Equals(IReadOnlyMultiMap<TKey,TValue>?) typed-interface overload ────────
+
+    [Test]
+    public void Equals_TypedInterface_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_Null_ReturnsFalse()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>?)null!), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_SameContent_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValueCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_MissingKey_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_BothEmpty_ReturnsTrue()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)new SortedMultiMap<string, int>()), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new SortedMultiMap<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
     }
 }

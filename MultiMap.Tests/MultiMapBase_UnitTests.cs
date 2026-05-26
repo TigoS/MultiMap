@@ -583,6 +583,59 @@ public abstract class MultiMapBaseTests
         Assert.That(_map.Values, Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
+    [Test]
+    public void Values_CountMatchesExpected()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        _map.Add("c", 4);
+
+        Assert.That(_map.Values.Count(), Is.EqualTo(4));
+    }
+
+    [Test]
+    public void Values_AfterClear_ReturnsEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Clear();
+
+        Assert.That(_map.Values, Is.Empty);
+    }
+
+    [Test]
+    public void Values_CanEnumerateTwice()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var valuesCol = _map.Values;
+
+        Assert.That(valuesCol.Count(), Is.EqualTo(2));
+        Assert.That(valuesCol.Count(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public void Values_SingleKey_SingleValue()
+    {
+        _map.Add("only", 42);
+
+        Assert.That(_map.Values, Is.EquivalentTo(new[] { 42 }));
+    }
+
+    [Test]
+    public void Values_AfterRemoveAllFromKey_DoesNotContainRemovedValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        _map.Remove("a", 1);
+        _map.Remove("a", 2);
+
+        Assert.That(_map.Values, Is.EquivalentTo(new[] { 3 }));
+    }
+
     // ── GetValuesCount ────────────────────────────────────────
 
     [Test]
@@ -682,6 +735,43 @@ public abstract class MultiMapBaseTests
         Assert.That(items, Has.Count.EqualTo(2));
         Assert.That(items, Does.Contain(new KeyValuePair<string, int>("a", 1)));
         Assert.That(items, Does.Contain(new KeyValuePair<string, int>("b", 2)));
+    }
+
+    // ── ValuesEnumerator.Reset() ──────────────────────────────────────────────
+
+    [Test]
+    public void Values_GetEnumerator_Reset_AllowsSecondPass()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        // Obtain the IEnumerator<TValue> from the Values property.
+        var enumerator = _map.Values.GetEnumerator();
+
+        // First pass — drain all values.
+        var firstPass = new List<int>();
+        while (enumerator.MoveNext())
+            firstPass.Add(enumerator.Current);
+
+        // Reset and collect a second pass.
+        enumerator.Reset();
+        var secondPass = new List<int>();
+        while (enumerator.MoveNext())
+            secondPass.Add(enumerator.Current);
+
+        enumerator.Dispose();
+
+        Assert.That(firstPass, Is.EquivalentTo(secondPass));
+        Assert.That(secondPass, Has.Count.EqualTo(2));
+    }
+
+    [Test]
+    public void Values_GetEnumerator_Reset_OnEmptyMap_DoesNotThrow()
+    {
+        var enumerator = _map.Values.GetEnumerator();
+        enumerator.Reset();
+        Assert.That(enumerator.MoveNext(), Is.False);
+        enumerator.Dispose();
     }
 }
 

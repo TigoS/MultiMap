@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Tests;
 
@@ -1178,6 +1179,107 @@ public class MultiMapSetTests
         Assert.That(map.KeyCount, Is.EqualTo(1));
         Assert.That(map.Count, Is.EqualTo(1));
         Assert.That(map.Get("KEY"), Is.EquivalentTo(new[] { "Hello" }));
+    }
+
+    // ── Equals(object?) self-reference ─────────────────────────────────────────
+
+    [Test]
+    public void Equals_Object_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((object)_map), Is.True);
+    }
+
+    // ── Equals(IReadOnlyMultiMap<TKey,TValue>?) typed-interface overload ────────
+
+    [Test]
+    public void Equals_TypedInterface_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_Null_ReturnsFalse()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>?)null!), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_SameContent_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_MissingKey_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValueCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_BothEmpty_ReturnsTrue()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)new MultiMapSet<string, int>()), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_OtherKeyNotInThis_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("z", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
     }
 }
 

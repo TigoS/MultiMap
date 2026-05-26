@@ -2393,6 +2393,216 @@ public class MultiMapAsyncTests
         Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
     }
 
+    // ── EqualsAsync(object?) overload ─────────────────────────
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_SameContent_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 1);
+
+        // Call EqualsAsync(object?) explicitly via cast to object
+        Assert.That(await _map.EqualsAsync((object)other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_DifferentContent_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+
+        Assert.That(await _map.EqualsAsync((object)other), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_Null_ReturnsFalse()
+    {
+        Assert.That(await _map.EqualsAsync((object?)null), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_DifferentType_ReturnsFalse()
+    {
+        Assert.That(await _map.EqualsAsync((object)"not a map"), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_SelfReference_ReturnsTrue()
+    {
+        await _map.AddAsync("a", 1);
+        Assert.That(await _map.EqualsAsync((object)_map), Is.True);
+    }
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_BothEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        Assert.That(await _map.EqualsAsync((object)other), Is.True);
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_ObjectOverload_DifferentValueCount_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.EqualsAsync((object)other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    // ── Equals(object?) SynchronizationContext guard ──────────
+
+    [Test]
+    public void Equals_WithSynchronizationContextButDifferentType_ReturnsFalse()
+    {
+        // Type check must short-circuit before the SynchronizationContext guard.
+        var prev = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+        try
+        {
+            Assert.That(_map.Equals("not a map"), Is.False);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(prev);
+        }
+    }
+
+    [Test]
+    public void Equals_WithSynchronizationContextAndSelfReference_ReturnsTrue()
+    {
+        // ReferenceEquals short-circuits before the SynchronizationContext guard.
+        var prev = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+        try
+        {
+            Assert.That(_map.Equals(_map), Is.True);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(prev);
+        }
+    }
+
+    [Test]
+    public void Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException()
+    {
+        // Run on a dedicated thread so SynchronizationContext.Current is fully under our control.
+        // Cast to object explicitly to hit the Equals(object?) override where the guard lives.
+        InvalidOperationException? caught = null;
+        var thread = new Thread(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
+            using var other = new MultiMapAsync<string, int>();
+            try { _map.Equals((object)other); }
+            catch (InvalidOperationException ex) { caught = ex; }
+        });
+        thread.Start();
+        thread.Join();
+
+        Assert.That(caught, Is.Not.Null, "Expected InvalidOperationException when SynchronizationContext is present.");
+    }
+
+    // ── EqualsAsync(IReadOnlyMultiMapAsync<TKey,TValue>) ─────
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_SameContent_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_DifferentContent_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_Null_ReturnsFalse()
+    {
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>?)null), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_SelfReference_ReturnsTrue()
+    {
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)_map), Is.True);
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_BothEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_DifferentKeyCount_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_DisposedThis_ThrowsObjectDisposedException()
+    {
+        var other = new MultiMapAsync<string, int>();
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+            await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other));
+
+        other.Dispose();
+    }
+
+    [Test]
+    public async Task EqualsAsync_TypedOverload_WithCancellation_ThrowsOperationCanceled()
+    {
+        var other = new MultiMapAsync<string, int>();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        // TaskCanceledException derives from OperationCanceledException; use CatchAsync to accept both.
+        var ex = Assert.CatchAsync<OperationCanceledException>(async () =>
+            await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other, cts.Token));
+        Assert.That(ex, Is.Not.Null);
+
+        await other.DisposeAsync();
+    }
+
     [Test]
     public async Task AddAsync_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
     {
@@ -2470,6 +2680,289 @@ public class MultiMapAsyncTests
 
         await map.DisposeAsync();
     }
+
+    // ── GetValuesAsync additional coverage ───────────────────
+
+    [Test]
+    public async Task GetValuesAsync_CountMatchesGetCountAsync()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+
+        var values = await _map.GetValuesAsync();
+        var count = await _map.GetCountAsync();
+
+        Assert.That(values.Count(), Is.EqualTo(count));
+    }
+
+    [Test]
+    public async Task GetValuesAsync_AfterClear_ReturnsEmpty()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.ClearAsync();
+
+        var values = await _map.GetValuesAsync();
+
+        Assert.That(values, Is.Empty);
+    }
+
+    [Category("Stress")]
+    [Test]
+    public async Task Stress_GetValuesAsync_ConcurrentWithWrites_ReturnsConsistentCount()
+    {
+        const int keyCount = 8;
+        const int valuesPerKey = 5;
+
+        for (int i = 0; i < keyCount; i++)
+            for (int v = 0; v < valuesPerKey; v++)
+                await _map.AddAsync($"key{i}", i * 1000 + v);
+
+        int expected = keyCount * valuesPerKey;
+
+        var tasks = Enumerable.Range(0, 16).Select(async _ =>
+        {
+            var values = await _map.GetValuesAsync();
+            return values.Count();
+        });
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results, Has.All.EqualTo(expected));
+    }
+
+    [Category("Stress")]
+    [Test]
+    public async Task Stress_EqualsAsync_ConcurrentCalls_AllReturnTrue()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        var tasks = Enumerable.Range(0, 20).Select(async _ =>
+            await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other));
+
+        var results = await Task.WhenAll(tasks);
+
+        Assert.That(results, Has.All.True);
+
+        await other.DisposeAsync();
+    }
 }
 
+/// <summary>
+/// A minimal <see cref="IReadOnlyMultiMapAsync{TKey,TValue}"/> backed by a plain Dictionary,
+/// used to exercise the generic-interface path in <c>MultiMapAsync.EqualsAsync</c>.
+/// </summary>
+internal sealed class FakeReadOnlyMultiMapAsync<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
+    where TKey : notnull, IEquatable<TKey>
+    where TValue : notnull, IEquatable<TValue>
+{
+    private readonly Dictionary<TKey, List<TValue>> _data = new();
 
+    public void Add(TKey key, TValue value)
+    {
+        if (!_data.TryGetValue(key, out var list))
+            _data[key] = list = new List<TValue>();
+        list.Add(value);
+    }
+
+    public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_data.Values.Sum(v => v.Count));
+
+    public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_data.Count);
+
+    public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
+    {
+        if (_data.TryGetValue(key, out var list))
+            return ValueTask.FromResult((true, (IEnumerable<TValue>)list));
+        return ValueTask.FromResult((false, Enumerable.Empty<TValue>()));
+    }
+
+    public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
+        => ValueTask.FromResult((IEnumerable<TKey>)_data.Keys);
+
+    public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_data.Values.SelectMany(v => v));
+
+    public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_data.TryGetValue(key, out var l) ? l.Count : 0);
+
+    public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_data.TryGetValue(key, out var l) && l.Contains(value));
+
+    public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
+        => ValueTask.FromResult(_data.ContainsKey(key));
+
+    public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
+    {
+        if (_data.TryGetValue(key, out var list))
+            return ValueTask.FromResult((IEnumerable<TValue>)list);
+        throw new KeyNotFoundException($"Key '{key}' not found.");
+    }
+
+    public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
+    {
+        if (_data.TryGetValue(key, out var list))
+            return ValueTask.FromResult((IEnumerable<TValue>)list);
+        return ValueTask.FromResult(Enumerable.Empty<TValue>());
+    }
+
+    public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other) => ReferenceEquals(this, other);
+
+    public IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken cancellationToken = default)
+        => new FlatAsyncEnumerator(_data);
+
+    private sealed class FlatAsyncEnumerator : IAsyncEnumerator<KeyValuePair<TKey, TValue>>
+    {
+        private readonly IEnumerator<KeyValuePair<TKey, List<TValue>>> _outer;
+        private IEnumerator<TValue>? _inner;
+        private TKey _currentKey = default!;
+        public KeyValuePair<TKey, TValue> Current { get; private set; }
+
+        public FlatAsyncEnumerator(Dictionary<TKey, List<TValue>> data) =>
+            _outer = data.GetEnumerator();
+
+        public ValueTask<bool> MoveNextAsync()
+        {
+            while (true)
+            {
+                if (_inner != null && _inner.MoveNext())
+                {
+                    Current = new KeyValuePair<TKey, TValue>(_currentKey, _inner.Current);
+                    return ValueTask.FromResult(true);
+                }
+                _inner?.Dispose();
+                _inner = null;
+                if (!_outer.MoveNext())
+                    return ValueTask.FromResult(false);
+                _currentKey = _outer.Current.Key;
+                _inner = _outer.Current.Value.GetEnumerator();
+            }
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            _inner?.Dispose();
+            _outer.Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+[TestFixture]
+public class MultiMapAsync_GenericInterfaceEqualsTests
+{
+    private MultiMapAsync<string, int> _map = null!;
+
+    [SetUp]
+    public void SetUp() => _map = new MultiMapAsync<string, int>();
+
+    [TearDown]
+    public void TearDown() => _map.Dispose();
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_SameContent_ReturnsTrue()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("a", 1);
+        fake.Add("b", 2);
+
+        Assert.That(await _map.EqualsAsync(fake), Is.True);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_DifferentValues_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("a", 2);
+
+        Assert.That(await _map.EqualsAsync(fake), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_MissingKeyInOther_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("a", 1);
+        // "b" missing in fake
+
+        Assert.That(await _map.EqualsAsync(fake), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_DifferentCounts_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("a", 1);
+        // different total count
+
+        Assert.That(await _map.EqualsAsync(fake), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_BothEmpty_ReturnsTrue()
+    {
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+
+        Assert.That(await _map.EqualsAsync(fake), Is.True);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_NullOther_ReturnsFalse()
+    {
+        Assert.That(await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>?)null), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_OtherKeyNotInThis_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("z", 1);
+
+        Assert.That(await _map.EqualsAsync(fake), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_ValueMismatch_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("a", 99);
+
+        Assert.That(await _map.EqualsAsync(fake), Is.False);
+    }
+
+    [Test]
+    public async Task EqualsAsync_GenericPath_DifferentValueCount_ReturnsFalse()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+
+        var fake = new FakeReadOnlyMultiMapAsync<string, int>();
+        fake.Add("a", 1);
+
+        Assert.That(await _map.EqualsAsync(fake), Is.False);
+    }
+}
