@@ -47,7 +47,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **3 interfaces** (`IMultiMap`, `IMultiMapAsync`, `ISimpleMultiMap`) for flexibility
 - **Multi-target**: .NET 10, .NET 8, and .NET Standard 2.0
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
-- **Thread-safe variants**: per-key locked (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
+- **Thread-safe variants**: fully lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Dispose safety**: `MultiMapLock` and `MultiMapAsync` throw `ObjectDisposedException` after disposal
 - **Custom value comparers**: `IEqualityComparer<TValue>` constructor overloads on all `HashSet`-based implementations
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
@@ -70,16 +70,18 @@ MultiMap/
 │   │   └── ISimpleMultiMap.cs          # Simplified interface (extends IReadOnlySimpleMultiMap)
 │   ├── Entities/
 │   │   ├── MultiMapBase.cs             # Abstract base class for non-concurrent multimaps
+│   │   ├── MultiMapBase.ValuesCollection.cs  # Nested ValuesCollection enumerator (partial)
+│   │   ├── MultiMapBase.ValuesEnumerator.cs  # Nested ValuesEnumerator struct (partial)
 │   │   ├── MultiMapList.cs             # List-based (allows duplicates)
 │   │   ├── MultiMapSet.cs              # HashSet-based (unique values)
 │   │   ├── SortedMultiMap.cs           # SortedDictionary + SortedSet
-│   │   ├── ConcurrentMultiMap.cs       # ConcurrentDictionary + per-key locked HashSet
+│   │   ├── ConcurrentMultiMap.cs       # Nested ConcurrentDictionary, fully lock-free
 │   │   ├── MultiMapLock.cs             # ReaderWriterLockSlim-based
 │   │   ├── MultiMapAsync.cs            # SemaphoreSlim-based async
 │   │   └── SimpleMultiMap.cs           # Lightweight ISimpleMultiMap impl
 │   └── Helpers/
 │       └── MultiMapHelper.cs           # Set-like extension methods
-├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1,354 tests × 2 TFMs)
+├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1,466 tests × 2 TFMs)
 ├── MultiMap.Demo/                      # Console demo application
 │   ├── Program.cs                      # Demo entry point
 │   └── TestDataHelper.cs               # Sample data factory for demos
@@ -185,8 +187,8 @@ A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`
 
 | Method | Returns | Description |
 |---|---|---|
-| `Add(key, value)` | `bool` | Adds a key-value pair |
-| `Remove(key, value)` | `void` | Removes a specific pair |
+| `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
+| `Remove(key, value)` | `bool` | Removes a specific pair; returns `true` if removed |
 | `Clear(key)` | `void` | Removes all values for a key |
 | `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all pairs as a flat sequence |
 
@@ -216,9 +218,9 @@ Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<
 
 **Constructors:** `()`, `(IComparer<TKey>? keyComparer)`
 
-### `ConcurrentMultiMap<TKey, TValue>` — Per-Key Locked Concurrent
+### `ConcurrentMultiMap<TKey, TValue>` — Fully Lock-Free Concurrent
 
-Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock` for thread safety and an `Interlocked` counter for O(1) `Count`. A verify-after-lock pattern prevents count drift when concurrent `RemoveKey` invalidates a locked `HashSet`. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
+Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` for fully lock-free concurrent access — no explicit locks are held for per-key operations. `Count` is O(n), computed by summing the sizes of all inner dictionaries. `KeyCount` iterates the outer dictionary filtering empty inner sets. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
 
 **Constructors:** `()`, `(int concurrencyLevel, int capacity)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`
 
@@ -274,7 +276,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | **KeyCount property** | ✅ `KeyCount` property (number of unique keys) | ✅ `GetKeyCountAsync()` method | ❌ Not available |
 | **Add (duplicate)** | ✅ Returns `false` | ✅ Returns `false` (via `ValueTask<bool>`) | ✅ Returns `false` |
 | **AddRange** | ✅ `AddRange(key, values)` and `AddRange(items)` | ✅ `AddRangeAsync(key, values)` and `AddRangeAsync(items)` | ❌ Not available |
-| **Remove return type** | ✅ `bool` | ✅ `ValueTask<bool>` | ✅ `void` |
+| **Remove return type** | ✅ `bool` | ✅ `ValueTask<bool>` | ✅ `bool` |
 | **RemoveRange** | ✅ `RemoveRange(items)` returns `int` | ✅ `RemoveRangeAsync(items)` returns `ValueTask<int>` | ❌ Not available |
 | **RemoveWhere** | ✅ `RemoveWhere(key, predicate)` returns `int` | ✅ `RemoveWhereAsync(key, predicate)` returns `ValueTask<int>` | ❌ Not available |
 | **GetValuesCount** | ✅ `GetValuesCount(key)` returns `int` | ✅ `GetValuesCountAsync(key)` returns `ValueTask<int>` | ❌ Not available |
@@ -289,7 +291,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | General purpose, unique values | `MultiMapSet` | Fast O(1) lookups with uniqueness guarantee |
 | Duplicate values needed | `MultiMapList` | Only implementation allowing duplicate values per key |
 | Sorted enumeration / range queries | `SortedMultiMap` | Maintains key and value ordering |
-| High-concurrency, many threads | `ConcurrentMultiMap` | Lock-free via nested `ConcurrentDictionary`; no contention under concurrent reads/writes |
+| High-concurrency, many threads | `ConcurrentMultiMap` | Fully lock-free via nested `ConcurrentDictionary`; no contention under concurrent reads/writes |
 | Read-heavy, occasional writes | `MultiMapLock` | RW lock allows concurrent readers |
 | Async / I/O-bound code | `MultiMapAsync` | `SemaphoreSlim` works with `async`/`await` |
 | Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `Flatten()` and `GetOrDefault` |
@@ -332,7 +334,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.11" />
+<PackageReference Include="MultiMap" Version="1.0.12" />
 ```
 
 ## Usage
@@ -1170,6 +1172,70 @@ int added = await map.AddRangeAsync(items);  // Returns number of pairs actually
 #### Compatibility
 
 All other APIs remain unchanged. The only breaking changes are the `AddRange` and `AddRangeAsync` return types on the `IEnumerable<KeyValuePair>` overloads.
+
+### Upgrading to Version 1.0.12+
+
+Version 1.0.12 is focused on **correctness, consistency, and performance**. All changes are non-breaking with one minor API consistency fix in `ISimpleMultiMap`.
+
+#### Breaking Changes
+
+**`ISimpleMultiMap.Remove` return type changed from `void` to `bool` (v1.0.12):**
+
+`ISimpleMultiMap.Remove(TKey, TValue)` previously returned `void`, which was inconsistent with the `IMultiMap.Remove(TKey, TValue)` signature. The return type has been changed to `bool` so both interfaces are consistent.
+
+**Before (v1.0.11):**
+```csharp
+map.Remove("A", 1);  // void — no way to know if the pair was actually removed
+```
+
+**After (v1.0.12):**
+```csharp
+bool removed = map.Remove("A", 1);  // true if the pair was found and removed
+```
+
+If you implement `ISimpleMultiMap` directly, update your `Remove` signature from `void` to `bool`. Callers that ignored the return value require no changes — the call still compiles.
+
+#### Non-Breaking Changes
+
+- **`MultiMapAsync` typed equality:** `MultiMapAsync<TKey, TValue>` now implements `Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` directly, avoiding boxing via the `object` overload in equality-heavy scenarios.
+
+- **`ConcurrentMultiMap` is now fully lock-free:** The internal storage changed from `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key locking and an `Interlocked` counter to `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. All per-key read and write operations are now lock-free. `Count` is O(n) (sum of inner dictionary sizes) — no `Interlocked` counter is needed.
+
+- **`SymmetricExceptWith` optimization for `IMultiMap`:** The `IMultiMap` overload now uses a per-key lookup dictionary (same strategy as the `ISimpleMultiMap` overload) to avoid redundant lock acquisitions when multiple entries share the same key.
+
+- **Zero-allocation `Values` property and `GetValuesAsync()`:** `MultiMapBase.Values`, `MultiMapLock.Values`, and `MultiMapAsync.GetValuesAsync()` now use a custom struct enumerator instead of `SelectMany` LINQ iterators, eliminating per-access heap allocations on hot read paths.
+
+- **`MultiMapBase` partial classes:** The nested `ValuesCollection` and `ValuesEnumerator` types were extracted into separate `MultiMapBase.ValuesCollection.cs` and `MultiMapBase.ValuesEnumerator.cs` partial files for better code organisation.
+
+- **All concrete classes are now `sealed`:** Every concrete implementation (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`) is declared `sealed`, enabling JIT devirtualization on hot paths such as `Add` and `Remove`.
+
+- **Null-value guard on `AddRange`:** A runtime guard was added to prevent `null` values from silently entering list-backed collections, preserving the `TValue : notnull` contract at runtime.
+
+- **`MultiMapList` equality fix:** `MultiMapList.Equals(object?)` previously used `SequenceEqual`, which is order-dependent. The comparison now uses set-based equality so two lists with the same content in a different insertion order compare equal.
+
+#### Recommended Upgrade Steps
+
+1. **Update NuGet package:**
+   ```bash
+   dotnet add package MultiMap --version 1.0.12
+   ```
+
+2. **If you implement `ISimpleMultiMap` directly:**
+   - Change your `Remove(TKey key, TValue value)` signature from `void` to `bool` and return `true` when the pair was removed.
+
+3. **Adopt the `Remove` return value where useful:**
+   ```csharp
+   // Before: result was silently discarded
+   map.Remove("key", value);
+
+   // After: check whether anything was actually removed
+   if (!map.Remove("key", value))
+       Console.WriteLine("Pair not found");
+   ```
+
+#### Compatibility
+
+All other APIs are **fully backward-compatible**. The only source-breaking change is the `ISimpleMultiMap.Remove` return type. Callers that did not capture the `void` return (the common case) recompile without modification.
 
 ## Release Notes
 
