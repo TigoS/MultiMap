@@ -469,7 +469,7 @@ public class SimpleMultiMapTests
     [Test]
     public void Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
     {
-        var map = new SimpleMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new SimpleMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
@@ -479,7 +479,7 @@ public class SimpleMultiMapTests
     [Test]
     public void Constructor_WithCapacityAndValueComparer_WorksCorrectly()
     {
-        var map = new SimpleMultiMap<string, string>(100, StringComparer.OrdinalIgnoreCase);
+        var map = new SimpleMultiMap<string, string>(100, valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
@@ -489,7 +489,7 @@ public class SimpleMultiMapTests
     [Test]
     public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
     {
-        var map = new SimpleMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new SimpleMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "ABC");
         map.Add("key", "abc");
         map.Add("key", "Abc");

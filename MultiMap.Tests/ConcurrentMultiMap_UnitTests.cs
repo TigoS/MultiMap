@@ -1311,7 +1311,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         bool added = map.Add("key", "hello");
 
@@ -1322,7 +1322,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Constructor_WithConcurrencyCapacityAndValueComparer_WorksCorrectly()
     {
-        var map = new ConcurrentMultiMap<string, string>(4, 100, StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(4, 100, valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         bool added = map.Add("key", "hello");
 
@@ -1333,7 +1333,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "ABC");
         map.Add("key", "abc");
         map.Add("key", "Abc");
@@ -1345,7 +1345,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Contains_WithCaseInsensitiveComparer_FindsValueIgnoringCase()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
 
         Assert.That(map.Contains("key", "hello"), Is.True);
@@ -1355,7 +1355,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void AddRange_WithValueComparer_RespectsComparer()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.AddRange("key", new[] { "Hello", "hello", "HELLO" });
 
         Assert.That(map.Count, Is.EqualTo(1));

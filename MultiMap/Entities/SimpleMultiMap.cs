@@ -32,6 +32,15 @@ namespace MultiMap.Entities
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class with the specified equality comparer for keys.
+        /// </summary>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public SimpleMultiMap(IEqualityComparer<TKey>? keyComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
         /// with the specified initial capacity for keys.
         /// </summary>
@@ -39,6 +48,17 @@ namespace MultiMap.Entities
         public SimpleMultiMap(int capacity)
         {
             _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+        /// with the specified initial capacity for keys and equality comparer for keys.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        public SimpleMultiMap(int capacity, IEqualityComparer<TKey>? keyComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
         }
 
         /// <summary>
@@ -55,12 +75,37 @@ namespace MultiMap.Entities
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+        /// with the specified initial capacity for keys and equality comparers for keys and values.
+        /// </summary>
+        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public SimpleMultiMap(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
         /// with the specified equality comparer for values.
         /// </summary>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public SimpleMultiMap(IEqualityComparer<TValue>? valueComparer)
         {
             _dictionary = new Dictionary<TKey, HashSet<TValue>>();
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+        /// with the specified equality comparers for keys and values.
+        /// </summary>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public SimpleMultiMap(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        {
+            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
             _valueComparer = valueComparer;
         }
 

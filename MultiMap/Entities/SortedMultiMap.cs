@@ -17,6 +17,8 @@ namespace MultiMap.Entities
         where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
         where TValue : notnull, IEquatable<TValue>, IComparable<TValue>
     {
+        private readonly IComparer<TValue>? _valueComparer;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class.
         /// </summary>
@@ -34,8 +36,29 @@ namespace MultiMap.Entities
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class with the specified comparer for values.
+        /// </summary>
+        /// <param name="valueComparer">The comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public SortedMultiMap(IComparer<TValue>? valueComparer)
+            : base(new SortedDictionary<TKey, SortedSet<TValue>>())
+        {
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class with the specified comparers for keys and values.
+        /// </summary>
+        /// <param name="keyComparer">The comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        /// <param name="valueComparer">The comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public SortedMultiMap(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)
+            : base(new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer))
+        {
+            _valueComparer = valueComparer;
+        }
+
         /// <inheritdoc/>
-        protected override SortedSet<TValue> CreateCollection() => new SortedSet<TValue>();
+        protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? new SortedSet<TValue>() : new SortedSet<TValue>(_valueComparer);
 
         /// <inheritdoc/>
         protected override bool AddToCollection(SortedSet<TValue> collection, TValue value) => collection.Add(value);
