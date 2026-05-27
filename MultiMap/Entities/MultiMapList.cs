@@ -113,9 +113,16 @@ namespace MultiMap.Entities
 
             // Prevent null values in the enumerable silently enter the list,
             // violating the TValue : notnull constraint at runtime.
-            list.AddRange(values.Where(static v => v != null));
-            int added = list.Count - before;
-            _count += added;
+            int added = 0;
+            foreach (var value in values)
+            {
+                if (value != null)
+                {
+                    list.Add(value);
+                    _count++;
+                    added++;
+                }
+            }
 
             return added;
         }
