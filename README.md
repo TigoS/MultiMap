@@ -642,22 +642,22 @@ dotnet test
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapAsyncTests` | 213 | Async implementation |
-| `MultiMapAsync_GenericInterfaceEqualsTests` | 6 | Generic-interface async equality path |
+| `MultiMapAsyncTests` | 214 | Async implementation |
+| `MultiMapAsync_GenericInterfaceEqualsTests` | 9 | Generic-interface async equality path |
 | `ConcurrentMultiMapTests` | 127 | Lock-free concurrent implementation |
-| `MultiMapLockTests` | 142 | RW Lock implementation |
-| `MultiMapListTests` | 120 | List-based implementation |
-| `MultiMapSetTests` | 114 | HashSet-based implementation |
-| `SortedMultiMapTests` | 105 | Sorted implementation |
+| `MultiMapLockTests` | 157 | RW Lock implementation |
+| `MultiMapListTests` | 129 | List-based implementation |
+| `MultiMapSetTests` | 124 | HashSet-based implementation |
+| `SortedMultiMapTests` | 118 | Sorted implementation |
 | `SimpleMultiMapTests` | 48 | Lightweight implementation |
-| **Entity subtotal** | **837** | |
+| **Entity subtotal** | **926** | |
 
 ### Test Coverage by Base Class
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapBaseTests` (×3 fixtures) | 198 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap) |
-| **Base subtotal** | **198** | |
+| `MultiMapBaseTests` (×3 fixtures) | 219 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap) |
+| **Base subtotal** | **219** | |
 
 ### Test Coverage by Extension Methods
 
@@ -676,11 +676,11 @@ dotnet test
 | `MultiMapHelperWithConcurrentMultiMapTests` | 12 | Extensions + concurrent stress tests |
 | `MultiMapHelperWithMultiMapListTests` | 10 | Extensions with `MultiMapList` + stress tests |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | Extensions with `SortedMultiMap` + stress tests |
-| **Helper subtotal** | **319** | |
+| **Helper subtotal** | **321** | |
 
 | | |
 |---|---|
-| **Total** | **1,409 tests × 2 TFMs = 2,818 executions** |
+| **Total** | **1,466 tests × 2 TFMs = 2,932 executions** |
 
 ### Test Categories
 
@@ -701,33 +701,34 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapAsyncTests` | 192 | 14.2% |
-| `ConcurrentMultiMapTests` | 127 | 9.4% |
-| `MultiMapLockTests` | 138 | 10.2% |
-| `MultiMapListTests` | 113 | 8.3% |
-| `MultiMapSetTests` | 114 | 8.4% |
-| `SortedMultiMapTests` | 105 | 7.8% |
-| `SimpleMultiMapTests` | 48 | 3.5% |
-| **Entity subtotal** | **837** | **61.8%** |
-| `MultiMapBaseTests` (×3 fixtures) | 198 | 14.6% |
-| **Base subtotal** | **198** | **14.6%** |
-| `MultiMapHelperAsyncTests` | 65 | 4.8% |
-| `MultiMapHelperWithMultiMapSetTests` | 34 | 2.5% |
-| `MultiMapHelperTests` | 28 | 2.1% |
-| `SimpleMultiMapHelperTests` | 28 | 2.1% |
-| `MultiMapHelperExtensionAsyncTests` | 25 | 1.8% |
-| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 1.8% |
-| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 1.8% |
-| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 1.8% |
-| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 1.7% |
-| `MultiMapHelperWithMultiMapLockTests` | 12 | 0.9% |
-| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 0.9% |
+| `MultiMapAsyncTests` | 214 | 14.6% |
+| `MultiMapAsync_GenericInterfaceEqualsTests` | 9 | 0.6% |
+| `ConcurrentMultiMapTests` | 127 | 8.7% |
+| `MultiMapLockTests` | 157 | 10.7% |
+| `MultiMapListTests` | 129 | 8.8% |
+| `MultiMapSetTests` | 124 | 8.5% |
+| `SortedMultiMapTests` | 118 | 8.0% |
+| `SimpleMultiMapTests` | 48 | 3.3% |
+| **Entity subtotal** | **926** | **63.2%** |
+| `MultiMapBaseTests` (×3 fixtures) | 219 | 14.9% |
+| **Base subtotal** | **219** | **14.9%** |
+| `MultiMapHelperAsyncTests` | 65 | 4.4% |
+| `MultiMapHelperWithMultiMapSetTests` | 34 | 2.3% |
+| `MultiMapHelperTests` | 30 | 2.0% |
+| `SimpleMultiMapHelperTests` | 28 | 1.9% |
+| `MultiMapHelperExtensionAsyncTests` | 25 | 1.7% |
+| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 1.6% |
+| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 1.6% |
+| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 1.6% |
+| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 1.6% |
+| `MultiMapHelperWithMultiMapLockTests` | 12 | 0.8% |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 0.8% |
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.7% |
 | `MultiMapHelperWithSortedMultiMapTests` | 10 | 0.7% |
-| **Helper subtotal** | **319** | **23.6%** |
+| **Helper subtotal** | **321** | **21.9%** |
 | **Total** | **1,466 × 2 TFMs** | **2,932 executions** |
 
-> **Coverage distribution:** ~63% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15% verify the shared `MultiMapBase` contract across all 3 subclass fixtures, and ~22% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper. All 1,409 tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
+> **Coverage distribution:** ~63% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15% verify the shared `MultiMapBase` contract across all 3 subclass fixtures, and ~22% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper. All 1,466 tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
 
 ### Code Coverage (Coverlet)
 
@@ -774,7 +775,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 Benchmarks are run with **BenchmarkDotNet v0.15.0** with `CPUUsageDiagnoser`.
 
-**Environment:** .NET 10.0.8, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
+**Environment:** .NET 10.0.5 (MultiMapSet/List/Sorted/Lock/Async/Simple) · .NET 10.0.8 (ConcurrentMultiMap), 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
 
 **Benchmark Parameters:** 100 keys × 50 values/key for bulk operations (5,000 pairs); 50 keys × 20 values/key for set operations (1,000 pairs).
 
@@ -812,7 +813,7 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 > - **KeyCount**: `ConcurrentMultiMap` (~564 ns) enumerates all entries in the outer `ConcurrentDictionary` filtering empty inner sets, while `MultiMapSet`/`MultiMapList`/`SortedMultiMap` expose a direct O(1) property (< 1 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns).
 > - **Indexer**: Not available for `MultiMapAsync` (async API uses `GetAsync` instead).
 > - **AddRange(items)**: The KVP overload is ~3–5x slower than `AddRange(key, values)` because it groups items by key and processes multiple keys across the map.
-> - **RemoveWhere**: Very efficient (0.7–4.3 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.
+> - **RemoveWhere**: Very efficient (0.7–8.9 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.
 
 ### Set Operations (via `MultiMapHelper`)
 
@@ -862,7 +863,7 @@ Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
 - **Retrieval methods**: `Get()`, `GetOrDefault()`, and `TryGet()` offer comparable performance when keys exist; choose based on your error handling preference (exception, empty collection, or bool return)
 - **KeyCount**: O(1) for `MultiMapSet`/`MultiMapList`/`SortedMultiMap` (< 1 ns). `ConcurrentMultiMap` enumerates entries filtering empty inner sets (~564 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns)
 - **GetValuesCount**: Ultra-fast for non-concurrent implementations (3–4 ns) vs `SortedMultiMap` (114 ns tree lookup) and `MultiMapAsync` (39 ns with semaphore overhead)
-- **RemoveWhere vs RemoveRange**: `RemoveWhere` operates on a single key (0.7–4.3 μs) and is **~130–365x faster** than `RemoveRange` across multiple keys (241 μs–1,582 μs)
+- **RemoveWhere vs RemoveRange**: `RemoveWhere` operates on a single key (0.7–8.9 μs) and is **~70–469x faster** than `RemoveRange` across multiple keys (241 μs–1,582 μs)
 - **ConcurrentMultiMap Count**: O(n) by summing inner `ConcurrentDictionary` sizes — ~59 µs for 100 keys × 50 values; no `Interlocked` counter needed in the lock-free design
 - **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration. Keys Enumeration is **~15x slower** (53.1 μs vs 3.6 μs for `MultiMapList`)
 - **Thread-safe overhead**: `ConcurrentMultiMap` is ~4.8x slower than `MultiMapSet` for adds (lock-free but higher allocation); `MultiMapLock` is ~2.8x slower
