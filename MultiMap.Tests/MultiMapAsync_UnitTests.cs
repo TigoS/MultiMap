@@ -1868,7 +1868,7 @@ public class MultiMapAsyncTests
             var pairs = Enumerable.Range(batch * 10, 10)
                 .Select(v => new KeyValuePair<string, int>($"key{v % 5}", v))
                 .ToList();
-            tasks.Add(_map.AddRangeAsync(pairs));
+            tasks.Add(_map.AddRangeAsync(pairs).AsTask());
         }
 
         await Task.WhenAll(tasks);
