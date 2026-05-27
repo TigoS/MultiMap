@@ -103,14 +103,10 @@ namespace MultiMap.Helpers
             if (target is null) throw new ArgumentNullException(nameof(target));
             if (other is null) throw new ArgumentNullException(nameof(other));
 
-            var itemsToRemove = new List<KeyValuePair<TKey, TValue>>();
-
             foreach (var kvp in other)
             {
-                itemsToRemove.Add(new KeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
+                target.Remove(kvp.Key, kvp.Value);
             }
-
-            target.RemoveRange(itemsToRemove);
         }
 
         /// <summary>
