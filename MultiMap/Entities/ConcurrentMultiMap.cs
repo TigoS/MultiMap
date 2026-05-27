@@ -336,35 +336,7 @@ namespace MultiMap.Entities
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
-        {
-            if (obj is not ConcurrentMultiMap<TKey, TValue> other)
-                return false;
-
-            if (ReferenceEquals(this, other))
-                return true;
-
-            if (Count != other.Count)
-                return false;
-
-            if (KeyCount != other.KeyCount)
-                return false;
-
-            foreach (var kvp in _dictionary)
-            {
-                if (kvp.Value.IsEmpty)
-                    continue;
-
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                var thisSet = new HashSet<TValue>(kvp.Value.Keys, _valueComparer);
-                if (!thisSet.SetEquals(otherSet.Keys))
-                    return false;
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) => Equals(obj as ConcurrentMultiMap<TKey, TValue>);
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
@@ -375,7 +347,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (KeyCount != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
                 return false;
 
             foreach (var kvp in _dictionary)

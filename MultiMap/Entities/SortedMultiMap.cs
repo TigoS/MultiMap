@@ -67,28 +67,7 @@ namespace MultiMap.Entities
         protected override int RemoveWhereFromCollection(SortedSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
-        {
-            if (obj is not SortedMultiMap<TKey, TValue> other)
-                return false;
-
-            if (ReferenceEquals(this, other))
-                return true;
-
-            if (Count != other.Count || KeyCount != other.KeyCount)
-                return false;
-
-            foreach (var kvp in _dictionary)
-            {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) => Equals(obj as SortedMultiMap<TKey, TValue>);
 
         /// <inheritdoc/>
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
@@ -103,7 +82,7 @@ namespace MultiMap.Entities
                 return true;
             }
 
-            if (KeyCount != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
             {
                 return false;
             }

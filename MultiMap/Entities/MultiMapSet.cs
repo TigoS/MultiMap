@@ -144,28 +144,7 @@ namespace MultiMap.Entities
 #endif
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
-        {
-            if (obj is not MultiMapSet<TKey, TValue> other)
-                return false;
-
-            if (ReferenceEquals(this, other))
-                return true;
-
-            if (Count != other.Count || KeyCount != other.KeyCount)
-                return false;
-
-            foreach (var kvp in _dictionary)
-            {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
 
         /// <inheritdoc/>
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
@@ -176,7 +155,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (KeyCount != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
                 return false;
 
             foreach (var key in Keys)

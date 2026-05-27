@@ -787,56 +787,7 @@ namespace MultiMap.Entities
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
-        {
-            if (obj is not MultiMapLock<TKey, TValue> other)
-                return false;
-
-            if (ReferenceEquals(this, other))
-                return true;
-
-            ThrowIfDisposed();
-            other.ThrowIfDisposed();
-
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            first._lock.EnterReadLock();
-            try
-            {
-                second._lock.EnterReadLock();
-                try
-                {
-                    if (_count != other._count || _dictionary.Count != other._dictionary.Count)
-                        return false;
-
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                }
-                finally
-                {
-                    second._lock.ExitReadLock();
-                }
-            }
-            finally
-            {
-                first._lock.ExitReadLock();
-            }
-
-            foreach (var kvp in thisSnapshot)
-            {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) => Equals(obj as MultiMapLock<TKey, TValue>);
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
@@ -854,7 +805,7 @@ namespace MultiMap.Entities
             {
                 ThrowIfDisposed();
 
-                if (_dictionary.Count != other.KeyCount)
+                if (_dictionary.Count != other.KeyCount || _count != other.Count)
                     return false;
 
                 foreach (var key in _dictionary.Keys)

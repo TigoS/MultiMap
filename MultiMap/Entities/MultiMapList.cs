@@ -121,31 +121,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
-        {
-            if (obj is not MultiMapList<TKey, TValue> other)
-                return false;
-
-            if (ReferenceEquals(this, other))
-                return true;
-
-            if (Count != other.Count || _dictionary.Count != other._dictionary.Count)
-                return false;
-
-            foreach (var kvp in _dictionary)
-            {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherList))
-                    return false;
-
-                if (kvp.Value.Count != otherList.Count)
-                    return false;
-
-                if (!kvp.Value.OrderBy(v => v).SequenceEqual(otherList.OrderBy(v => v)))
-                    return false;
-            }
-
-            return true;
-        }
+        public override bool Equals(object? obj) => Equals(obj as MultiMapList<TKey, TValue>);
 
         /// <inheritdoc/>
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
@@ -156,7 +132,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (_dictionary.Count != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
                 return false;
 
             foreach (var key in Keys)

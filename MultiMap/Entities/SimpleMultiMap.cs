@@ -205,7 +205,7 @@ namespace MultiMap.Entities
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (_dictionary.Count != other._dictionary.Count)
+            if (_dictionary.Keys.Count != other._dictionary.Keys.Count || _dictionary.Count != other._dictionary.Count)
                 return false;
 
             foreach (var kvp in _dictionary)
