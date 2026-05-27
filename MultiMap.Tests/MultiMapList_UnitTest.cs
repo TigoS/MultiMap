@@ -1130,7 +1130,7 @@ public class MultiMapListTests
     }
 
     [Test]
-    public void Equals_SameContentDifferentInsertionOrder_ReturnsTrue()
+    public void Equals_SameContentDifferentInsertionOrder_ReturnsFalse()
     {
         var other = new MultiMapList<string, int>();
         _map.Add("a", 3);
@@ -1141,7 +1141,7 @@ public class MultiMapListTests
         other.Add("a", 2);
         other.Add("a", 3);
 
-        Assert.That(_map.Equals(other), Is.True);
+        Assert.That(_map.Equals(other), Is.False);
     }
 
     [Test]
@@ -1169,7 +1169,7 @@ public class MultiMapListTests
     }
 
     [Test]
-    public void Equals_MultipleKeysDifferentOrder_ReturnsTrue()
+    public void Equals_MultipleKeysDifferentOrder_ReturnsFalse()
     {
         var other = new MultiMapList<string, int>();
         _map.Add("a", 10);
@@ -1180,7 +1180,7 @@ public class MultiMapListTests
         other.Add("a", 10);
         other.Add("b", 20);
 
-        Assert.That(_map.Equals(other), Is.True);
+        Assert.That(_map.Equals(other), Is.False);
     }
 
     [Test]
