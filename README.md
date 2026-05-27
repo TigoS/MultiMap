@@ -60,32 +60,33 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 ```
 MultiMap/
-├── MultiMap/                           # Core library (NuGet package)
+├── MultiMap/                                   # Core library (NuGet package)
 │   ├── Interfaces/
-│   │   ├── IReadOnlySimpleMultiMap.cs  # Base read-only interface
-│   │   ├── IReadOnlyMultiMap.cs        # Extended read-only with TryGet, Contains, KeyCount
-│   │   ├── IReadOnlyMultiMapAsync.cs   # Async read-only with cancellation support
-│   │   ├── IMultiMap.cs                # Synchronous multimap (extends IReadOnlyMultiMap)
-│   │   ├── IMultiMapAsync.cs           # Async multimap (extends IReadOnlyMultiMapAsync)
-│   │   └── ISimpleMultiMap.cs          # Simplified interface (extends IReadOnlySimpleMultiMap)
+│   │   ├── IReadOnlySimpleMultiMap.cs          # Base read-only interface
+│   │   ├── IReadOnlyMultiMap.cs                # Extended read-only with TryGet, Contains, KeyCount
+│   │   ├── IReadOnlyMultiMapAsync.cs           # Async read-only with cancellation support
+│   │   ├── ISimpleMultiMap.cs                  # Simplified interface (extends IReadOnlySimpleMultiMap)
+│   │   ├── IMultiMap.cs                        # Synchronous multimap (extends IReadOnlyMultiMap)
+│   │   └── IMultiMapAsync.cs                   # Async multimap (extends IReadOnlyMultiMapAsync)
 │   ├── Entities/
-│   │   ├── MultiMapBase.cs             # Abstract base class for non-concurrent multimaps
-│   │   ├── MultiMapBase.ValuesCollection.cs  # Nested ValuesCollection enumerator (partial)
-│   │   ├── MultiMapBase.ValuesEnumerator.cs  # Nested ValuesEnumerator struct (partial)
-│   │   ├── MultiMapList.cs             # List-based (allows duplicates)
-│   │   ├── MultiMapSet.cs              # HashSet-based (unique values)
-│   │   ├── SortedMultiMap.cs           # SortedDictionary + SortedSet
-│   │   ├── ConcurrentMultiMap.cs       # Nested ConcurrentDictionary, fully lock-free
-│   │   ├── MultiMapLock.cs             # ReaderWriterLockSlim-based
-│   │   ├── MultiMapAsync.cs            # SemaphoreSlim-based async
-│   │   └── SimpleMultiMap.cs           # Lightweight ISimpleMultiMap impl
+│   │   ├── MultiMapBase.cs                     # Abstract base class for non-concurrent multimaps
+│   │   ├── MultiMapBase.ValuesCollection.cs    # Nested ValuesCollection enumerator (partial)
+│   │   ├── MultiMapBase.ValuesEnumerator.cs    # Nested ValuesEnumerator struct (partial)
+│   │   ├── MultiMapList.cs                     # List-based (allows duplicates)
+│   │   ├── MultiMapSet.cs                      # HashSet-based (unique values)
+│   │   ├── SortedMultiMap.cs                   # SortedDictionary + SortedSet
+│   │   ├── ConcurrentMultiMap.cs               # Nested ConcurrentDictionary, fully lock-free
+│   │   ├── MultiMapLock.cs                     # ReaderWriterLockSlim-based
+│   │   ├── MultiMapAsync.cs                    # SemaphoreSlim-based async (public API)
+│   │   ├── MultiMapAsync.Core.cs               # SemaphoreSlim-based async (private helpers, partial)
+│   │   └── SimpleMultiMap.cs                   # Lightweight ISimpleMultiMap implementation
 │   └── Helpers/
-│       └── MultiMapHelper.cs           # Set-like extension methods
-├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1,466 tests × 2 TFMs)
-├── MultiMap.Demo/                      # Console demo application
-│   ├── Program.cs                      # Demo entry point
-│   └── TestDataHelper.cs               # Sample data factory for demos
-└── BenchmarkSuite/                     # BenchmarkDotNet performance benchmarks
+│       └── MultiMapHelper.cs                   # Set-like extension methods
+├── MultiMap.Tests/                             # Unit tests (NUnit 4, 1,466 tests × 2 TFMs)
+├── MultiMap.Demo/                              # Console demo application
+│   ├── Program.cs                              # Demo entry point
+│   └── TestDataHelper.cs                       # Sample data factory for demos
+└── BenchmarkSuite/                             # BenchmarkDotNet performance benchmarks
 ```
 
 ## Interfaces
@@ -222,7 +223,7 @@ Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<
 
 Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` for fully lock-free concurrent access — no explicit locks are held for per-key operations. `Count` is O(n), computed by summing the sizes of all inner dictionaries. `KeyCount` iterates the outer dictionary filtering empty inner sets. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
 
-**Constructors:** `()`, `(int concurrencyLevel, int capacity)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
@@ -232,7 +233,7 @@ Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow c
 
 ### `MultiMapAsync<TKey, TValue>` — Async-Safe
 
-Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios.
+Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios. `Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` uses a deadlock-safe dual-semaphore acquisition when comparing two `MultiMapAsync` instances; `Equals(object?)` throws `InvalidOperationException` under a `SynchronizationContext` — use `EqualsAsync` in `async` contexts instead.
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
@@ -1197,7 +1198,7 @@ If you implement `ISimpleMultiMap` directly, update your `Remove` signature from
 
 #### Non-Breaking Changes
 
-- **`MultiMapAsync` typed equality:** `MultiMapAsync<TKey, TValue>` now implements `Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` directly, avoiding boxing via the `object` overload in equality-heavy scenarios.
+- **`MultiMapAsync` typed equality:** `MultiMapAsync<TKey, TValue>` now implements `Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` with a deadlock-safe dual-semaphore strategy (both semaphores acquired in a consistent `RuntimeHelpers.GetHashCode` order when comparing two `MultiMapAsync` instances). `Equals(object?)` additionally guards against calling synchronous equality under a `SynchronizationContext` and throws `InvalidOperationException` — use `EqualsAsync` instead in `async` contexts.
 
 - **`ConcurrentMultiMap` is now fully lock-free:** The internal storage changed from `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key locking and an `Interlocked` counter to `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. All per-key read and write operations are now lock-free. `Count` is O(n) (sum of inner dictionary sizes) — no `Interlocked` counter is needed.
 
@@ -1212,6 +1213,12 @@ If you implement `ISimpleMultiMap` directly, update your `Remove` signature from
 - **Null-value guard on `AddRange`:** A runtime guard was added to prevent `null` values from silently entering list-backed collections, preserving the `TValue : notnull` contract at runtime.
 
 - **`MultiMapList` equality fix:** `MultiMapList.Equals(object?)` previously used `SequenceEqual`, which is order-dependent. The comparison now uses set-based equality so two lists with the same content in a different insertion order compare equal.
+
+- **`MultiMapSet(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` constructor added:** A combined key-and-value comparer overload fills the gap between the separate key-only and value-only overloads, bringing `MultiMapSet` to a full 8-overload family.
+
+- **`ConcurrentMultiMap` key-comparer constructors added:** `ConcurrentMultiMap(IEqualityComparer<TKey>?)` and `ConcurrentMultiMap(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` overloads are now available, bringing `ConcurrentMultiMap` to a full 8-overload family on par with the other implementations.
+
+- **`MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` optimised on .NET 6+:** The KVP-sequence overload now overrides the base-class implementation and uses `CollectionsMarshal.GetValueRefOrAddDefault` on .NET 6 and later, eliminating the per-item virtual dispatch through the base class and matching the existing `Add` and `AddRange(key, values)` fast paths.
 
 #### Recommended Upgrade Steps
 
