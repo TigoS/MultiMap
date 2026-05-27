@@ -114,12 +114,11 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
-                if (value != null)
-                {
-                    list.Add(value);
-                    _count++;
-                    added++;
-                }
+                if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+
+                list.Add(value);
+                _count++;
+                added++;
             }
 
             return added;
