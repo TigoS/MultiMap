@@ -2,14 +2,14 @@ using System.Collections;
 
 namespace MultiMap.Entities
 {
-public abstract partial class MultiMapBase<TKey, TValue, TCollection> where TKey : notnull, IEquatable<TKey>
+    public abstract partial class MultiMapBase<TKey, TValue, TCollection> where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
         where TCollection : ICollection<TValue>
     {
         /// <summary>
         /// A struct enumerator that walks every value in every inner collection without allocating a heap iterator object.
         /// </summary>
-        public struct ValuesEnumerator : IEnumerator<TValue>
+        internal struct ValuesEnumerator : IEnumerator<TValue>
         {
             private IEnumerator<TCollection> _outerEnumerator;
             private IEnumerator<TValue>? _innerEnumerator;

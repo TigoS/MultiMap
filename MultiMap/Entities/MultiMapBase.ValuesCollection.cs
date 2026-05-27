@@ -2,7 +2,7 @@ using System.Collections;
 
 namespace MultiMap.Entities
 {
-public abstract partial class MultiMapBase<TKey, TValue, TCollection> where TKey : notnull, IEquatable<TKey>
+    public abstract partial class MultiMapBase<TKey, TValue, TCollection> where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
         where TCollection : ICollection<TValue>
     {
