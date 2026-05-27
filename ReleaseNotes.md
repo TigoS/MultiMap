@@ -7,11 +7,35 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-99.5%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-96.2%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Release Notes
+
+### 1.0.12
+
+**Added**
+
+- `MultiMapBase.ValuesCollection.cs` and `MultiMapBase.ValuesEnumerator.cs` — partial class files that host the nested `ValuesCollection` and `ValuesEnumerator` struct, extracted from `MultiMapBase.cs` for better code organisation
+- Additional benchmarks covering `Values`/`GetValuesAsync`, `KeyCount`/`GetKeyCountAsync`, `GetValuesCount`/`GetValuesCountAsync`, set operations, and `SimpleMultiMap` operations in `BenchmarkSuite`
+
+**Changed**
+
+- `ISimpleMultiMap.Remove(TKey, TValue)` now returns `bool` (previously `void`) — consistent with `IMultiMap.Remove(TKey, TValue)`. Returns `true` if the pair was found and removed; `false` otherwise. **Source-breaking** if you implement `ISimpleMultiMap` directly
+- `ConcurrentMultiMap` is now fully lock-free: internal storage changed from `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock`/`ReaderWriterLockSlim` and an `Interlocked` counter to `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. All per-key operations are lock-free; `Count` is O(n) (sum of inner dictionary sizes)
+- `MultiMapAsync` now implements `Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` directly (typed equality), avoiding boxing via the `object` overload
+- `MultiMapBase.Values`, `MultiMapLock.Values`, and `MultiMapAsync.GetValuesAsync()` now use a custom zero-allocation struct enumerator instead of `SelectMany` LINQ iterators, eliminating per-access heap allocations on read-heavy paths
+- All 7 concrete implementations (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`) are now declared `sealed`, enabling JIT devirtualization on hot paths such as `Add` and `Remove`
+- `SymmetricExceptWith` for `IMultiMap` now caches per-key lookups in a local dictionary (matching the existing `ISimpleMultiMap` strategy), eliminating redundant dictionary lookups and, for locked implementations, redundant lock acquisitions when multiple values share the same key
+- Test count increased from **1,354 tests** to **1,466 tests** × 2 target frameworks = **2,932 total test executions**
+- Code coverage updated: **96.2% line coverage**, **81.2% branch coverage**, **97.9% method coverage**
+- README updated with corrected API descriptions (`ConcurrentMultiMap` lock-free design, `ISimpleMultiMap.Remove` return type, project structure including partial files, package installation version)
+
+**Fixed**
+
+- `MultiMapList.Equals(object?)` used `SequenceEqual`, which is order-dependent; replaced with content-based set equality so two lists with the same values in a different insertion order compare equal
+- Null-value guard added to `AddRange` on list-backed collections — prevents `null` values from silently entering a `List<TValue>` and violating the `TValue : notnull` constraint at runtime
 
 ### 1.0.11
 
