@@ -18,19 +18,23 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 **Added**
 
 - `MultiMapBase.ValuesCollection.cs` and `MultiMapBase.ValuesEnumerator.cs` — partial class files that host the nested `ValuesCollection` and `ValuesEnumerator` struct, extracted from `MultiMapBase.cs` for better code organisation
+- `MultiMapAsync.Core.cs` — partial class file containing the private helper and core async path logic extracted from `MultiMapAsync.cs`, separating the public API surface from internal implementation details
+- `MultiMapSet(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` constructor overload — fills the gap between the separate key-only and value-only overloads, completing `MultiMapSet` to a full 8-overload family
+- `ConcurrentMultiMap(IEqualityComparer<TKey>?)` and `ConcurrentMultiMap(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` constructor overloads — bring `ConcurrentMultiMap` to a full 8-overload family on par with the other implementations
 - Additional benchmarks covering `Values`/`GetValuesAsync`, `KeyCount`/`GetKeyCountAsync`, `GetValuesCount`/`GetValuesCountAsync`, set operations, and `SimpleMultiMap` operations in `BenchmarkSuite`
 
 **Changed**
 
 - `ISimpleMultiMap.Remove(TKey, TValue)` now returns `bool` (previously `void`) — consistent with `IMultiMap.Remove(TKey, TValue)`. Returns `true` if the pair was found and removed; `false` otherwise. **Source-breaking** if you implement `ISimpleMultiMap` directly
 - `ConcurrentMultiMap` is now fully lock-free: internal storage changed from `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock`/`ReaderWriterLockSlim` and an `Interlocked` counter to `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. All per-key operations are lock-free; `Count` is O(n) (sum of inner dictionary sizes)
-- `MultiMapAsync` now implements `Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` directly (typed equality), avoiding boxing via the `object` overload
+- `MultiMapAsync.Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` reworked with a deadlock-safe dual-semaphore strategy: when comparing two `MultiMapAsync` instances both semaphores are acquired in a stable `RuntimeHelpers.GetHashCode`-ordered sequence; `Equals(object?)` additionally throws `InvalidOperationException` when called under a `SynchronizationContext` — callers in `async` contexts must use `EqualsAsync` instead
+- `MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` overrides the base-class implementation on .NET 6+ and uses `CollectionsMarshal.GetValueRefOrAddDefault`, eliminating per-item virtual dispatch and matching the existing `Add` / `AddRange(key, values)` fast paths
 - `MultiMapBase.Values`, `MultiMapLock.Values`, and `MultiMapAsync.GetValuesAsync()` now use a custom zero-allocation struct enumerator instead of `SelectMany` LINQ iterators, eliminating per-access heap allocations on read-heavy paths
 - All 7 concrete implementations (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`) are now declared `sealed`, enabling JIT devirtualization on hot paths such as `Add` and `Remove`
 - `SymmetricExceptWith` for `IMultiMap` now caches per-key lookups in a local dictionary (matching the existing `ISimpleMultiMap` strategy), eliminating redundant dictionary lookups and, for locked implementations, redundant lock acquisitions when multiple values share the same key
 - Test count increased from **1,354 tests** to **1,466 tests** × 2 target frameworks = **2,932 total test executions**
 - Code coverage updated: **96.2% line coverage**, **81.2% branch coverage**, **97.9% method coverage**
-- README updated with corrected API descriptions (`ConcurrentMultiMap` lock-free design, `ISimpleMultiMap.Remove` return type, project structure including partial files, package installation version)
+- README updated with corrected API descriptions (`ConcurrentMultiMap` lock-free design and full constructor set, `MultiMapSet` full constructor set, `ISimpleMultiMap.Remove` return type, project structure including partial files, package installation version)
 
 **Fixed**
 
