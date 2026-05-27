@@ -124,6 +124,32 @@ namespace MultiMap.Entities
             return added;
         }
 
+        #if NET6_0_OR_GREATER
+        /// <inheritdoc/>
+        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
+            int added = 0;
+            var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
+
+            foreach (var item in items)
+            {
+                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
+                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+
+                ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
+                list ??= new List<TValue>();
+
+                list.Add(item.Value);
+                _count++;
+                added++;
+            }
+
+            return added;
+        }
+#endif
+
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapList<TKey, TValue>);
 
