@@ -40,7 +40,7 @@ namespace MultiMap.Interfaces
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> or <paramref name="values"/> is <see langword="null"/>.
         /// </exception>
-        public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
+        public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously adds a collection of key/value pairs to the data store.
@@ -51,7 +51,7 @@ namespace MultiMap.Interfaces
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="items"/> is <see langword="null"/>.
         /// </exception>
-        public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
+        public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes a specific value from the set associated with the specified key.

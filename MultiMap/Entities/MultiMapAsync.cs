@@ -182,7 +182,7 @@ namespace MultiMap.Entities
         // ── AddRangeAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
-        public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
+        public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (values is null) throw new ArgumentNullException(nameof(values));
@@ -193,7 +193,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return Task.FromResult(AddRangeCore(key, values));
+                    return new ValueTask<int>(AddRangeCore(key, values));
                 }
                 finally
                 {
@@ -229,7 +229,7 @@ namespace MultiMap.Entities
             return added;
         }
 
-        private async Task<int> AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
+        private async ValueTask<int> AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
         {
             await waitTask.ConfigureAwait(false);
             try
@@ -245,7 +245,7 @@ namespace MultiMap.Entities
         // ── AddRangeAsync (overload for params array) ─────────
 
         /// <inheritdoc/>
-        public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
+        public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
             if (items is null) throw new ArgumentNullException(nameof(items));
 
@@ -255,7 +255,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return Task.FromResult(AddRangeCore(items));
+                    return new ValueTask<int>(AddRangeCore(items));
                 }
                 finally
                 {
@@ -291,7 +291,7 @@ namespace MultiMap.Entities
             return added;
         }
 
-        private async Task<int> AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
+        private async ValueTask<int> AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             await waitTask.ConfigureAwait(false);
             try
