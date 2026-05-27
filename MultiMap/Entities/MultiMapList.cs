@@ -109,8 +109,6 @@ namespace MultiMap.Entities
             }
 #endif
 
-            int before = list.Count;
-
             // Prevent null values in the enumerable silently enter the list,
             // violating the TValue : notnull constraint at runtime.
             int added = 0;
