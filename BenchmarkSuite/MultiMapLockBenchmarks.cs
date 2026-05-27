@@ -303,4 +303,87 @@ public class MultiMapLockBenchmarks
     }
 
     #endregion
+
+    #region Microbenchmarks
+
+    [Benchmark]
+    public void MultiMapLock_RemoveKey()
+    {
+        using var map = new MultiMapLock<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+        map.RemoveKey(Consts.Key1Prefix);
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_Add_Duplicate()
+    {
+        using var map = new MultiMapLock<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+        return map.Add(Consts.Key1Prefix, 1);
+    }
+
+    [Benchmark]
+    public int MultiMapLock_Count_AfterAdd()
+    {
+        using var map = new MultiMapLock<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public int MultiMapLock_Count_AfterRemove()
+    {
+        using var map = new MultiMapLock<string, int>();
+        map.Add(Consts.Key1Prefix, 1);
+        map.Remove(Consts.Key1Prefix, 1);
+        return map.Count;
+    }
+
+    [Benchmark]
+    public void MultiMapLock_Clear_Empty()
+    {
+        using var map = new MultiMapLock<string, int>();
+        map.Clear();
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_ContainsKey_Missing()
+    {
+        using var map = new MultiMapLock<string, int>();
+        return map.ContainsKey(Consts.KeyMissingPrefix);
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_Remove_Missing()
+    {
+        using var map = new MultiMapLock<string, int>();
+        return map.Remove(Consts.KeyMissingPrefix, 1);
+    }
+
+    [Benchmark]
+    public int MultiMapLock_Keys_Enumeration()
+    {
+        var map = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+            map.Add($"{Consts.KeyPrefix}{k}", 0);
+
+        int sum = 0;
+        foreach (var key in map.Keys)
+            sum += key.Length;
+
+        map.Dispose();
+        return sum;
+    }
+
+    [Benchmark]
+    public int MultiMapLock_Enumerate()
+    {
+        int count = 0;
+        foreach (var _ in _map)
+            count++;
+        return count;
+    }
+
+    #endregion
 }
