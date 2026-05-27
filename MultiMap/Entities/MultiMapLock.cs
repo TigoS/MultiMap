@@ -810,13 +810,9 @@ namespace MultiMap.Entities
 
                 foreach (var key in _dictionary.Keys)
                 {
-                    if (!other.ContainsKey(key))
-                        return false;
-
                     var thisValues = _dictionary[key];
-                    var otherValuesCount = other.GetValuesCount(key);
 
-                    if (thisValues.Count != otherValuesCount)
+                    if (!other.ContainsKey(key) || thisValues.Count != other.GetValuesCount(key))
                         return false;
 
                     foreach (var value in thisValues)

@@ -141,13 +141,10 @@ namespace MultiMap.Entities
 
             foreach (var key in Keys)
             {
-                if (!other.ContainsKey(key))
+                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
                     return false;
 
-                var thisValues = this[key];
-                var otherValues = other[key];
-
-                if (!thisValues.OrderBy(v => v).SequenceEqual(otherValues.OrderBy(v => v)))
+                if (!this[key].SequenceEqual(other[key]))
                     return false;
             }
 

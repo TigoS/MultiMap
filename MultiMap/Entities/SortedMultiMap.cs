@@ -73,39 +73,21 @@ namespace MultiMap.Entities
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
-            {
                 return false;
-            }
 
             if (ReferenceEquals(this, other))
-            {
                 return true;
-            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
-            {
                 return false;
-            }
 
             foreach (var key in Keys)
             {
-                if (!other.ContainsKey(key))
-                {
+                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
                     return false;
-                }
 
-                var thisValues = this[key];
-                var otherValues = other[key];
-
-                if (thisValues.Count() != otherValues.Count())
-                {
+                if (!this[key].SequenceEqual(other[key]))
                     return false;
-                }
-
-                if (!thisValues.SequenceEqual(otherValues))
-                {
-                    return false;
-                }
             }
 
             return true;

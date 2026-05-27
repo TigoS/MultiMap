@@ -355,7 +355,7 @@ namespace MultiMap.Entities
                 if (kvp.Value.IsEmpty)
                     continue;
 
-                if (!other.ContainsKey(kvp.Key))
+                if (!other.ContainsKey(kvp.Key) || GetValuesCount(kvp.Key) != other.GetValuesCount(kvp.Key))
                     return false;
 
                 var thisSet = new HashSet<TValue>(kvp.Value.Keys, _valueComparer);

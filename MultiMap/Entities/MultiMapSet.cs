@@ -160,21 +160,12 @@ namespace MultiMap.Entities
 
             foreach (var key in Keys)
             {
-                if (!other.ContainsKey(key))
+                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
                     return false;
-
-                var thisValuesCount = GetValuesCount(key);
-                var otherValuesCount = other.GetValuesCount(key);
-
-                if (thisValuesCount != otherValuesCount)
-                    return false;
-
-                var thisValues = this[key];
-                var otherValues = other[key];
 
                 // Compare values as sets
-                var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
-                foreach (var value in thisValues)
+                var otherValuesSet = new HashSet<TValue>(other[key], _valueComparer);
+                foreach (var value in this[key])
                 {
                     if (!otherValuesSet.Contains(value))
                         return false;
