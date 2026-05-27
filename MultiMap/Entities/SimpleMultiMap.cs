@@ -114,10 +114,12 @@ namespace MultiMap.Entities
 
             if (_dictionary.TryGetValue(key, out var hashset))
             {
-                hashset.Remove(value);
+                bool removed = hashset.Remove(value);
 
                 if (hashset.Count == 0)
-                    return _dictionary.Remove(key);
+                    _dictionary.Remove(key);
+
+                return removed;
             }
 
             return false;
