@@ -194,7 +194,12 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
 
-            return _dictionary.TryGetValue(key, out var valuesSet) && valuesSet.TryRemove(value, out _);
+            bool removed = _dictionary.TryGetValue(key, out var valuesSet) && valuesSet.TryRemove(value, out _);
+
+            if (removed && valuesSet?.IsEmpty == true)
+                _dictionary.TryRemove(key, out _);
+
+            return removed;
         }
 
         /// <inheritdoc/>
@@ -226,6 +231,9 @@ namespace MultiMap.Entities
             foreach (var value in valuesSet.Keys)
                 if (predicate(value) && valuesSet.TryRemove(value, out _))
                     removedCount++;
+
+            if (removedCount > 0 && valuesSet?.IsEmpty == true)
+                _dictionary.TryRemove(key, out _);
 
             return removedCount;
         }
