@@ -1,6 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
+using MultiMap.Interfaces;
 
 namespace BenchmarkSuite;
 
@@ -8,12 +9,16 @@ namespace BenchmarkSuite;
 public class SimpleMultiMapBenchmarks
 {
     private SimpleMultiMap<string, int> _map = null!;
+    private SimpleMultiMap<string, int> _mapEqual = null!;
+    private SimpleMultiMap<string, int> _mapDifferent = null!;
     private string[] _keys = null!;
 
     [GlobalSetup]
     public void Setup()
     {
         _map = new SimpleMultiMap<string, int>();
+        _mapEqual = new SimpleMultiMap<string, int>();
+        _mapDifferent = new SimpleMultiMap<string, int>();
         _keys = new string[Consts.KeyCount];
 
         for (int i = 0; i < Consts.KeyCount; i++)
@@ -23,6 +28,16 @@ public class SimpleMultiMapBenchmarks
             for (int j = 0; j < Consts.ValuesPerKey; j++)
             {
                 _map.Add(_keys[i], j);
+                _mapEqual.Add(_keys[i], j);
+            }
+        }
+
+        // _mapDifferent has one extra key so Equals short-circuits on Count
+        for (int i = 0; i < Consts.KeyCount + 1; i++)
+        {
+            for (int j = 0; j < Consts.ValuesPerKey; j++)
+            {
+                _mapDifferent.Add($"{Consts.KeyPrefix}{i}", j);
             }
         }
     }
@@ -134,10 +149,10 @@ public class SimpleMultiMapBenchmarks
         }
     }
 
-    // --- Clear(key) benchmarks ---
+    // --- RemoveKey benchmarks ---
 
     [Benchmark]
-    public void SimpleMultiMap_Clear()
+    public void SimpleMultiMap_RemoveKey()
     {
         var map = new SimpleMultiMap<string, int>();
 
@@ -151,12 +166,13 @@ public class SimpleMultiMapBenchmarks
 
         for (int k = 0; k < Consts.KeyCount; k++)
         {
-            map.Clear($"{Consts.KeyPrefix}{k}");
+            map.RemoveKey($"{Consts.KeyPrefix}{k}");
         }
     }
 
-    // --- Flatten benchmarks ---
+    // --- Flatten benchmarks (deprecated API — kept to measure the obsolete path) ---
 
+#pragma warning disable CS0618 // Flatten() is intentionally tested here
     [Benchmark]
     public int SimpleMultiMap_Flatten()
     {
@@ -169,6 +185,7 @@ public class SimpleMultiMapBenchmarks
 
         return count;
     }
+#pragma warning restore CS0618
 
     // --- Enumeration benchmarks ---
 
@@ -183,5 +200,27 @@ public class SimpleMultiMapBenchmarks
         }
 
         return count;
+    }
+
+    // --- Count benchmarks ---
+
+    [Benchmark]
+    public int SimpleMultiMap_Count()
+    {
+        return _map.Count;
+    }
+
+    // --- Equals benchmarks ---
+
+    [Benchmark]
+    public bool SimpleMultiMap_Equals_EqualMaps()
+    {
+        return _map.Equals((IReadOnlySimpleMultiMap<string, int>)_mapEqual);
+    }
+
+    [Benchmark]
+    public bool SimpleMultiMap_Equals_DifferentMaps()
+    {
+        return _map.Equals((IReadOnlySimpleMultiMap<string, int>)_mapDifferent);
     }
 }
