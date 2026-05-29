@@ -16,11 +16,11 @@ namespace MultiMap.Entities
     /// It is suitable for scenarios where multiple threads need to add, remove, or query key-value associations without external synchronization.
     /// Dispose the instance when no longer needed to release resources.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
-        where TKey : notnull
-        where TValue : notnull
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    public sealed class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly ReaderWriterLockSlim _lock;
@@ -494,7 +494,16 @@ namespace MultiMap.Entities
                 _lock.EnterReadLock();
                 try
                 {
-                    return _dictionary.Values.SelectMany(hashset => hashset).ToArray();
+                    var result = new TValue[_count];
+                    var index = 0;
+                    foreach (var hashset in _dictionary.Values)
+                    {
+                        foreach (var value in hashset)
+                        {
+                            result[index++] = value;
+                        }
+                    }
+                    return result;
                 }
                 finally
                 {
@@ -778,55 +787,47 @@ namespace MultiMap.Entities
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
+        public override bool Equals(object? obj) => Equals(obj as MultiMapLock<TKey, TValue>);
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
-            if (obj is not MultiMapLock<TKey, TValue> other)
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
             ThrowIfDisposed();
-            other.ThrowIfDisposed();
 
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            first._lock.EnterReadLock();
+            _lock.EnterReadLock();
             try
             {
-                second._lock.EnterReadLock();
-                try
+                ThrowIfDisposed();
+
+                if (_dictionary.Count != other.KeyCount || _count != other.Count)
+                    return false;
+
+                foreach (var key in _dictionary.Keys)
                 {
-                    if (_count != other._count || _dictionary.Count != other._dictionary.Count)
+                    var thisValues = _dictionary[key];
+
+                    if (!other.ContainsKey(key) || thisValues.Count != other.GetValuesCount(key))
                         return false;
 
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    foreach (var value in thisValues)
+                    {
+                        if (!other.Contains(key, value))
+                            return false;
+                    }
                 }
-                finally
-                {
-                    second._lock.ExitReadLock();
-                }
+
+                return true;
             }
             finally
             {
-                first._lock.ExitReadLock();
+                _lock.ExitReadLock();
             }
-
-            foreach (var kvp in thisSnapshot)
-            {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
-
-            return true;
         }
 
         /// <inheritdoc/>

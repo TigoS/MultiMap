@@ -5,11 +5,11 @@
     /// </summary>
     /// <remarks>This interface provides asynchronous methods for querying the contents of a multimap, where each key can be associated with multiple values. Implementations are expected to support concurrent and asynchronous access patterns. The interface does not allow modification of the multimap's contents.
     /// Enumeration yields key-value pairs, and all retrieval operations are non-blocking and support cancellation via a token.</remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must not be null.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multimap. Must not be null.</typeparam>
-    public interface IReadOnlyMultiMapAsync<TKey, TValue> : IAsyncEnumerable<KeyValuePair<TKey, TValue>>, IDisposable, IAsyncDisposable
-        where TKey : notnull
-        where TValue : notnull
+    /// <typeparam name="TKey">The type of keys in the multimap. Must not be null and must implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multimap. Must not be null and must implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    public interface IReadOnlyMultiMapAsync<TKey, TValue> : IAsyncEnumerable<KeyValuePair<TKey, TValue>>, IEquatable<IReadOnlyMultiMapAsync<TKey, TValue>>, IDisposable, IAsyncDisposable
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Asynchronously retrieves a collection of values associated with the specified key.

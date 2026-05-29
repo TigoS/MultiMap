@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-99.5%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-99.51%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -47,43 +47,46 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **3 interfaces** (`IMultiMap`, `IMultiMapAsync`, `ISimpleMultiMap`) for flexibility
 - **Multi-target**: .NET 10, .NET 8, and .NET Standard 2.0
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
-- **Thread-safe variants**: per-key locked (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
+- **Thread-safe variants**: fully lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Dispose safety**: `MultiMapLock` and `MultiMapAsync` throw `ObjectDisposedException` after disposal
 - **Custom value comparers**: `IEqualityComparer<TValue>` constructor overloads on all `HashSet`-based implementations
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
-- **2,708 test executions** (1,354 tests × 2 target frameworks) with NUnit 4
-- **99.5% line coverage, 84.8% branch coverage** via Coverlet
+- **3,366 test executions** (1,683 tests × 2 target frameworks) with NUnit 4
+- **99.51% line coverage, 96.38% branch coverage** via Coverlet
 - **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 
 ## Project Structure
 
 ```
 MultiMap/
-├── MultiMap/                           # Core library (NuGet package)
+├── MultiMap/                                   # Core library (NuGet package)
 │   ├── Interfaces/
-│   │   ├── IReadOnlySimpleMultiMap.cs  # Base read-only interface
-│   │   ├── IReadOnlyMultiMap.cs        # Extended read-only with TryGet, Contains, KeyCount
-│   │   ├── IReadOnlyMultiMapAsync.cs   # Async read-only with cancellation support
-│   │   ├── IMultiMap.cs                # Synchronous multimap (extends IReadOnlyMultiMap)
-│   │   ├── IMultiMapAsync.cs           # Async multimap (extends IReadOnlyMultiMapAsync)
-│   │   └── ISimpleMultiMap.cs          # Simplified interface (extends IReadOnlySimpleMultiMap)
+│   │   ├── IReadOnlySimpleMultiMap.cs          # Base read-only interface
+│   │   ├── IReadOnlyMultiMap.cs                # Extended read-only with TryGet, Contains, KeyCount
+│   │   ├── IReadOnlyMultiMapAsync.cs           # Async read-only with cancellation support
+│   │   ├── ISimpleMultiMap.cs                  # Simplified interface (extends IReadOnlySimpleMultiMap)
+│   │   ├── IMultiMap.cs                        # Synchronous multimap (extends IReadOnlyMultiMap)
+│   │   └── IMultiMapAsync.cs                   # Async multimap (extends IReadOnlyMultiMapAsync)
 │   ├── Entities/
-│   │   ├── MultiMapBase.cs             # Abstract base class for non-concurrent multimaps
-│   │   ├── MultiMapList.cs             # List-based (allows duplicates)
-│   │   ├── MultiMapSet.cs              # HashSet-based (unique values)
-│   │   ├── SortedMultiMap.cs           # SortedDictionary + SortedSet
-│   │   ├── ConcurrentMultiMap.cs       # ConcurrentDictionary + per-key locked HashSet
-│   │   ├── MultiMapLock.cs             # ReaderWriterLockSlim-based
-│   │   ├── MultiMapAsync.cs            # SemaphoreSlim-based async
-│   │   └── SimpleMultiMap.cs           # Lightweight ISimpleMultiMap impl
+│   │   ├── MultiMapBase.cs                     # Abstract base class for non-concurrent multimaps
+│   │   ├── MultiMapBase.ValuesCollection.cs    # Nested ValuesCollection enumerator (partial)
+│   │   ├── MultiMapBase.ValuesEnumerator.cs    # Nested ValuesEnumerator struct (partial)
+│   │   ├── MultiMapList.cs                     # List-based (allows duplicates)
+│   │   ├── MultiMapSet.cs                      # HashSet-based (unique values)
+│   │   ├── SortedMultiMap.cs                   # SortedDictionary + SortedSet
+│   │   ├── ConcurrentMultiMap.cs               # Nested ConcurrentDictionary, fully lock-free
+│   │   ├── MultiMapLock.cs                     # ReaderWriterLockSlim-based
+│   │   ├── MultiMapAsync.cs                    # SemaphoreSlim-based async (public API)
+│   │   ├── MultiMapAsync.Core.cs               # SemaphoreSlim-based async (private helpers, partial)
+│   │   └── SimpleMultiMap.cs                   # Lightweight ISimpleMultiMap implementation
 │   └── Helpers/
-│       └── MultiMapHelper.cs           # Set-like extension methods
-├── MultiMap.Tests/                     # Unit tests (NUnit 4, 1,354 tests × 2 TFMs)
-├── MultiMap.Demo/                      # Console demo application
-│   ├── Program.cs                      # Demo entry point
-│   └── TestDataHelper.cs               # Sample data factory for demos
-└── BenchmarkSuite/                     # BenchmarkDotNet performance benchmarks
+│       └── MultiMapHelper.cs                   # Set-like extension methods
+├── MultiMap.Tests/                             # Unit tests (NUnit 4, 1,466 tests × 2 TFMs)
+├── MultiMap.Demo/                              # Console demo application
+│   ├── Program.cs                              # Demo entry point
+│   └── TestDataHelper.cs                       # Sample data factory for demos
+└── BenchmarkSuite/                             # BenchmarkDotNet performance benchmarks
 ```
 
 ## Interfaces
@@ -110,6 +113,7 @@ The base read-only interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
 |---|---|---|
 | `Get(key)` | `IEnumerable<TValue>` | Returns values; throws `KeyNotFoundException` if not found |
 | `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
+| `Count` | `int` | Total number of key-value pairs (from `IReadOnlyCollection<KeyValuePair<TKey,TValue>>`) |
 
 ### `IReadOnlyMultiMap<TKey, TValue>`
 
@@ -185,10 +189,10 @@ A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`
 
 | Method | Returns | Description |
 |---|---|---|
-| `Add(key, value)` | `bool` | Adds a key-value pair |
-| `Remove(key, value)` | `void` | Removes a specific pair |
-| `Clear(key)` | `void` | Removes all values for a key |
-| `Flatten()` | `IEnumerable<KeyValuePair<TKey, TValue>>` | Returns all pairs as a flat sequence |
+| `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
+| `Remove(key, value)` | `bool` | Removes a specific pair; returns `true` if removed |
+| `RemoveKey(key)` | `void` | Removes all values for a key |
+| ~~`Flatten()`~~ | `IEnumerable<KeyValuePair<TKey, TValue>>` | **Deprecated.** Enumerate the map directly instead (`foreach`, `ToList()`, LINQ) |
 
 **Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`
 
@@ -216,11 +220,11 @@ Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<
 
 **Constructors:** `()`, `(IComparer<TKey>? keyComparer)`
 
-### `ConcurrentMultiMap<TKey, TValue>` — Per-Key Locked Concurrent
+### `ConcurrentMultiMap<TKey, TValue>` — Fully Lock-Free Concurrent
 
-Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock` for thread safety and an `Interlocked` counter for O(1) `Count`. A verify-after-lock pattern prevents count drift when concurrent `RemoveKey` invalidates a locked `HashSet`. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
+Implements `IMultiMap`. Uses `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` for fully lock-free concurrent access — no explicit locks are held for per-key operations. `Count` is O(n), computed by summing the sizes of all inner dictionaries. `KeyCount` iterates the outer dictionary filtering empty inner sets. `Keys` returns a snapshot (`ToArray()`) for safe concurrent enumeration. Suitable for high-concurrency scenarios.
 
-**Constructors:** `()`, `(int concurrencyLevel, int capacity)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
@@ -230,13 +234,13 @@ Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow c
 
 ### `MultiMapAsync<TKey, TValue>` — Async-Safe
 
-Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios.
+Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios. `Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` uses a deadlock-safe dual-semaphore acquisition when comparing two `MultiMapAsync` instances; `Equals(object?)` throws `InvalidOperationException` under a `SynchronizationContext` — use `EqualsAsync` in `async` contexts instead.
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `SimpleMultiMap<TKey, TValue>` — Lightweight
 
-Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection.
+Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection. `Count` returns the total number of key-value pairs (O(n) over keys, summing per-key set sizes). Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
 
 **Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`
 
@@ -247,7 +251,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `MultiMapList` | `IMultiMap` | ❌ No | ✅ Yes | ❌ No | O(1) |
 | `MultiMapSet` | `IMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
 | `SortedMultiMap` | `IMultiMap` | ❌ No | ❌ No | ✅ Yes | O(1) |
-| `ConcurrentMultiMap` | `IMultiMap` | ✅ Per-key lock | ❌ No | ❌ No | O(1) |
+| `ConcurrentMultiMap` | `IMultiMap` | ✅ Lock-free | ❌ No | ❌ No | O(n) |
 | `MultiMapLock` | `IMultiMap` | ✅ RW Lock | ❌ No | ❌ No | O(1) |
 | `MultiMapAsync` | `IMultiMapAsync` | ✅ Semaphore | ❌ No | ❌ No | O(1) |
 | `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | ➖ |
@@ -259,7 +263,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | `MultiMapList` | `Dictionary<TKey, List<TValue>>` | `List<TValue>` | O(1) amortized add; allows duplicate values |
 | `MultiMapSet` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | O(1) add/contains; enforces unique values |
 | `SortedMultiMap` | `SortedDictionary<TKey, SortedSet<TValue>>` | `SortedSet<TValue>` | O(log n) operations; keys & values sorted |
-| `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Per-key `lock`; `Interlocked` counter for O(1) Count |
+| `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` | `ConcurrentDictionary<TValue, byte>` | Fully lock-free via nested `ConcurrentDictionary`; `Count` is O(n) by summing inner sizes |
 | `MultiMapLock` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `ReaderWriterLockSlim` |
 | `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `SemaphoreSlim(1,1)` |
 | `SimpleMultiMap` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Simplified API surface |
@@ -274,11 +278,11 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | **KeyCount property** | ✅ `KeyCount` property (number of unique keys) | ✅ `GetKeyCountAsync()` method | ❌ Not available |
 | **Add (duplicate)** | ✅ Returns `false` | ✅ Returns `false` (via `ValueTask<bool>`) | ✅ Returns `false` |
 | **AddRange** | ✅ `AddRange(key, values)` and `AddRange(items)` | ✅ `AddRangeAsync(key, values)` and `AddRangeAsync(items)` | ❌ Not available |
-| **Remove return type** | ✅ `bool` | ✅ `ValueTask<bool>` | ✅ `void` |
+| **Remove return type** | ✅ `bool` | ✅ `ValueTask<bool>` | ✅ `bool` |
 | **RemoveRange** | ✅ `RemoveRange(items)` returns `int` | ✅ `RemoveRangeAsync(items)` returns `ValueTask<int>` | ❌ Not available |
 | **RemoveWhere** | ✅ `RemoveWhere(key, predicate)` returns `int` | ✅ `RemoveWhereAsync(key, predicate)` returns `ValueTask<int>` | ❌ Not available |
 | **GetValuesCount** | ✅ `GetValuesCount(key)` returns `int` | ✅ `GetValuesCountAsync(key)` returns `ValueTask<int>` | ❌ Not available |
-| **Enumeration** | ✅ `IEnumerable<KeyValuePair>` | ✅ `IAsyncEnumerable<KeyValuePair>` | ✅ `IEnumerable<KeyValuePair>` (+ `Flatten()`) |
+| **Enumeration** | ✅ `IEnumerable<KeyValuePair>` | ✅ `IAsyncEnumerable<KeyValuePair>` | ✅ `IEnumerable<KeyValuePair>` (`Flatten()` deprecated) |
 | **Disposable** | ⚠️ Only `MultiMapLock` | ✅ Yes (`IAsyncDisposable` + `IDisposable`) | ❌ No |
 | **CancellationToken** | ❌ No | ✅ Yes (all methods) | ❌ No |
 
@@ -289,10 +293,10 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 | General purpose, unique values | `MultiMapSet` | Fast O(1) lookups with uniqueness guarantee |
 | Duplicate values needed | `MultiMapList` | Only implementation allowing duplicate values per key |
 | Sorted enumeration / range queries | `SortedMultiMap` | Maintains key and value ordering |
-| High-concurrency, many threads | `ConcurrentMultiMap` | Per-key locking scales well with thread count |
+| High-concurrency, many threads | `ConcurrentMultiMap` | Fully lock-free via nested `ConcurrentDictionary`; no contention under concurrent reads/writes |
 | Read-heavy, occasional writes | `MultiMapLock` | RW lock allows concurrent readers |
 | Async / I/O-bound code | `MultiMapAsync` | `SemaphoreSlim` works with `async`/`await` |
-| Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `Flatten()` and `GetOrDefault` |
+| Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `GetOrDefault` and direct enumeration |
 
 ### Performance Comparison (5,000 pairs)
 
@@ -300,13 +304,13 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 |---|---|---|---|---|---|
 | `MultiMapList` | 34,239 ns | 8,031 ns | 28 ns | < 1 ns | **1.0x** (baseline) |
 | `MultiMapSet` | 72,331 ns | 8,845 ns | 34 ns | < 1 ns | 2.1x |
-| `SimpleMultiMap` | 126,326 ns | 11,543 ns | — | — | 3.7x |
-| `ConcurrentMultiMap` | 181,554 ns | 12,559 ns | 165 ns | < 1 ns | 5.3x |
+| `SimpleMultiMap` | 71,966 ns | 11,327 ns | — | ~190 ns ¹ | 2.1x |
+| `ConcurrentMultiMap` | 347,000 ns | 85,976 ns | 294 ns | ~59,000 ns | 10.1x |
 | `MultiMapLock` | 203,122 ns | 13,985 ns | 25 ns | 16 ns | 5.9x |
 | `MultiMapAsync` | 290,558 ns | 21,917 ns | 40 ns | 33 ns | 8.5x |
 | `SortedMultiMap` | 829,766 ns | 40,506 ns | 24 ns | < 1 ns | 24.2x |
 
-> **Note:** Performance data from BenchmarkDotNet. See [Benchmarks](#benchmarks) for full details.
+> **Note:** Performance data from BenchmarkDotNet. See [Benchmarks](#benchmarks) for full details. ¹ `SimpleMultiMap.Count` sums per-key set sizes (O(n) over keys); benchmark pending next run.
 
 ## Extension Methods
 
@@ -332,7 +336,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="1.0.11" />
+<PackageReference Include="MultiMap" Version="1.0.12" />
 ```
 
 ## Usage
@@ -577,7 +581,8 @@ map.Add("A", 2);
 
 var values = map.Get("A");                // [1, 2]
 var safe = map.GetOrDefault("missing");   // empty
-var flat = map.Flatten();                 // all key-value pairs
+// Enumerate directly — ISimpleMultiMap implements IEnumerable<KeyValuePair<TKey, TValue>>
+foreach (var kvp in map) { /* ... */ }   // replaces map.Flatten()
 
 // Set operations return the modified map
 map = map.Union(otherMap);
@@ -632,7 +637,7 @@ C: 3
 
 ## Testing
 
-The library includes **1,354 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,708 total test executions**), covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **1,683 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**3,366 total test executions**), covering all implementations, interfaces, edge cases, and concurrent stress tests.
 
 ```shell
 dotnet test
@@ -642,44 +647,45 @@ dotnet test
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapAsyncTests` | 192 | Async implementation |
-| `ConcurrentMultiMapTests` | 127 | Per-key locked concurrent implementation |
-| `MultiMapLockTests` | 138 | RW Lock implementation |
-| `MultiMapListTests` | 113 | List-based implementation |
-| `MultiMapSetTests` | 114 | HashSet-based implementation |
-| `SortedMultiMapTests` | 105 | Sorted implementation |
-| `SimpleMultiMapTests` | 48 | Lightweight implementation |
-| **Entity subtotal** | **837** | |
+| `MultiMapAsyncTests` | 189 | Async implementation |
+| `MultiMapAsync_GenericInterfaceEqualsTests` | 21 | Generic-interface async equality path |
+| `ConcurrentMultiMapTests` | 127 | Lock-free concurrent implementation |
+| `MultiMapLockTests` | 164 | RW Lock implementation |
+| `MultiMapListTests` | 145 | List-based implementation |
+| `MultiMapSetTests` | 140 | HashSet-based implementation |
+| `SortedMultiMapTests` | 133 | Sorted implementation |
+| `SimpleMultiMapTests` | 75 | Lightweight implementation |
+| **Entity subtotal** | **994** | |
 
 ### Test Coverage by Base Class
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapBaseTests` (×3 fixtures) | 198 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap) |
-| **Base subtotal** | **198** | |
+| `MultiMapBaseTests` (×3 fixtures) | 270 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap) |
+| **Base subtotal** | **270** | |
 
 ### Test Coverage by Extension Methods
 
 | Test Class | Tests | Category |
 |---|---|---|
 | `MultiMapHelperAsyncTests` | 65 | Async extension methods (`UnionAsync`, `IntersectAsync`, etc.) |
-| `MultiMapHelperWithMultiMapSetTests` | 34 | Extensions with `MultiMapSet` + stress tests |
-| `MultiMapHelperTests` | 28 | `IMultiMap` extensions (primary) |
-| `SimpleMultiMapHelperTests` | 28 | `ISimpleMultiMap` extensions |
+| `MultiMapHelperWithMultiMapSetTests` | 28 | Extensions with `MultiMapSet` + stress tests |
+| `MultiMapHelperTests` | 38 | `IMultiMap` extensions (primary) |
+| `SimpleMultiMapHelperTests` | 36 | `ISimpleMultiMap` extensions |
 | `MultiMapHelperExtensionAsyncTests` | 25 | Async helper extension edge cases |
 | `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | Edge cases with `SortedMultiMap` |
 | `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | Edge cases with `ConcurrentMultiMap` |
 | `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | Edge cases with `MultiMapLock` |
 | `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | Edge cases with `MultiMapList` |
-| `MultiMapHelperWithMultiMapLockTests` | 12 | Extensions + concurrent stress tests |
-| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | Extensions + concurrent stress tests |
-| `MultiMapHelperWithMultiMapListTests` | 10 | Extensions with `MultiMapList` + stress tests |
-| `MultiMapHelperWithSortedMultiMapTests` | 10 | Extensions with `SortedMultiMap` + stress tests |
-| **Helper subtotal** | **319** | |
+| `MultiMapHelperWithMultiMapLockTests` | 4 | Extensions + concurrent stress tests |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 4 | Extensions + concurrent stress tests |
+| `MultiMapHelperWithMultiMapListTests` | 4 | Extensions with `MultiMapList` + stress tests |
+| `MultiMapHelperWithSortedMultiMapTests` | 4 | Extensions with `SortedMultiMap` + stress tests |
+| **Helper subtotal** | **303** | |
 
 | | |
 |---|---|
-| **Total** | **1,354 tests × 2 TFMs = 2,708 executions** |
+| **Total** | **1,683 tests × 2 TFMs = 3,366 executions** |
 
 ### Test Categories
 
@@ -700,33 +706,34 @@ Each implementation is tested across the following categories:
 
 | Area | Tests | % of Total |
 |---|---|---|
-| `MultiMapAsyncTests` | 192 | 14.2% |
-| `ConcurrentMultiMapTests` | 127 | 9.4% |
-| `MultiMapLockTests` | 138 | 10.2% |
-| `MultiMapListTests` | 113 | 8.3% |
-| `MultiMapSetTests` | 114 | 8.4% |
-| `SortedMultiMapTests` | 105 | 7.8% |
-| `SimpleMultiMapTests` | 48 | 3.5% |
-| **Entity subtotal** | **837** | **61.8%** |
-| `MultiMapBaseTests` (×3 fixtures) | 198 | 14.6% |
-| **Base subtotal** | **198** | **14.6%** |
-| `MultiMapHelperAsyncTests` | 65 | 4.8% |
-| `MultiMapHelperWithMultiMapSetTests` | 34 | 2.5% |
-| `MultiMapHelperTests` | 28 | 2.1% |
-| `SimpleMultiMapHelperTests` | 28 | 2.1% |
-| `MultiMapHelperExtensionAsyncTests` | 25 | 1.8% |
-| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 1.8% |
-| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 1.8% |
-| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 1.8% |
-| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 1.7% |
-| `MultiMapHelperWithMultiMapLockTests` | 12 | 0.9% |
-| `MultiMapHelperWithConcurrentMultiMapTests` | 12 | 0.9% |
-| `MultiMapHelperWithMultiMapListTests` | 10 | 0.7% |
-| `MultiMapHelperWithSortedMultiMapTests` | 10 | 0.7% |
-| **Helper subtotal** | **319** | **23.6%** |
-| **Total** | **1,354 × 2 TFMs** | **2,708 executions** |
+| `MultiMapAsyncTests` | 189 | 11.2% |
+| `MultiMapAsync_GenericInterfaceEqualsTests` | 21 | 1.2% |
+| `ConcurrentMultiMapTests` | 127 | 7.5% |
+| `MultiMapLockTests` | 164 | 9.7% |
+| `MultiMapListTests` | 145 | 8.6% |
+| `MultiMapSetTests` | 140 | 8.3% |
+| `SortedMultiMapTests` | 133 | 7.9% |
+| `SimpleMultiMapTests` | 75 | 4.5% |
+| **Entity subtotal** | **994** | **59.1%** |
+| `MultiMapBaseTests` (×3 fixtures) | 270 | 16.0% |
+| **Base subtotal** | **270** | **16.0%** |
+| `MultiMapHelperAsyncTests` | 65 | 3.9% |
+| `MultiMapHelperWithMultiMapSetTests` | 28 | 1.7% |
+| `MultiMapHelperTests` | 38 | 2.3% |
+| `SimpleMultiMapHelperTests` | 36 | 2.1% |
+| `MultiMapHelperExtensionAsyncTests` | 25 | 1.5% |
+| `MultiMapHelperWithSortedMultiMapEdgeCaseTests` | 24 | 1.4% |
+| `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests` | 24 | 1.4% |
+| `MultiMapHelperWithMultiMapLockEdgeCaseTests` | 24 | 1.4% |
+| `MultiMapHelperWithMultiMapListEdgeCaseTests` | 23 | 1.4% |
+| `MultiMapHelperWithMultiMapLockTests` | 4 | 0.2% |
+| `MultiMapHelperWithConcurrentMultiMapTests` | 4 | 0.2% |
+| `MultiMapHelperWithMultiMapListTests` | 4 | 0.2% |
+| `MultiMapHelperWithSortedMultiMapTests` | 4 | 0.2% |
+| **Helper subtotal** | **303** | **18.0%** |
+| **Total** | **1,683 × 2 TFMs** | **3,366 executions** |
 
-> **Coverage distribution:** ~62% of tests target the 7 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15% verify the shared `MultiMapBase` contract across all 3 subclass fixtures, and ~24% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper. All 1,354 tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
+> **Coverage distribution:** ~59% of tests target the 8 core implementations (including new interface member tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~16% verify the shared `MultiMapBase` contract across all 3 subclass fixtures, and ~18% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests that exercise helpers with all implementations, and comprehensive tests for async extension methods in MultiMapHelper. All 1,683 unique tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
 
 ### Code Coverage (Coverlet)
 
@@ -740,37 +747,41 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **99.5%** (1,427/1,434 lines) |
-| **Branch coverage** | **84.8%** (731/862 branches) |
-| **Method coverage** | **98.2%** (218/222 methods) |
+| **Line coverage** | **99.51%** (2,250/2,261 lines) |
+| **Branch coverage** | **96.38%** (906/940 branches)
+| **Method coverage** | **97.9%** (236/241 methods) |
 
 #### Per-Class Breakdown
 
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 99.5% | 83.6% | ✅ Full |
-| `MultiMapAsync<TKey, TValue>` | 100% | 88.7% | ✅ Full |
-| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 77.4% | ✅ Full |
-| `MultiMapList<TKey, TValue>` | 94.0% | 86.7% | ✅ Near-full |
-| `MultiMapLock<TKey, TValue>` | 100% | 85.1% | ✅ Full |
-| `MultiMapSet<TKey, TValue>` | 96.2% | 87.5% | ✅ Near-full |
-| `SimpleMultiMap<TKey, TValue>` | 98.3% | 80.0% | ✅ Full |
+| `ConcurrentMultiMap<TKey, TValue>` | 99.02% | 98.43% | ✅ Near-full |
+| `MultiMapAsync<TKey, TValue>` | 99.45% | 84.12% | ✅ Near-full |
+| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 98.71% | ✅ Full |
+| `MultiMapBase/ValuesCollection` | 100% | 100% | ✅ Full |
+| `MultiMapBase/ValuesEnumerator` | 100% | 100% | ✅ Full |
+| `MultiMapList<TKey, TValue>` | 94.5% | 100% | ✅ Near-full |
+| `MultiMapLock<TKey, TValue>` | 100% | 98.8% | ✅ Full |
+| `MultiMapSet<TKey, TValue>` | 97.5% | 100% | ✅ Near-full |
+| `SimpleMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
 | `SortedMultiMap<TKey, TValue>` | 100% | 100% | ✅ Full |
-| `MultiMapHelper` | 100% | 81.0% | ✅ Full |
+| `MultiMapHelper` | 100% | 100% | ✅ Full |
 
 > **Notes:**
-> - **5 of 9 classes achieve 100% line coverage**: `MultiMapAsync`, `MultiMapBase`, `MultiMapLock`, `SortedMultiMap`, and `MultiMapHelper`.
-> - `SortedMultiMap` achieves **100% line and 100% branch coverage** — the only class with perfect branch coverage.
-> - `ConcurrentMultiMap` at **99.5% line coverage** — the single uncovered line is a `continue` in a race-condition retry loop, extremely difficult to trigger deterministically.
-> - `MultiMapList` (94.0%) and `MultiMapSet` (96.2%) have uncovered lines in `CreateCollection`/`AddToCollection` methods — these are dead code on .NET 10 and .NET 8 where `CollectionsMarshal` is used instead.
+> - **7 of 11 tracked classes achieve 100% line coverage**: `SimpleMultiMap`, `MultiMapBase`, `MultiMapLock`, `SortedMultiMap`, and `MultiMapHelper`; `ValuesCollection` and `ValuesEnumerator` (nested) also reach 100% line coverage.
+> - `SimpleMultiMap`, `SortedMultiMap`, `ValuesCollection`, `ValuesEnumerator`, and `MultiMapHelper` achieve **100% line and 100% branch coverage**.
+> - `MultiMapLock` reaches **100% line coverage** with **98.8% branch coverage**.
+> - `ConcurrentMultiMap` at **99.02% line coverage** — remaining uncovered lines are `continue` guards in race-condition retry loops that are structurally unreachable in single-threaded test scenarios.
+> - `MultiMapList` (94.5%) and `MultiMapSet` (97.5%) have uncovered lines in `CreateCollection`/`AddToCollection` methods — these are dead code on .NET 10 and .NET 8 where `CollectionsMarshal` is used instead.
+> - `MultiMapAsync` remaining branch misses are concentrated in compiler-generated async state-machine branches and the `SynchronizationContext` guard path, which are not exercisable from the test host.
 > - Branch coverage numbers reflect Coverlet's granular condition tracking, including async state machine branches and null-coalescing paths that are structurally unreachable in certain target frameworks.
-> - Overall **99.5% line coverage** across the entire assembly with **1,354 tests × 2 target frameworks** (2,708 total executions).
+> - Overall **99.51% line coverage** across the entire assembly with **1,683 tests × 2 target frameworks** (3,366 total executions).
 
 ## Benchmarks
 
 Benchmarks are run with **BenchmarkDotNet v0.15.0** with `CPUUsageDiagnoser`.
 
-**Environment:** .NET 10.0.5, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
+**Environment:** .NET 10.0.5 (MultiMapSet/List/Sorted/Lock/Async/Simple) · .NET 10.0.8 (ConcurrentMultiMap), 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
 
 **Benchmark Parameters:** 100 keys × 50 values/key for bulk operations (5,000 pairs); 50 keys × 20 values/key for set operations (1,000 pairs).
 
@@ -778,17 +789,17 @@ Benchmarks are run with **BenchmarkDotNet v0.15.0** with `CPUUsageDiagnoser`.
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Add** (5,000 pairs) | 72,331 ns | 34,239 ns | 181,554 ns | 829,766 ns | 203,122 ns | 290,558 ns |
-| **AddRange** (key, values) | 44,503 ns | 4,677 ns | 58,813 ns | 135,734 ns | 83,066 ns | 82,674 ns |
-| **Get** (100 keys) | 8,845 ns | 8,031 ns | 12,559 ns | 40,506 ns | 13,985 ns | 21,917 ns |
-| **GetOrDefault** (100 keys) | 8,701 ns | 8,434 ns | 13,149 ns | 43,170 ns | 19,995 ns | 21,840 ns |
-| **TryGet** | 36 ns | 29 ns | 163 ns | 24 ns | 68 ns | 122 ns |
-| **Remove** (5,000 pairs) | 123,370 ns | 112,941 ns | 351,468 ns | 1,713,694 ns | 379,655 ns | 515,439 ns |
-| **Clear** | 157,012 ns | 119,122 ns | 247,484 ns | 949,403 ns | 291,700 ns | 365,615 ns |
-| **Contains** | 34 ns | 28 ns | 165 ns | 24 ns | 25 ns | 40 ns |
-| **ContainsKey** | 34 ns | 27 ns | 152 ns | 23 ns | 23 ns | 37 ns |
-| **Count** / **GetCount** | < 1 ns | < 1 ns | < 1 ns | < 1 ns | 16 ns | 33 ns |
-| **GetKeys** | 31 ns | 27 ns | 336 ns | 24 ns | 321 ns | 335 ns |
+| **Add** (5,000 pairs) | 72,331 ns | 34,239 ns | 347,000 ns | 829,766 ns | 203,122 ns | 290,558 ns |
+| **AddRange** (key, values) | 44,503 ns | 4,677 ns | 239,474 ns | 135,734 ns | 83,066 ns | 82,674 ns |
+| **Get** (100 keys) | 8,845 ns | 8,031 ns | 85,976 ns | 40,506 ns | 13,985 ns | 21,917 ns |
+| **GetOrDefault** (100 keys) | 8,701 ns | 8,434 ns | 85,057 ns | 43,170 ns | 19,995 ns | 21,840 ns |
+| **TryGet** | 36 ns | 29 ns | 625 ns | 24 ns | 68 ns | 122 ns |
+| **Remove** (5,000 pairs) | 123,370 ns | 112,941 ns | 472,842 ns | 1,713,694 ns | 379,655 ns | 515,439 ns |
+| **Clear** | 157,012 ns | 119,122 ns | 434,721 ns | 949,403 ns | 291,700 ns | 365,615 ns |
+| **Contains** | 34 ns | 28 ns | 294 ns | 24 ns | 25 ns | 40 ns |
+| **ContainsKey** | 34 ns | 27 ns | 295 ns | 23 ns | 23 ns | 37 ns |
+| **Count** / **GetCount** | < 1 ns | < 1 ns | ~59,000 ns | < 1 ns | 16 ns | 33 ns |
+| **GetKeys** | 31 ns | 27 ns | 383 ns | 24 ns | 321 ns | 335 ns |
 
 ### New Interface Members
 
@@ -796,28 +807,28 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **KeyCount** / **GetKeyCountAsync** | 0.25 ns | 0.03 ns | 740 ns | 0.05 ns | 17 ns | 35 ns |
-| **Values** / **GetValuesAsync** | 11,741 ns | 11,283 ns | 16,044 ns | 35,865 ns | 18,195 ns | 18,229 ns |
-| **GetValuesCount** / **GetValuesCountAsync** | 3.5 ns | 3.6 ns | 14 ns | 114 ns | 25 ns | 39 ns |
-| **Indexer** (`this[key]`) | 4.0 ns | 3.8 ns | 59 ns | 117 ns | 106 ns | — |
-| **AddRange(items)** / **AddRangeAsync(items)** | 241,677 ns | 191,969 ns | 275,766 ns | 1,129,768 ns | 353,910 ns | 264,718 ns |
-| **RemoveRange** / **RemoveRangeAsync** | 269,777 ns | 241,100 ns | 378,457 ns | 1,581,737 ns | 456,169 ns | 383,420 ns |
-| **RemoveWhere** / **RemoveWhereAsync** | 1,441 ns | 663 ns | 4,208 ns | 3,374 ns | 4,287 ns | 4,048 ns |
+| **KeyCount** / **GetKeyCountAsync** | 0.25 ns | 0.03 ns | 564 ns | 0.05 ns | 17 ns | 35 ns |
+| **Values** / **GetValuesAsync** | 11,741 ns | 11,283 ns | 80,816 ns | 35,865 ns | 18,195 ns | 18,229 ns |
+| **GetValuesCount** / **GetValuesCountAsync** | 3.5 ns | 3.6 ns | 589 ns | 114 ns | 25 ns | 39 ns |
+| **Indexer** (`this[key]`) | 4.0 ns | 3.8 ns | 720 ns | 117 ns | 106 ns | — |
+| **AddRange(items)** / **AddRangeAsync(items)** | 241,677 ns | 191,969 ns | 538,760 ns | 1,129,768 ns | 353,910 ns | 264,718 ns |
+| **RemoveRange** / **RemoveRangeAsync** | 269,777 ns | 241,100 ns | 621,871 ns | 1,581,737 ns | 456,169 ns | 383,420 ns |
+| **RemoveWhere** / **RemoveWhereAsync** | 1,441 ns | 663 ns | 8,851 ns | 3,374 ns | 4,287 ns | 4,048 ns |
 
 > **Notes:**
-> - **KeyCount**: `ConcurrentMultiMap` (~740 ns) must enumerate all keys in the `ConcurrentDictionary`, while `MultiMapSet`/`MultiMapList`/`SortedMultiMap` expose a direct O(1) property (< 1 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns).
+> - **KeyCount**: `ConcurrentMultiMap` (~564 ns) enumerates all entries in the outer `ConcurrentDictionary` filtering empty inner sets, while `MultiMapSet`/`MultiMapList`/`SortedMultiMap` expose a direct O(1) property (< 1 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns).
 > - **Indexer**: Not available for `MultiMapAsync` (async API uses `GetAsync` instead).
 > - **AddRange(items)**: The KVP overload is ~3–5x slower than `AddRange(key, values)` because it groups items by key and processes multiple keys across the map.
-> - **RemoveWhere**: Very efficient (0.7–4.3 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.
+> - **RemoveWhere**: Very efficient (0.7–8.9 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.
 
 ### Set Operations (via `MultiMapHelper`)
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap | MultiMapLock | MultiMapAsync |
 |---|---|---|---|---|---|---|
-| **Union** | 79,720 ns | 57,160 ns | 119,920 ns | 438,700 ns | 150,521 ns | 189,794 ns |
-| **Intersect** | 78,230 ns | 64,400 ns | 124,010 ns | 437,430 ns | 152,191 ns | 192,079 ns |
-| **ExceptWith** | 80,460 ns | 63,790 ns | 131,950 ns | 572,490 ns | 142,321 ns | 183,657 ns |
-| **SymmetricExceptWith** | 94,070 ns | 78,500 ns | 154,350 ns | 685,100 ns | 149,055 ns | 189,629 ns |
+| **Union** | 79,720 ns | 57,160 ns | 232,924 ns | 438,700 ns | 150,521 ns | 189,794 ns |
+| **Intersect** | 78,230 ns | 64,400 ns | 495,255 ns | 437,430 ns | 152,191 ns | 192,079 ns |
+| **ExceptWith** | 80,460 ns | 63,790 ns | 224,808 ns | 572,490 ns | 142,321 ns | 183,657 ns |
+| **SymmetricExceptWith** | 94,070 ns | 78,500 ns | 556,905 ns | 685,100 ns | 149,055 ns | 189,629 ns |
 
 ### Microbenchmarks
 
@@ -825,15 +836,15 @@ Edge-case and diagnostic benchmarks for the four `IMultiMap` implementations in 
 
 | Operation | MultiMapSet | MultiMapList | ConcurrentMultiMap | SortedMultiMap |
 |---|---|---|---|---|
-| **Add (duplicate)** | 36 ns | 32 ns | 165 ns | 29 ns |
-| **Remove (missing key)** | 5 ns | 5 ns | 91 ns | 8 ns |
-| **ContainsKey (missing)** | 4 ns | 5 ns | 80 ns | 8 ns |
-| **ContainsKey + Get** | 34 ns | 28 ns | 156 ns | 23 ns |
-| **Count after Add** | 30 ns | 23 ns | 142 ns | 19 ns |
-| **Count after Remove** | 39 ns | 29 ns | 191 ns | 29 ns |
-| **Clear (empty)** | 3.77 ns | 3.55 ns | 288 ns | 8.44 ns |
-| **RemoveKey** | 36 ns | 27 ns | 184 ns | 24 ns |
-| **Keys Enumeration** (100 keys) | 4,198 ns | 3,576 ns | 9,989 ns | 53,122 ns |
+| **Add (duplicate)** | 36 ns | 32 ns | 303 ns | 29 ns |
+| **Remove (missing key)** | 5 ns | 5 ns | 118 ns | 8 ns |
+| **ContainsKey (missing)** | 4 ns | 5 ns | 118 ns | 8 ns |
+| **ContainsKey + Get** | 34 ns | 28 ns | 622 ns | 23 ns |
+| **Count after Add** | 30 ns | 23 ns | 664 ns | 19 ns |
+| **Count after Remove** | 39 ns | 29 ns | 688 ns | 29 ns |
+| **Clear (empty)** | 3.77 ns | 3.55 ns | 398 ns | 8.44 ns |
+| **RemoveKey** | 36 ns | 27 ns | 307 ns | 24 ns |
+| **Keys Enumeration** (100 keys) | 4,198 ns | 3,576 ns | 28,009 ns | 53,122 ns |
 
 ### SimpleMultiMap Operations
 
@@ -841,29 +852,32 @@ Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
 
 | Operation | SimpleMultiMap |
 |---|---|
-| **Add** (5,000 pairs) | 126,326 ns |
-| **Add (duplicate)** | 60 ns |
-| **Get** (100 keys) | 11,543 ns |
-| **GetOrDefault** (100 keys) | 11,595 ns |
-| **GetOrDefault (missing)** (100 keys) | 3,164 ns |
-| **Remove** (5,000 pairs) | 208,127 ns |
-| **Clear** (100 keys) | 163,286 ns |
-| **Flatten** | 16,087 ns |
-| **Enumerate** | 28,855 ns |
+| **Add** (5,000 pairs) | 71,966 ns |
+| **Add (duplicate)** | 34 ns |
+| **Get** (100 keys) | 11,327 ns |
+| **GetOrDefault** (100 keys) | 10,967 ns |
+| **GetOrDefault (missing)** (100 keys) | 2,143 ns |
+| **Remove** (5,000 pairs) | 117,249 ns |
+| **Clear** (100 keys) | 155,339 ns |
+| ~~**Flatten**~~ (deprecated) | 14,799 ns |
+| **Enumerate** | 14,995 ns |
+| **Count** | — ¹ |
+| **Equals (equal maps)** | — ¹ |
+| **Equals (different maps)** | — ¹ |
 
 ### Key Takeaways
 
 - **AddRange vs Add**: `AddRange(key, values)` is significantly faster — `MultiMapList` **~7.3x**, `SortedMultiMap` **~6.1x**, `MultiMapAsync` **~3.5x**, `MultiMapLock` **~2.4x** faster than individual `Add` calls
 - **Fastest adds**: `MultiMapList` (no uniqueness check) — **~2.1x faster** than `MultiMapSet`
 - **Retrieval methods**: `Get()`, `GetOrDefault()`, and `TryGet()` offer comparable performance when keys exist; choose based on your error handling preference (exception, empty collection, or bool return)
-- **KeyCount**: O(1) for `MultiMapSet`/`MultiMapList`/`SortedMultiMap` (< 1 ns). `ConcurrentMultiMap` enumerates keys (~740 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns)
+- **KeyCount**: O(1) for `MultiMapSet`/`MultiMapList`/`SortedMultiMap` (< 1 ns). `ConcurrentMultiMap` enumerates entries filtering empty inner sets (~564 ns). `MultiMapLock` acquires a read lock (~17 ns). `MultiMapAsync` acquires a semaphore (~35 ns)
 - **GetValuesCount**: Ultra-fast for non-concurrent implementations (3–4 ns) vs `SortedMultiMap` (114 ns tree lookup) and `MultiMapAsync` (39 ns with semaphore overhead)
-- **RemoveWhere vs RemoveRange**: `RemoveWhere` operates on a single key (0.7–4.3 μs) and is **~130–365x faster** than `RemoveRange` across multiple keys (241 μs–1,582 μs)
-- **ConcurrentMultiMap Count**: O(1) via `Interlocked` counter — sub-nanosecond, on par with non-concurrent implementations
+- **RemoveWhere vs RemoveRange**: `RemoveWhere` operates on a single key (0.7–8.9 μs) and is **~70–469x faster** than `RemoveRange` across multiple keys (241 μs–1,582 μs)
+- **ConcurrentMultiMap Count**: O(n) by summing inner `ConcurrentDictionary` sizes — ~59 µs for 100 keys × 50 values; no `Interlocked` counter needed in the lock-free design
 - **SortedMultiMap**: Slowest across all operations due to tree-based data structures, but provides sorted enumeration. Keys Enumeration is **~15x slower** (53.1 μs vs 3.6 μs for `MultiMapList`)
-- **Thread-safe overhead**: `ConcurrentMultiMap` is ~2.5x slower than `MultiMapSet` for adds; `MultiMapLock` is ~2.8x slower
+- **Thread-safe overhead**: `ConcurrentMultiMap` is ~4.8x slower than `MultiMapSet` for adds (lock-free but higher allocation); `MultiMapLock` is ~2.8x slower
 - **Async vs Lock**: `MultiMapLock` is faster than `MultiMapAsync` for adds (~203 μs vs ~291 μs) and reads (~14 μs vs ~22 μs for `Get`). Choose `MultiMapAsync` when you need `async`/`await` compatibility
-- **SimpleMultiMap**: Lightweight alternative with performance between `MultiMapSet` and `MultiMapLock` — `Add` at 126 μs, `Get` at 11.5 μs
+- **SimpleMultiMap**: Lightweight alternative with performance between `MultiMapSet` and `MultiMapLock` — `Add` at 72 μs, `Get` at 11.3 μs. Benchmarks for the new `Count` and `Equals` members are included in the benchmark suite (see `SimpleMultiMapBenchmarks.cs`; marked ¹ above pending next benchmark run).
 
 ## Migration Guide
 
@@ -1019,7 +1033,7 @@ int keyCount = map.KeyCount;  // O(1) - instant
 
 **Before:** Getting all values required flattening
 ```csharp
-var allValues = map.Flatten().Select(kvp => kvp.Value);
+var allValues = map.Select(kvp => kvp.Value);  // enumerate directly
 ```
 
 **After:** Direct property access
@@ -1165,6 +1179,141 @@ int added = await map.AddRangeAsync(items);  // Returns number of pairs actually
 #### Compatibility
 
 All other APIs remain unchanged. The only breaking changes are the `AddRange` and `AddRangeAsync` return types on the `IEnumerable<KeyValuePair>` overloads.
+
+### Upgrading to Version 1.0.12+
+
+Version 1.0.12 is focused on **correctness, consistency, and performance**. There is one source-breaking API change, one backward-compatible rename alias, and one soft deprecation in `ISimpleMultiMap`.
+
+#### Breaking Changes
+
+**`ISimpleMultiMap.Remove` return type changed from `void` to `bool` (v1.0.12):**
+
+`ISimpleMultiMap.Remove(TKey, TValue)` previously returned `void`, which was inconsistent with the `IMultiMap.Remove(TKey, TValue)` signature. The return type has been changed to `bool` so both interfaces are consistent.
+
+**Before (v1.0.11):**
+```csharp
+map.Remove("A", 1);  // void — no way to know if the pair was actually removed
+```
+
+**After (v1.0.12):**
+```csharp
+bool removed = map.Remove("A", 1);  // true if the pair was found and removed
+```
+
+If you implement `ISimpleMultiMap` directly, update your `Remove` signature from `void` to `bool`. Callers that ignored the return value require no changes — the call still compiles.
+
+---
+
+**`ISimpleMultiMap.Clear(TKey)` renamed to `ISimpleMultiMap.RemoveKey(TKey)` (v1.0.12) — backward-compatible:**
+
+`ISimpleMultiMap.Clear(TKey key)` has been renamed to `ISimpleMultiMap.RemoveKey(TKey key)` to align with `IMultiMap.RemoveKey(TKey key)` and make the API surface consistent across all multimap interfaces.
+
+**Before (v1.0.11):**
+```csharp
+map.Clear("keyA");  // removes all values for "keyA"
+```
+
+**After (v1.0.12):**
+```csharp
+map.RemoveKey("keyA");  // removes all values for "keyA"
+```
+
+For backward compatibility, `Clear(TKey key)` is retained in `ISimpleMultiMap` as an `[Obsolete]` alias that forwards directly to `RemoveKey(TKey key)`. Existing call sites continue to compile and run; a compiler warning (`CS0618`) is emitted to guide migration. Migrate call sites to `map.RemoveKey(key)` before the next major version when `Clear(key)` will be removed. Note: the parameterless `Clear()` on `IMultiMap` implementations is unaffected.
+
+---
+
+**`ISimpleMultiMap.Flatten()` deprecated (v1.0.12):**
+
+`ISimpleMultiMap.Flatten()` is decorated with `[Obsolete]` and will be removed in a future version. The method was always equivalent to enumerating the map directly — `ISimpleMultiMap<TKey, TValue>` implements `IEnumerable<KeyValuePair<TKey, TValue>>`, so iterating the map with `foreach`, `ToList()`, or any LINQ method produces the exact same sequence.
+
+**Before (v1.0.11):**
+```csharp
+foreach (var kvp in map.Flatten()) { /* ... */ }
+var pairs = map.Flatten().ToList();
+```
+
+**After (v1.0.12):**
+```csharp
+foreach (var kvp in map) { /* ... */ }
+var pairs = map.ToList();
+```
+
+This is a **soft deprecation** — existing call sites continue to compile and run without change; a compiler warning (`CS0618`) is emitted to guide migration. No immediate action is required, but callers should migrate before the next major version.
+
+#### Non-Breaking Changes
+
+- **`SimpleMultiMap.Count` property added:** `SimpleMultiMap<TKey, TValue>` now exposes a `Count` property (inherited via `IReadOnlyCollection<KeyValuePair<TKey, TValue>>`) that returns the total number of key-value pairs across all keys (O(n) over keys, summing per-key `HashSet` sizes).
+
+- **`SimpleMultiMap.Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)` added:** Typed equality compares the total pair count first (fast exit), then verifies per-key value-set contents using set-equality semantics.
+
+- **`SimpleMultiMap` equality bug fix:** `Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)` previously compared `_dictionary.Count` (key count) against `other.Count` (total pair count), producing incorrect results when maps had equal key counts but different numbers of values. Fixed to compare total pair counts on both sides.
+
+- **`MultiMapAsync` typed equality:**
+
+- **`ConcurrentMultiMap` is now fully lock-free:** The internal storage changed from `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key locking and an `Interlocked` counter to `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. All per-key read and write operations are now lock-free. `Count` is O(n) (sum of inner dictionary sizes) — no `Interlocked` counter is needed.
+
+- **`SymmetricExceptWith` optimization for `IMultiMap`:** The `IMultiMap` overload now uses a per-key lookup dictionary (same strategy as the `ISimpleMultiMap` overload) to avoid redundant lock acquisitions when multiple entries share the same key.
+
+- **Zero-allocation `Values` property and `GetValuesAsync()`:** `MultiMapBase.Values`, `MultiMapLock.Values`, and `MultiMapAsync.GetValuesAsync()` now use a custom struct enumerator instead of `SelectMany` LINQ iterators, eliminating per-access heap allocations on hot read paths.
+
+- **`MultiMapBase` partial classes:** The nested `ValuesCollection` and `ValuesEnumerator` types were extracted into separate `MultiMapBase.ValuesCollection.cs` and `MultiMapBase.ValuesEnumerator.cs` partial files for better code organization.
+
+- **All concrete classes are now `sealed`:** Every concrete implementation (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`) is declared `sealed`, enabling JIT devirtualization on hot paths such as `Add` and `Remove`.
+
+- **Null-value guard on `AddRange`:** A runtime guard was added to prevent `null` values from silently entering list-backed collections, preserving the `TValue : notnull` contract at runtime.
+
+- **`MultiMapList` equality fix:** `MultiMapList.Equals(object?)` previously used `SequenceEqual`, which is order-dependent. The comparison now uses set-based equality so two lists with the same content in a different insertion order compare equal.
+
+- **`MultiMapSet(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` constructor added:** A combined key-and-value comparer overload fills the gap between the separate key-only and value-only overloads, bringing `MultiMapSet` to a full 8-overload family.
+
+- **`ConcurrentMultiMap` key-comparer constructors added:** `ConcurrentMultiMap(IEqualityComparer<TKey>?)` and `ConcurrentMultiMap(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` overloads are now available, bringing `ConcurrentMultiMap` to a full 8-overload family on par with the other implementations.
+
+- **`MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` optimised on .NET 6+:** The KVP-sequence overload now overrides the base-class implementation and uses `CollectionsMarshal.GetValueRefOrAddDefault` on .NET 6 and later, eliminating the per-item virtual dispatch through the base class and matching the existing `Add` and `AddRange(key, values)` fast paths.
+
+#### Recommended Upgrade Steps
+
+1. **Update NuGet package:**
+   ```bash
+   dotnet add package MultiMap --version 1.0.12
+   ```
+
+2. **If you implement `ISimpleMultiMap` directly:**
+   - Change your `Remove(TKey key, TValue value)` signature from `void` to `bool` and return `true` when the pair was removed.
+   - Rename your `Clear(TKey key)` method to `RemoveKey(TKey key)`.
+
+3. **Update `Clear(key)` call sites:**
+   ```csharp
+   // Before
+   map.Clear("keyA");
+
+   // After
+   map.RemoveKey("keyA");
+   ```
+
+4. **Migrate away from `Flatten()` (optional, but recommended):**
+   ```csharp
+   // Before — emits CS0618 warning
+   foreach (var kvp in map.Flatten()) { /* ... */ }
+   var pairs = map.Flatten().ToList();
+
+   // After — enumerate the map directly
+   foreach (var kvp in map) { /* ... */ }
+   var pairs = map.ToList();
+   ```
+
+5. **Adopt the `Remove` return value where useful:**
+   ```csharp
+   // Before: result was silently discarded
+   map.Remove("key", value);
+
+   // After: check whether anything was actually removed
+   if (!map.Remove("key", value))
+       Console.WriteLine("Pair not found");
+   ```
+
+#### Compatibility
+
+All other APIs are **fully backward-compatible**. The two source-breaking changes are the `ISimpleMultiMap.Remove` return type and the `ISimpleMultiMap.Clear(TKey)` → `RemoveKey(TKey)` rename, both limited to `ISimpleMultiMap` implementors and direct `SimpleMultiMap` call sites. `Flatten()` is soft-deprecated (compiler warning only) and continues to compile and run unchanged.
 
 ## Release Notes
 

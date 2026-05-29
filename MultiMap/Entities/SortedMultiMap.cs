@@ -1,4 +1,5 @@
 ﻿using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -10,12 +11,14 @@ namespace MultiMap.Entities
     /// This type is useful when you need to maintain multiple values per key and require predictable ordering for both keys and values.
     /// Thread safety is not guaranteed; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and support sorting.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and support sorting.</typeparam>
-    public class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
-        where TKey : notnull, IComparable<TKey>
-        where TValue : notnull, IComparable<TValue>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IComparable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IComparable{TValue}"/>.</typeparam>
+    public sealed class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
+        where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
+        where TValue : notnull, IEquatable<TValue>, IComparable<TValue>
     {
+        private readonly IComparer<TValue>? _valueComparer;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class.
         /// </summary>
@@ -33,8 +36,29 @@ namespace MultiMap.Entities
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class with the specified comparer for values.
+        /// </summary>
+        /// <param name="valueComparer">The comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public SortedMultiMap(IComparer<TValue>? valueComparer)
+            : base(new SortedDictionary<TKey, SortedSet<TValue>>())
+        {
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class with the specified comparers for keys and values.
+        /// </summary>
+        /// <param name="keyComparer">The comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        /// <param name="valueComparer">The comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public SortedMultiMap(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)
+            : base(new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer))
+        {
+            _valueComparer = valueComparer;
+        }
+
         /// <inheritdoc/>
-        protected override SortedSet<TValue> CreateCollection() => new SortedSet<TValue>();
+        protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? new SortedSet<TValue>() : new SortedSet<TValue>(_valueComparer);
 
         /// <inheritdoc/>
         protected override bool AddToCollection(SortedSet<TValue> collection, TValue value) => collection.Add(value);
@@ -43,23 +67,26 @@ namespace MultiMap.Entities
         protected override int RemoveWhereFromCollection(SortedSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
+        public override bool Equals(object? obj) => Equals(obj as SortedMultiMap<TKey, TValue>);
+
+        /// <inheritdoc/>
+        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
-            if (obj is not SortedMultiMap<TKey, TValue> other)
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (Count != other.Count || KeyCount != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
                 return false;
 
-            foreach (var kvp in _dictionary)
+            foreach (var key in Keys)
             {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
+                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
                     return false;
 
-                if (!kvp.Value.SetEquals(otherSet))
+                if (!this[key].SequenceEqual(other[key]))
                     return false;
             }
 

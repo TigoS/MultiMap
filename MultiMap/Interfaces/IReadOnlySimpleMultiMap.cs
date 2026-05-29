@@ -4,11 +4,11 @@
     /// Represents a read-only collection that maps keys to one or more values, allowing retrieval of all values associated with a given key.
     /// </summary>
     /// <remarks>This interface provides read-only access to a multi-value mapping, where each key can be associated with multiple values. It does not allow modification of the collection. Implementations must ensure that both keys and values are non-null. Enumeration yields key-value pairs for all associations in the collection.</remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multi-map. Must not be null.</typeparam>
-    public interface IReadOnlySimpleMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
-        where TKey : notnull
-        where TValue : notnull
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null and must implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multi-map. Must not be null and must implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    public interface IReadOnlySimpleMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Retrieves all values associated with the specified key.

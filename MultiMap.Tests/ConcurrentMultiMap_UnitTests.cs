@@ -1311,7 +1311,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Constructor_WithValueComparer_UsesCaseInsensitiveComparison()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         bool added = map.Add("key", "hello");
 
@@ -1322,7 +1322,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Constructor_WithConcurrencyCapacityAndValueComparer_WorksCorrectly()
     {
-        var map = new ConcurrentMultiMap<string, string>(4, 100, StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(4, 100, valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         bool added = map.Add("key", "hello");
 
@@ -1333,7 +1333,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "ABC");
         map.Add("key", "abc");
         map.Add("key", "Abc");
@@ -1345,7 +1345,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Contains_WithCaseInsensitiveComparer_FindsValueIgnoringCase()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
 
         Assert.That(map.Contains("key", "hello"), Is.True);
@@ -1355,7 +1355,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void AddRange_WithValueComparer_RespectsComparer()
     {
-        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
         map.AddRange("key", new[] { "Hello", "hello", "HELLO" });
 
         Assert.That(map.Count, Is.EqualTo(1));
@@ -1536,5 +1536,128 @@ public class ConcurrentMultiMapTests
             _map.Clear();
         }
     }
+
+    // ── Missing constructor overloads ─────────────────────
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesCaseInsensitiveKeyComparison()
+    {
+        var map = new ConcurrentMultiMap<string, int>(StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+
+        Assert.That(map.Get("key").Single(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithKeyAndValueComparer_BothApplied()
+    {
+        var map = new ConcurrentMultiMap<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+
+        Assert.That(map.Get("KEY").Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyCapacityAndKeyComparer_UsesComparer()
+    {
+        var map = new ConcurrentMultiMap<string, int>(2, 10, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+
+        Assert.That(map.Get("key").Single(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyCapacityKeyAndValueComparer_BothApplied()
+    {
+        var map = new ConcurrentMultiMap<string, string>(2, 10, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+
+        Assert.That(map.Get("KEY").Count(), Is.EqualTo(1));
+    }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Add_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Add(null!, 1));
+
+    [Test]
+    public void Add_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new ConcurrentMultiMap<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Add("key", null!));
+    }
+
+    [Test]
+    public void AddRange_Key_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange(null!, new[] { 1 }));
+
+    [Test]
+    public void AddRange_Key_NullValues_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
+
+    [Test]
+    public void AddRange_Items_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void Get_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Get(null!));
+
+    [Test]
+    public void GetOrDefault_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetOrDefault(null!));
+
+    [Test]
+    public void TryGet_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.TryGet(null!, out _));
+
+    [Test]
+    public void Remove_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Remove(null!, 1));
+
+    [Test]
+    public void Remove_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new ConcurrentMultiMap<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Remove("key", null!));
+    }
+
+    [Test]
+    public void RemoveRange_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveRange(null!));
+
+    [Test]
+    public void RemoveWhere_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere(null!, _ => true));
+
+    [Test]
+    public void RemoveWhere_NullPredicate_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere("key", null!));
+
+    [Test]
+    public void RemoveKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
+
+    [Test]
+    public void ContainsKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.ContainsKey(null!));
+
+    [Test]
+    public void Contains_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Contains(null!, 1));
+
+    [Test]
+    public void Contains_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new ConcurrentMultiMap<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Contains("key", null!));
+    }
+
+    [Test]
+    public void GetValuesCount_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
 }
 

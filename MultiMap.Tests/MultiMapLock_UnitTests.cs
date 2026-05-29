@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using MultiMap.Interfaces;
 using System.Reflection;
 
 namespace MultiMap.Tests;
@@ -1015,6 +1016,65 @@ public class MultiMapLockTests
         Assert.That(values, Is.EquivalentTo(new[] { 2, 10 }));
     }
 
+    [Test]
+    public void Values_CountMatchesArrayLength()
+    {
+        // The pre-sized fill uses _count — verify array length always equals Count.
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        _map.Add("c", 4);
+        _map.Add("c", 5);
+
+        var values = _map.Values.ToArray();
+
+        Assert.That(values.Length, Is.EqualTo(_map.Count));
+    }
+
+    [Test]
+    public void Values_IsSnapshotNotLiveView()
+    {
+        _map.Add("a", 1);
+
+        var snapshot = _map.Values.ToArray();
+        _map.Add("a", 2);
+
+        Assert.That(snapshot, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Values_AfterClear_ReturnsEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        _map.Clear();
+
+        Assert.That(_map.Values, Is.Empty);
+    }
+
+    [Test]
+    public void Values_ConcurrentReads_AllReturnConsistentResults()
+    {
+        const int keyCount = 10;
+        const int valuesPerKey = 5;
+
+        for (int i = 0; i < keyCount; i++)
+            for (int v = 0; v < valuesPerKey; v++)
+                _map.Add($"key{i}", i * 100 + v);
+
+        int expected = keyCount * valuesPerKey;
+        var errors = new System.Collections.Concurrent.ConcurrentBag<string>();
+
+        Parallel.For(0, 20, _ =>
+        {
+            var values = _map.Values.ToArray();
+            if (values.Length != expected)
+                errors.Add($"Expected {expected} but got {values.Length}");
+        });
+
+        Assert.That(errors, Is.Empty);
+    }
+
     #endregion
 
     #region GetValuesCount Method Tests
@@ -1642,4 +1702,271 @@ public class MultiMapLockTests
         Assert.That(map.Count, Is.EqualTo(1));
         Assert.That(map.Get("KEY"), Is.EquivalentTo(new[] { "Hello" }));
     }
+
+    // ── Equals(object?) self-reference ─────────────────────────────────────────
+
+    [Test]
+    public void Equals_Object_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((object)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_Object_SameContent_DifferentInstance_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((object)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((object)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((object)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentKeys_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("z", 1);
+
+        Assert.That(_map.Equals((object)other), Is.False);
+    }
+
+    // ── Equals(IReadOnlyMultiMap<TKey,TValue>?) typed-interface overload ────────
+
+    [Test]
+    public void Equals_TypedInterface_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_Null_ReturnsFalse()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>?)null!), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_SameContent_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_MissingKey_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValueCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_BothEmpty_ReturnsTrue()
+    {
+        using var other = new MultiMapLock<string, int>();
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_OtherKeyNotInThis_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        using var other = new MultiMapLock<string, int>();
+        other.Add("z", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Equals_TypedInterface_ConcurrentReads_Consistent()
+    {
+        for (int i = 0; i < 50; i++)
+            _map.Add($"k{i}", i);
+
+        using var other = new MultiMapLock<string, int>();
+        for (int i = 0; i < 50; i++)
+            other.Add($"k{i}", i);
+
+        var results = Enumerable.Range(0, 20)
+            .AsParallel()
+            .Select(_ => _map.Equals((IReadOnlyMultiMap<string, int>)other))
+            .ToArray();
+
+        Assert.That(results, Has.All.True);
+    }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Add_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Add(null!, 1));
+
+    [Test]
+    public void Add_NullValue_ThrowsArgumentNullException()
+    {
+        using var map = new MultiMapLock<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Add("key", null!));
+    }
+
+    [Test]
+    public void AddRange_Key_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange(null!, new[] { 1 }));
+
+    [Test]
+    public void AddRange_Key_NullValues_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
+
+    [Test]
+    public void AddRange_Items_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void Get_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Get(null!));
+
+    [Test]
+    public void GetOrDefault_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetOrDefault(null!));
+
+    [Test]
+    public void TryGet_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.TryGet(null!, out _));
+
+    [Test]
+    public void Remove_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Remove(null!, 1));
+
+    [Test]
+    public void Remove_NullValue_ThrowsArgumentNullException()
+    {
+        using var map = new MultiMapLock<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Remove("key", null!));
+    }
+
+    [Test]
+    public void RemoveRange_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveRange(null!));
+
+    [Test]
+    public void RemoveWhere_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere(null!, _ => true));
+
+    [Test]
+    public void RemoveWhere_NullPredicate_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere("key", null!));
+
+    [Test]
+    public void RemoveKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
+
+    [Test]
+    public void ContainsKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.ContainsKey(null!));
+
+    [Test]
+    public void Contains_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Contains(null!, 1));
+
+    [Test]
+    public void Contains_NullValue_ThrowsArgumentNullException()
+    {
+        using var map = new MultiMapLock<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Contains("key", null!));
+    }
+
+    [Test]
+    public void GetValuesCount_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
+
+    [Test]
+    public void Union_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Union(null!));
+
+    [Test]
+    public void Intersect_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Intersect(null!));
+
+    [Test]
+    public void ExceptWith_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.ExceptWith(null!));
+
+    [Test]
+    public void SymmetricExceptWith_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.SymmetricExceptWith(null!));
 }

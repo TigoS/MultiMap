@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 #endif
 using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -14,11 +15,11 @@ namespace MultiMap.Entities
     /// Values associated with a key are unordered and duplicates are not allowed.
     /// The class is not thread-safe; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multimap. Must be non-nullable.</typeparam>
-    public class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
-        where TKey : notnull
-        where TValue : notnull
+    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    public sealed class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly IEqualityComparer<TValue>? _valueComparer;
 
@@ -45,6 +46,17 @@ namespace MultiMap.Entities
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapSet(IEqualityComparer<TValue>? valueComparer)
             : base(new Dictionary<TKey, HashSet<TValue>>())
+        {
+            _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparers for keys and values.
+        /// </summary>
+        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        public MultiMapSet(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+            : base(new Dictionary<TKey, HashSet<TValue>>(keyComparer))
         {
             _valueComparer = valueComparer;
         }
@@ -143,24 +155,32 @@ namespace MultiMap.Entities
 #endif
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
+        public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
+
+        /// <inheritdoc/>
+        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
-            if (obj is not MultiMapSet<TKey, TValue> other)
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (Count != other.Count || KeyCount != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
                 return false;
 
-            foreach (var kvp in _dictionary)
+            foreach (var key in Keys)
             {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
+                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
                     return false;
 
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
+                // Compare values as sets
+                var otherValuesSet = new HashSet<TValue>(other[key], _valueComparer);
+                foreach (var value in this[key])
+                {
+                    if (!otherValuesSet.Contains(value))
+                        return false;
+                }
             }
 
             return true;

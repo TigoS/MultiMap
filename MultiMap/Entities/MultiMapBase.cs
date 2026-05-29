@@ -6,12 +6,12 @@ namespace MultiMap.Entities
     /// <summary>
     /// Provides a shared implementation of dictionary-backed multi-map operations for concrete multi-map types such as <see cref="MultiMapSet{TKey, TValue}"/>, <see cref="MultiMapList{TKey, TValue}"/>, and <see cref="SortedMultiMap{TKey, TValue}"/>.
     /// </summary>
-    /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     /// <typeparam name="TCollection">The collection type used to store values under each key.</typeparam>
-    public abstract class MultiMapBase<TKey, TValue, TCollection> : IMultiMap<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+    public abstract partial class MultiMapBase<TKey, TValue, TCollection> : IMultiMap<TKey, TValue>
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
         where TCollection : ICollection<TValue>
     {
         /// <summary>
@@ -250,7 +250,7 @@ namespace MultiMap.Entities
         public int KeyCount => _dictionary.Count;
 
         /// <inheritdoc/>
-        public IEnumerable<TValue> Values => _dictionary.Values.SelectMany(c => c);
+        public IEnumerable<TValue> Values => new ValuesCollection(_dictionary.Values);
 
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
@@ -284,5 +284,8 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc/>
+        public abstract bool Equals(IReadOnlyMultiMap<TKey, TValue>? other);
     }
 }

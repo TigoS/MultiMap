@@ -309,4 +309,99 @@ public class MultiMapAsyncBenchmarks
     }
 
     #endregion
+
+    #region Microbenchmarks
+
+    [Benchmark]
+    public void MultiMapAsync_RemoveKey()
+    {
+        var map = new MultiMapAsync<string, int>();
+        map.AddAsync(Consts.Key1Prefix, 1).GetAwaiter().GetResult();
+        map.RemoveKeyAsync(Consts.Key1Prefix).GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_Add_Duplicate()
+    {
+        var map = new MultiMapAsync<string, int>();
+        map.AddAsync(Consts.Key1Prefix, 1).GetAwaiter().GetResult();
+        bool result = map.AddAsync(Consts.Key1Prefix, 1).GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+        return result;
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_Count_AfterAdd()
+    {
+        var map = new MultiMapAsync<string, int>();
+        map.AddAsync(Consts.Key1Prefix, 1).GetAwaiter().GetResult();
+        int count = map.GetCountAsync().GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+        return count;
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_Count_AfterRemove()
+    {
+        var map = new MultiMapAsync<string, int>();
+        map.AddAsync(Consts.Key1Prefix, 1).GetAwaiter().GetResult();
+        map.RemoveAsync(Consts.Key1Prefix, 1).GetAwaiter().GetResult();
+        int count = map.GetCountAsync().GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+        return count;
+    }
+
+    [Benchmark]
+    public void MultiMapAsync_Clear_Empty()
+    {
+        var map = new MultiMapAsync<string, int>();
+        map.ClearAsync().GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_ContainsKey_Missing()
+    {
+        var map = new MultiMapAsync<string, int>();
+        bool result = map.ContainsKeyAsync(Consts.KeyMissingPrefix).GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+        return result;
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_Remove_Missing()
+    {
+        var map = new MultiMapAsync<string, int>();
+        bool result = map.RemoveAsync(Consts.KeyMissingPrefix, 1).GetAwaiter().GetResult();
+        map.DisposeAsync().GetAwaiter().GetResult();
+        return result;
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_Keys_Enumeration()
+    {
+        var map = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+            map.AddAsync($"{Consts.KeyPrefix}{k}", 0).GetAwaiter().GetResult();
+
+        int sum = 0;
+        foreach (var key in map.GetKeysAsync().GetAwaiter().GetResult())
+            sum += key.Length;
+
+        map.DisposeAsync().GetAwaiter().GetResult();
+        return sum;
+    }
+
+    [Benchmark]
+    public int MultiMapAsync_Enumerate()
+    {
+        int count = 0;
+        foreach (var _ in _map.ToBlockingEnumerable())
+            count++;
+        return count;
+    }
+
+    #endregion
 }

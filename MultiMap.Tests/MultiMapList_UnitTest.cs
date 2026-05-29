@@ -1,4 +1,5 @@
 ﻿using MultiMap.Entities;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Tests;
 
@@ -1129,6 +1130,82 @@ public class MultiMapListTests
     }
 
     [Test]
+    public void Equals_SameContentDifferentInsertionOrder_ReturnsFalse()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 3);
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        other.Add("a", 1);
+        other.Add("a", 2);
+        other.Add("a", 3);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_DuplicateValuesPreserved_DifferentCounts_ReturnsFalse()
+    {
+        // Both have value 1 under "a" but different multiplicities
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 1);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_SameDuplicateMultiplicity_ReturnsTrue()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 1);
+        other.Add("a", 1);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals(other), Is.True);
+    }
+
+    [Test]
+    public void Equals_MultipleKeysDifferentOrder_ReturnsFalse()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 10);
+        _map.Add("b", 20);
+        _map.Add("a", 30);
+
+        other.Add("a", 30);
+        other.Add("a", 10);
+        other.Add("b", 20);
+
+        Assert.That(_map.Equals(other), Is.False);
+    }
+
+    [Test]
+    public void Equals_AsObject_SameContent_ReturnsTrue()
+    {
+        var other = new MultiMapList<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((object)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_AsObject_Null_ReturnsFalse()
+    {
+        Assert.That(_map.Equals((object?)null), Is.False);
+    }
+
+    [Test]
+    public void Equals_AsObject_DifferentType_ReturnsFalse()
+    {
+        Assert.That(_map.Equals("not a map"), Is.False);
+    }
+
+    [Test]
     public void Constructor_WithCapacity_WorksCorrectly()
     {
         var map = new MultiMapList<string, int>(100);
@@ -1171,5 +1248,198 @@ public class MultiMapListTests
         Assert.That(map.KeyCount, Is.EqualTo(1));
         Assert.That(map.Get("KEY"), Is.EqualTo(new[] { 1, 2 }));
     }
+
+    // ── Equals(IReadOnlyMultiMap<TKey,TValue>?) typed-interface overload ────────
+
+    [Test]
+    public void Equals_TypedInterface_SameReference_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_Null_ReturnsFalse()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>?)null!), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_SameContent_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValues_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_MissingKey_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentValueCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_BothEmpty_ReturnsTrue()
+    {
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)new MultiMapList<string, int>()), Is.True);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_DifferentKeyCount_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_OtherKeyNotInThis_ReturnsFalse()
+    {
+        _map.Add("a", 1);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("z", 1);
+
+        Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Add_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Add(null!, 1));
+
+    [Test]
+    public void Add_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Add("key", null!));
+    }
+
+    [Test]
+    public void AddRange_Key_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange(null!, new[] { 1 }));
+
+    [Test]
+    public void AddRange_Key_NullValues_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
+
+    [Test]
+    public void AddRange_Key_NullElementInValues_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.AddRange("key", new string[] { null! }));
+    }
+
+    [Test]
+    public void AddRange_Items_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void AddRange_Items_NullKey_ThrowsArgumentNullException()
+    {
+        var items = new[] { new KeyValuePair<string, int>(null!, 1) };
+        Assert.Throws<ArgumentNullException>(() => _map.AddRange(items));
+    }
+
+    [Test]
+    public void AddRange_Items_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        var items = new[] { new KeyValuePair<string, string>("k", null!) };
+        Assert.Throws<ArgumentNullException>(() => map.AddRange(items));
+    }
+
+    [Test]
+    public void Get_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Get(null!));
+
+    [Test]
+    public void GetOrDefault_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetOrDefault(null!));
+
+    [Test]
+    public void Remove_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Remove(null!, 1));
+
+    [Test]
+    public void Remove_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Remove("key", null!));
+    }
+
+    [Test]
+    public void RemoveRange_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveRange(null!));
+
+    [Test]
+    public void RemoveWhere_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere(null!, _ => true));
+
+    [Test]
+    public void RemoveWhere_NullPredicate_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere("key", null!));
+
+    [Test]
+    public void RemoveKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
+
+    [Test]
+    public void ContainsKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.ContainsKey(null!));
+
+    [Test]
+    public void Contains_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Contains(null!, 1));
+
+    [Test]
+    public void Contains_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Contains("key", null!));
+    }
+
+    [Test]
+    public void GetValuesCount_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
 }
 

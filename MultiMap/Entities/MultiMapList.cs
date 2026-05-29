@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 #endif
 using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -14,11 +15,11 @@ namespace MultiMap.Entities
     /// Keys and values must be non-null. Thread safety is not guaranteed;
     /// external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapList<TKey, TValue> : MultiMapBase<TKey, TValue, List<TValue>>
-        where TKey : notnull
-        where TValue : notnull
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    public sealed class MultiMapList<TKey, TValue> : MultiMapBase<TKey, TValue, List<TValue>>
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Initializes a new instance of the MultiMapList class with an empty mapping.
@@ -108,32 +109,68 @@ namespace MultiMap.Entities
             }
 #endif
 
-            int before = list.Count;
-            list.AddRange(values);
-            int added = list.Count - before;
-            _count += added;
+            // Prevent null values in the enumerable silently enter the list,
+            // violating the TValue : notnull constraint at runtime.
+            int added = 0;
+            foreach (var value in values)
+            {
+                if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+
+                list.Add(value);
+                _count++;
+                added++;
+            }
 
             return added;
         }
 
+        #if NET6_0_OR_GREATER
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
+        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (obj is not MultiMapList<TKey, TValue> other)
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
+            int added = 0;
+            var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
+
+            foreach (var item in items)
+            {
+                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
+                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+
+                ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
+                list ??= new List<TValue>();
+
+                list.Add(item.Value);
+                _count++;
+                added++;
+            }
+
+            return added;
+        }
+#endif
+
+        /// <inheritdoc/>
+        public override bool Equals(object? obj) => Equals(obj as MultiMapList<TKey, TValue>);
+
+        /// <inheritdoc/>
+        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        {
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (Count != other.Count || KeyCount != other.KeyCount)
+            if (KeyCount != other.KeyCount || Count != other.Count)
                 return false;
 
-            foreach (var kvp in _dictionary)
+            foreach (var key in Keys)
             {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherList))
+                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
                     return false;
 
-                if (!kvp.Value.SequenceEqual(otherList))
+                if (!this[key].SequenceEqual(other[key]))
                     return false;
             }
 

@@ -1,3 +1,5 @@
+using MultiMap.Entities;
+
 namespace MultiMap.Interfaces
 {
     /// <summary>
@@ -8,11 +10,11 @@ namespace MultiMap.Interfaces
     /// Implementations are expected to be thread-safe and suitable for concurrent scenarios.
     /// The interface supports asynchronous enumeration of all key-value pairs via <see cref="IAsyncEnumerable{T}"/>.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
     public interface IMultiMapAsync<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
         /// Asynchronously adds a value to the set associated with the specified key.
@@ -40,7 +42,7 @@ namespace MultiMap.Interfaces
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> or <paramref name="values"/> is <see langword="null"/>.
         /// </exception>
-        public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
+        public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously adds a collection of key/value pairs to the data store.
@@ -51,7 +53,7 @@ namespace MultiMap.Interfaces
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="items"/> is <see langword="null"/>.
         /// </exception>
-        public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
+        public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Asynchronously removes a specific value from the set associated with the specified key.
@@ -112,5 +114,27 @@ namespace MultiMap.Interfaces
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
         public Task ClearAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously determines whether the current instance and the specified object are equal by comparing their key-value mappings.
+        /// </summary>
+        /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
+        /// If either instance has been disposed, an exception is thrown.</remarks>
+        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
+        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
+        public ValueTask<bool> EqualsAsync(object? obj);
+
+        /// <summary>
+        /// Asynchronously determines whether the current instance and the specified <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> are equal by comparing their key-value mappings.
+        /// </summary>
+        /// <remarks>
+        /// When <paramref name="other"/> is another <see cref="MultiMapAsync{TKey, TValue}"/>, both semaphores are acquired atomically (lock-ordering by identity hash code to prevent deadlock) and a pair of snapshots is taken before any comparison work is done outside the locks. For any other <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> implementation, a snapshot of this instance is taken under its own semaphore, and the comparison is then performed asynchronously against the other instance using its public async API.
+        /// </remarks>
+        /// <param name="other">The map to compare with the current instance.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <returns>
+        /// A <see cref="ValueTask{TResult}"/> whose result is <see langword="true"/> if both maps contain the same keys with the same associated value sets; otherwise <see langword="false"/>.
+        /// </returns>
+        public ValueTask<bool> EqualsAsync(IReadOnlyMultiMapAsync<TKey, TValue>? other, CancellationToken cancellationToken = default);
     }
 }

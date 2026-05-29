@@ -24,7 +24,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `SimpleMultiMap.Count` property — returns the total number of key–value pairs across all keys (sum of all per-key value set sizes)
 - `SimpleMultiMap.Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)` — typed equality against the read-only interface; compares total pair count, then per-key value-set contents
 - Additional benchmarks covering `Values`/`GetValuesAsync`, `KeyCount`/`GetKeyCountAsync`, `GetValuesCount`/`GetValuesCountAsync`, set operations, `SimpleMultiMap` operations, and the new `SimpleMultiMap.Count` / `SimpleMultiMap.Equals` members in `BenchmarkSuite`
-- 75 `SimpleMultiMapTests` — full coverage of all `SimpleMultiMap` public members including `Count`, typed equality, null-key guards, and `GetOrDefault` edge cases
+- 75 `SimpleMultiMapTests` — full coverage of all `SimpleMultiMap` public members, including `Count`, typed equality, null-key guards, and `GetOrDefault` edge cases
 - 217 new unit tests across all test files to close branch/line coverage gaps: null-guard paths for `MultiMapLock`, `MultiMapBase` (shared across all 3 subclass fixtures), `MultiMapHelper` (sync and async extension methods), generic-interface equality path for `MultiMapAsync`, and `ValuesEnumerator.Reset`/`Dispose` branches
 
 **Changed**
@@ -33,7 +33,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `ISimpleMultiMap.Clear(TKey)` renamed to `ISimpleMultiMap.RemoveKey(TKey)` — aligns naming with `IMultiMap.RemoveKey(TKey)` for API consistency. For backward compatibility, `Clear(TKey)` is retained as an `[Obsolete]` alias that forwards to `RemoveKey(TKey)` (soft deprecation, compiler warning `CS0618`). Migrate call sites to `RemoveKey(key)` before the next major version
 - `ISimpleMultiMap.Remove(TKey, TValue)` now returns `bool` (previously `void`) — consistent with `IMultiMap.Remove(TKey, TValue)`.
 - `ConcurrentMultiMap` is now fully lock-free: internal storage changed from `ConcurrentDictionary<TKey, HashSet<TValue>>` with per-key `lock`/`ReaderWriterLockSlim` and an `Interlocked` counter to `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>`. All per-key operations are lock-free; `Count` is O(n) (sum of inner dictionary sizes)
-- `MultiMapAsync.Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` reworked with a deadlock-safe dual-semaphore strategy: when comparing two `MultiMapAsync` instances both semaphores are acquired in a stable `RuntimeHelpers.GetHashCode`-ordered sequence; `Equals(object?)` additionally throws `InvalidOperationException` when called under a `SynchronizationContext` — callers in `async` contexts must use `EqualsAsync` instead
+- `MultiMapAsync.Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)` reworked with a deadlock-safe dual-semaphore strategy: when comparing two `MultiMapAsync` instances, both semaphores are acquired in a stable `RuntimeHelpers.GetHashCode`-ordered sequence; `Equals(object?)` additionally throws `InvalidOperationException` when called under a `SynchronizationContext` — callers in `async` contexts must use `EqualsAsync` instead
 - `MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` overrides the base-class implementation on .NET 6+ and uses `CollectionsMarshal.GetValueRefOrAddDefault`, eliminating per-item virtual dispatch and matching the existing `Add` / `AddRange(key, values)` fast paths
 - `MultiMapBase.Values`, `MultiMapLock.Values`, and `MultiMapAsync.GetValuesAsync()` now use a custom zero-allocation struct enumerator instead of `SelectMany` LINQ iterators, eliminating per-access heap allocations on read-heavy paths
 - All 7 concrete implementations (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`) are now declared `sealed`, enabling JIT devirtualization on hot paths such as `Add` and `Remove`
@@ -46,7 +46,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 - `SimpleMultiMap.Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)` — was incorrectly comparing `_dictionary.Count` (key count) against `other.Count` (total pair count); fixed to compare `Count` (total pairs) against `other.Count` for semantically correct equality
 - `MultiMapList.Equals(object?)` used `SequenceEqual`, which is order-dependent; replaced with content-based set equality so two lists with the same values in a different insertion order compare equal
-- Null-value guard added to `AddRange` on list-backed collections — prevents `null` values from silently entering a `List<TValue>` and violating the `TValue : notnull` constraint at runtime
+- Null-value guard added to `AddRange` on list-backed collections — prevents `null` values from silently entering a `List<TValue>` and violating the `TValue: notnull` constraint at runtime
 
 ### 1.0.11
 
@@ -183,11 +183,11 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - Updated `Get()` and `GetAsync()` methods to throw `KeyNotFoundException` when key is not found (breaking change from previous behavior that returned empty)
 - All implementations now support three retrieval patterns:
   - `Get(key)` / `GetAsync(key)` — throws exception if key not found
-  - `GetOrDefault(key)` / `GetOrDefaultAsync(key)` — returns empty if key not found  
+  - `GetOrDefault(key)` / `GetOrDefaultAsync(key)` — returns empty if key not found
   - `TryGet(key, out values)` / `TryGetAsync(key)` — returns bool indicating success
 - Updated documentation to reflect interface hierarchy: `IMultiMap` extends `IReadOnlyMultiMap`, `IMultiMapAsync` extends `IReadOnlyMultiMapAsync`
 - Test count increased from 714 to **771 tests**
-- Updated README with complete interface documentation including all retrieval method variants
+- Updated README with complete interface documentation, including all retrieval method variants
 
 **Fixed**
 

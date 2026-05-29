@@ -1,8 +1,5 @@
-﻿using MultiMap.Helpers;
+using MultiMap.Helpers;
 using System.Runtime.CompilerServices;
-#if NET6_0_OR_GREATER
-using System.Runtime.InteropServices;
-#endif
 using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
@@ -17,11 +14,11 @@ namespace MultiMap.Entities
     /// Enumerating the collection produces a snapshot of the current state, so changes made during enumeration are not reflected.
     /// This class is useful for managing associations where each key can have multiple distinct values, such as grouping or indexing tasks in asynchronous workflows.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable.</typeparam>
-    public class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    public sealed partial class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly SemaphoreSlim _semaphore;
@@ -105,23 +102,6 @@ namespace MultiMap.Entities
             _valueComparer = valueComparer;
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (Volatile.Read(ref _disposed) != 0)
-                throw new ObjectDisposedException(GetType().FullName);
-        }
-
-        private static bool IsCompletedSuccessfully(Task task)
-        {
-#if NETSTANDARD2_0
-            return task.Status == TaskStatus.RanToCompletion;
-#else
-            return task.IsCompletedSuccessfully;
-#endif
-        }
-
-        // ── AddAsync ──────────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
@@ -144,45 +124,8 @@ namespace MultiMap.Entities
             return AddSlowAsync(waitTask, key, value);
         }
 
-        private bool AddCore(TKey key, TValue value)
-        {
-#if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
-
-            if (hashset.Add(value))
-            {
-                _count++;
-                return true;
-            }
-
-            return false;
-        }
-
-        private async ValueTask<bool> AddSlowAsync(Task waitTask, TKey key, TValue value)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return AddCore(key, value);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── AddRangeAsync ─────────────────────────────────────
-
         /// <inheritdoc/>
-        public Task<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
+        public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (values is null) throw new ArgumentNullException(nameof(values));
@@ -193,7 +136,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return Task.FromResult(AddRangeCore(key, values));
+                    return new ValueTask<int>(AddRangeCore(key, values));
                 }
                 finally
                 {
@@ -203,49 +146,8 @@ namespace MultiMap.Entities
             return AddRangeSlowAsync(waitTask, key, values);
         }
 
-        private int AddRangeCore(TKey key, IEnumerable<TValue> values)
-        {
-#if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
-
-            int added = 0;
-            foreach (var value in values)
-            {
-                if (hashset.Add(value))
-                {
-                    _count++;
-                    added++;
-                }
-            }
-
-            return added;
-        }
-
-        private async Task<int> AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return AddRangeCore(key, values);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── AddRangeAsync (overload for params array) ─────────
-
         /// <inheritdoc/>
-        public Task<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
+        public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
             if (items is null) throw new ArgumentNullException(nameof(items));
 
@@ -255,7 +157,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return Task.FromResult(AddRangeCore(items));
+                    return new ValueTask<int>(AddRangeCore(items));
                 }
                 finally
                 {
@@ -264,47 +166,6 @@ namespace MultiMap.Entities
             }
             return AddRangeSlowAsync(waitTask, items);
         }
-
-        private int AddRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            int added = 0;
-            foreach (var item in items)
-            {
-#if NET6_0_OR_GREATER
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                if (!_dictionary.TryGetValue(item.Key, out var hashset))
-                {
-                    hashset = new HashSet<TValue>(_valueComparer);
-                    _dictionary[item.Key] = hashset;
-                }
-#endif
-
-                if (hashset.Add(item.Value))
-                {
-                    _count++;
-                    added++;
-                }
-            }
-
-            return added;
-        }
-
-        private async Task<int> AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return AddRangeCore(items);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetAsync ──────────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
@@ -327,29 +188,6 @@ namespace MultiMap.Entities
             return GetSlowAsync(waitTask, key);
         }
 
-        private IEnumerable<TValue> GetCore(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToArray();
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
-        }
-
-        private async ValueTask<IEnumerable<TValue>> GetSlowAsync(Task waitTask, TKey key)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return GetCore(key);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetOrDefaultAsync ──────────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -371,29 +209,6 @@ namespace MultiMap.Entities
             return GetOrDefaultSlowAsync(waitTask, key);
         }
 
-        private IEnumerable<TValue> GetOrDefaultCore(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToArray();
-
-            return [];
-        }
-
-        private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(Task waitTask, TKey key)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return GetOrDefaultCore(key);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── TryGetAsync ──────────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -414,30 +229,6 @@ namespace MultiMap.Entities
             }
             return TryGetSlowAsync(waitTask, key);
         }
-
-        private (bool found, IEnumerable<TValue> values) TryGetCore(TKey key)
-        {
-            (bool found, IEnumerable<TValue> values) result;
-            result.found = _dictionary.TryGetValue(key, out var hashset);
-            result.values = result.found ? hashset?.ToArray() ?? [] : [];
-
-            return result;
-        }
-
-        private async ValueTask<(bool found, IEnumerable<TValue> values)> TryGetSlowAsync(Task waitTask, TKey key)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return TryGetCore(key);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── RemoveAsync ───────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
@@ -461,40 +252,6 @@ namespace MultiMap.Entities
             return RemoveSlowAsync(waitTask, key, value);
         }
 
-        private bool RemoveCore(TKey key, TValue value)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-            {
-                bool removed = hashset.Remove(value);
-
-                if (removed)
-                {
-                    _count--;
-                    if (hashset.Count == 0)
-                        _dictionary.Remove(key);
-                }
-
-                return removed;
-            }
-
-            return false;
-        }
-
-        private async ValueTask<bool> RemoveSlowAsync(Task waitTask, TKey key, TValue value)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return RemoveCore(key, value);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── RemoveRangeAsync ──────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
@@ -515,35 +272,6 @@ namespace MultiMap.Entities
             }
             return RemoveRangeSlowAsync(waitTask, items);
         }
-
-        private int RemoveRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            int removedCount = 0;
-            foreach (var item in items)
-            {
-                if (RemoveCore(item.Key, item.Value))
-                {
-                    removedCount++;
-                }
-            }
-
-            return removedCount;
-        }
-
-        private async ValueTask<int> RemoveRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return RemoveRangeCore(items);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── RemoveWhereAsync ──────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
@@ -567,35 +295,6 @@ namespace MultiMap.Entities
             return RemoveWhereSlowAsync(waitTask, key, predicate);
         }
 
-        private int RemoveWhereCore(TKey key, Predicate<TValue> predicate)
-        {
-            if (!_dictionary.TryGetValue(key, out var hashset))
-                return 0;
-
-            int removedCount = hashset.RemoveWhere(predicate);
-            _count -= removedCount;
-
-            if (hashset.Count == 0)
-                _dictionary.Remove(key);
-
-            return removedCount;
-        }
-
-        private async ValueTask<int> RemoveWhereSlowAsync(Task waitTask, TKey key, Predicate<TValue> predicate)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return RemoveWhereCore(key, predicate);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── RemoveKeyAsync ────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -617,32 +316,6 @@ namespace MultiMap.Entities
             return RemoveKeySlowAsync(waitTask, key);
         }
 
-        private bool RemoveKeyCore(TKey key)
-        {
-            if (_dictionary.TryGetValue(key, out var hashset))
-            {
-                _count -= hashset.Count;
-                return _dictionary.Remove(key);
-            }
-
-            return false;
-        }
-
-        private async ValueTask<bool> RemoveKeySlowAsync(Task waitTask, TKey key)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return RemoveKeyCore(key);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── ContainsKeyAsync ──────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -663,21 +336,6 @@ namespace MultiMap.Entities
             }
             return ContainsKeySlowAsync(waitTask, key);
         }
-
-        private async ValueTask<bool> ContainsKeySlowAsync(Task waitTask, TKey key)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _dictionary.ContainsKey(key);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── ContainsAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
@@ -702,21 +360,6 @@ namespace MultiMap.Entities
             return ContainsSlowAsync(waitTask, key, value);
         }
 
-        private async ValueTask<bool> ContainsSlowAsync(Task waitTask, TKey key, TValue value)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetCountAsync ─────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default)
         {
@@ -735,21 +378,6 @@ namespace MultiMap.Entities
             }
             return GetCountSlowAsync(waitTask);
         }
-
-        private async ValueTask<int> GetCountSlowAsync(Task waitTask)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _count;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetKeysAsync ──────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
@@ -770,21 +398,6 @@ namespace MultiMap.Entities
             return GetKeysSlowAsync(waitTask);
         }
 
-        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(Task waitTask)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _dictionary.Keys.ToArray();
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetKeyCountAsync ──────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default)
         {
@@ -804,21 +417,6 @@ namespace MultiMap.Entities
             return GetKeysCountSlowAsync(waitTask);
         }
 
-        private async ValueTask<int> GetKeysCountSlowAsync(Task waitTask)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _dictionary.Count;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetValuesAsync ────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default)
         {
@@ -828,7 +426,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return new ValueTask<IEnumerable<TValue>>(_dictionary.Values.SelectMany(v => v).ToArray());
+                    return new ValueTask<IEnumerable<TValue>>(GetValuesCore());
                 }
                 finally
                 {
@@ -837,21 +435,6 @@ namespace MultiMap.Entities
             }
             return GetValuesSlowAsync(waitTask);
         }
-
-        private async ValueTask<IEnumerable<TValue>> GetValuesSlowAsync(Task waitTask)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _dictionary.Values.SelectMany(v => v).ToArray();
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── GetValuesCountAsync ───────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
@@ -874,21 +457,6 @@ namespace MultiMap.Entities
             return GetValuesCountSlowAsync(waitTask, key);
         }
 
-        private async ValueTask<int> GetValuesCountSlowAsync(Task waitTask, TKey key)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                return _dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── ClearAsync ────────────────────────────────────────
-
         /// <inheritdoc/>
         public Task ClearAsync(CancellationToken cancellationToken = default)
         {
@@ -909,22 +477,6 @@ namespace MultiMap.Entities
             }
             return ClearSlowAsync(waitTask);
         }
-
-        private async Task ClearSlowAsync(Task waitTask)
-        {
-            await waitTask.ConfigureAwait(false);
-            try
-            {
-                _dictionary.Clear();
-                _count = 0;
-            }
-            finally
-            {
-                _semaphore.Release();
-            }
-        }
-
-        // ── UnionAsync ────────────────────────────────────────
 
         /// <summary>
         /// Atomically adds all key-value pairs from <paramref name="other"/> into this multi-map.
@@ -958,31 +510,6 @@ namespace MultiMap.Entities
                 _semaphore.Release();
             }
         }
-
-        private void UnionCore(List<(TKey Key, TValue[] Values)> snapshot)
-        {
-            foreach (var (key, values) in snapshot)
-            {
-#if NET6_0_OR_GREATER
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                {
-                    hashset = new HashSet<TValue>(_valueComparer);
-                    _dictionary[key] = hashset;
-                }
-#endif
-
-                foreach (var value in values)
-                {
-                    if (hashset.Add(value))
-                        _count++;
-                }
-            }
-        }
-
-        // ── IntersectAsync ────────────────────────────────────
 
         /// <summary>
         /// Atomically removes all key-value pairs from this multi-map that do not exist in <paramref name="other"/>.
@@ -1018,34 +545,6 @@ namespace MultiMap.Entities
             }
         }
 
-        private void IntersectCore(Dictionary<TKey, HashSet<TValue>> otherIndex)
-        {
-            var keysToRemove = new List<TKey>();
-
-            foreach (var kvp in _dictionary)
-            {
-                if (!otherIndex.TryGetValue(kvp.Key, out var otherValues))
-                {
-                    _count -= kvp.Value.Count;
-                    keysToRemove.Add(kvp.Key);
-                    continue;
-                }
-
-                int removed = kvp.Value.RemoveWhere(v => !otherValues.Contains(v));
-                _count -= removed;
-
-                if (kvp.Value.Count == 0)
-                    keysToRemove.Add(kvp.Key);
-            }
-
-            foreach (var key in keysToRemove)
-            {
-                _dictionary.Remove(key);
-            }
-        }
-
-        // ── ExceptWithAsync ───────────────────────────────────
-
         /// <summary>
         /// Atomically removes all key-value pairs from this multi-map that exist in <paramref name="other"/>.
         /// </summary>
@@ -1079,26 +578,6 @@ namespace MultiMap.Entities
             }
         }
 
-        private void ExceptWithCore(List<(TKey Key, TValue[] Values)> snapshot)
-        {
-            foreach (var (key, values) in snapshot)
-            {
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                    continue;
-
-                foreach (var value in values)
-                {
-                    if (hashset.Remove(value))
-                        _count--;
-                }
-
-                if (hashset.Count == 0)
-                    _dictionary.Remove(key);
-            }
-        }
-
-        // ── SymmetricExceptWithAsync ──────────────────────────
-
         /// <summary>
         /// Atomically modifies this multi-map to contain only pairs present in either this instance
         /// or <paramref name="other"/>, but not both.
@@ -1130,39 +609,6 @@ namespace MultiMap.Entities
             finally
             {
                 _semaphore.Release();
-            }
-        }
-
-        private void SymmetricExceptWithCore(List<(TKey Key, TValue[] Values)> snapshot)
-        {
-            foreach (var (key, values) in snapshot)
-            {
-#if NET6_0_OR_GREATER
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                {
-                    hashset = new HashSet<TValue>(_valueComparer);
-                    _dictionary[key] = hashset;
-                }
-#endif
-
-                foreach (var value in values)
-                {
-                    if (!hashset.Remove(value))
-                    {
-                        hashset.Add(value);
-                        _count++;
-                    }
-                    else
-                    {
-                        _count--;
-                    }
-                }
-
-                if (hashset.Count == 0)
-                    _dictionary.Remove(key);
             }
         }
 
@@ -1212,53 +658,119 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask DisposeAsync()
         {
-            return DisposeAsyncCore();
+            DisposeCore();
+
+            return default;
         }
 
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            if (obj is not MultiMapAsync<TKey, TValue> other)
+            var other = obj as IReadOnlyMultiMapAsync<TKey, TValue>;
+            if (other is null)
+                return false;
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (SynchronizationContext.Current != null)
+                throw new InvalidOperationException(
+                    "Equals cannot be called synchronously when a SynchronizationContext is present. " +
+                    "Use EqualsAsync instead to avoid deadlocks.");
+
+            return Equals(other);
+}
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)
+        {
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
             ThrowIfDisposed();
-            other.ThrowIfDisposed();
 
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            first._semaphore.Wait();
-            try
+            // Fast path: both sides are MultiMapAsync — acquire both semaphores in a
+            // consistent order to avoid deadlock, then compare under lock.
+            if (other is MultiMapAsync<TKey, TValue> concreteOther)
             {
-                second._semaphore.Wait();
+                concreteOther.ThrowIfDisposed();
+
+                var first  = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
+                var second = ReferenceEquals(first, this) ? concreteOther : this;
+
+                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
+
+                first._semaphore.Wait();
                 try
                 {
-                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
-                        return false;
+                    second._semaphore.Wait();
+                    try
+                    {
+                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
+                            _dictionary.Count != concreteOther._dictionary.Count)
+                            return false;
 
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        thisSnapshot  = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    }
+                    finally
+                    {
+                        second._semaphore.Release();
+                    }
                 }
                 finally
                 {
-                    second._semaphore.Release();
+                    first._semaphore.Release();
                 }
+
+                foreach (var kvp in thisSnapshot)
+                {
+                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                        return false;
+
+                    if (!kvp.Value.SetEquals(otherSet))
+                        return false;
+                }
+
+                return true;
+            }
+
+            // General path: snapshot this instance under its semaphore, then query
+            // the other side via the interface API (no sync-context risk here because
+            // the caller already opted into the synchronous overload).
+            Dictionary<TKey, HashSet<TValue>> snapshot;
+            int thisCount;
+
+            _semaphore.Wait();
+            try
+            {
+                thisCount = _count;
+                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
             }
             finally
             {
-                first._semaphore.Release();
+                _semaphore.Release();
             }
 
-            foreach (var kvp in thisSnapshot)
+            int otherCount = other.GetCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+            int otherKeyCount = other.GetKeyCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+
+            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
+                return false;
+
+            foreach (var kvp in snapshot)
             {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                var (found, otherValues) = other.TryGetAsync(kvp.Key, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+                if (!found)
                     return false;
+
+                var otherSet = otherValues is HashSet<TValue> hs
+                    ? hs
+                    : new HashSet<TValue>(otherValues, _valueComparer);
 
                 if (!kvp.Value.SetEquals(otherSet))
                     return false;
@@ -1267,56 +779,96 @@ namespace MultiMap.Entities
             return true;
         }
 
-        /// <summary>
-        /// Asynchronously determines whether the current instance and the specified object are equal by comparing their key-value mappings.
-        /// </summary>
-        /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
-        /// If either instance has been disposed, an exception is thrown.</remarks>
-        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
-        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
-        public async ValueTask<bool> EqualsAsync(object? obj)
+        /// <inheritdoc/>
+        public async ValueTask<bool> EqualsAsync(object? obj) => await EqualsAsync(obj as IReadOnlyMultiMapAsync<TKey, TValue>).ConfigureAwait(false);
+
+        /// <inheritdoc/>
+        public async ValueTask<bool> EqualsAsync(IReadOnlyMultiMapAsync<TKey, TValue>? other, CancellationToken cancellationToken = default)
         {
-            if (obj is not MultiMapAsync<TKey, TValue> other)
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
             ThrowIfDisposed();
-            other.ThrowIfDisposed();
 
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            await first._semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
+            if (other is MultiMapAsync<TKey, TValue> concreteOther)
             {
-                await second._semaphore.WaitAsync().ConfigureAwait(false);
+                concreteOther.ThrowIfDisposed();
+
+                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
+                var second = ReferenceEquals(first, this) ? concreteOther : this;
+
+                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
+
+                await first._semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
-                        return false;
+                    await second._semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    try
+                    {
+                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
+                            _dictionary.Count != concreteOther._dictionary.Count)
+                            return false;
 
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                    }
+                    finally
+                    {
+                        second._semaphore.Release();
+                    }
                 }
                 finally
                 {
-                    second._semaphore.Release();
+                    first._semaphore.Release();
                 }
+
+                foreach (var kvp in thisSnapshot)
+                {
+                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                        return false;
+
+                    if (!kvp.Value.SetEquals(otherSet))
+                        return false;
+                }
+
+                return true;
+            }
+
+            // General path: snapshot this instance, then compare asynchronously via the interface API.
+            Dictionary<TKey, HashSet<TValue>> snapshot;
+            int thisCount;
+
+            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                thisCount = _count;
+                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
             }
             finally
             {
-                first._semaphore.Release();
+                _semaphore.Release();
             }
 
-            foreach (var kvp in thisSnapshot)
+            int otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);
+            int otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
+
+            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
+                return false;
+
+            foreach (var kvp in snapshot)
             {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                var (found, otherValues) = await other.TryGetAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
+                if (!found)
                     return false;
+
+                var otherSet = otherValues is HashSet<TValue> hs
+                    ? hs
+                    : new HashSet<TValue>(otherValues, _valueComparer);
 
                 if (!kvp.Value.SetEquals(otherSet))
                     return false;
@@ -1338,37 +890,6 @@ namespace MultiMap.Entities
             {
                 _semaphore.Release();
             }
-        }
-
-        /// <summary>
-        /// Releases resources used by the current instance.
-        /// </summary>
-        /// <remarks>Override this method in a derived class to release additional resources. This method is called by the public Dispose pattern implementation to perform actual cleanup of managed or unmanaged resources.</remarks>
-        protected virtual void DisposeCore()
-        {
-            if (Interlocked.Exchange(ref _disposed, 1) != 0)
-                return;
-
-            try
-            {
-                _dictionary.Clear();
-                _count = 0;
-            }
-            finally
-            {
-                _semaphore.Dispose();
-            }
-        }
-
-        /// <summary>
-        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
-        /// </summary>
-        /// <remarks>Override this method to release additional resources in a derived class when disposing asynchronously. This method is called by DisposeAsync and should not be called directly.</remarks>
-        /// <returns>A ValueTask that represents the asynchronous dispose operation.</returns>
-        protected virtual ValueTask DisposeAsyncCore()
-        {
-            DisposeCore();
-            return default;
         }
     }
 }
