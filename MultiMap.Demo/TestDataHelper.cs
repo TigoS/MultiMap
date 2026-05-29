@@ -50,7 +50,7 @@ namespace MultiMap.Demo
         {
             Console.WriteLine($"{title}:");
 
-            foreach (var item in multiMap.Flatten())
+            foreach (var item in multiMap)
             {
                 Console.WriteLine($"{item.Key}: {item.Value}");
             }
