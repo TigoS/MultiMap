@@ -200,7 +200,7 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var otherLookup = new Dictionary<TKey, ISet<TValue>>();
 
-            foreach (var kvp in target.Flatten())
+            foreach (var kvp in target)
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
@@ -265,7 +265,7 @@ namespace MultiMap.Helpers
 
             var targetLookup = new Dictionary<TKey, ISet<TValue>>();
 
-            foreach (var kvp in other.Flatten())
+            foreach (var kvp in other)
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
