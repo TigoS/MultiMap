@@ -102,8 +102,6 @@ namespace MultiMap.Entities
             _valueComparer = valueComparer;
         }
 
-        // ── AddAsync ──────────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
@@ -125,7 +123,6 @@ namespace MultiMap.Entities
             }
             return AddSlowAsync(waitTask, key, value);
         }
-        // ── AddRangeAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
@@ -149,8 +146,6 @@ namespace MultiMap.Entities
             return AddRangeSlowAsync(waitTask, key, values);
         }
 
-        // ── AddRangeAsync (pairs) ──────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
@@ -172,8 +167,6 @@ namespace MultiMap.Entities
             return AddRangeSlowAsync(waitTask, items);
         }
 
-        // ── GetAsync ──────────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -194,7 +187,6 @@ namespace MultiMap.Entities
             }
             return GetSlowAsync(waitTask, key);
         }
-        // ── GetOrDefaultAsync ─────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
@@ -217,8 +209,6 @@ namespace MultiMap.Entities
             return GetOrDefaultSlowAsync(waitTask, key);
         }
 
-        // ── TryGetAsync ────────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -239,8 +229,6 @@ namespace MultiMap.Entities
             }
             return TryGetSlowAsync(waitTask, key);
         }
-
-        // ── RemoveAsync ───────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
@@ -263,7 +251,6 @@ namespace MultiMap.Entities
             }
             return RemoveSlowAsync(waitTask, key, value);
         }
-        // ── RemoveRangeAsync ──────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
@@ -285,8 +272,6 @@ namespace MultiMap.Entities
             }
             return RemoveRangeSlowAsync(waitTask, items);
         }
-
-        // ── RemoveWhereAsync ──────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
@@ -310,8 +295,6 @@ namespace MultiMap.Entities
             return RemoveWhereSlowAsync(waitTask, key, predicate);
         }
 
-        // ── RemoveKeyAsync ────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -333,8 +316,6 @@ namespace MultiMap.Entities
             return RemoveKeySlowAsync(waitTask, key);
         }
 
-        // ── ContainsKeyAsync ──────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
@@ -355,8 +336,6 @@ namespace MultiMap.Entities
             }
             return ContainsKeySlowAsync(waitTask, key);
         }
-
-        // ── ContainsAsync ─────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
@@ -381,8 +360,6 @@ namespace MultiMap.Entities
             return ContainsSlowAsync(waitTask, key, value);
         }
 
-        // ── GetCountAsync ─────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default)
         {
@@ -401,8 +378,6 @@ namespace MultiMap.Entities
             }
             return GetCountSlowAsync(waitTask);
         }
-
-        // ── GetKeysAsync ──────────────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
@@ -423,8 +398,6 @@ namespace MultiMap.Entities
             return GetKeysSlowAsync(waitTask);
         }
 
-        // ── GetKeyCountAsync ──────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default)
         {
@@ -444,8 +417,6 @@ namespace MultiMap.Entities
             return GetKeysCountSlowAsync(waitTask);
         }
 
-        // ── GetValuesAsync ────────────────────────────────────
-
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default)
         {
@@ -464,8 +435,6 @@ namespace MultiMap.Entities
             }
             return GetValuesSlowAsync(waitTask);
         }
-
-        // ── GetValuesCountAsync ───────────────────────────────
 
         /// <inheritdoc/>
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
@@ -488,8 +457,6 @@ namespace MultiMap.Entities
             return GetValuesCountSlowAsync(waitTask, key);
         }
 
-        // ── ClearAsync ────────────────────────────────────────
-
         /// <inheritdoc/>
         public Task ClearAsync(CancellationToken cancellationToken = default)
         {
@@ -510,8 +477,6 @@ namespace MultiMap.Entities
             }
             return ClearSlowAsync(waitTask);
         }
-
-        // ── UnionAsync ────────────────────────────────────────
 
         /// <summary>
         /// Atomically adds all key-value pairs from <paramref name="other"/> into this multi-map.
@@ -545,8 +510,6 @@ namespace MultiMap.Entities
                 _semaphore.Release();
             }
         }
-
-        // ── IntersectAsync ────────────────────────────────────
 
         /// <summary>
         /// Atomically removes all key-value pairs from this multi-map that do not exist in <paramref name="other"/>.
@@ -582,8 +545,6 @@ namespace MultiMap.Entities
             }
         }
 
-        // ── ExceptWithAsync ───────────────────────────────────
-
         /// <summary>
         /// Atomically removes all key-value pairs from this multi-map that exist in <paramref name="other"/>.
         /// </summary>
@@ -616,8 +577,6 @@ namespace MultiMap.Entities
                 _semaphore.Release();
             }
         }
-
-        // ── SymmetricExceptWithAsync ──────────────────────────
 
         /// <summary>
         /// Atomically modifies this multi-map to contain only pairs present in either this instance
@@ -707,7 +666,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            if (obj is not MultiMapAsync<TKey, TValue> other)
+            var other = obj as IReadOnlyMultiMapAsync<TKey, TValue>;
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
@@ -715,52 +675,11 @@ namespace MultiMap.Entities
 
             if (SynchronizationContext.Current != null)
                 throw new InvalidOperationException(
-                    $"Calling {nameof(Equals)} on {nameof(MultiMapAsync<TKey, TValue>)} from a thread with a " +
-                    $"{nameof(SynchronizationContext)} (e.g. a UI thread) can deadlock. " +
-                    $"Use {nameof(EqualsAsync)} instead.");
+                    "Equals cannot be called synchronously when a SynchronizationContext is present. " +
+                    "Use EqualsAsync instead to avoid deadlocks.");
 
-            ThrowIfDisposed();
-            other.ThrowIfDisposed();
-
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            first._semaphore.Wait();
-            try
-            {
-                second._semaphore.Wait();
-                try
-                {
-                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
-                        return false;
-
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                }
-                finally
-                {
-                    second._semaphore.Release();
-                }
-            }
-            finally
-            {
-                first._semaphore.Release();
-            }
-
-            foreach (var kvp in thisSnapshot)
-            {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
-
-            return true;
-        }
+            return Equals(other);
+}
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)
@@ -773,108 +692,85 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            // Wait for both semaphores to compare safely
-            _semaphore.Wait();
-            try
+            // Fast path: both sides are MultiMapAsync — acquire both semaphores in a
+            // consistent order to avoid deadlock, then compare under lock.
+            if (other is MultiMapAsync<TKey, TValue> concreteOther)
             {
-                // Get counts synchronously from this instance
-                int thisKeyCount = _dictionary.Count;
-                int thisCount = _count;
+                concreteOther.ThrowIfDisposed();
 
-                // Get counts from other instance
-                int otherKeyCount = other.GetKeyCountAsync(CancellationToken.None).GetAwaiter().GetResult();
-                int otherCount = other.GetCountAsync(CancellationToken.None).GetAwaiter().GetResult();
+                var first  = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
+                var second = ReferenceEquals(first, this) ? concreteOther : this;
 
-                // Quick check: if counts differ, they're not equal
-                if (thisKeyCount != otherKeyCount || thisCount != otherCount)
-                    return false;
+                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
+                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
 
-                // Compare each key and its values
-                foreach (var kvp in _dictionary)
+                first._semaphore.Wait();
+                try
                 {
-                    var key = kvp.Key;
-                    var thisValues = kvp.Value;
-
-                    // Check if other contains the key
-                    var (found, otherValues) = other.TryGetAsync(key, CancellationToken.None).GetAwaiter().GetResult();
-                    if (!found)
-                        return false;
-
-                    // Convert otherValues to HashSet for comparison
-                    var otherValuesSet = otherValues is HashSet<TValue> hs
-                        ? hs
-                        : new HashSet<TValue>(otherValues, _valueComparer);
-
-                    // Check if value counts match
-                    if (thisValues.Count != otherValuesSet.Count)
-                        return false;
-
-                    // Check if all values in thisValues are in otherValuesSet
-                    foreach (var value in thisValues)
+                    second._semaphore.Wait();
+                    try
                     {
-                        if (!otherValuesSet.Contains(value))
+                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
+                            _dictionary.Count != concreteOther._dictionary.Count)
                             return false;
+
+                        thisSnapshot  = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
                     }
+                    finally
+                    {
+                        second._semaphore.Release();
+                    }
+                }
+                finally
+                {
+                    first._semaphore.Release();
+                }
+
+                foreach (var kvp in thisSnapshot)
+                {
+                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                        return false;
+
+                    if (!kvp.Value.SetEquals(otherSet))
+                        return false;
                 }
 
                 return true;
+            }
+
+            // General path: snapshot this instance under its semaphore, then query
+            // the other side via the interface API (no sync-context risk here because
+            // the caller already opted into the synchronous overload).
+            Dictionary<TKey, HashSet<TValue>> snapshot;
+            int thisCount;
+
+            _semaphore.Wait();
+            try
+            {
+                thisCount = _count;
+                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
             }
             finally
             {
                 _semaphore.Release();
             }
-        }
 
-        /// <summary>
-        /// Asynchronously determines whether the current instance and the specified object are equal by comparing their key-value mappings.
-        /// </summary>
-        /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
-        /// If either instance has been disposed, an exception is thrown.</remarks>
-        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
-        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
-        public async ValueTask<bool> EqualsAsync(object? obj)
-        {
-            if (obj is not MultiMapAsync<TKey, TValue> other)
+            int otherCount = other.GetCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+            int otherKeyCount = other.GetKeyCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
+
+            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
                 return false;
 
-            if (ReferenceEquals(this, other))
-                return true;
-
-            ThrowIfDisposed();
-            other.ThrowIfDisposed();
-
-            var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(other) ? this : other;
-            var second = ReferenceEquals(first, this) ? other : this;
-
-            Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-            Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-            await first._semaphore.WaitAsync().ConfigureAwait(false);
-            try
+            foreach (var kvp in snapshot)
             {
-                await second._semaphore.WaitAsync().ConfigureAwait(false);
-                try
-                {
-                    if (Volatile.Read(ref _count) != Volatile.Read(ref other._count) || _dictionary.Count != other._dictionary.Count)
-                        return false;
-
-                    thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    otherSnapshot = other._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                }
-                finally
-                {
-                    second._semaphore.Release();
-                }
-            }
-            finally
-            {
-                first._semaphore.Release();
-            }
-
-            foreach (var kvp in thisSnapshot)
-            {
-                if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                var (found, otherValues) = other.TryGetAsync(kvp.Key, CancellationToken.None).AsTask().GetAwaiter().GetResult();
+                if (!found)
                     return false;
+
+                var otherSet = otherValues is HashSet<TValue> hs
+                    ? hs
+                    : new HashSet<TValue>(otherValues, _valueComparer);
 
                 if (!kvp.Value.SetEquals(otherSet))
                     return false;
@@ -883,17 +779,10 @@ namespace MultiMap.Entities
             return true;
         }
 
-        /// <summary>
-        /// Asynchronously determines whether the current instance and the specified <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> are equal by comparing their key-value mappings.
-        /// </summary>
-        /// <remarks>
-        /// When <paramref name="other"/> is another <see cref="MultiMapAsync{TKey, TValue}"/>, both semaphores are acquired atomically (lock-ordering by identity hash code to prevent deadlock) and a pair of snapshots is taken before any comparison work is done outside the locks. For any other <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> implementation, a snapshot of this instance is taken under its own semaphore, and the comparison is then performed asynchronously against the other instance using its public async API.
-        /// </remarks>
-        /// <param name="other">The map to compare with the current instance.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns>
-        /// A <see cref="ValueTask{TResult}"/> whose result is <see langword="true"/> if both maps contain the same keys with the same associated value sets; otherwise <see langword="false"/>.
-        /// </returns>
+        /// <inheritdoc/>
+        public async ValueTask<bool> EqualsAsync(object? obj) => await EqualsAsync(obj as IReadOnlyMultiMapAsync<TKey, TValue>).ConfigureAwait(false);
+
+        /// <inheritdoc/>
         public async ValueTask<bool> EqualsAsync(IReadOnlyMultiMapAsync<TKey, TValue>? other, CancellationToken cancellationToken = default)
         {
             if (other is null)

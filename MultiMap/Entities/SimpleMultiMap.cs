@@ -110,6 +110,9 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
+        public int Count => _dictionary.Values.Sum(set => set.Count);
+
+        /// <inheritdoc />
         public bool Add(TKey key, TValue value)
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
@@ -171,7 +174,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        public void Clear(TKey key)
+        public void RemoveKey(TKey key)
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
 
@@ -179,6 +182,11 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
+        [Obsolete("Clear(key) has been renamed to RemoveKey(key) for API consistency. Use ISimpleMultiMap.RemoveKey(key) instead. This method will be removed in a future version.")]
+        public void Clear(TKey key) => RemoveKey(key);
+
+        /// <inheritdoc />
+        [Obsolete("Flatten() is redundant. ISimpleMultiMap<TKey,TValue> implements IEnumerable<KeyValuePair<TKey,TValue>> directly — enumerate the map instead (e.g. foreach, ToList(), or LINQ). This method will be removed in a future version.")]
         public IEnumerable<KeyValuePair<TKey, TValue>> Flatten() => this;
 
         /// <inheritdoc />
@@ -197,23 +205,23 @@ namespace MultiMap.Entities
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
-        public override bool Equals(object? obj)
+        public override bool Equals(object? obj) => Equals(obj as SimpleMultiMap<TKey, TValue>);
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
         {
-            if (obj is not SimpleMultiMap<TKey, TValue> other)
+            if (other is null)
                 return false;
 
             if (ReferenceEquals(this, other))
                 return true;
 
-            if (_dictionary.Count != other._dictionary.Count)
+            if (Count != other.Count)
                 return false;
 
             foreach (var kvp in _dictionary)
             {
-                if (!other._dictionary.TryGetValue(kvp.Key, out var otherSet))
-                    return false;
-
-                if (!kvp.Value.SetEquals(otherSet))
+                if (!kvp.Value.SetEquals(other.GetOrDefault(kvp.Key)))
                     return false;
             }
 
