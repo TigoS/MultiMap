@@ -10,7 +10,7 @@
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
-    public interface IMultiMap<TKey, TValue> : IReadOnlyMultiMap<TKey, TValue>
+    public interface IMultiMap<TKey, TValue> : IReadOnlyMultiMap<TKey, TValue>, IEquatable<IReadOnlyMultiMap<TKey, TValue>>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {

@@ -10,7 +10,7 @@
     /// Thread safety and ordering of keys or values depend on the specific implementation.</remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null and must implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values in the multi-map. Must not be null and must implement <see cref="IEquatable{TValue}"/>.</typeparam>
-    public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>, IEquatable<IReadOnlyMultiMap<TKey, TValue>>
+    public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {

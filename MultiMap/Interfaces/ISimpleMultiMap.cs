@@ -10,7 +10,7 @@
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the collection. Must not be null and must implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must not be null and must implement <see cref="IEquatable{TValue}"/>.</typeparam>
-    public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
+    public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>, IEquatable<IReadOnlySimpleMultiMap<TKey, TValue>>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {
@@ -51,22 +51,42 @@
         /// <summary>
         /// Removes all values associated with the specified key.
         /// </summary>
-        /// <param name="key">The key whose associated values are to be cleared. Cannot be null.</param>
+        /// <param name="key">The key whose associated values are to be removed. Cannot be null.</param>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> is <see langword="null"/>.
         /// </exception>
+        public void RemoveKey(TKey key);
+
+        /// <summary>
+        /// Removes all values associated with the specified key.
+        /// </summary>
+        /// <remarks>
+        /// This method has been renamed to <see cref="RemoveKey"/> for API consistency with other multimap interfaces.
+        /// Use <see cref="RemoveKey"/> instead.
+        /// </remarks>
+        /// <param name="key">The key whose associated values are to be removed. Cannot be null.</param>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
+        [Obsolete("Clear(key) has been renamed to RemoveKey(key) for API consistency. Use ISimpleMultiMap.RemoveKey(key) instead. This method will be removed in a future version.")]
         public void Clear(TKey key);
 
         /// <summary>
         /// Returns a flattened sequence of key-value pairs from the collection.
         /// </summary>
         /// <remarks>
-        /// The returned sequence includes all key-value pairs, regardless of their original nesting or structure within the collection.
+        /// <para>
+        /// <b>This method is deprecated.</b> <see cref="ISimpleMultiMap{TKey,TValue}"/> already implements
+        /// <see cref="IEnumerable{T}"/> of <see cref="KeyValuePair{TKey, TValue}"/>, so iterating the map
+        /// directly (e.g. <c>foreach</c>, <c>map.ToList()</c>, LINQ) produces the exact same sequence.
+        /// Use direct enumeration instead.
+        /// </para>
         /// The order of the pairs in the sequence may depend on the underlying collection implementation.
         /// </remarks>
         /// <returns>
         /// An enumerable collection of <see cref="KeyValuePair{TKey, TValue}"/> representing all key-value pairs contained in the collection.
         /// </returns>
+        [Obsolete("Flatten() is redundant. ISimpleMultiMap<TKey,TValue> implements IEnumerable<KeyValuePair<TKey,TValue>> directly — enumerate the map instead (e.g. foreach, ToList(), or LINQ). This method will be removed in a future version.")]
         public IEnumerable<KeyValuePair<TKey, TValue>> Flatten();
     }
 }
