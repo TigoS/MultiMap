@@ -57,7 +57,8 @@ Fixed
 - `SimpleMultiMap.Equals(IReadOnlySimpleMultiMap&lt;TKey, TValue&gt;? other)` — was incorrectly comparing `_dictionary.Count` (key count) against `other.Count` (total pair count); fixed to compare `Count` (total pairs) against `other.Count` for semantically correct equality
 - `MultiMapList.Equals(object?)` used `SequenceEqual`, which is order-dependent; replaced with content-based set equality so two lists with the same values in a different insertion order compare equal
 - Null-value guard added to `AddRange` on list-backed collections — prevents `null` values from silently entering a `List&lt;TValue&gt;` and violating the `TValue : notnull` constraint at runtime
-</PackageReleaseNotes>
+
+See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
