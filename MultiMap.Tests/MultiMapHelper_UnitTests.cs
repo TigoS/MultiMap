@@ -415,6 +415,40 @@ public class MultiMapHelperTests
         Assert.That(_target.Contains("x", 50), Is.True);
         Assert.That(_target.Count, Is.EqualTo(3));
     }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Union_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => MultiMapHelper.Union<string, int>(null!, _other));
+
+    [Test]
+    public void Union_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.Union(null!));
+
+    [Test]
+    public void Intersect_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => MultiMapHelper.Intersect<string, int>(null!, _other));
+
+    [Test]
+    public void Intersect_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.Intersect(null!));
+
+    [Test]
+    public void ExceptWith_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => MultiMapHelper.ExceptWith<string, int>(null!, _other));
+
+    [Test]
+    public void ExceptWith_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.ExceptWith(null!));
+
+    [Test]
+    public void SymmetricExceptWith_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => MultiMapHelper.SymmetricExceptWith<string, int>(null!, _other));
+
+    [Test]
+    public void SymmetricExceptWith_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.SymmetricExceptWith(null!));
 }
 
 [TestFixture]
@@ -2017,7 +2051,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
     }
 
     [Test]
@@ -2028,7 +2062,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_target.Count(), Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
@@ -2041,7 +2075,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
     }
 
     [Test]
@@ -2049,7 +2083,7 @@ public class SimpleMultiMapHelperTests
     {
         _target.Union(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2060,7 +2094,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_other.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_other.Count(), Is.EqualTo(1));
         Assert.That(_other.GetOrDefault("a"), Is.Empty);
     }
 
@@ -2074,7 +2108,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(4));
+        Assert.That(_target.Count(), Is.EqualTo(4));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2, 3 }));
         Assert.That(_target.GetOrDefault("c"), Is.EquivalentTo(new[] { 4 }));
@@ -2095,7 +2129,7 @@ public class SimpleMultiMapHelperTests
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_target.Count(), Is.EqualTo(2));
     }
 
     [Test]
@@ -2106,7 +2140,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2116,7 +2150,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2126,7 +2160,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2139,7 +2173,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_target.Count(), Is.EqualTo(2));
     }
 
     [Test]
@@ -2151,7 +2185,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_other.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_other.Count(), Is.EqualTo(1));
     }
 
     [Test]
@@ -2164,7 +2198,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
     }
 
@@ -2183,7 +2217,7 @@ public class SimpleMultiMapHelperTests
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
         Assert.That(_target.GetOrDefault("b"), Is.Empty);
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
     }
 
     [Test]
@@ -2194,7 +2228,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
@@ -2205,7 +2239,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
     }
 
     [Test]
@@ -2216,7 +2250,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2226,7 +2260,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2238,7 +2272,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2249,7 +2283,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_other.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_other.Count(), Is.EqualTo(1));
         Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
@@ -2267,7 +2301,7 @@ public class SimpleMultiMapHelperTests
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_target.Count(), Is.EqualTo(2));
     }
 
     [Test]
@@ -2278,7 +2312,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_target.Count(), Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
@@ -2293,7 +2327,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2303,7 +2337,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(1));
+        Assert.That(_target.Count(), Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
@@ -2315,7 +2349,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_target.Count(), Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
@@ -2325,7 +2359,7 @@ public class SimpleMultiMapHelperTests
     {
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Flatten(), Is.Empty);
+        Assert.That(_target, Is.Empty);
     }
 
     [Test]
@@ -2337,10 +2371,44 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_other.Flatten().Count(), Is.EqualTo(2));
+        Assert.That(_other.Count(), Is.EqualTo(2));
         Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_other.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Union_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).Union(_other));
+
+    [Test]
+    public void Union_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.Union(null!));
+
+    [Test]
+    public void Intersect_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).Intersect(_other));
+
+    [Test]
+    public void Intersect_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.Intersect(null!));
+
+    [Test]
+    public void ExceptWith_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).ExceptWith(_other));
+
+    [Test]
+    public void ExceptWith_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.ExceptWith(null!));
+
+    [Test]
+    public void SymmetricExceptWith_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).SymmetricExceptWith(_other));
+
+    [Test]
+    public void SymmetricExceptWith_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.SymmetricExceptWith(null!));
 }
 
 [TestFixture]
@@ -3443,6 +3511,40 @@ public class MultiMapHelperAsyncTests
         for (int v = 0; v < 5; v++)
             Assert.That(await _target.ContainsAsync("x", v), Is.False);
     }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void UnionAsync_NullTarget_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).UnionAsync(_other));
+
+    [Test]
+    public void UnionAsync_NullOther_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.UnionAsync(null!));
+
+    [Test]
+    public void IntersectAsync_NullTarget_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).IntersectAsync(_other));
+
+    [Test]
+    public void IntersectAsync_NullOther_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.IntersectAsync(null!));
+
+    [Test]
+    public void ExceptWithAsync_NullTarget_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).ExceptWithAsync(_other));
+
+    [Test]
+    public void ExceptWithAsync_NullOther_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.ExceptWithAsync(null!));
+
+    [Test]
+    public void SymmetricExceptWithAsync_NullTarget_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).SymmetricExceptWithAsync(_other));
+
+    [Test]
+    public void SymmetricExceptWithAsync_NullOther_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.SymmetricExceptWithAsync(null!));
 }
 
 [TestFixture]

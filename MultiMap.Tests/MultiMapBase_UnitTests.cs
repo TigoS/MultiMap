@@ -773,7 +773,110 @@ public abstract class MultiMapBaseTests
         Assert.That(enumerator.MoveNext(), Is.False);
         enumerator.Dispose();
     }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Add_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Add(null!, 1));
+
+    [Test]
+    public void AddRange_Key_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange(null!, new[] { 1 }));
+
+    [Test]
+    public void AddRange_Key_NullValues_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
+
+    [Test]
+    public void AddRange_Items_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void Get_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Get(null!));
+
+    [Test]
+    public void GetOrDefault_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetOrDefault(null!));
+
+    [Test]
+    public void Remove_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Remove(null!, 1));
+
+    [Test]
+    public void RemoveRange_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveRange(null!));
+
+    [Test]
+    public void RemoveWhere_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere(null!, _ => true));
+
+    [Test]
+    public void RemoveWhere_NullPredicate_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere("key", null!));
+
+    [Test]
+    public void RemoveKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
+
+    [Test]
+    public void ContainsKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.ContainsKey(null!));
+
+    [Test]
+    public void Contains_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Contains(null!, 1));
+
+    [Test]
+    public void GetValuesCount_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
+
+    [Test]
+    public void TryGet_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.TryGet(null!, out _));
+
+    // ── ValuesEnumerator branch coverage ────────────────────────
+
+    [Test]
+    public void Values_GetEnumerator_Reset_WhileInnerActive_DisposesInnerAndResets()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var enumerator = _map.Values.GetEnumerator();
+        // Advance once so _innerEnumerator is non-null
+        enumerator.MoveNext();
+
+        // Reset while _innerEnumerator is active
+        enumerator.Reset();
+
+        // Should be able to enumerate from scratch
+        var items = new List<int>();
+        while (enumerator.MoveNext())
+            items.Add(enumerator.Current);
+
+        enumerator.Dispose();
+
+        Assert.That(items, Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void Values_GetEnumerator_Dispose_WhileInnerActive_DoesNotThrow()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        var enumerator = _map.Values.GetEnumerator();
+        // Advance once so _innerEnumerator is non-null
+        enumerator.MoveNext();
+
+        // Dispose while _innerEnumerator is active — should not throw
+        Assert.DoesNotThrow(() => enumerator.Dispose());
+    }
 }
+
+// ── Null-guard branch coverage shared by all MultiMapBase-backed implementations ──
 
 [TestFixture]
 public sealed class MultiMapSetBaseTests : MultiMapBaseTests

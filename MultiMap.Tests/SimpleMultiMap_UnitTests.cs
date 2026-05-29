@@ -110,10 +110,10 @@ public class SimpleMultiMapTests
     }
 
     [Test]
-    public void GetOrDefault_AfterClearingKey_ReturnsEmpty()
+    public void GetOrDefault_AfterRemovingKey_ReturnsEmpty()
     {
         _map.Add("a", 1);
-        _map.Clear("a");
+        _map.RemoveKey("a");
 
         Assert.That(_map.GetOrDefault("a"), Is.Empty);
     }
@@ -168,49 +168,50 @@ public class SimpleMultiMapTests
         Assert.That(_map.Get("b"), Is.EquivalentTo(new[] { 2 }));
     }
 
-    // ── Clear(key) ─────────────────────────────────────────
+    // ── RemoveKey ──────────────────────────────────────────
 
     [Test]
-    public void Clear_ExistingKey_RemovesAllValues()
+    public void RemoveKey_ExistingKey_RemovesAllValues()
     {
         _map.Add("a", 1);
         _map.Add("a", 2);
         _map.Add("a", 3);
 
-        _map.Clear("a");
+        _map.RemoveKey("a");
 
         Assert.That(_map.GetOrDefault("a"), Is.Empty);
     }
 
     [Test]
-    public void Clear_ExistingKey_KeyNoLongerExists()
+    public void RemoveKey_ExistingKey_KeyNoLongerExists()
     {
         _map.Add("a", 1);
 
-        _map.Clear("a");
+        _map.RemoveKey("a");
 
         Assert.Throws<KeyNotFoundException>(() => _map.Get("a"));
     }
 
     [Test]
-    public void Clear_NonExistentKey_DoesNotThrow()
+    public void RemoveKey_NonExistentKey_DoesNotThrow()
     {
-        Assert.DoesNotThrow(() => _map.Clear("missing"));
+        Assert.DoesNotThrow(() => _map.RemoveKey("missing"));
     }
 
     [Test]
-    public void Clear_DoesNotAffectOtherKeys()
+    public void RemoveKey_DoesNotAffectOtherKeys()
     {
         _map.Add("a", 1);
         _map.Add("b", 2);
 
-        _map.Clear("a");
+        _map.RemoveKey("a");
 
         Assert.That(_map.Get("b"), Is.EquivalentTo(new[] { 2 }));
     }
 
-    // ── Flatten ────────────────────────────────────────────
+    // ── Flatten (deprecated — CS0618 suppressed intentionally) ───────────
 
+#pragma warning disable CS0618
     [Test]
     public void Flatten_ReturnsAllKeyValuePairs()
     {
@@ -256,6 +257,7 @@ public class SimpleMultiMapTests
         Assert.That(pairs, Has.Count.EqualTo(2));
         Assert.That(pairs, Has.All.Matches<KeyValuePair<string, int>>(kvp => kvp.Key == "a"));
     }
+#pragma warning restore CS0618
 
     // ── GetEnumerator ──────────────────────────────────────
 
@@ -327,10 +329,10 @@ public class SimpleMultiMapTests
     // ── Integration / Cross-method ─────────────────────────
 
     [Test]
-    public void AddThenClearThenAdd_WorksCorrectly()
+    public void AddThenRemoveKeyThenAdd_WorksCorrectly()
     {
         _map.Add("a", 1);
-        _map.Clear("a");
+        _map.RemoveKey("a");
         _map.Add("a", 2);
 
         Assert.That(_map.Get("a"), Is.EquivalentTo(new[] { 2 }));
@@ -347,6 +349,7 @@ public class SimpleMultiMapTests
         Assert.That(_map.GetOrDefault("a"), Is.Empty);
     }
 
+    #pragma warning disable CS0618
     [Test]
     public void Flatten_MatchesEnumerator()
     {
@@ -358,6 +361,7 @@ public class SimpleMultiMapTests
 
         Assert.That(fromFlatten, Is.EquivalentTo(fromEnumerator));
     }
+#pragma warning restore CS0618
 
     // ── Equals / GetHashCode ──────────────────────────────
 
@@ -473,7 +477,9 @@ public class SimpleMultiMapTests
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
+#pragma warning disable CS0618
         Assert.That(map.Flatten().Count(), Is.EqualTo(1));
+#pragma warning restore CS0618
     }
 
     [Test]
@@ -483,7 +489,9 @@ public class SimpleMultiMapTests
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
+#pragma warning disable CS0618
         Assert.That(map.Flatten().Count(), Is.EqualTo(1));
+#pragma warning restore CS0618
     }
 
     [Test]
@@ -494,6 +502,254 @@ public class SimpleMultiMapTests
         map.Add("key", "abc");
         map.Add("key", "Abc");
 
+#pragma warning disable CS0618
         Assert.That(map.Flatten().Count(), Is.EqualTo(1));
+#pragma warning restore CS0618
+    }
+
+    // ── Count ──────────────────────────────────────────────
+
+    [Test]
+    public void Count_EmptyMap_IsZero()
+    {
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Count_SingleEntry_IsOne()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Count_MultipleValuesForSameKey_ReflectsTotal()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("a", 3);
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Count_MultipleKeys_SumsAllValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 10);
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Count_AfterRemovingOneValue_Decrements()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        _map.Remove("a", 1);
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Count_AfterRemovingKey_Decrements()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Count_DuplicateValue_NotCounted()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 1);
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    // ── Typed Equals(IReadOnlySimpleMultiMap<TKey, TValue>?) ───
+
+    [Test]
+    public void Equals_Typed_SameInstance_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)_map), Is.True);
+    }
+
+    [Test]
+    public void Equals_Typed_NullOther_ReturnsFalse()
+    {
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>?)null), Is.False);
+    }
+
+    [Test]
+    public void Equals_Typed_EmptyMaps_ReturnsTrue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_Typed_SameContent_ReturnsTrue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        other.Add("a", 1);
+        other.Add("a", 2);
+        other.Add("b", 3);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void Equals_Typed_DifferentValues_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Typed_DifferentKeyCount_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Typed_DifferentKeys_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 1);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Typed_DifferentValueCount_SameKey_ReturnsFalse()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_Typed_ValuesInDifferentInsertionOrder_ReturnsTrue()
+    {
+        var other = new SimpleMultiMap<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        other.Add("a", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.Equals((IReadOnlySimpleMultiMap<string, int>)other), Is.True);
+    }
+
+    [Test]
+    public void GetOrDefault_NullKey_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.GetOrDefault(null!));
+    }
+
+    // ── Constructor overloads ─────────────────────────────
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesComparer()
+    {
+        var map = new SimpleMultiMap<string, int>(StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+
+        Assert.That(map.Get("key").Single(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndKeyComparer_UsesComparer()
+    {
+        var map = new SimpleMultiMap<string, int>(10, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+
+        Assert.That(map.Get("key").Single(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityKeyAndValueComparer_BothApplied()
+    {
+        var map = new SimpleMultiMap<string, string>(10, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+
+        Assert.That(map.Get("KEY").Count(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithKeyAndValueComparer_BothApplied()
+    {
+        var map = new SimpleMultiMap<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+
+        Assert.That(map.Get("KEY").Count(), Is.EqualTo(1));
+    }
+
+    // ── Null-guard coverage ───────────────────────────────
+
+    [Test]
+    public void Add_NullKey_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.Add(null!, 1));
+    }
+
+    [Test]
+    public void Add_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new SimpleMultiMap<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Add("key", null!));
+    }
+
+    [Test]
+    public void Get_NullKey_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.Get(null!));
+    }
+
+    [Test]
+    public void Remove_NullKey_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.Remove(null!, 1));
+    }
+
+    [Test]
+    public void Remove_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new SimpleMultiMap<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Remove("key", null!));
+    }
+
+    [Test]
+    public void RemoveKey_NullKey_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
     }
 }

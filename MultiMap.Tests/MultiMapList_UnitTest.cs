@@ -1340,5 +1340,106 @@ public class MultiMapListTests
 
         Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
     }
+
+    // ── Null-guard branch coverage ─────────────────────────
+
+    [Test]
+    public void Add_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Add(null!, 1));
+
+    [Test]
+    public void Add_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Add("key", null!));
+    }
+
+    [Test]
+    public void AddRange_Key_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange(null!, new[] { 1 }));
+
+    [Test]
+    public void AddRange_Key_NullValues_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
+
+    [Test]
+    public void AddRange_Key_NullElementInValues_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.AddRange("key", new string[] { null! }));
+    }
+
+    [Test]
+    public void AddRange_Items_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void AddRange_Items_NullKey_ThrowsArgumentNullException()
+    {
+        var items = new[] { new KeyValuePair<string, int>(null!, 1) };
+        Assert.Throws<ArgumentNullException>(() => _map.AddRange(items));
+    }
+
+    [Test]
+    public void AddRange_Items_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        var items = new[] { new KeyValuePair<string, string>("k", null!) };
+        Assert.Throws<ArgumentNullException>(() => map.AddRange(items));
+    }
+
+    [Test]
+    public void Get_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Get(null!));
+
+    [Test]
+    public void GetOrDefault_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetOrDefault(null!));
+
+    [Test]
+    public void Remove_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Remove(null!, 1));
+
+    [Test]
+    public void Remove_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Remove("key", null!));
+    }
+
+    [Test]
+    public void RemoveRange_NullItems_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveRange(null!));
+
+    [Test]
+    public void RemoveWhere_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere(null!, _ => true));
+
+    [Test]
+    public void RemoveWhere_NullPredicate_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveWhere("key", null!));
+
+    [Test]
+    public void RemoveKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
+
+    [Test]
+    public void ContainsKey_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.ContainsKey(null!));
+
+    [Test]
+    public void Contains_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.Contains(null!, 1));
+
+    [Test]
+    public void Contains_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapList<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.Contains("key", null!));
+    }
+
+    [Test]
+    public void GetValuesCount_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
 }
 
