@@ -13,6 +13,13 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Release Notes
 
+### 2.0.1
+
+**Breaking Changes**
+
+- `ISimpleMultiMap.Clear(TKey key)` removed — this method was deprecated in v1.0.12 as an `[Obsolete]` alias for `RemoveKey(TKey key)`. Update all remaining call sites to `map.RemoveKey(key)`
+- `ISimpleMultiMap.Flatten()` removed — this method was deprecated in v1.0.12. Replace all remaining usages with direct enumeration: `foreach (var kvp in map)`, `map.ToList()`, or any LINQ expression
+
 ### 1.0.12
 
 **Added**

@@ -182,14 +182,6 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        [Obsolete("Clear(key) has been renamed to RemoveKey(key) for API consistency. Use ISimpleMultiMap.RemoveKey(key) instead. This method will be removed in a future version.")]
-        public void Clear(TKey key) => RemoveKey(key);
-
-        /// <inheritdoc />
-        [Obsolete("Flatten() is redundant. ISimpleMultiMap<TKey,TValue> implements IEnumerable<KeyValuePair<TKey,TValue>> directly — enumerate the map instead (e.g. foreach, ToList(), or LINQ). This method will be removed in a future version.")]
-        public IEnumerable<KeyValuePair<TKey, TValue>> Flatten() => this;
-
-        /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             foreach (var kvp in _dictionary)

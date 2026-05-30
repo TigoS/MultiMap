@@ -1180,6 +1180,59 @@ int added = await map.AddRangeAsync(items);  // Returns number of pairs actually
 
 All other APIs remain unchanged. The only breaking changes are the `AddRange` and `AddRangeAsync` return types on the `IEnumerable<KeyValuePair>` overloads.
 
+### Upgrading to Version 2.0.1+
+
+Version 2.0.1 removes two `ISimpleMultiMap` members that were soft-deprecated in v1.0.12 and completes their removal as a **source-breaking change**.
+
+#### Breaking Changes
+
+**`ISimpleMultiMap.Clear(TKey)` removed (v2.0.1):**
+
+`Clear(TKey key)` was deprecated in v1.0.12 as an `[Obsolete]` alias for `RemoveKey(TKey key)`. It has now been removed. Update any remaining call sites:
+
+```csharp
+// Before (v1.0.x — emitted CS0618 warning since v1.0.12)
+map.Clear("keyA");
+
+// After (v2.0.1)
+map.RemoveKey("keyA");
+```
+
+If you implement `ISimpleMultiMap` directly, remove your `Clear(TKey key)` override (it is no longer part of the contract).
+
+---
+
+**`ISimpleMultiMap.Flatten()` removed (v2.0.1):**
+
+`Flatten()` was deprecated in v1.0.12 because `ISimpleMultiMap<TKey, TValue>` already implements `IEnumerable<KeyValuePair<TKey, TValue>>`. It has now been removed. Replace any remaining usages with direct enumeration:
+
+```csharp
+// Before (v1.0.x — emitted CS0618 warning since v1.0.12)
+foreach (var kvp in map.Flatten()) { /* ... */ }
+var pairs = map.Flatten().ToList();
+
+// After (v2.0.1)
+foreach (var kvp in map) { /* ... */ }
+var pairs = map.ToList();
+```
+
+#### Recommended Upgrade Steps
+
+1. **Update NuGet package:**
+   ```bash
+   dotnet add package MultiMap --version 2.0.1
+   ```
+
+2. **Replace `Clear(key)` with `RemoveKey(key)`** at every call site that was producing a CS0618 warning.
+
+3. **Replace `Flatten()` with direct enumeration** at every call site that was producing a CS0618 warning.
+
+4. **If you implement `ISimpleMultiMap` directly**, remove any `Clear(TKey)` and `Flatten()` override methods — they are no longer part of the interface contract.
+
+#### Compatibility
+
+All other APIs introduced in v1.0.12 (including `RemoveKey`, `SimpleMultiMap.Count`, `SimpleMultiMap.Equals`, the new constructors, and all `IMultiMap` / `IMultiMapAsync` members) remain **fully backward-compatible**.
+
 ### Upgrading to Version 1.0.12+
 
 Version 1.0.12 is focused on **correctness, consistency, and performance**. There is one source-breaking API change, one backward-compatible rename alias, and one soft deprecation in `ISimpleMultiMap`.
@@ -1281,7 +1334,7 @@ This is a **soft deprecation** — existing call sites continue to compile and r
    - Change your `Remove(TKey key, TValue value)` signature from `void` to `bool` and return `true` when the pair was removed.
    - Rename your `Clear(TKey key)` method to `RemoveKey(TKey key)`.
 
-3. **Update `Clear(key)` call sites:**
+3. **Update `Clear(key)` call sites** (emits CS0618 warning; hard-removed in v2.0.1):
    ```csharp
    // Before
    map.Clear("keyA");
@@ -1290,9 +1343,9 @@ This is a **soft deprecation** — existing call sites continue to compile and r
    map.RemoveKey("keyA");
    ```
 
-4. **Migrate away from `Flatten()` (optional, but recommended):**
+4. **Migrate away from `Flatten()` (emits CS0618 warning; hard-removed in v2.0.1):**
    ```csharp
-   // Before — emits CS0618 warning
+   // Before
    foreach (var kvp in map.Flatten()) { /* ... */ }
    var pairs = map.Flatten().ToList();
 
@@ -1313,7 +1366,7 @@ This is a **soft deprecation** — existing call sites continue to compile and r
 
 #### Compatibility
 
-All other APIs are **fully backward-compatible**. The two source-breaking changes are the `ISimpleMultiMap.Remove` return type and the `ISimpleMultiMap.Clear(TKey)` → `RemoveKey(TKey)` rename, both limited to `ISimpleMultiMap` implementors and direct `SimpleMultiMap` call sites. `Flatten()` is soft-deprecated (compiler warning only) and continues to compile and run unchanged.
+All other APIs are **fully backward-compatible**. The one source-breaking change in v1.0.12 is the `ISimpleMultiMap.Remove` return type. `Clear(TKey)` and `Flatten()` emitted CS0618 deprecation warnings since v1.0.12 and have been **hard-removed in v2.0.1** — see the [Upgrading to 2.0.1+](#upgrading-to-version-201) section above.
 
 ## Release Notes
 

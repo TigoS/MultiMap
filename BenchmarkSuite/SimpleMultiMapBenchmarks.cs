@@ -170,23 +170,6 @@ public class SimpleMultiMapBenchmarks
         }
     }
 
-    // --- Flatten benchmarks (deprecated API — kept to measure the obsolete path) ---
-
-#pragma warning disable CS0618 // Flatten() is intentionally tested here
-    [Benchmark]
-    public int SimpleMultiMap_Flatten()
-    {
-        int count = 0;
-
-        foreach (var kvp in _map.Flatten())
-        {
-            count++;
-        }
-
-        return count;
-    }
-#pragma warning restore CS0618
-
     // --- Enumeration benchmarks ---
 
     [Benchmark]
