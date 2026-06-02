@@ -1,5 +1,3 @@
-using MultiMap.Entities;
-
 namespace MultiMap.Interfaces
 {
     /// <summary>
@@ -120,15 +118,15 @@ namespace MultiMap.Interfaces
         /// </summary>
         /// <remarks>Equality is determined by comparing the set of keys and the associated sets of values in both instances. The comparison is thread-safe and takes a snapshot of the current state of both maps.
         /// If either instance has been disposed, an exception is thrown.</remarks>
-        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="MultiMapAsync{TKey, TValue}"/>.</param>
-        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="MultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
+        /// <param name="obj">The object to compare with the current instance. Typically, this should be another <see cref="IMultiMapAsync{TKey, TValue}"/>.</param>
+        /// <returns>A ValueTask that represents the asynchronous operation. The result is <see langword="true"/> if the specified object is a <see cref="IMultiMapAsync{TKey, TValue}"/> and contains the same keys and associated values as the current instance; otherwise, <see langword="false"/>.</returns>
         public ValueTask<bool> EqualsAsync(object? obj);
 
         /// <summary>
         /// Asynchronously determines whether the current instance and the specified <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> are equal by comparing their key-value mappings.
         /// </summary>
         /// <remarks>
-        /// When <paramref name="other"/> is another <see cref="MultiMapAsync{TKey, TValue}"/>, both semaphores are acquired atomically (lock-ordering by identity hash code to prevent deadlock) and a pair of snapshots is taken before any comparison work is done outside the locks. For any other <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> implementation, a snapshot of this instance is taken under its own semaphore, and the comparison is then performed asynchronously against the other instance using its public async API.
+        /// When <paramref name="other"/> is another <see cref="IMultiMapAsync{TKey, TValue}"/>, both semaphores are acquired atomically (lock-ordering by identity hash code to prevent deadlock) and a pair of snapshots is taken before any comparison work is done outside the locks. For any other <see cref="IReadOnlyMultiMapAsync{TKey, TValue}"/> implementation, a snapshot of this instance is taken under its own semaphore, and the comparison is then performed asynchronously against the other instance using its public async API.
         /// </remarks>
         /// <param name="other">The map to compare with the current instance.</param>
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>

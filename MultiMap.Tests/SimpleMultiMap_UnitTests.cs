@@ -209,56 +209,6 @@ public class SimpleMultiMapTests
         Assert.That(_map.Get("b"), Is.EquivalentTo(new[] { 2 }));
     }
 
-    // ── Flatten (deprecated — CS0618 suppressed intentionally) ───────────
-
-#pragma warning disable CS0618
-    [Test]
-    public void Flatten_ReturnsAllKeyValuePairs()
-    {
-        _map.Add("a", 1);
-        _map.Add("a", 2);
-        _map.Add("b", 3);
-
-        var pairs = _map.Flatten().ToList();
-
-        Assert.That(pairs, Has.Count.EqualTo(3));
-        Assert.That(pairs, Does.Contain(new KeyValuePair<string, int>("a", 1)));
-        Assert.That(pairs, Does.Contain(new KeyValuePair<string, int>("a", 2)));
-        Assert.That(pairs, Does.Contain(new KeyValuePair<string, int>("b", 3)));
-    }
-
-    [Test]
-    public void Flatten_EmptyMap_ReturnsEmpty()
-    {
-        Assert.That(_map.Flatten(), Is.Empty);
-    }
-
-    [Test]
-    public void Flatten_AfterRemoval_ReflectsCurrentState()
-    {
-        _map.Add("a", 1);
-        _map.Add("a", 2);
-        _map.Remove("a", 1);
-
-        var pairs = _map.Flatten().ToList();
-
-        Assert.That(pairs, Has.Count.EqualTo(1));
-        Assert.That(pairs, Does.Contain(new KeyValuePair<string, int>("a", 2)));
-    }
-
-    [Test]
-    public void Flatten_SingleKey_ReturnsAllValuesForKey()
-    {
-        _map.Add("a", 1);
-        _map.Add("a", 2);
-
-        var pairs = _map.Flatten().ToList();
-
-        Assert.That(pairs, Has.Count.EqualTo(2));
-        Assert.That(pairs, Has.All.Matches<KeyValuePair<string, int>>(kvp => kvp.Key == "a"));
-    }
-#pragma warning restore CS0618
-
     // ── GetEnumerator ──────────────────────────────────────
 
     [Test]
@@ -348,20 +298,6 @@ public class SimpleMultiMapTests
 
         Assert.That(_map.GetOrDefault("a"), Is.Empty);
     }
-
-    #pragma warning disable CS0618
-    [Test]
-    public void Flatten_MatchesEnumerator()
-    {
-        _map.Add("a", 1);
-        _map.Add("b", 2);
-
-        var fromFlatten = _map.Flatten().ToList();
-        var fromEnumerator = _map.ToList();
-
-        Assert.That(fromFlatten, Is.EquivalentTo(fromEnumerator));
-    }
-#pragma warning restore CS0618
 
     // ── Equals / GetHashCode ──────────────────────────────
 
@@ -477,9 +413,7 @@ public class SimpleMultiMapTests
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
-#pragma warning disable CS0618
-        Assert.That(map.Flatten().Count(), Is.EqualTo(1));
-#pragma warning restore CS0618
+    Assert.That(map.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -489,9 +423,7 @@ public class SimpleMultiMapTests
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
-#pragma warning disable CS0618
-        Assert.That(map.Flatten().Count(), Is.EqualTo(1));
-#pragma warning restore CS0618
+        Assert.That(map.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -502,9 +434,7 @@ public class SimpleMultiMapTests
         map.Add("key", "abc");
         map.Add("key", "Abc");
 
-#pragma warning disable CS0618
-        Assert.That(map.Flatten().Count(), Is.EqualTo(1));
-#pragma warning restore CS0618
+        Assert.That(map.Count, Is.EqualTo(1));
     }
 
     // ── Count ──────────────────────────────────────────────

@@ -1,4 +1,4 @@
-﻿using MultiMap.Helpers;
+using MultiMap.Helpers;
 using MultiMap.Interfaces;
 using System.Collections;
 #if NET6_0_OR_GREATER
@@ -22,6 +22,7 @@ namespace MultiMap.Entities
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;
+        private int _count;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class.
@@ -110,7 +111,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        public int Count => _dictionary.Values.Sum(set => set.Count);
+        public int Count => _count;
 
         /// <inheritdoc />
         public bool Add(TKey key, TValue value)
@@ -129,7 +130,9 @@ namespace MultiMap.Entities
             }
 #endif
 
-            return hashset.Add(value);
+            bool added = hashset.Add(value);
+            if (added) _count++;
+            return added;
         }
 
         /// <inheritdoc />
@@ -138,7 +141,11 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             if (_dictionary.TryGetValue(key, out var hashset))
+#if NET9_0_OR_GREATER
+                return hashset.AsReadOnly();
+#else
                 return hashset.ToArray();
+#endif
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -149,9 +156,13 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             if (_dictionary.TryGetValue(key, out var hashset))
+#if NET9_0_OR_GREATER
+                return hashset.AsReadOnly();
+#else
                 return hashset.ToArray();
+#endif
 
-            return [];
+            return Array.Empty<TValue>();
         }
 
         /// <inheritdoc />
@@ -164,8 +175,12 @@ namespace MultiMap.Entities
             {
                 bool removed = hashset.Remove(value);
 
-                if (hashset.Count == 0)
-                    _dictionary.Remove(key);
+                if (removed)
+                {
+                    _count--;
+                    if (hashset.Count == 0)
+                        _dictionary.Remove(key);
+                }
 
                 return removed;
             }
@@ -174,20 +189,18 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc />
-        public void RemoveKey(TKey key)
+        public bool RemoveKey(TKey key)
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
 
-            _dictionary.Remove(key);
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                _count -= hashset.Count;
+                return _dictionary.Remove(key);
+            }
+
+            return false;
         }
-
-        /// <inheritdoc />
-        [Obsolete("Clear(key) has been renamed to RemoveKey(key) for API consistency. Use ISimpleMultiMap.RemoveKey(key) instead. This method will be removed in a future version.")]
-        public void Clear(TKey key) => RemoveKey(key);
-
-        /// <inheritdoc />
-        [Obsolete("Flatten() is redundant. ISimpleMultiMap<TKey,TValue> implements IEnumerable<KeyValuePair<TKey,TValue>> directly — enumerate the map instead (e.g. foreach, ToList(), or LINQ). This method will be removed in a future version.")]
-        public IEnumerable<KeyValuePair<TKey, TValue>> Flatten() => this;
 
         /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -204,8 +217,25 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        /// <inheritdoc />
+        public bool ContainsKey(TKey key)
+        {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+
+            return _dictionary.ContainsKey(key);
+        }
+
+        /// <inheritdoc />
+        public bool Contains(TKey key, TValue value)
+        {
+            if (key is null) throw new ArgumentNullException(nameof(key));
+            if (value is null) throw new ArgumentNullException(nameof(value));
+
+            return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
+        }
+
         /// <inheritdoc/>
-        public override bool Equals(object? obj) => Equals(obj as SimpleMultiMap<TKey, TValue>);
+        public override bool Equals(object? obj) => Equals(obj as IReadOnlySimpleMultiMap<TKey, TValue>);
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
@@ -230,6 +260,6 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override int GetHashCode()
-            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
+            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
     }
 }

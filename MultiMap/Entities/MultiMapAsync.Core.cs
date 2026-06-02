@@ -1,4 +1,3 @@
-using MultiMap.Helpers;
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
@@ -24,6 +23,91 @@ namespace MultiMap.Entities
 #else
             return task.IsCompletedSuccessfully;
 #endif
+        }
+
+        // ── Async reader-writer lock helpers ──────────────────
+        //
+        // Design: _readerLock guards the _activeReaders counter (held only for
+        // the duration of an increment/decrement).  The first reader also acquires
+        // _writeLock so that writers are blocked while any reader is active; the
+        // last reader releases _writeLock.  Writers acquire _writeLock directly.
+
+        /// <summary>
+        /// Tries to enter a read lock without blocking.
+        /// Returns <see langword="true"/> and increments the reader count when successful.
+        /// </summary>
+        private bool TryEnterReadLockSync()
+        {
+            if (!_readerLock.Wait(0))
+                return false;
+
+            try
+            {
+                if (_activeReaders == 0)
+                {
+                    if (!_writeLock.Wait(0))
+                    {
+                        // Writer holds the lock – do not enter read lock.
+                        return false;
+                    }
+                }
+
+                _activeReaders++;
+                return true;
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
+        }
+
+        /// <summary>Enters a read lock synchronously (blocking).</summary>
+        private void EnterReadLockSync()
+        {
+            _readerLock.Wait();
+            try
+            {
+                if (_activeReaders == 0)
+                    _writeLock.Wait();
+
+                _activeReaders++;
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
+        }
+
+        /// <summary>Enters a read lock asynchronously.</summary>
+        private async Task EnterReadLockAsync(CancellationToken cancellationToken)
+        {
+            await _readerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_activeReaders == 0)
+                    await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                _activeReaders++;
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
+        }
+
+        /// <summary>Exits a previously entered read lock.</summary>
+        private void ExitReadLock()
+        {
+            _readerLock.Wait();
+            try
+            {
+                if (--_activeReaders == 0)
+                    _writeLock.Release();
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
         }
 
         // ── Add ───────────────────────────────────────────────
@@ -59,7 +143,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -67,26 +151,22 @@ namespace MultiMap.Entities
 
         private int AddRangeCore(TKey key, IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
+            bool exists = _dictionary.TryGetValue(key, out var hashset);
+            if (!exists)
                 hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
 
             int added = 0;
             foreach (var value in values)
             {
-                if (hashset.Add(value))
+                if (hashset!.Add(value))
                 {
                     _count++;
                     added++;
                 }
             }
+
+            if (!exists && added > 0)
+                _dictionary[key] = hashset!;
 
             return added;
         }
@@ -100,7 +180,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -139,7 +219,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -153,16 +233,16 @@ namespace MultiMap.Entities
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
 
-        private async ValueTask<IEnumerable<TValue>> GetSlowAsync(Task waitTask, TKey key)
+        private async ValueTask<IEnumerable<TValue>> GetSlowAsync(TKey key, CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return GetCore(key);
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
@@ -176,16 +256,16 @@ namespace MultiMap.Entities
             return [];
         }
 
-        private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(Task waitTask, TKey key)
+        private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(TKey key, CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return GetOrDefaultCore(key);
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
@@ -200,16 +280,16 @@ namespace MultiMap.Entities
             return result;
         }
 
-        private async ValueTask<(bool found, IEnumerable<TValue> values)> TryGetSlowAsync(Task waitTask, TKey key)
+        private async ValueTask<(bool found, IEnumerable<TValue> values)> TryGetSlowAsync(TKey key, CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return TryGetCore(key);
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
@@ -243,7 +323,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -272,7 +352,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -301,7 +381,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -327,82 +407,82 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
         // ── ContainsKey ───────────────────────────────────────
 
-        private async ValueTask<bool> ContainsKeySlowAsync(Task waitTask, TKey key)
+        private async ValueTask<bool> ContainsKeySlowAsync(TKey key, CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return _dictionary.ContainsKey(key);
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
         // ── Contains ──────────────────────────────────────────
 
-        private async ValueTask<bool> ContainsSlowAsync(Task waitTask, TKey key, TValue value)
+        private async ValueTask<bool> ContainsSlowAsync(TKey key, TValue value, CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
         // ── GetCount ──────────────────────────────────────────
 
-        private async ValueTask<int> GetCountSlowAsync(Task waitTask)
+        private async ValueTask<int> GetCountSlowAsync(CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return _count;
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
         // ── GetKeys ───────────────────────────────────────────
 
-        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(Task waitTask)
+        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return _dictionary.Keys.ToArray();
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
         // ── GetKeyCount ───────────────────────────────────────
 
-        private async ValueTask<int> GetKeysCountSlowAsync(Task waitTask)
+        private async ValueTask<int> GetKeyCountSlowAsync(CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return _dictionary.Count;
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
@@ -422,31 +502,31 @@ namespace MultiMap.Entities
             return result;
         }
 
-        private async ValueTask<IEnumerable<TValue>> GetValuesSlowAsync(Task waitTask)
+        private async ValueTask<IEnumerable<TValue>> GetValuesSlowAsync(CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return GetValuesCore();
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
         // ── GetValuesCount ────────────────────────────────────
 
-        private async ValueTask<int> GetValuesCountSlowAsync(Task waitTask, TKey key)
+        private async ValueTask<int> GetValuesCountSlowAsync(TKey key, CancellationToken cancellationToken)
         {
-            await waitTask.ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 return _dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0;
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
 
@@ -462,7 +542,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -586,7 +666,8 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Dispose();
+                _writeLock.Dispose();
+                _readerLock.Dispose();
             }
         }
     }

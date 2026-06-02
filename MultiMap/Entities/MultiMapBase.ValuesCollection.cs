@@ -9,7 +9,7 @@ namespace MultiMap.Entities
     {
         /// <summary>
         /// A lightweight, allocation-free view over all values in a multi-map's inner dictionary.
-        /// Enumerating with <c>foreach</c> on the concrete type uses <see cref="MultiMapBase{TKey, TValue, TCollection}.ValuesEnumerator{TEnumerator}"/> directly, avoiding boxing of the struct enumerator.
+        /// Enumerating with <c>foreach</c> on the concrete type uses <see cref="MultiMapBase{TKey, TValue, TCollection}.ValuesEnumerator"/> directly, avoiding boxing of the struct enumerator.
         /// </summary>
         private sealed class ValuesCollection : IEnumerable<TValue>
         {
@@ -18,7 +18,7 @@ namespace MultiMap.Entities
             internal ValuesCollection(ICollection<TCollection> collections) => _collections = collections;
 
             /// <summary>Returns a struct enumerator; <c>foreach</c> on the concrete type calls this without boxing.</summary>
-            public ValuesEnumerator<IEnumerator<TValue>> GetEnumerator() => new(_collections);
+            public ValuesEnumerator GetEnumerator() => new(_collections);
 
             /// <inheritdoc/>
             IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();

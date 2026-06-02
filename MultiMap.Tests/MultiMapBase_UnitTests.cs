@@ -87,6 +87,74 @@ public abstract class MultiMapBaseTests
     }
 
     [Test]
+    public void AddRange_NewKey_EmptyCollection_DoesNotCreateOrphanEntry()
+    {
+        _map.AddRange("ghost", Enumerable.Empty<int>());
+
+        Assert.That(_map.ContainsKey("ghost"), Is.False);
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyThenNonEmpty_CreatesKeyOnSecondCall()
+    {
+        _map.AddRange("a", Enumerable.Empty<int>());
+        _map.AddRange("a", new[] { 1, 2 });
+
+        Assert.That(_map.ContainsKey("a"), Is.True);
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyCollection_DoesNotAppearInKeys()
+    {
+        _map.Add("real", 1);
+        _map.AddRange("ghost", Enumerable.Empty<int>());
+
+        Assert.That(_map.Keys, Does.Not.Contain("ghost"));
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyCollection_ReturnsZero()
+    {
+        int added = _map.AddRange("ghost", Enumerable.Empty<int>());
+
+        Assert.That(added, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyLazySequence_EnumeratedExactlyOnce()
+    {
+        // Regression for optimisation: a lazy sequence that is empty should not be
+        // enumerated a second time after the short-circuit materialisation check.
+        int enumerations = 0;
+        IEnumerable<int> LazyEmpty()
+        {
+            enumerations++;
+            yield break;
+        }
+
+        _map.AddRange("a", LazyEmpty());
+
+        Assert.That(enumerations, Is.EqualTo(1));
+        Assert.That(_map.ContainsKey("a"), Is.False);
+    }
+
+    [Test]
+    public void AddRange_ExistingKey_EmptySequence_DoesNotAlterExistingValues()
+    {
+        _map.Add("a", 10);
+        int added = _map.AddRange("a", Enumerable.Empty<int>());
+
+        Assert.That(added, Is.EqualTo(0));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 10 }));
+        Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
     public void AddRange_UpdatesCount()
     {
         _map.AddRange("a", new[] { 1, 2 });

@@ -9,98 +9,104 @@ namespace MultiMap.Entities
     /// Provides thread-safe operations for adding, removing, and retrieving values by key, as well as asynchronous enumeration of all key-value pairs.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// MultiMapAsync is designed for concurrent scenarios where asynchronous access and modification of the collection are required.
     /// All operations are thread-safe and use internal locking to ensure consistency.
     /// Enumerating the collection produces a snapshot of the current state, so changes made during enumeration are not reflected.
     /// This class is useful for managing associations where each key can have multiple distinct values, such as grouping or indexing tasks in asynchronous workflows.
+    /// </para>
+    /// <para><b>Locking protocol (internal readers-writer protocol)</b></para>
+    /// <para>
+    /// Two <see cref="SemaphoreSlim"/> instances implement a custom readers-writer protocol:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><term><c>_writeLock</c> (1, 1)</term>
+    ///     <description>
+    ///       Exclusive permit held for the entire duration of every mutating operation
+    ///       (Add, AddRange, Remove*, Clear).  The first reader to enter also acquires
+    ///       this permit and holds it until the last concurrent reader exits, which
+    ///       prevents any writer from entering while readers are active.
+    ///     </description>
+    ///   </item>
+    ///   <item><term><c>_readerLock</c> (1, 1)</term>
+    ///     <description>
+    ///       Guards the <c>_activeReaders</c> counter.  It is held only for the brief
+    ///       critical section of incrementing or decrementing the counter, so many
+    ///       readers can proceed concurrently once their count is registered.
+    ///     </description>
+    ///   </item>
+    /// </list>
+    /// <para>
+    /// <b>Invariants:</b>
+    /// </para>
+    /// <list type="number">
+    ///   <item>A writer must acquire <c>_writeLock</c> exclusively; it will block until all active readers have exited (i.e. <c>_activeReaders</c> drops to 0 and <c>_writeLock</c> is released by the last reader).</item>
+    ///   <item>Readers must wait for any active writer: when <c>_activeReaders == 0</c> the first reader acquires <c>_writeLock</c>; if a writer currently holds it the reader blocks until the writer releases it.</item>
+    ///   <item>While at least one reader is active (<c>_activeReaders &gt; 0</c>), <c>_writeLock</c> remains held, so writers queue behind all current readers.</item>
+    ///   <item>Each operation has a fast path (non-blocking <c>Wait(0)</c>) that avoids allocating a <c>Task</c>/continuation; falling back to the <c>SlowAsync</c> variant only when contention is detected.</item>
+    /// </list>
+    /// <para>
+    /// Because every read acquires the shared <c>_writeLock</c>, writers can be starved under sustained high-frequency concurrent reads.
+    /// Prefer <see cref="MultiMapLock{TKey,TValue}"/> (which uses <see cref="System.Threading.ReaderWriterLockSlim"/>) for read-heavy workloads with latency-sensitive writers.
+    /// </para>
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
-    public sealed partial class MultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public sealed partial class MultiMapAsync<TKey, TValue>(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer) : IMultiMapAsync<TKey, TValue>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {
-        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
-        private readonly SemaphoreSlim _semaphore;
-        private readonly IEqualityComparer<TValue>? _valueComparer;
+        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
+                ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
+                : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+        /// <summary>Exclusive write lock – held by the single active writer.</summary>
+        private readonly SemaphoreSlim _writeLock = new SemaphoreSlim(1, 1);
+        /// <summary>Guards the <see cref="_activeReaders"/> counter; held only for the duration of an increment/decrement.</summary>
+        private readonly SemaphoreSlim _readerLock = new SemaphoreSlim(1, 1);
+        private readonly IEqualityComparer<TValue>? _valueComparer = valueComparer;
+        private int _activeReaders;
         private int _count;
         private int _disposed;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class.
         /// </summary>
-        public MultiMapAsync()
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
-            _semaphore = new SemaphoreSlim(1, 1);
-        }
+        public MultiMapAsync() : this(0, null, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified equality comparer for keys.
         /// </summary>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapAsync(IEqualityComparer<TKey>? keyComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
-            _semaphore = new SemaphoreSlim(1, 1);
-        }
+        public MultiMapAsync(IEqualityComparer<TKey>? keyComparer) : this(0, keyComparer, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified equality comparer for values.
         /// </summary>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapAsync(IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
-            _semaphore = new SemaphoreSlim(1, 1);
-            _valueComparer = valueComparer;
-        }
+        public MultiMapAsync(IEqualityComparer<TValue>? valueComparer) : this(0, null, valueComparer) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys.
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        public MultiMapAsync(int capacity)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
-            _semaphore = new SemaphoreSlim(1, 1);
-        }
+        public MultiMapAsync(int capacity) : this(capacity, null, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys.
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
-            _semaphore = new SemaphoreSlim(1, 1);
-        }
+        public MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer) : this(capacity, keyComparer, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for values.
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapAsync(int capacity, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
-            _semaphore = new SemaphoreSlim(1, 1);
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
-            _semaphore = new SemaphoreSlim(1, 1);
-            _valueComparer = valueComparer;
-        }
+        public MultiMapAsync(int capacity, IEqualityComparer<TValue>? valueComparer) : this(capacity, null, valueComparer) { }
 
         /// <inheritdoc/>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
@@ -109,7 +115,7 @@ namespace MultiMap.Entities
             if (value is null) throw new ArgumentNullException(nameof(value));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -118,7 +124,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return AddSlowAsync(waitTask, key, value);
@@ -131,7 +137,7 @@ namespace MultiMap.Entities
             if (values is null) throw new ArgumentNullException(nameof(values));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -140,7 +146,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return AddRangeSlowAsync(waitTask, key, values);
@@ -152,7 +158,7 @@ namespace MultiMap.Entities
             if (items is null) throw new ArgumentNullException(nameof(items));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -161,7 +167,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return AddRangeSlowAsync(waitTask, items);
@@ -173,8 +179,8 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -182,10 +188,10 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetSlowAsync(waitTask, key);
+            return GetSlowAsync(key, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -194,8 +200,8 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -203,10 +209,10 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetOrDefaultSlowAsync(waitTask, key);
+            return GetOrDefaultSlowAsync(key, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -215,8 +221,8 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -224,10 +230,10 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return TryGetSlowAsync(waitTask, key);
+            return TryGetSlowAsync(key, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -237,7 +243,7 @@ namespace MultiMap.Entities
             if (value is null) throw new ArgumentNullException(nameof(value));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -246,7 +252,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return RemoveSlowAsync(waitTask, key, value);
@@ -258,7 +264,7 @@ namespace MultiMap.Entities
             if (items is null) throw new ArgumentNullException(nameof(items));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -267,7 +273,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return RemoveRangeSlowAsync(waitTask, items);
@@ -280,7 +286,7 @@ namespace MultiMap.Entities
             if (predicate is null) throw new ArgumentNullException(nameof(predicate));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -289,7 +295,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return RemoveWhereSlowAsync(waitTask, key, predicate);
@@ -301,7 +307,7 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -310,7 +316,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return RemoveKeySlowAsync(waitTask, key);
@@ -322,8 +328,8 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -331,10 +337,10 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return ContainsKeySlowAsync(waitTask, key);
+            return ContainsKeySlowAsync(key, cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -344,8 +350,8 @@ namespace MultiMap.Entities
             if (value is null) throw new ArgumentNullException(nameof(value));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -354,18 +360,18 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return ContainsSlowAsync(waitTask, key, value);
+            return ContainsSlowAsync(key, value, cancellationToken);
         }
 
         /// <inheritdoc/>
         public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -373,18 +379,18 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetCountSlowAsync(waitTask);
+            return GetCountSlowAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -392,18 +398,18 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetKeysSlowAsync(waitTask);
+            return GetKeysSlowAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
         public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -411,18 +417,18 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetKeysCountSlowAsync(waitTask);
+            return GetKeyCountSlowAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -430,10 +436,10 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetValuesSlowAsync(waitTask);
+            return GetValuesSlowAsync(cancellationToken);
         }
 
         /// <inheritdoc/>
@@ -442,8 +448,8 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            cancellationToken.ThrowIfCancellationRequested();
+            if (TryEnterReadLockSync())
             {
                 try
                 {
@@ -451,17 +457,17 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    ExitReadLock();
                 }
             }
-            return GetValuesCountSlowAsync(waitTask, key);
+            return GetValuesCountSlowAsync(key, cancellationToken);
         }
 
         /// <inheritdoc/>
         public Task ClearAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _semaphore.WaitAsync(cancellationToken);
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
                 try
@@ -472,7 +478,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _semaphore.Release();
+                    _writeLock.Release();
                 }
             }
             return ClearSlowAsync(waitTask);
@@ -500,14 +506,14 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 UnionCore(snapshot);
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -534,14 +540,14 @@ namespace MultiMap.Entities
                 otherIndex[key] = new HashSet<TValue>(await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false));
             }
 
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 IntersectCore(otherIndex);
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -567,14 +573,14 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 ExceptWithCore(snapshot);
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -601,14 +607,14 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 SymmetricExceptWithCore(snapshot);
             }
             finally
             {
-                _semaphore.Release();
+                _writeLock.Release();
             }
         }
 
@@ -621,12 +627,12 @@ namespace MultiMap.Entities
         /// An <see cref="IAsyncEnumerator{T}"/> of <see cref="KeyValuePair{TKey, TValue}"/> representing all entries in the multi-map.
         /// </returns>
         public async IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(
-            [EnumeratorCancellation] CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
             List<KeyValuePair<TKey, TValue>> snapshot;
 
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 snapshot = new List<KeyValuePair<TKey, TValue>>(_count);
@@ -640,7 +646,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
 
             foreach (var pair in snapshot)
@@ -666,8 +672,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            var other = obj as IReadOnlyMultiMapAsync<TKey, TValue>;
-            if (other is null)
+            if (obj is not IReadOnlyMultiMapAsync<TKey, TValue> other)
                 return false;
 
             if (ReferenceEquals(this, other))
@@ -704,10 +709,10 @@ namespace MultiMap.Entities
                 Dictionary<TKey, HashSet<TValue>> thisSnapshot;
                 Dictionary<TKey, HashSet<TValue>> otherSnapshot;
 
-                first._semaphore.Wait();
+                first.EnterReadLockSync();
                 try
                 {
-                    second._semaphore.Wait();
+                    second.EnterReadLockSync();
                     try
                     {
                         if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
@@ -719,12 +724,12 @@ namespace MultiMap.Entities
                     }
                     finally
                     {
-                        second._semaphore.Release();
+                        second.ExitReadLock();
                     }
                 }
                 finally
                 {
-                    first._semaphore.Release();
+                    first.ExitReadLock();
                 }
 
                 foreach (var kvp in thisSnapshot)
@@ -745,7 +750,7 @@ namespace MultiMap.Entities
             Dictionary<TKey, HashSet<TValue>> snapshot;
             int thisCount;
 
-            _semaphore.Wait();
+            EnterReadLockSync();
             try
             {
                 thisCount = _count;
@@ -753,7 +758,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
 
             int otherCount = other.GetCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
@@ -804,10 +809,10 @@ namespace MultiMap.Entities
                 Dictionary<TKey, HashSet<TValue>> thisSnapshot;
                 Dictionary<TKey, HashSet<TValue>> otherSnapshot;
 
-                await first._semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await first.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    await second._semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    await second.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
                     try
                     {
                         if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
@@ -819,12 +824,12 @@ namespace MultiMap.Entities
                     }
                     finally
                     {
-                        second._semaphore.Release();
+                        second.ExitReadLock();
                     }
                 }
                 finally
                 {
-                    first._semaphore.Release();
+                    first.ExitReadLock();
                 }
 
                 foreach (var kvp in thisSnapshot)
@@ -843,7 +848,7 @@ namespace MultiMap.Entities
             Dictionary<TKey, HashSet<TValue>> snapshot;
             int thisCount;
 
-            await _semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 thisCount = _count;
@@ -851,7 +856,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
 
             int otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);
@@ -881,14 +886,14 @@ namespace MultiMap.Entities
         public override int GetHashCode()
         {
             ThrowIfDisposed();
-            _semaphore.Wait();
+            EnterReadLockSync();
             try
             {
-                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
+                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
             }
             finally
             {
-                _semaphore.Release();
+                ExitReadLock();
             }
         }
     }

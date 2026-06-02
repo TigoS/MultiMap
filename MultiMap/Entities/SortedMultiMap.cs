@@ -1,4 +1,4 @@
-﻿using MultiMap.Helpers;
+using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
@@ -11,8 +11,8 @@ namespace MultiMap.Entities
     /// This type is useful when you need to maintain multiple values per key and require predictable ordering for both keys and values.
     /// Thread safety is not guaranteed; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IComparable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IComparable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement both <see cref="IEquatable{TKey}"/> (required by the base class and all multi-map interfaces) and <see cref="IComparable{TKey}"/> (required by this class for sorted key ordering). Note: only the comparer is used at runtime; <see cref="IEquatable{TKey}"/> is a library-wide constraint on all multi-map types.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement both <see cref="IEquatable{TValue}"/> and <see cref="IComparable{TValue}"/>.</typeparam>
     public sealed class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
         where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
         where TValue : notnull, IEquatable<TValue>, IComparable<TValue>
@@ -95,6 +95,8 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override int GetHashCode()
-            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, SortedSet<TValue>>(_dictionary);
+            // SortedMultiMap uses IComparer<TKey> for ordering, not IEqualityComparer<TKey>;
+            // key hashing uses EqualityComparer<TKey>.Default (the ComputeUnorderedHash default).
+            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, SortedSet<TValue>>(_dictionary, valueComparer: _valueComparer is IEqualityComparer<TValue> ec ? ec : null);
     }
 }

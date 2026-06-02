@@ -2,8 +2,6 @@ using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
 using MultiMap.Helpers;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace BenchmarkSuite;
 
@@ -750,6 +748,43 @@ public class MultiMapBenchmarks
         }
 
         return sum;
+    }
+
+    // --- Map enumeration benchmarks ---
+    [Benchmark]
+    public int MultiMapSet_Enumerate()
+    {
+        int count = 0;
+        foreach (var _ in _setMap)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int MultiMapList_Enumerate()
+    {
+        int count = 0;
+        foreach (var _ in _listMap)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_Enumerate()
+    {
+        int count = 0;
+        foreach (var _ in _concurrentMap)
+            count++;
+        return count;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_Enumerate()
+    {
+        int count = 0;
+        foreach (var _ in _sortedMap)
+            count++;
+        return count;
     }
 
     // --- Helper set-operation benchmarks (MultiMapSet) ---

@@ -121,6 +121,20 @@ public class SimpleMultiMapBenchmarks
         return sum;
     }
 
+    // --- Contains benchmarks ---
+
+    [Benchmark]
+    public bool SimpleMultiMap_Contains()
+    {
+        return _map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool SimpleMultiMap_ContainsKey()
+    {
+        return _map.ContainsKey(Consts.Key50Prefix);
+    }
+
     // --- Remove benchmarks ---
 
     [Benchmark]
@@ -169,23 +183,6 @@ public class SimpleMultiMapBenchmarks
             map.RemoveKey($"{Consts.KeyPrefix}{k}");
         }
     }
-
-    // --- Flatten benchmarks (deprecated API — kept to measure the obsolete path) ---
-
-#pragma warning disable CS0618 // Flatten() is intentionally tested here
-    [Benchmark]
-    public int SimpleMultiMap_Flatten()
-    {
-        int count = 0;
-
-        foreach (var kvp in _map.Flatten())
-        {
-            count++;
-        }
-
-        return count;
-    }
-#pragma warning restore CS0618
 
     // --- Enumeration benchmarks ---
 
