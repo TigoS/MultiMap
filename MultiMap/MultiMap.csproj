@@ -35,7 +35,7 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Re
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\icons8-nuget-shadow\icons8-nuget-48.png">
+    <None Include="..\icons8-nuget-shadow\icons8-nuget-48.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
