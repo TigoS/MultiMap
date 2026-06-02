@@ -21,7 +21,6 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `ISimpleMultiMap.Flatten()` removed — deprecated in v1.0.12. Replace all remaining usages with direct enumeration: `foreach (var kvp in map)`, `map.ToList()`, or any LINQ expression.
 - `AddRange(TKey key, IEnumerable<TValue> values)` on a new key with an empty enumerable now returns `0` instead of `void`. Callers must check the return value of `AddRange` to confirm whether any pairs were actually added.
 - `AddRangeAsync(TKey key, IEnumerable<TValue> values)` on a new key with an empty enumerable now returns `0` instead of `Task`. Callers must `await` the result and check the returned count.
-- `MultiMapBase._dictionary` and `_count` are now `internal` (were `protected`). External subclasses must use the new `protected IReadOnlyDictionary<TKey, TCollection> Dictionary` property for read-only inspection and delegate all mutations through the public/protected API (`Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveWhere`, `Clear`).
 
 **Bug Fixes**
 
