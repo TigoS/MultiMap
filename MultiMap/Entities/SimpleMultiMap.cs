@@ -144,7 +144,7 @@ namespace MultiMap.Entities
 #if NET9_0_OR_GREATER
                 return hashset.AsReadOnly();
 #else
-                return hashset;
+                return hashset.ToArray();
 #endif
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
@@ -159,10 +159,10 @@ namespace MultiMap.Entities
 #if NET9_0_OR_GREATER
                 return hashset.AsReadOnly();
 #else
-                return hashset;
+                return hashset.ToArray();
 #endif
 
-            return [];
+            return Array.Empty<TValue>();
         }
 
         /// <inheritdoc />
