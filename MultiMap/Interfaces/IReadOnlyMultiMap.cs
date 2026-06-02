@@ -1,4 +1,4 @@
-﻿namespace MultiMap.Interfaces
+namespace MultiMap.Interfaces
 {
     /// <summary>
     /// Represents a read-only collection of keys, each mapped to one or more values. Provides methods to retrieve values associated with a key and to query the presence of keys or key-value pairs.
@@ -28,34 +28,6 @@
         public bool TryGet(TKey key, out IEnumerable<TValue> values);
 
         /// <summary>
-        /// Determines whether the collection contains an element with the specified key.
-        /// </summary>
-        /// <param name="key">The key to locate in the collection.
-        /// Cannot be null if the collection does not accept null keys.</param>
-        /// <returns>
-        /// <see langword="true"/> if the collection contains an element with the specified key;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
-        /// </exception>
-        public bool ContainsKey(TKey key);
-
-        /// <summary>
-        /// Determines whether the collection contains an element with the specified key and value.
-        /// </summary>
-        /// <param name="key">The key to locate in the collection.</param>
-        /// <param name="value">The value to locate in the collection associated with the specified key.</param>
-        /// <returns>
-        /// <see langword="true"/> if an element with the specified key and value exists in the collection;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
-        /// </exception>
-        public bool Contains(TKey key, TValue value);
-
-        /// <summary>
         /// Gets the number of keys contained in the collection.
         /// </summary>
         public int KeyCount { get; }
@@ -79,12 +51,6 @@
         /// Thrown when <paramref name="key"/> is <see langword="null"/>.
         /// </exception>
         public int GetValuesCount(TKey key);
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the collection.
-        /// </summary>
-        /// <returns>An enumerator that can be used to iterate through the collection of key/value pairs.</returns>
-        public new IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator();
 
         /// <summary>
         /// Gets the collection of values associated with the specified key.

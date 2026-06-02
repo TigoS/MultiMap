@@ -38,5 +38,32 @@
         /// Thrown when <paramref name="key"/> is <see langword="null"/>.
         /// </exception>
         public IEnumerable<TValue> GetOrDefault(TKey key);
+
+        /// <summary>
+        /// Determines whether the collection contains an element with the specified key.
+        /// </summary>
+        /// <param name="key">The key to locate in the collection. Cannot be null.</param>
+        /// <returns>
+        /// <see langword="true"/> if the collection contains an element with the specified key;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+        /// </exception>
+        public bool ContainsKey(TKey key);
+
+        /// <summary>
+        /// Determines whether the collection contains an element with the specified key and value.
+        /// </summary>
+        /// <param name="key">The key to locate in the collection. Cannot be null.</param>
+        /// <param name="value">The value to locate in the collection associated with the specified key. Cannot be null.</param>
+        /// <returns>
+        /// <see langword="true"/> if an element with the specified key and value exists in the collection;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+        /// </exception>
+        public bool Contains(TKey key, TValue value);
     }
 }

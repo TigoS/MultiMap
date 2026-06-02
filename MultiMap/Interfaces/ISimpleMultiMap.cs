@@ -18,16 +18,16 @@
         /// Attempts to add the specified key and value to the collection.
         /// </summary>
         /// <remarks>
-        /// If the key already exists in the collection, the method does not modify the existing entry and returns false.
-        /// The behavior regarding null keys or values depends on the implementation of the collection.
+        /// If the collection already contains the specified key-value pair, the method does not modify the collection and returns false.
+        /// The behavior regarding null keys or values depends on the specific implementation.
         /// </remarks>
         /// <param name="key">The key to add to the collection.
         /// Cannot be null if the collection does not support null keys.</param>
         /// <param name="value">The value associated with the key to add.
-        /// Cannot be null if the collection does not support null values.</param>
+        /// May be subject to constraints depending on the collection implementation.</param>
         /// <returns>
         /// <see langword="true"/> if the key and value were added successfully;
-        /// otherwise, <see langword="false"/> if the key already exists in the collection.
+        /// otherwise, <see langword="false"/> if the key-value pair already exists in the collection.
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
@@ -35,13 +35,15 @@
         public bool Add(TKey key, TValue value);
 
         /// <summary>
-        /// Removes the entry with the specified key and value from the collection, if it exists.
+        /// Removes the entry with the specified key and value from the collection.
         /// </summary>
-        /// <param name="key">The key of the entry to remove. Cannot be null.</param>
+        /// <remarks>This method removes the entry only if both the key and value match an existing element.
+        /// If the collection does not contain the specified key-value pair, no action is taken.</remarks>
+        /// <param name="key">The key of the element to remove. Cannot be null.</param>
         /// <param name="value">The value associated with the key to remove.</param>
         /// <returns>
-        /// <see langword="true"/> if the entry was successfully removed;
-        /// otherwise, <see langword="false"/> if the entry does not exist.
+        /// <see langword="true"/> if the element was found and removed;
+        /// otherwise, <see langword="false"/>.
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
@@ -51,11 +53,16 @@
         /// <summary>
         /// Removes all values associated with the specified key.
         /// </summary>
-        /// <param name="key">The key whose associated values are to be removed. Cannot be null.</param>
+        /// <remarks>Use this method to remove all entries for a given key.
+        /// If the key does not exist, no action is taken and the method returns false.</remarks>
+        /// <param name="key">The key whose values are to be removed. Cannot be null.</param>
+        /// <returns>
+        /// <see langword="true"/> if the key was found and its values were removed;
+        /// otherwise, <see langword="false"/>.
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> is <see langword="null"/>.
         /// </exception>
-        public void RemoveKey(TKey key);
-
-            }
-        }
+        public bool RemoveKey(TKey key);
+    }
+}

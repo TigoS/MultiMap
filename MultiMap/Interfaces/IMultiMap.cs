@@ -10,30 +10,10 @@
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
-    public interface IMultiMap<TKey, TValue> : IReadOnlyMultiMap<TKey, TValue>, IEquatable<IReadOnlyMultiMap<TKey, TValue>>
+    public interface IMultiMap<TKey, TValue> : IReadOnlyMultiMap<TKey, TValue>, ISimpleMultiMap<TKey, TValue>, IEquatable<IReadOnlyMultiMap<TKey, TValue>>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {
-        /// <summary>
-        /// Attempts to add the specified key and value to the collection.
-        /// </summary>
-        /// <remarks>
-        /// If the collection already contains the specified key-value pair, the method does not modify the collection and returns false.
-        /// The behavior regarding null keys or values depends on the specific implementation.
-        /// </remarks>
-        /// <param name="key">The key to add to the collection.
-        /// Cannot be null if the collection does not support null keys.</param>
-        /// <param name="value">The value associated with the key to add.
-        /// May be subject to constraints depending on the collection implementation.</param>
-        /// <returns>
-        /// <see langword="true"/> if the key and value were added successfully;
-        /// otherwise, <see langword="false"/> if the key-value pair already exists in the collection.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
-        /// </exception>
-        public bool Add(TKey key, TValue value);
-
         /// <summary>
         /// Adds a collection of values to the specified key.
         /// </summary>
@@ -55,22 +35,6 @@
         /// Thrown when <paramref name="items"/> is <see langword="null"/>.
         /// </exception>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
-
-        /// <summary>
-        /// Removes the entry with the specified key and value from the collection.
-        /// </summary>
-        /// <remarks>This method removes the entry only if both the key and value match an existing element.
-        /// If the collection does not contain the specified key-value pair, no action is taken.</remarks>
-        /// <param name="key">The key of the element to remove. Cannot be null.</param>
-        /// <param name="value">The value associated with the key to remove.</param>
-        /// <returns>
-        /// <see langword="true"/> if the element was found and removed;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
-        /// </exception>
-        public bool Remove(TKey key, TValue value);
 
         /// <summary>
         /// Removes the specified key/value pairs from the collection.
@@ -95,21 +59,6 @@
         /// Thrown when <paramref name="key"/> or <paramref name="predicate"/> is <see langword="null"/>.
         /// </exception>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate);
-
-        /// <summary>
-        /// Removes all values associated with the specified key.
-        /// </summary>
-        /// <remarks>Use this method to remove all entries for a given key.
-        /// If the key does not exist, no action is taken and the method returns false.</remarks>
-        /// <param name="key">The key whose values are to be removed. Cannot be null.</param>
-        /// <returns>
-        /// <see langword="true"/> if the key was found and its values were removed;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
-        /// </exception>
-        public bool RemoveKey(TKey key);
 
         /// <summary>
         /// Removes all items from the collection.
