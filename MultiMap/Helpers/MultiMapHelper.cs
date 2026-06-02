@@ -1,4 +1,4 @@
-﻿using MultiMap.Interfaces;
+using MultiMap.Interfaces;
 using System.Runtime.CompilerServices;
 
 namespace MultiMap.Helpers
@@ -12,52 +12,42 @@ namespace MultiMap.Helpers
         /// Adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
         /// </summary>
         /// <remarks>
-        /// This method is not atomic. When used with concurrent implementations such as
-        /// <see cref="Entities.ConcurrentMultiMap{TKey, TValue}"/> or <see cref="Entities.MultiMapLock{TKey, TValue}"/>,
-        /// concurrent modifications to <paramref name="target"/> or <paramref name="other"/> between
-        /// individual operations may cause the result to reflect a mix of states rather than a
-        /// point-in-time union. No structural corruption or count drift will occur.
+        /// This method is not atomic. When used with concurrent implementations such as <see cref="Entities.ConcurrentMultiMap{TKey, TValue}"/> or <see cref="Entities.MultiMapLock{TKey, TValue}"/>, concurrent modifications to <paramref name="target"/> or <paramref name="other"/> between individual operations may cause the result to reflect a mix of states rather than a point-in-time union. No structural corruption or count drift will occur.
         /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        public static void Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
             if (target is null) throw new ArgumentNullException(nameof(target));
             if (other is null) throw new ArgumentNullException(nameof(other));
 
-            foreach (var key in other.Keys)
-            {
-                target.AddRange(key, other.GetOrDefault(key));
-            }
+            target.AddRange(other);
+
+            return target;
         }
 
         /// <summary>
         /// Removes all key-value pairs from <paramref name="target"/> that do not exist in <paramref name="other"/>.
         /// </summary>
         /// <remarks>
-        /// This method is not atomic. It reads a snapshot of <paramref name="target"/> keys and values,
-        /// then applies removals in a separate phase. When used with concurrent implementations,
-        /// key-value pairs added to <paramref name="target"/> between the read and write phases will
-        /// survive the intersect even if absent from <paramref name="other"/>. Pairs scheduled for
-        /// <see cref="IMultiMap{TKey, TValue}.RemoveKey"/> removal will also remove any values added
-        /// concurrently under the same key. No structural corruption or count drift will occur.
+        /// This method is not atomic. It reads a snapshot of <paramref name="target"/> keys and values, then applies removals in a separate phase. When used with concurrent implementations, key-value pairs added to <paramref name="target"/> between the read and write phases will survive the intersect even if absent from <paramref name="other"/>. Pairs scheduled for <see cref="ISimpleMultiMap{TKey, TValue}.RemoveKey"/> removal will also remove any values added concurrently under the same key. No structural corruption or count drift will occur.
         /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        public static void Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
             if (target is null) throw new ArgumentNullException(nameof(target));
             if (other is null) throw new ArgumentNullException(nameof(other));
 
-            var keysToRemove = new List<TKey>();
+            var keysToRemove = new List<TKey>(target.KeyCount);
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
 
             foreach (var kvp in target)
@@ -69,7 +59,16 @@ namespace MultiMap.Helpers
                 }
 
                 var otherValues = other.GetOrDefault(kvp.Key);
-                var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
+                ISet<TValue> otherSet;
+                if (otherValues is ISet<TValue> existing)
+                {
+                    otherSet = existing;
+                }
+                else
+                {
+                    otherSet = new HashSet<TValue>();
+                    foreach (var v in otherValues) otherSet.Add(v);
+                }
                 if (!otherSet.Contains(kvp.Value))
                 {
                     valuesToRemove.Add(new KeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
@@ -82,21 +81,21 @@ namespace MultiMap.Helpers
             }
 
             target.RemoveRange(valuesToRemove);
+
+            return target;
         }
 
         /// <summary>
         /// Removes all key-value pairs from <paramref name="target"/> that exist in <paramref name="other"/>.
         /// </summary>
         /// <remarks>
-        /// This method is not atomic. Each removal is individually atomic, but values added to
-        /// <paramref name="target"/> between iterations that also exist in <paramref name="other"/>
-        /// may not be removed. No structural corruption or count drift will occur.
+        /// This method is not atomic. Each removal is individually atomic, but values added to <paramref name="target"/> between iterations that also exist in <paramref name="other"/> may not be removed. No structural corruption or count drift will occur.
         /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        public static void ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -107,6 +106,8 @@ namespace MultiMap.Helpers
             {
                 target.Remove(kvp.Key, kvp.Value);
             }
+
+            return target;
         }
 
         /// <summary>
@@ -114,34 +115,39 @@ namespace MultiMap.Helpers
         /// <paramref name="target"/> or <paramref name="other"/>, but not both.
         /// </summary>
         /// <remarks>
-        /// This method is not atomic. It classifies pairs via <see cref="IReadOnlyMultiMap{TKey, TValue}.Contains"/>
-        /// in a read phase, then applies additions and removals in separate write phases. When used with
-        /// concurrent implementations, pairs added to <paramref name="target"/> between classification and
-        /// mutation may be misclassified, leaving values that should have been removed or failing to add
-        /// values that should have been included. No structural corruption or count drift will occur.
+        /// This method is not atomic. It classifies pairs via <see cref="ICollection{TValue}.Contains"/> in a read phase, then applies additions and removals in separate write phases. When used with concurrent implementations, pairs added to <paramref name="target"/> between classification and mutation may be misclassified, leaving values that should have been removed or failing to add values that should have been included. No structural corruption or count drift will occur.
         /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        public static void SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
             if (target is null) throw new ArgumentNullException(nameof(target));
             if (other is null) throw new ArgumentNullException(nameof(other));
 
-            var toRemove = new List<KeyValuePair<TKey, TValue>>();
-            var toAdd = new List<KeyValuePair<TKey, TValue>>();
+            var otherCount = other.Count;
+            var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
+            var toAdd = new List<KeyValuePair<TKey, TValue>>(otherCount);
 
-            var targetLookup = new Dictionary<TKey, ISet<TValue>>();
+            var targetLookup = new Dictionary<TKey, ISet<TValue>>(other.KeyCount);
 
             foreach (var kvp in other)
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
                     var raw = target.GetOrDefault(kvp.Key);
-                    targetSet = raw as ISet<TValue> ?? new HashSet<TValue>(raw);
+                    if (raw is ISet<TValue> existing)
+                    {
+                        targetSet = existing;
+                    }
+                    else
+                    {
+                        targetSet = new HashSet<TValue>();
+                        foreach (var v in raw) targetSet.Add(v);
+                    }
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -157,6 +163,8 @@ namespace MultiMap.Helpers
 
             target.RemoveRange(toRemove);
             target.AddRange(toAdd);
+
+            return target;
         }
 
         // ── ISimpleMultiMap overloads
@@ -197,7 +205,7 @@ namespace MultiMap.Helpers
             if (target is null) throw new ArgumentNullException(nameof(target));
             if (other is null) throw new ArgumentNullException(nameof(other));
 
-            var toRemove = new List<KeyValuePair<TKey, TValue>>();
+            var toRemove = new List<KeyValuePair<TKey, TValue>>(target.Count);
             var otherLookup = new Dictionary<TKey, ISet<TValue>>();
 
             foreach (var kvp in target)
@@ -205,7 +213,15 @@ namespace MultiMap.Helpers
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
                     var raw = other.GetOrDefault(kvp.Key);
-                    otherSet = raw as ISet<TValue> ?? new HashSet<TValue>(raw);
+                    if (raw is ISet<TValue> existing)
+                    {
+                        otherSet = existing;
+                    }
+                    else
+                    {
+                        otherSet = new HashSet<TValue>();
+                        foreach (var v in raw) otherSet.Add(v);
+                    }
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -260,8 +276,9 @@ namespace MultiMap.Helpers
             if (target is null) throw new ArgumentNullException(nameof(target));
             if (other is null) throw new ArgumentNullException(nameof(other));
 
-            var toRemove = new List<KeyValuePair<TKey, TValue>>();
-            var toAdd = new List<KeyValuePair<TKey, TValue>>();
+            var otherCount = other.Count;
+            var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
+            var toAdd = new List<KeyValuePair<TKey, TValue>>(otherCount);
 
             var targetLookup = new Dictionary<TKey, ISet<TValue>>();
 
@@ -270,7 +287,15 @@ namespace MultiMap.Helpers
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
                     var raw = target.GetOrDefault(kvp.Key);
-                    targetSet = raw as ISet<TValue> ?? new HashSet<TValue>(raw);
+                    if (raw is ISet<TValue> existing)
+                    {
+                        targetSet = existing;
+                    }
+                    else
+                    {
+                        targetSet = new HashSet<TValue>();
+                        foreach (var v in raw) targetSet.Add(v);
+                    }
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -284,20 +309,13 @@ namespace MultiMap.Helpers
                 }
             }
 
-            foreach (var kvp in toRemove)
-            {
-                target.Remove(kvp.Key, kvp.Value);
-            }
-
-            foreach (var kvp in toAdd)
-            {
-                target.Add(kvp.Key, kvp.Value);
-            }
+            foreach (var kvp in toRemove) target.Remove(kvp.Key, kvp.Value);
+            foreach (var kvp in toAdd) target.Add(kvp.Key, kvp.Value);
 
             return target;
         }
 
-        // ── IMultiMapAsync overloads ──────────────────────
+        // ── IMultiMapAsync overloads
 
         /// <summary>
         /// Asynchronously adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
@@ -363,7 +381,16 @@ namespace MultiMap.Helpers
                 }
 
                 var otherValues = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
-                var otherSet = otherValues as ISet<TValue> ?? new HashSet<TValue>(otherValues);
+                ISet<TValue> otherSet;
+                if (otherValues is ISet<TValue> existing)
+                {
+                    otherSet = existing;
+                }
+                else
+                {
+                    otherSet = new HashSet<TValue>();
+                    foreach (var v in otherValues) otherSet.Add(v);
+                }
                 var values = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
@@ -447,7 +474,16 @@ namespace MultiMap.Helpers
             foreach (var key in otherKeys)
             {
                 var targetValues = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
-                var targetSet = targetValues as ISet<TValue> ?? new HashSet<TValue>(targetValues);
+                ISet<TValue> targetSet;
+                if (targetValues is ISet<TValue> existing)
+                {
+                    targetSet = existing;
+                }
+                else
+                {
+                    targetSet = new HashSet<TValue>();
+                    foreach (var v in targetValues) targetSet.Add(v);
+                }
                 var values = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
@@ -487,30 +523,44 @@ namespace MultiMap.Helpers
 
         /// <summary>
         /// Computes an order-independent hash code for a dictionary of key-to-collection entries.
+        /// When a custom comparer is supplied the hash is derived from <see cref="IEqualityComparer{T}.GetHashCode(T)"/> so that the result is consistent with the equality semantics used by the owning map instance.
         /// </summary>
         /// <typeparam name="TKey">The type of keys.</typeparam>
         /// <typeparam name="TValue">The type of values in each collection.</typeparam>
         /// <typeparam name="TCollection">The collection type that implements <see cref="IEnumerable{TValue}"/>.</typeparam>
         /// <param name="entries">The key-collection pairs to compute the hash for.</param>
+        /// <param name="keyComparer">
+        /// The equality comparer used for keys, or <see langword="null"/> to use <see cref="EqualityComparer{T}.Default"/>.
+        /// </param>
+        /// <param name="valueComparer">
+        /// The equality comparer used for values, or <see langword="null"/> to use <see cref="EqualityComparer{T}.Default"/>.
+        /// </param>
         /// <returns>A hash code that is independent of the enumeration order of keys and values.</returns>
         internal static int ComputeUnorderedHash<TKey, TValue, TCollection>(
-            IEnumerable<KeyValuePair<TKey, TCollection>> entries)
+            IEnumerable<KeyValuePair<TKey, TCollection>> entries,
+            IEqualityComparer<TKey>? keyComparer = null,
+            IEqualityComparer<TValue>? valueComparer = null)
             where TKey : notnull
             where TValue : notnull
             where TCollection : IEnumerable<TValue>
         {
+            var kc = keyComparer ?? EqualityComparer<TKey>.Default;
+            var vc = valueComparer ?? EqualityComparer<TValue>.Default;
+
             unchecked
             {
                 int hash = 0;
+
                 foreach (var kvp in entries)
                 {
                     int valueHash = 0;
                     foreach (var value in kvp.Value)
                     {
-                        valueHash += Scramble(value.GetHashCode());
+                        valueHash += Scramble(vc.GetHashCode(value));
                     }
-                    hash += Scramble(HashCode.Combine(kvp.Key, valueHash));
+                    hash += Scramble(HashCode.Combine(kc.GetHashCode(kvp.Key), valueHash));
                 }
+
                 return hash;
             }
         }
