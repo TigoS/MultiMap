@@ -83,21 +83,28 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (values is null) throw new ArgumentNullException(nameof(values));
 
-            if (!_dictionary.TryGetValue(key, out var collection))
-            {
+            // Materialise first so we can short-circuit without allocating a collection
+            // when the input sequence is empty.
+            var materialised = values as ICollection<TValue> ?? values.ToList();
+            if (materialised.Count == 0)
+                return 0;
+
+            bool exists = _dictionary.TryGetValue(key, out var collection);
+            if (!exists)
                 collection = CreateCollection();
-                _dictionary[key] = collection;
-            }
 
             int added = 0;
-            foreach (var value in values)
+            foreach (var value in materialised)
             {
-                if (AddToCollection(collection, value))
+                if (AddToCollection(collection!, value))
                 {
                     _count++;
                     added++;
                 }
             }
+
+            if (!exists && added > 0)
+                _dictionary[key] = collection!;
 
             return added;
         }
@@ -284,6 +291,9 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other) => Equals(other as IReadOnlyMultiMap<TKey, TValue>);
 
         /// <inheritdoc/>
         public abstract bool Equals(IReadOnlyMultiMap<TKey, TValue>? other);

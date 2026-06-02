@@ -1,4 +1,4 @@
-﻿#if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
 using MultiMap.Helpers;
@@ -102,11 +102,9 @@ namespace MultiMap.Entities
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
             list ??= new List<TValue>();
 #else
-            if (!_dictionary.TryGetValue(key, out var list))
-            {
+            bool exists = _dictionary.TryGetValue(key, out var list);
+            if (!exists)
                 list = new List<TValue>();
-                _dictionary[key] = list;
-            }
 #endif
 
             // Prevent null values in the enumerable silently enter the list,
@@ -116,10 +114,18 @@ namespace MultiMap.Entities
             {
                 if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
 
-                list.Add(value);
+                list!.Add(value);
                 _count++;
                 added++;
             }
+
+#if NET6_0_OR_GREATER
+            if (!exists && added == 0)
+                ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
+#else
+            if (!exists && added > 0)
+                _dictionary[key] = list!;
+#endif
 
             return added;
         }

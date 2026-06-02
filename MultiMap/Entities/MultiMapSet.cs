@@ -1,5 +1,8 @@
-﻿#if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
+#endif
+#if NET8_0_OR_GREATER
+using System.Collections.Frozen;
 #endif
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
@@ -112,6 +115,12 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
+#if NET8_0_OR_GREATER
+        /// <inheritdoc/>
+        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection)
+            => collection.ToFrozenSet(_valueComparer);
+#endif
+
 #if NET6_0_OR_GREATER
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
@@ -144,6 +153,35 @@ namespace MultiMap.Entities
             foreach (var value in values)
             {
                 if (hashset.Add(value))
+                {
+                    _count++;
+                    added++;
+                }
+            }
+
+            if (!exists && added == 0)
+                ((Dictionary<TKey, HashSet<TValue>>)_dictionary).Remove(key);
+
+            return added;
+        }
+
+        /// <inheritdoc/>
+        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            if (items is null) throw new ArgumentNullException(nameof(items));
+
+            int added = 0;
+            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+
+            foreach (var item in items)
+            {
+                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
+                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
+
+                if (hashset.Add(item.Value))
                 {
                     _count++;
                     added++;
@@ -188,6 +226,7 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override int GetHashCode()
-            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
+            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary,
+                ((Dictionary<TKey, HashSet<TValue>>)_dictionary).Comparer, _valueComparer);
     }
 }

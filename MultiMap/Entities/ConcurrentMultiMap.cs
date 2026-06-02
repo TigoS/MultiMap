@@ -1,4 +1,4 @@
-﻿using MultiMap.Helpers;
+using MultiMap.Helpers;
 using MultiMap.Interfaces;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -13,6 +13,9 @@ namespace MultiMap.Entities
     /// ConcurrentMultiMap is designed for scenarios where multiple threads may add or remove key-value pairs simultaneously.
     /// Each key maps to a set of unique values, and all operations are safe for concurrent access.
     /// This class is useful for managing collections where keys can have multiple associated values and thread safety is required.
+    /// <para>
+    /// Unlike <see cref="MultiMapLock{TKey, TValue}"/> and <see cref="MultiMapAsync{TKey, TValue}"/>, this class does <b>not</b> implement <see cref="IDisposable"/> because it owns no disposable resources — the underlying <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey, TValue}"/> requires no explicit cleanup.
+    /// </para>
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
@@ -22,6 +25,8 @@ namespace MultiMap.Entities
     {
         private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;
+        private int _count;
+        private int _keyCount;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
@@ -115,8 +120,24 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
 
-            var valuesSet = _dictionary.GetOrAdd(key, _ => CreateValueSet());
-            return valuesSet.TryAdd(value, 0);
+            bool isNewKey = false;
+            if (!_dictionary.TryGetValue(key, out var valuesSet))
+            {
+                var candidate = CreateValueSet();
+                valuesSet = _dictionary.GetOrAdd(key, candidate);
+                if (ReferenceEquals(valuesSet, candidate))
+                    isNewKey = true;
+            }
+
+            if (valuesSet.TryAdd(value, 0))
+            {
+                Interlocked.Increment(ref _count);
+                if (isNewKey)
+                    Interlocked.Increment(ref _keyCount);
+                return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc/>
@@ -126,12 +147,34 @@ namespace MultiMap.Entities
             if (values is null) throw new ArgumentNullException(nameof(values));
 
             var items = values as ICollection<TValue> ?? values.ToArray();
-            var valuesSet = _dictionary.GetOrAdd(key, _ => CreateValueSet());
+            if (items.Count == 0)
+                return 0;
+
+            bool isNewKey = false;
+            if (!_dictionary.TryGetValue(key, out var valuesSet))
+            {
+                var candidate = CreateValueSet();
+                valuesSet = _dictionary.GetOrAdd(key, candidate);
+                if (ReferenceEquals(valuesSet, candidate))
+                    isNewKey = true;
+            }
 
             int added = 0;
             foreach (var value in items)
                 if (valuesSet.TryAdd(value, 0))
                     added++;
+
+            if (added > 0)
+            {
+                Interlocked.Add(ref _count, added);
+                if (isNewKey)
+                    Interlocked.Increment(ref _keyCount);
+            }
+            else if (isNewKey)
+            {
+                // All values were duplicates; remove the zombie entry we created.
+                TryPruneEmptySet(key, valuesSet);
+            }
 
             return added;
         }
@@ -141,11 +184,49 @@ namespace MultiMap.Entities
         {
             if (items is null) throw new ArgumentNullException(nameof(items));
 
-            int added = 0;
+            // Group by key so we call GetOrAdd at most once per unique key instead of once per item.
+            var grouped = new Dictionary<TKey, List<TValue>>();
             foreach (var item in items)
             {
-                if (Add(item.Key, item.Value))
-                    added++;
+                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
+                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+
+                if (!grouped.TryGetValue(item.Key, out var list))
+                {
+                    list = new List<TValue>();
+                    grouped[item.Key] = list;
+                }
+                list.Add(item.Value);
+            }
+
+            int added = 0;
+            foreach (var group in grouped)
+            {
+                bool isNewKey = false;
+                if (!_dictionary.TryGetValue(group.Key, out var valuesSet))
+                {
+                    var candidate = CreateValueSet();
+                    valuesSet = _dictionary.GetOrAdd(group.Key, candidate);
+                    if (ReferenceEquals(valuesSet, candidate))
+                        isNewKey = true;
+                }
+
+                int groupAdded = 0;
+                foreach (var value in group.Value)
+                    if (valuesSet.TryAdd(value, 0))
+                        groupAdded++;
+
+                if (groupAdded > 0)
+                {
+                    Interlocked.Add(ref _count, groupAdded);
+                    if (isNewKey)
+                        Interlocked.Increment(ref _keyCount);
+                    added += groupAdded;
+                }
+                else if (isNewKey)
+                {
+                    TryPruneEmptySet(group.Key, valuesSet);
+                }
             }
 
             return added;
@@ -167,7 +248,7 @@ namespace MultiMap.Entities
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
 
-            if (_dictionary.TryGetValue(key, out var valuesSet))
+            if (_dictionary.TryGetValue(key, out var valuesSet) && !valuesSet.IsEmpty)
                 return valuesSet.Keys.ToArray();
 
             return [];
@@ -185,6 +266,7 @@ namespace MultiMap.Entities
             }
 
             values = [];
+
             return false;
         }
 
@@ -194,12 +276,21 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
 
-            bool removed = _dictionary.TryGetValue(key, out var valuesSet) && valuesSet.TryRemove(value, out _);
+            if (!_dictionary.TryGetValue(key, out var valuesSet))
+                return false;
 
-            if (removed && valuesSet?.IsEmpty == true)
-                _dictionary.TryRemove(key, out _);
+            if (!valuesSet.TryRemove(value, out _))
+                return false;
 
-            return removed;
+            Interlocked.Decrement(ref _count);
+
+            // Prune the outer key only when the inner set is confirmed empty.
+            // Use the conditional-remove pattern: remove the entry, then re-add it
+            // if another thread concurrently inserted a value — this makes the prune
+            // atomic with respect to concurrent Adds on the same key.
+            TryPruneEmptySet(key, valuesSet);
+
+            return true;
         }
 
         /// <inheritdoc/>
@@ -232,8 +323,11 @@ namespace MultiMap.Entities
                 if (predicate(value) && valuesSet.TryRemove(value, out _))
                     removedCount++;
 
-            if (removedCount > 0 && valuesSet?.IsEmpty == true)
-                _dictionary.TryRemove(key, out _);
+            if (removedCount > 0)
+            {
+                Interlocked.Add(ref _count, -removedCount);
+                TryPruneEmptySet(key, valuesSet);
+            }
 
             return removedCount;
         }
@@ -243,7 +337,20 @@ namespace MultiMap.Entities
         {
             if (key is null) throw new ArgumentNullException(nameof(key));
 
-            return _dictionary.TryRemove(key, out _);
+            if (!_dictionary.TryRemove(key, out var removedSet))
+                return false;
+
+            // Snapshot the inner count at the moment of removal and adjust both
+            // counters. Under a concurrent Add/Remove racing on the same key, _count
+            // may transiently deviate from the true value by the number of values
+            // touched in that race window; this is an accepted trade-off for O(1) Count.
+            int c = removedSet.Count;
+            if (c > 0)
+                Interlocked.Add(ref _count, -c);
+
+            Interlocked.Decrement(ref _keyCount);
+
+            return true;
         }
 
         /// <inheritdoc/>
@@ -264,52 +371,30 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int Count
-        {
-            get
-            {
-                int n = 0;
-                foreach (var kvp in _dictionary)
-                    n += kvp.Value.Count;
-                return n;
-            }
-        }
+        public int Count => Volatile.Read(ref _count);
 
         /// <inheritdoc/>
         public IEnumerable<TKey> Keys
         {
             get
             {
-                var result = new List<TKey>();
                 foreach (var kvp in _dictionary)
                     if (!kvp.Value.IsEmpty)
-                        result.Add(kvp.Key);
-                return result;
+                        yield return kvp.Key;
             }
         }
 
         /// <inheritdoc/>
-        public int KeyCount
-        {
-            get
-            {
-                int n = 0;
-                foreach (var kvp in _dictionary)
-                    if (!kvp.Value.IsEmpty)
-                        n++;
-                return n;
-            }
-        }
+        public int KeyCount => Volatile.Read(ref _keyCount);
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Values
         {
             get
             {
-                var result = new List<TValue>();
                 foreach (var kvp in _dictionary)
-                    result.AddRange(kvp.Value.Keys);
-                return result;
+                    foreach (var value in kvp.Value.Keys)
+                        yield return value;
             }
         }
 
@@ -324,10 +409,45 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> this[TKey key] => Get(key);
 
+        /// <summary>
+        /// Attempts to remove <paramref name="key"/> from the outer dictionary when its inner set is empty.
+        /// If another thread has concurrently added a value to the set between the caller's last removal and this prune attempt, the key is left in place (or re-inserted if <c>TryRemove</c> already succeeded).
+        /// This makes key-pruning safe under concurrent <c>Add</c> operations.
+        /// </summary>
+        private void TryPruneEmptySet(TKey key, ConcurrentDictionary<TValue, byte> valuesSet)
+        {
+            if (!valuesSet.IsEmpty)
+                return;
+
+            // Attempt to remove the outer entry only while the inner set is still empty.
+            // If TryRemove succeeds but the set was concurrently populated, put it back.
+            if (_dictionary.TryRemove(key, out var removedSet))
+            {
+                if (!removedSet.IsEmpty)
+                {
+                    // Another thread added to the set between our check and the remove;
+                    // restore the entry so no values are lost.
+                    _dictionary.TryAdd(key, removedSet);
+                    // Key was transiently absent but is restored; _keyCount is unaffected.
+                }
+                else
+                {
+                    // Only decrement _keyCount if we are still removing the *same* set
+                    // instance that was passed in. If another thread already ran GetOrAdd
+                    // with a fresh candidate and re-inserted the key, ContainsKey will
+                    // be true and we must not decrement.
+                    if (!_dictionary.ContainsKey(key))
+                        Interlocked.Decrement(ref _keyCount);
+                }
+            }
+        }
+
         /// <inheritdoc/>
         public void Clear()
         {
             _dictionary.Clear();
+            Interlocked.Exchange(ref _count, 0);
+            Interlocked.Exchange(ref _keyCount, 0);
         }
 
         /// <inheritdoc/>
@@ -345,6 +465,9 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as ConcurrentMultiMap<TKey, TValue>);
+
+        /// <inheritdoc/>
+        public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other) => Equals(other as IReadOnlyMultiMap<TKey, TValue>);
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)

@@ -1,7 +1,6 @@
-﻿using MultiMap.Helpers;
+using MultiMap.Helpers;
 using MultiMap.Interfaces;
 using System.Collections;
-using System.Runtime.CompilerServices;
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
@@ -31,65 +30,39 @@ namespace MultiMap.Entities
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class.
         /// </summary>
-        public MultiMapLock()
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
-            _lock = new ReaderWriterLockSlim();
-        }
+        public MultiMapLock() : this(0, null, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified equality comparer for keys.
         /// </summary>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapLock(IEqualityComparer<TKey>? keyComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
-            _lock = new ReaderWriterLockSlim();
-        }
+        public MultiMapLock(IEqualityComparer<TKey>? keyComparer) : this(0, keyComparer, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified equality comparer for values.
         /// </summary>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapLock(IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
-            _lock = new ReaderWriterLockSlim();
-            _valueComparer = valueComparer;
-        }
+        public MultiMapLock(IEqualityComparer<TValue>? valueComparer) : this(0, null, valueComparer) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys.
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        public MultiMapLock(int capacity)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
-            _lock = new ReaderWriterLockSlim();
-        }
+        public MultiMapLock(int capacity) : this(capacity, null, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys.
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapLock(int capacity, IEqualityComparer<TKey>? keyComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
-            _lock = new ReaderWriterLockSlim();
-        }
+        public MultiMapLock(int capacity, IEqualityComparer<TKey>? keyComparer) : this(capacity, keyComparer, null) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for values.
         /// </summary>
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapLock(int capacity, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
-            _lock = new ReaderWriterLockSlim();
-            _valueComparer = valueComparer;
-        }
+        public MultiMapLock(int capacity, IEqualityComparer<TValue>? valueComparer) : this(capacity, null, valueComparer) { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
@@ -99,7 +72,9 @@ namespace MultiMap.Entities
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapLock(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
+            _dictionary = capacity > 0
+                ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
+                : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
             _lock = new ReaderWriterLockSlim();
             _valueComparer = valueComparer;
         }
@@ -155,26 +130,22 @@ namespace MultiMap.Entities
             _lock.EnterWriteLock();
             try
             {
-#if NET6_0_OR_GREATER
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                {
+                bool exists = _dictionary.TryGetValue(key, out var hashset);
+                if (!exists)
                     hashset = new HashSet<TValue>(_valueComparer);
-                    _dictionary[key] = hashset;
-                }
-#endif
 
                 int added = 0;
                 foreach (var value in values)
                 {
-                    if (hashset.Add(value))
+                    if (hashset!.Add(value))
                     {
                         _count++;
                         added++;
                     }
                 }
+
+                if (!exists && added > 0)
+                    _dictionary[key] = hashset!;
 
                 return added;
             }
@@ -790,6 +761,9 @@ namespace MultiMap.Entities
         public override bool Equals(object? obj) => Equals(obj as MultiMapLock<TKey, TValue>);
 
         /// <inheritdoc/>
+        public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other) => Equals(other as IReadOnlyMultiMap<TKey, TValue>);
+
+        /// <inheritdoc/>
         public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
@@ -837,7 +811,7 @@ namespace MultiMap.Entities
             _lock.EnterReadLock();
             try
             {
-                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary);
+                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
             }
             finally
             {

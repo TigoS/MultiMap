@@ -10,8 +10,7 @@ namespace MultiMap.Entities
         /// <summary>
         /// A struct enumerator that walks every value in every inner collection without allocating a heap iterator object.
         /// </summary>
-        internal struct ValuesEnumerator<TEnumerator> : IEnumerator<TValue>
-            where TEnumerator : IEnumerator<TValue>
+        internal struct ValuesEnumerator : IEnumerator<TValue>
         {
             private IEnumerator<TCollection> _outerEnumerator;
             private IEnumerator<TValue>? _innerEnumerator;
