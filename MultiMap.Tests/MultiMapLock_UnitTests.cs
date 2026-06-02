@@ -1,6 +1,5 @@
 using MultiMap.Entities;
 using MultiMap.Interfaces;
-using System.Reflection;
 
 namespace MultiMap.Tests;
 
@@ -97,6 +96,76 @@ public class MultiMapLockTests
 
         Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyCollection_DoesNotCreateOrphanEntry()
+    {
+        _map.AddRange("ghost", Enumerable.Empty<int>());
+
+        Assert.That(_map.ContainsKey("ghost"), Is.False);
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyThenNonEmpty_CreatesKeyOnSecondCall()
+    {
+        _map.AddRange("a", Enumerable.Empty<int>());
+        _map.AddRange("a", new[] { 1, 2 });
+
+        Assert.That(_map.ContainsKey("a"), Is.True);
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyCollection_DoesNotAppearInKeys()
+    {
+        _map.Add("real", 1);
+        _map.AddRange("ghost", Enumerable.Empty<int>());
+
+        Assert.That(_map.Keys, Does.Not.Contain("ghost"));
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_NewKey_EmptyCollection_ReturnsZero()
+    {
+        int added = _map.AddRange("ghost", Enumerable.Empty<int>());
+
+        Assert.That(added, Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void AddRange_EmptyCollection_ConcurrentWithRealAdds_NeverLeavesOrphanKey()
+    {
+        const int iterations = 2000;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            using var barrier = new Barrier(2);
+
+            var t1 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.AddRange("ghost", Enumerable.Empty<int>());
+            });
+
+            var t2 = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                _map.Add("real", i);
+            });
+
+            Task.WaitAll(t1, t2);
+
+            Assert.That(_map.ContainsKey("ghost"), Is.False);
+            Assert.That(_map.KeyCount, Is.EqualTo(1));
+
+            _map.RemoveKey("real");
+        }
     }
 
     [Test]
@@ -579,6 +648,46 @@ public class MultiMapLockTests
                     _map.Contains("a", i);
             });
         });
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void AddRange_ConcurrentOverlappingRanges_KeepsUniqueValuesPerKey()
+    {
+        const int workers = 400;
+
+        Parallel.For(0, workers, i => _map.AddRange("overlap", new[] { i, i + 1 }));
+
+        Assert.That(_map.GetValuesCount("overlap"), Is.EqualTo(workers + 1));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void MixedConcurrentOperations_CountMatchesPerKeyAggregation()
+    {
+        const int count = 1500;
+
+        Parallel.For(0, count, i =>
+        {
+            string key = $"k{i % 12}";
+
+            _map.Add(key, i);
+
+            if (i % 4 == 0)
+                _map.Remove(key, i);
+
+            if (i % 6 == 0)
+                _map.RemoveWhere(key, v => v % 13 == 0);
+
+            if (i % 8 == 0)
+                _map.GetOrDefault(key);
+        });
+
+        int aggregated = 0;
+        foreach (var key in _map.Keys)
+            aggregated += _map.GetValuesCount(key);
+
+        Assert.That(_map.Count, Is.EqualTo(aggregated));
     }
 
     [Test]

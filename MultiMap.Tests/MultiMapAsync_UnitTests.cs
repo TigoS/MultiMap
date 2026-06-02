@@ -100,6 +100,68 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public async Task AddRangeAsync_NewKey_EmptyCollection_DoesNotCreateOrphanEntry()
+    {
+        await _map.AddRangeAsync("ghost", Enumerable.Empty<int>());
+
+        Assert.That(await _map.ContainsKeyAsync("ghost"), Is.False);
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(0));
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task AddRangeAsync_NewKey_EmptyThenNonEmpty_CreatesKeyOnSecondCall()
+    {
+        await _map.AddRangeAsync("a", Enumerable.Empty<int>());
+        await _map.AddRangeAsync("a", new[] { 1, 2 });
+
+        Assert.That(await _map.ContainsKeyAsync("a"), Is.True);
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task AddRangeAsync_NewKey_EmptyCollection_DoesNotAppearInKeys()
+    {
+        await _map.AddAsync("real", 1);
+        await _map.AddRangeAsync("ghost", Enumerable.Empty<int>());
+
+        Assert.That(await _map.GetKeysAsync(), Does.Not.Contain("ghost"));
+        Assert.That(await _map.GetKeyCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task AddRangeAsync_NewKey_EmptyCollection_ReturnsZero()
+    {
+        int added = await _map.AddRangeAsync("ghost", Enumerable.Empty<int>());
+
+        Assert.That(added, Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public async Task AddRangeAsync_EmptyCollection_ConcurrentFromManyTasks_NeverLeavesOrphanKey()
+    {
+        const int tasks = 8;
+        const int iterations = 200;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            var addRangeTasks = Enumerable.Range(0, tasks)
+                .Select(_ => _map.AddRangeAsync("ghost", Enumerable.Empty<int>()).AsTask())
+                .ToArray<Task>();
+            var realAddTask = (Task)_map.AddAsync("real", i).AsTask();
+
+            await Task.WhenAll([.. addRangeTasks, realAddTask]);
+
+            Assert.That(await _map.ContainsKeyAsync("ghost"), Is.False,
+                "Orphan key 'ghost' should never appear after AddRangeAsync with empty enumerable");
+
+            await _map.ClearAsync();
+        }
+    }
+
+    [Test]
     public async Task AddRangeAsync_DuplicateValues_IgnoresDuplicates()
     {
         await _map.AddRangeAsync("a", new[] { 1, 1, 1 });
@@ -563,6 +625,57 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    [Category("Stress")]
+    public async Task MixedConcurrentOperations_CountMatchesPerKeyAggregation()
+    {
+        const int workers = 16;
+        const int iterationsPerWorker = 200;
+
+        var tasks = Enumerable.Range(0, workers)
+            .Select(worker => Task.Run(async () =>
+            {
+                for (int i = 0; i < iterationsPerWorker; i++)
+                {
+                    string key = $"k{i % 8}";
+                    int value = worker * iterationsPerWorker + i;
+
+                    await _map.AddAsync(key, value);
+
+                    if (i % 4 == 0)
+                        await _map.RemoveAsync(key, value);
+
+                    if (i % 7 == 0)
+                        await _map.GetOrDefaultAsync(key);
+                }
+            }))
+            .ToArray();
+
+        await Task.WhenAll(tasks);
+
+        var keys = await _map.GetKeysAsync();
+        int aggregated = 0;
+        foreach (var key in keys)
+            aggregated += await _map.GetValuesCountAsync(key);
+
+        Assert.That(await _map.GetCountAsync(), Is.EqualTo(aggregated));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public async Task AddRangeAsync_ConcurrentOverlappingRanges_KeepsUniqueValuesPerKey()
+    {
+        const int workers = 100;
+
+        var tasks = Enumerable.Range(0, workers)
+            .Select(i => _map.AddRangeAsync("overlap", new[] { i, i + 1, i + 2 }).AsTask())
+            .ToArray();
+
+        await Task.WhenAll(tasks);
+
+        Assert.That(await _map.GetValuesCountAsync("overlap"), Is.EqualTo(workers + 2));
+    }
+
+    [Test]
     public async Task Equals_SameInstance_ReturnsTrue()
     {
         Assert.That(_map.Equals(_map), Is.True);
@@ -900,8 +1013,11 @@ public class MultiMapAsyncTests
 
     private SemaphoreSlim GetSemaphore()
     {
-        return (SemaphoreSlim)typeof(MultiMapAsync<string, int>)
-            .GetField("_semaphore", BindingFlags.NonPublic | BindingFlags.Instance)!
+        var mapType = typeof(MultiMapAsync<string, int>);
+        var field = mapType.GetField("_writeLock", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? mapType.GetField("_semaphore", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        return (SemaphoreSlim)field!
             .GetValue(_map)!;
     }
 
