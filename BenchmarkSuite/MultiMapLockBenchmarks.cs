@@ -1,8 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace BenchmarkSuite;
 
@@ -152,6 +150,12 @@ public class MultiMapLockBenchmarks
 
     [Benchmark]
     public int MultiMapLock_GetKeys() => _map.Keys.Count();
+
+    [Benchmark]
+    public bool MultiMapLock_TryGet()
+    {
+        return _map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
 
     [Benchmark]
     public void MultiMapLock_Union()

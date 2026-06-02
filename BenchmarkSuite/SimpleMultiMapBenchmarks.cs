@@ -121,6 +121,20 @@ public class SimpleMultiMapBenchmarks
         return sum;
     }
 
+    // --- Contains benchmarks ---
+
+    [Benchmark]
+    public bool SimpleMultiMap_Contains()
+    {
+        return _map.Contains(Consts.Key50Prefix, Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool SimpleMultiMap_ContainsKey()
+    {
+        return _map.ContainsKey(Consts.Key50Prefix);
+    }
+
     // --- Remove benchmarks ---
 
     [Benchmark]
