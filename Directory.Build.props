@@ -1,0 +1,14 @@
+<Project>
+  <PropertyGroup>
+	<LangVersion>preview</LangVersion>
+	<Nullable>enable</Nullable>
+	<ImplicitUsings>enable</ImplicitUsings>
+	<EnableNETAnalyzers>true</EnableNETAnalyzers>
+	<AnalysisLevel>latest</AnalysisLevel>
+	<Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(ContinuousIntegrationBuild)' == 'true'">
+	<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>
