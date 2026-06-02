@@ -414,28 +414,28 @@ public class SimpleMultiMapTests
         map.Add("key", "hello");
 
     Assert.That(map.Count, Is.EqualTo(1));
-}
+    }
 
-[Test]
-public void Constructor_WithCapacityAndValueComparer_WorksCorrectly()
-{
-    var map = new SimpleMultiMap<string, string>(100, valueComparer: StringComparer.OrdinalIgnoreCase);
-    map.Add("key", "Hello");
-    map.Add("key", "hello");
+    [Test]
+    public void Constructor_WithCapacityAndValueComparer_WorksCorrectly()
+    {
+        var map = new SimpleMultiMap<string, string>(100, valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "Hello");
+        map.Add("key", "hello");
 
-    Assert.That(map.Count, Is.EqualTo(1));
-}
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
 
-[Test]
-public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
-{
-    var map = new SimpleMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
-    map.Add("key", "ABC");
-    map.Add("key", "abc");
-    map.Add("key", "Abc");
+    [Test]
+    public void Add_WithCaseInsensitiveComparer_TreatsSameCaseAsDuplicate()
+    {
+        var map = new SimpleMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("key", "ABC");
+        map.Add("key", "abc");
+        map.Add("key", "Abc");
 
-    Assert.That(map.Count, Is.EqualTo(1));
-}
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
 
     // ── Count ──────────────────────────────────────────────
 
