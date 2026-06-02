@@ -432,12 +432,7 @@ namespace MultiMap.Entities
                 }
                 else
                 {
-                    // Only decrement _keyCount if we are still removing the *same* set
-                    // instance that was passed in. If another thread already ran GetOrAdd
-                    // with a fresh candidate and re-inserted the key, ContainsKey will
-                    // be true and we must not decrement.
-                    if (!_dictionary.ContainsKey(key))
-                        Interlocked.Decrement(ref _keyCount);
+                    Interlocked.Decrement(ref _keyCount);
                 }
             }
         }
