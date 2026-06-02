@@ -107,13 +107,29 @@ The library follows a hierarchical interface design with three parallel families
 
 ### `IReadOnlySimpleMultiMap<TKey, TValue>`
 
-The base read-only interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>`.
+The base read-only interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>` and `IReadOnlyCollection<KeyValuePair<TKey,TValue>>`.
 
 | Method | Returns | Description |
 |---|---|---|
 | `Get(key)` | `IEnumerable<TValue>` | Returns values; throws `KeyNotFoundException` if not found |
 | `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
-| `Count` | `int` | Total number of key-value pairs (from `IReadOnlyCollection<KeyValuePair<TKey,TValue>>`) |
+| `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
+| `ContainsKey(key)` | `bool` | Checks if a key exists |
+| `Count` | `int` | Gets the total number of key-value pairs (from `IReadOnlyCollection<KeyValuePair<TKey,TValue>>`) |
+
+### `ISimpleMultiMap<TKey, TValue>`
+
+A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
+
+| Method | Returns | Description |
+|---|---|---|
+| `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
+| `Remove(key, value)` | `bool` | Removes a specific pair; returns `true` if removed |
+| `RemoveKey(key)` | `bool` | Removes all values for a key; returns `true` when the key existed |
+
+> **Migration note:** legacy `ISimpleMultiMap.Clear(TKey)`/void patterns were removed; use `RemoveKey(TKey)` and consume its `bool` result.
+
+**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `Contains`, `ContainsKey`, `Count`
 
 ### `IReadOnlyMultiMap<TKey, TValue>`
 
@@ -122,15 +138,14 @@ Extended read-only interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
 | Member | Returns | Description |
 |---|---|---|
 | `TryGet(key, out values)` | `bool` | Attempts to retrieve values; returns `true` if key exists |
-| `ContainsKey(key)` | `bool` | Checks if a key exists |
-| `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
 | `KeyCount` | `int` | Gets the number of unique keys |
-| `Count` | `int` | Gets the total number of key-value pairs |
 | `Keys` | `IEnumerable<TKey>` | Gets all keys |
 | `Values` | `IEnumerable<TValue>` | Gets all values across all keys |
 | `GetValuesCount(key)` | `int` | Gets count of values for a key (0 if missing) |
 | `this[key]` | `IEnumerable<TValue>` | Indexer — convenient value access by key |
 | `GetEnumerator()` | `IEnumerator<KeyValuePair>` | Enumerates all key-value pairs |
+
+**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`, `Contains`, `ContainsKey`, `Count`
 
 ### `IMultiMap<TKey, TValue>`
 
@@ -147,7 +162,7 @@ The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TV
 | `RemoveKey(key)` | `bool` | Removes a key and all its values |
 | `Clear()` | `void` | Removes all entries |
 
-**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `KeyCount`, `Count`, `Keys`, `Values`, `GetValuesCount`, `this[key]`
+**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `Contains`, `ContainsKey`, `KeyCount`, `Count`, `Keys`, `Values`, `GetValuesCount`, `this[key]`
 
 ### `IReadOnlyMultiMapAsync<TKey, TValue>`
 
@@ -183,27 +198,13 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 
 **Inherited from `IReadOnlyMultiMapAsync`:** `GetAsync`, `GetOrDefaultAsync`, `TryGetAsync`, `ContainsKeyAsync`, `ContainsAsync`, `GetCountAsync`, `GetKeyCountAsync`, `GetKeysAsync`, `GetValuesCountAsync`, `GetValuesAsync`
 
-### `ISimpleMultiMap<TKey, TValue>`
-
-A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
-
-| Method | Returns | Description |
-|---|---|---|
-| `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
-| `Remove(key, value)` | `bool` | Removes a specific pair; returns `true` if removed |
-| `RemoveKey(key)` | `bool` | Removes all values for a key; returns `true` when the key existed |
-
-> **Migration note:** legacy `ISimpleMultiMap.Clear(TKey)`/void patterns were removed; use `RemoveKey(TKey)` and consume its `bool` result.
-
-**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`
-
 ## Implementations
 
 ### `MultiMapBase<TKey, TValue, TCollection>` — Abstract Base Class
 
 Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `CreateCollection()`, `AddToCollection()`, and `RemoveWhereFromCollection()` to plug in their specific collection type. On .NET 6+ subclasses may also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup.
 
-**Encapsulation:** The underlying `_dictionary` field and the `_count` field are `internal`, preventing external subclasses from bypassing the count-bookkeeping invariant. A `protected IReadOnlyDictionary<TKey, TCollection> Dictionary` property exposes a read-only view for use in derived classes.
+**Encapsulation:** The underlying `_dictionary` field and the `_count` field are `protected`, preventing external subclasses from bypassing the count-bookkeeping invariant.
 
 ### `MultiMapList<TKey, TValue>` — List-Based
 
@@ -253,7 +254,7 @@ Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `Semaph
 
 ### `SimpleMultiMap<TKey, TValue>` — Lightweight
 
-Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection. `Count` returns the total number of key-value pairs (O(n) over keys, summing per-key set sizes). Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
+Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get` throws `KeyNotFoundException` if the key doesn't exist, while `GetOrDefault` returns an empty collection. `Count` returns the total number of key-value pairs (**O(1)** — backed by `_count`). Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
@@ -261,25 +262,25 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Implementation | Interface | Thread-Safe | Duplicates | Ordered | Count Complexity |
 |---|---|---|---|---|---|
+| `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
 | `MultiMapList` | `IMultiMap` | ❌ No | ✅ Yes | ❌ No | O(1) |
 | `MultiMapSet` | `IMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
 | `SortedMultiMap` | `IMultiMap` | ❌ No | ❌ No | ✅ Yes | O(1) |
 | `ConcurrentMultiMap` | `IMultiMap` | ✅ Lock-free | ❌ No | ❌ No | O(1) |
 | `MultiMapLock` | `IMultiMap` | ✅ RW Lock | ❌ No | ❌ No | O(1) |
 | `MultiMapAsync` | `IMultiMapAsync` | ✅ Semaphore | ❌ No | ❌ No | O(1) |
-| `SimpleMultiMap` | `ISimpleMultiMap` | ❌ No | ❌ No | ❌ No | O(1) |
 
 ### Internal Data Structures
 
 | Implementation | Outer Structure | Inner Structure | Notes |
 |---|---|---|---|
+| `SimpleMultiMap` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Simplified API surface |
 | `MultiMapList` | `Dictionary<TKey, List<TValue>>` | `List<TValue>` | O(1) amortized add; allows duplicate values |
 | `MultiMapSet` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | O(1) add/contains; enforces unique values |
 | `SortedMultiMap` | `SortedDictionary<TKey, SortedSet<TValue>>` | `SortedSet<TValue>` | O(log n) operations; keys & values sorted |
 | `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>>` | `ConcurrentDictionary<TValue, byte>` | Fully lock-free via nested `ConcurrentDictionary`; `Count` and `KeyCount` are O(1) via `Interlocked`-maintained counters |
 | `MultiMapLock` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `ReaderWriterLockSlim` |
 | `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `SemaphoreSlim(1,1)`; all operations (reads and writes) acquire the same exclusive permit — see writer-starvation note above |
-| `SimpleMultiMap` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Simplified API surface |
 
 ### API Behavior Differences
 
@@ -303,24 +304,24 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Use Case | Recommended Implementation | Reason |
 |---|---|---|
+| Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `GetOrDefault` and direct enumeration |
 | General purpose, unique values | `MultiMapSet` | Fast O(1) lookups with uniqueness guarantee |
 | Duplicate values needed | `MultiMapList` | Only implementation allowing duplicate values per key |
 | Sorted enumeration / range queries | `SortedMultiMap` | Maintains key and value ordering |
 | High-concurrency, many threads | `ConcurrentMultiMap` | Fully lock-free via nested `ConcurrentDictionary`; no contention under concurrent reads/writes |
 | Read-heavy, occasional writes | `MultiMapLock` | RW lock allows concurrent readers |
 | Async / I/O-bound code | `MultiMapAsync` | `SemaphoreSlim` works with `async`/`await` |
-| Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with `GetOrDefault` and direct enumeration |
 
 ### Performance Comparison (5,000 pairs)
 
 | Implementation | Add | Get (100 keys) | Contains | Count | Relative Add Speed |
 |---|---|---|---|---|---|
 | `MultiMapList` | 46,949 ns | 9,157 ns | 35 ns | < 1 ns | **1.0x** (baseline) |
-| `MultiMapSet` | 81,379 ns | 12,909 ns | 41 ns | < 1 ns | 1.7x |
 | `SimpleMultiMap` | 81,557 ns | 12,013 ns | 5 ns | < 1 ns | 1.7x |
-| `ConcurrentMultiMap` | 202,077 ns | 54,536 ns | 186 ns | < 1 ns | 4.3x |
+| `MultiMapSet` | 81,379 ns | 12,909 ns | 41 ns | < 1 ns | 1.7x |
 | `MultiMapLock` | 123,190 ns | 12,439 ns | 15 ns | 11 ns | 2.6x |
 | `MultiMapAsync` | 185,584 ns | 18,283 ns | 82 ns | 80 ns | 4.0x |
+| `ConcurrentMultiMap` | 202,077 ns | 54,536 ns | 186 ns | < 1 ns | 4.3x |
 | `SortedMultiMap` | 845,301 ns | 37,745 ns | 34 ns | < 1 ns | 18.0x |
 
 > **Note:** Performance data from BenchmarkDotNet (latest run on .NET 10.0.8 / SDK 10.0.300). See [Benchmarks](#benchmarks) for full details.
@@ -331,8 +332,8 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. `Get
 
 | Family | Methods | Current signatures |
 |---|---|---|
-| `IMultiMap<TKey, TValue>` | `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` | `this IMultiMap<TKey,TValue> target, IMultiMap<TKey,TValue> other` → returns `IMultiMap<TKey,TValue>` |
 | `ISimpleMultiMap<TKey, TValue>` | `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` | `this ISimpleMultiMap<TKey,TValue> target, ISimpleMultiMap<TKey,TValue> other` → returns `ISimpleMultiMap<TKey,TValue>` |
+| `IMultiMap<TKey, TValue>` | `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` | `this IMultiMap<TKey,TValue> target, IMultiMap<TKey,TValue> other` → returns `IMultiMap<TKey,TValue>` |
 | `IMultiMapAsync<TKey, TValue>` | `UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, `SymmetricExceptWithAsync` | `this IMultiMapAsync<TKey,TValue> target, IMultiMapAsync<TKey,TValue> other, CancellationToken cancellationToken = default` → returns `Task` |
 
 These signatures mutate and return the sync target map for fluent usage, while async extensions complete via `Task` and support `CancellationToken`.
@@ -1311,7 +1312,7 @@ This is a **soft deprecation** — existing call sites continue to compile and r
 
 #### Non-Breaking Changes
 
-- **`SimpleMultiMap.Count` property added:** `SimpleMultiMap<TKey, TValue>` now exposes a `Count` property (inherited via `IReadOnlyCollection<KeyValuePair<TKey, TValue>>`) that returns the total number of key-value pairs across all keys (O(n) over keys, summing per-key `HashSet` sizes).
+- **`SimpleMultiMap.Count` property added:** `SimpleMultiMap<TKey, TValue>` now exposes a `Count` property (inherited via `IReadOnlyCollection<KeyValuePair<TKey, TValue>>`) that returns the total number of key-value pairs across all keys (**O(1)** — backed by `_count`).
 
 - **`SimpleMultiMap.Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)` added:** Typed equality compares the total pair count first (fast exit), then verifies per-key value-set contents using set-equality semantics.
 
@@ -1343,7 +1344,7 @@ This is a **soft deprecation** — existing call sites continue to compile and r
 
 1. **Update NuGet package:**
    ```bash
-   dotnet add package MultiMap --version 1.0.12
+   dotnet add package MultiMap --version 2.0.1
    ```
 
 2. **If you implement `ISimpleMultiMap` directly:**
