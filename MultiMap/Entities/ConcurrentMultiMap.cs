@@ -26,7 +26,6 @@ namespace MultiMap.Entities
         private readonly ConcurrentDictionary<TKey, ConcurrentDictionary<TValue, byte>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;
         private int _count;
-        private int _keyCount;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
@@ -125,25 +124,15 @@ namespace MultiMap.Entities
             if (value is null) throw new ArgumentNullException(nameof(value));
 #endif
 
-            bool isNewKey = false;
             if (!_dictionary.TryGetValue(key, out var valuesSet))
             {
                 var candidate = CreateValueSet();
                 valuesSet = _dictionary.GetOrAdd(key, candidate);
-                if (ReferenceEquals(valuesSet, candidate))
-                {
-                    isNewKey = true;
-                }
             }
 
             if (valuesSet.TryAdd(value, 0))
             {
                 Interlocked.Increment(ref _count);
-                if (isNewKey)
-                {
-                    Interlocked.Increment(ref _keyCount);
-                }
-
                 return true;
             }
 
@@ -167,15 +156,10 @@ namespace MultiMap.Entities
                 return 0;
             }
 
-            bool isNewKey = false;
             if (!_dictionary.TryGetValue(key, out var valuesSet))
             {
                 var candidate = CreateValueSet();
                 valuesSet = _dictionary.GetOrAdd(key, candidate);
-                if (ReferenceEquals(valuesSet, candidate))
-                {
-                    isNewKey = true;
-                }
             }
 
             int added = 0;
@@ -190,15 +174,6 @@ namespace MultiMap.Entities
             if (added > 0)
             {
                 Interlocked.Add(ref _count, added);
-                if (isNewKey)
-                {
-                    Interlocked.Increment(ref _keyCount);
-                }
-            }
-            else if (isNewKey)
-            {
-                // All values were duplicates; remove the zombie entry we created.
-                TryPruneEmptySet(key, valuesSet);
             }
 
             return added;
@@ -235,15 +210,10 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var group in grouped)
             {
-                bool isNewKey = false;
                 if (!_dictionary.TryGetValue(group.Key, out var valuesSet))
                 {
                     var candidate = CreateValueSet();
                     valuesSet = _dictionary.GetOrAdd(group.Key, candidate);
-                    if (ReferenceEquals(valuesSet, candidate))
-                    {
-                        isNewKey = true;
-                    }
                 }
 
                 int groupAdded = 0;
@@ -258,16 +228,7 @@ namespace MultiMap.Entities
                 if (groupAdded > 0)
                 {
                     Interlocked.Add(ref _count, groupAdded);
-                    if (isNewKey)
-                    {
-                        Interlocked.Increment(ref _keyCount);
-                    }
-
                     added += groupAdded;
-                }
-                else if (isNewKey)
-                {
-                    TryPruneEmptySet(group.Key, valuesSet);
                 }
             }
 
@@ -430,17 +391,15 @@ namespace MultiMap.Entities
                 return false;
             }
 
-            // Snapshot the inner count at the moment of removal and adjust both
-            // counters. Under a concurrent Add/Remove racing on the same key, _count
-            // may transiently deviate from the true value by the number of values
-            // touched in that race window; this is an accepted trade-off for O(1) Count.
+            // Snapshot the inner count at the moment of removal and adjust _count.
+            // Under a concurrent Add/Remove racing on the same key, _count may transiently
+            // deviate from the true value by the number of values touched in that race window;
+            // this is an accepted trade-off for O(1) Count.
             int c = removedSet.Count;
             if (c > 0)
             {
                 Interlocked.Add(ref _count, -c);
             }
-
-            Interlocked.Decrement(ref _keyCount);
 
             return true;
         }
@@ -490,7 +449,19 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        public int KeyCount => Volatile.Read(ref _keyCount);
+        public int KeyCount
+        {
+            get
+            {
+                int count = 0;
+                foreach (var kvp in _dictionary)
+                {
+                    if (!kvp.Value.IsEmpty)
+                        count++;
+                }
+                return count;
+            }
+        }
 
         /// <inheritdoc/>
         public IEnumerable<TValue> Values
@@ -543,11 +514,6 @@ namespace MultiMap.Entities
                     // Another thread added to the set between our check and the remove;
                     // restore the entry so no values are lost.
                     _dictionary.TryAdd(key, removedSet);
-                    // Key was transiently absent but is restored; _keyCount is unaffected.
-                }
-                else
-                {
-                    Interlocked.Decrement(ref _keyCount);
                 }
             }
         }
@@ -557,22 +523,18 @@ namespace MultiMap.Entities
         {
             _dictionary.Clear();
             Interlocked.Exchange(ref _count, 0);
-            Interlocked.Exchange(ref _keyCount, 0);
         }
 
         /// <inheritdoc/>
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            var snapshot = new List<KeyValuePair<TKey, TValue>>();
             foreach (var kvp in _dictionary)
             {
                 foreach (var value in kvp.Value.Keys)
                 {
-                    snapshot.Add(new KeyValuePair<TKey, TValue>(kvp.Key, value));
+                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
                 }
             }
-
-            return snapshot.GetEnumerator();
         }
 
         /// <inheritdoc/>

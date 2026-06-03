@@ -58,8 +58,11 @@ namespace MultiMap.Helpers
 #endif
 
             var keysToRemove = new HashSet<TKey>();
-            var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
-            var otherLookup = new Dictionary<TKey, ISet<TValue>>(other.KeyCount);
+            // Cache of other's value sets per key (materialised to avoid aliasing a live set).
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
+            // Values to remove grouped by key so we call RemoveWhere once per key
+            // (one dictionary lookup) instead of once per value via RemoveRange.
+            var removeByKey = new Dictionary<TKey, HashSet<TValue>>();
 
             foreach (var kvp in target)
             {
@@ -71,23 +74,20 @@ namespace MultiMap.Helpers
 
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    var otherValues = other.GetOrDefault(kvp.Key);
-                    if (otherValues is ISet<TValue> existing)
-                    {
-                        otherSet = existing;
-                    }
-                    else
-                    {
-                        otherSet = new HashSet<TValue>();
-                        foreach (var v in otherValues) otherSet.Add(v);
-                    }
-
+                    // Always materialise into a fresh HashSet to avoid aliasing a live
+                    // mutable set that could be modified concurrently on the source.
+                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
                 {
-                    valuesToRemove.Add(new KeyValuePair<TKey, TValue>(kvp.Key, kvp.Value));
+                    if (!removeByKey.TryGetValue(kvp.Key, out var toRemove))
+                    {
+                        toRemove = new HashSet<TValue>();
+                        removeByKey[kvp.Key] = toRemove;
+                    }
+                    toRemove.Add(kvp.Value);
                 }
             }
 
@@ -96,7 +96,10 @@ namespace MultiMap.Helpers
                 target.RemoveKey(key);
             }
 
-            target.RemoveRange(valuesToRemove);
+            foreach (var kvp in removeByKey)
+            {
+                target.RemoveWhere(kvp.Key, v => kvp.Value.Contains(v));
+            }
 
             return target;
         }

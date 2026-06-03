@@ -88,8 +88,9 @@ namespace MultiMap.Entities
             if (values is null) throw new ArgumentNullException(nameof(values));
 #endif
 
-            // Materialise first so we can short-circuit without allocating a collection
-            // when the input sequence is empty.
+            // Materialise the sequence upfront: we need Count to short-circuit on an empty
+            // input without allocating a new inner collection, and we want to enumerate only
+            // once even if the caller passes a non-replayable IEnumerable<T>.
             var materialised = values as ICollection<TValue> ?? values.ToArray();
             if (materialised.Count == 0)
                 return 0;
@@ -260,10 +261,10 @@ namespace MultiMap.Entities
             if (key is null) throw new ArgumentNullException(nameof(key));
 #endif
 
-            if (_dictionary.TryGetValue(key, out var collection))
+            if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
             {
                 _count -= collection.Count;
-                return _dictionary.Remove(key);
+                return true;
             }
 
             return false;
