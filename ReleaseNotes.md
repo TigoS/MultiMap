@@ -13,6 +13,29 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Release Notes
 
+### 2.1.0
+
+**Added**
+
+- **Read-only set query operations**: Added four new set algebra query methods to `MultiMapHelper` (extension methods), `MultiMapAsync` (atomic instance methods), and `MultiMapLock` (atomic instance methods):
+  - `IsSubsetOf` / `IsSubsetOfAsync` — Check if the current multimap is a subset of another (all key-value pairs exist in the other)
+  - `IsSupersetOf` / `IsSupersetOfAsync` — Check if the current multimap is a superset of another (contains all pairs from the other)
+  - `Overlaps` / `OverlapsAsync` — Check if the current multimap shares any key-value pairs with another
+  - `SetEquals` / `SetEqualsAsync` — Check if the current multimap contains exactly the same key-value pairs as another
+- Comprehensive unit test coverage for all new set query operations including:
+  - 48 tests for `MultiMapHelper` sync extensions (including null guards)
+  - 26 tests for `MultiMapHelper` async extensions
+  - 56 tests for `MultiMapAsync` atomic methods (including stress/concurrency tests)
+  - 54 tests for `MultiMapLock` atomic methods (including stress/concurrency tests)
+- Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
+
+**Implementation Details**
+
+- `MultiMapHelper` extensions provide read-only query semantics for `IMultiMap<TKey, TValue>`, `ISimpleMultiMap<TKey, TValue>`, and `IMultiMapAsync<TKey, TValue>` interfaces
+- `MultiMapAsync` instance methods implement atomic snapshot-based comparisons with ordered semaphore acquisition to prevent deadlocks when comparing two `MultiMapAsync` instances
+- `MultiMapLock` instance methods implement atomic read-lock-based comparisons, snapshotting the other map before acquiring locks to avoid lock-ordering issues
+- All query methods use `HashSet<TValue>` for efficient O(1) value lookups and short-circuit on first definitive result for optimal performance
+
 ### 2.0.1
 
 **Breaking Changes**
