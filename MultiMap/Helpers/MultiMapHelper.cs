@@ -167,22 +167,13 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
             var toAdd = new List<KeyValuePair<TKey, TValue>>(otherCount);
 
-            var targetLookup = new Dictionary<TKey, ISet<TValue>>(other.KeyCount);
+            var targetLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
             foreach (var kvp in other)
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
-                    var raw = target.GetOrDefault(kvp.Key);
-                    if (raw is ISet<TValue> existing)
-                    {
-                        targetSet = existing;
-                    }
-                    else
-                    {
-                        targetSet = new HashSet<TValue>();
-                        foreach (var v in raw) targetSet.Add(v);
-                    }
+                    targetSet = new HashSet<TValue>(target.GetOrDefault(kvp.Key));
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -227,23 +218,13 @@ namespace MultiMap.Helpers
             if (other is null) throw new ArgumentNullException(nameof(other));
 #endif
 
-            var otherLookup = new Dictionary<TKey, ISet<TValue>>(other.KeyCount);
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
             foreach (var kvp in target)
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    var otherValues = other.GetOrDefault(kvp.Key);
-                    if (otherValues is ISet<TValue> existing)
-                    {
-                        otherSet = existing;
-                    }
-                    else
-                    {
-                        otherSet = new HashSet<TValue>();
-                        foreach (var v in otherValues) otherSet.Add(v);
-                    }
-
+                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -307,23 +288,13 @@ namespace MultiMap.Helpers
             if (other is null) throw new ArgumentNullException(nameof(other));
 #endif
 
-            var otherLookup = new Dictionary<TKey, ISet<TValue>>(other.KeyCount);
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
             foreach (var kvp in target)
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    var otherValues = other.GetOrDefault(kvp.Key);
-                    if (otherValues is ISet<TValue> existing)
-                    {
-                        otherSet = existing;
-                    }
-                    else
-                    {
-                        otherSet = new HashSet<TValue>();
-                        foreach (var v in otherValues) otherSet.Add(v);
-                    }
-
+                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -338,7 +309,7 @@ namespace MultiMap.Helpers
         /// Determines whether <paramref name="target"/> and <paramref name="other"/> contain the same key-value pairs.
         /// </summary>
         /// <remarks>
-        /// This method is not atomic. It compares total pair counts, then reads keys and values from both multimaps.
+        /// This method is not atomic. It compares total pair counts,
         /// Concurrent modifications to either multimap may cause the result to reflect a mix of states.
         /// No structural corruption or count drift will occur.
         /// </remarks>
@@ -362,23 +333,13 @@ namespace MultiMap.Helpers
             if (target.Count != other.Count || target.KeyCount != other.KeyCount)
                 return false;
 
-            var otherLookup = new Dictionary<TKey, ISet<TValue>>(other.KeyCount);
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
             foreach (var kvp in target)
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    var otherValues = other.GetOrDefault(kvp.Key);
-                    if (otherValues is ISet<TValue> existing)
-                    {
-                        otherSet = existing;
-                    }
-                    else
-                    {
-                        otherSet = new HashSet<TValue>();
-                        foreach (var v in otherValues) otherSet.Add(v);
-                    }
-
+                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -438,22 +399,13 @@ namespace MultiMap.Helpers
 #endif
 
             var toRemove = new List<KeyValuePair<TKey, TValue>>(target.Count);
-            var otherLookup = new Dictionary<TKey, ISet<TValue>>();
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
 
             foreach (var kvp in target)
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    var raw = other.GetOrDefault(kvp.Key);
-                    if (raw is ISet<TValue> existing)
-                    {
-                        otherSet = existing;
-                    }
-                    else
-                    {
-                        otherSet = new HashSet<TValue>();
-                        foreach (var v in raw) otherSet.Add(v);
-                    }
+                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -528,22 +480,13 @@ namespace MultiMap.Helpers
             var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
             var toAdd = new List<KeyValuePair<TKey, TValue>>(otherCount);
 
-            var targetLookup = new Dictionary<TKey, ISet<TValue>>();
+            var targetLookup = new Dictionary<TKey, HashSet<TValue>>();
 
             foreach (var kvp in other)
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
-                    var raw = target.GetOrDefault(kvp.Key);
-                    if (raw is ISet<TValue> existing)
-                    {
-                        targetSet = existing;
-                    }
-                    else
-                    {
-                        targetSet = new HashSet<TValue>();
-                        foreach (var v in raw) targetSet.Add(v);
-                    }
+                    targetSet = new HashSet<TValue>(target.GetOrDefault(kvp.Key));
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -585,19 +528,7 @@ namespace MultiMap.Helpers
 
             foreach (var kvp in target)
             {
-                var otherValues = other.GetOrDefault(kvp.Key);
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
-
-                if (!otherSet.Contains(kvp.Value))
+                if (!new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
                     return false;
             }
 
@@ -649,19 +580,7 @@ namespace MultiMap.Helpers
 
             foreach (var kvp in target)
             {
-                var otherValues = other.GetOrDefault(kvp.Key);
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
-
-                if (otherSet.Contains(kvp.Value))
+                if (new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
                     return true;
             }
 
@@ -693,19 +612,7 @@ namespace MultiMap.Helpers
 
             foreach (var kvp in target)
             {
-                var otherValues = other.GetOrDefault(kvp.Key);
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
-
-                if (!otherSet.Contains(kvp.Value))
+                if (!new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
                     return false;
             }
 
@@ -787,17 +694,7 @@ namespace MultiMap.Helpers
                     continue;
                 }
 
-                var otherValues = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
+                var otherSet = new HashSet<TValue>(await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false));
                 var values = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
@@ -896,17 +793,7 @@ namespace MultiMap.Helpers
             var otherKeys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in otherKeys)
             {
-                var targetValues = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
-                ISet<TValue> targetSet;
-                if (targetValues is ISet<TValue> existing)
-                {
-                    targetSet = existing;
-                }
-                else
-                {
-                    targetSet = new HashSet<TValue>();
-                    foreach (var v in targetValues) targetSet.Add(v);
-                }
+                var targetSet = new HashSet<TValue>(await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false));
                 var values = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 foreach (var value in values)
                 {
@@ -957,16 +844,7 @@ namespace MultiMap.Helpers
                 var targetValues = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 var otherValues = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
 
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
+                var otherSet = new HashSet<TValue>(otherValues);
 
                 foreach (var value in targetValues)
                 {
@@ -1039,16 +917,7 @@ namespace MultiMap.Helpers
                 var targetValues = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 var otherValues = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
 
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
+                var otherSet = new HashSet<TValue>(otherValues);
 
                 foreach (var value in targetValues)
                 {
@@ -1100,16 +969,7 @@ namespace MultiMap.Helpers
                 var targetValues = await target.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
                 var otherValues = await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false);
 
-                ISet<TValue> otherSet;
-                if (otherValues is ISet<TValue> existing)
-                {
-                    otherSet = existing;
-                }
-                else
-                {
-                    otherSet = new HashSet<TValue>();
-                    foreach (var v in otherValues) otherSet.Add(v);
-                }
+                var otherSet = new HashSet<TValue>(otherValues);
 
                 foreach (var value in targetValues)
                 {
@@ -1122,7 +982,7 @@ namespace MultiMap.Helpers
         }
 
         /// <summary>
-        /// Scrambles a hash code to improve distribution and reduce collisions.
+        /// Scrambles a hash code
         /// </summary>
         /// <param name="h">The hash code to scramble.</param>
         /// <returns>The scrambled hash code.</returns>

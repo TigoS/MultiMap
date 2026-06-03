@@ -127,6 +127,7 @@ namespace MultiMap.Entities
         {
             ArgumentNullException.ThrowIfNull(key);
             ArgumentNullException.ThrowIfNull(value);
+
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
             hashset ??= new HashSet<TValue>(_valueComparer);
 

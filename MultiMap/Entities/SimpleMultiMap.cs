@@ -11,8 +11,12 @@ namespace MultiMap.Entities
     /// Represents a collection that associates multiple values with each key, allowing efficient retrieval and management of grouped data.
     /// </summary>
     /// <remarks>
-    /// Use this class to store and access sets of values for each key, where duplicate values per key are not allowed.
-    /// The map is suitable for scenarios where one-to-many relationships are required, such as grouping items or indexing data.
+    /// <see cref="SimpleMultiMap{TKey, TValue}"/> is an intentionally limited, standalone set-based multimap intended for
+    /// initial design and drafting scenarios where only the <see cref="ISimpleMultiMap{TKey, TValue}"/> contract is needed.
+    /// It duplicates the constructor overloads already present on <see cref="MultiMapSet{TKey, TValue}"/> because it does not
+    /// inherit from <see cref="MultiMapBase{TKey, TValue, TCollection}"/>; the duplication is deliberate, not an oversight.
+    /// For production use, prefer <see cref="MultiMapSet{TKey, TValue}"/> or another full <see cref="Interfaces.IMultiMap{TKey, TValue}"/> implementation.
+    /// Duplicate values per key are not allowed.
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>

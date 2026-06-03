@@ -12,6 +12,9 @@ namespace MultiMap.Entities
     /// <remarks>
     /// This class is useful for scenarios where a key can have multiple associated values, such as grouping or indexing.
     /// The collection maintains insertion order for values under each key.
+    /// Unlike set-based implementations, <see cref="MultiMapList{TKey, TValue}"/> allows duplicate values per key;
+    /// <see cref="MultiMapBase{TKey,TValue,TCollection}.Add"/> always returns <see langword="true"/> and
+    /// <c>AddRange</c> returns the count of every value appended, regardless of whether that value already existed under the key.
     /// Keys and values must be non-null. Thread safety is not guaranteed;
     /// external synchronization is required for concurrent access.
     /// </remarks>
