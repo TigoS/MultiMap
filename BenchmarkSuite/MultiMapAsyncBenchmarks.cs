@@ -1,8 +1,8 @@
+using System.Collections.Generic;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Microsoft.VSDiagnostics;
 using MultiMap.Entities;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace BenchmarkSuite;
 
@@ -401,6 +401,90 @@ public class MultiMapAsyncBenchmarks
         foreach (var _ in _map.ToBlockingEnumerable())
             count++;
         return count;
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_IsSubsetOf()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        bool result = target.IsSubsetOfAsync(other).GetAwaiter().GetResult();
+        target.DisposeAsync().GetAwaiter().GetResult();
+        other.DisposeAsync().GetAwaiter().GetResult();
+        return result;
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_IsSupersetOf()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        bool result = target.IsSupersetOfAsync(other).GetAwaiter().GetResult();
+        target.DisposeAsync().GetAwaiter().GetResult();
+        other.DisposeAsync().GetAwaiter().GetResult();
+        return result;
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_Overlaps()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        bool result = target.OverlapsAsync(other).GetAwaiter().GetResult();
+        target.DisposeAsync().GetAwaiter().GetResult();
+        other.DisposeAsync().GetAwaiter().GetResult();
+        return result;
+    }
+
+    [Benchmark]
+    public bool MultiMapAsync_SetEquals()
+    {
+        var target = new MultiMapAsync<string, int>();
+        var other = new MultiMapAsync<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.AddAsync($"{Consts.KeyPrefix}{k}", v).GetAwaiter().GetResult();
+                other.AddAsync($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset).GetAwaiter().GetResult();
+            }
+        }
+
+        bool result = target.SetEqualsAsync(other).GetAwaiter().GetResult();
+        target.DisposeAsync().GetAwaiter().GetResult();
+        other.DisposeAsync().GetAwaiter().GetResult();
+        return result;
     }
 
     #endregion

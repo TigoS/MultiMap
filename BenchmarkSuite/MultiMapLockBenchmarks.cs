@@ -389,5 +389,77 @@ public class MultiMapLockBenchmarks
         return count;
     }
 
+    [Benchmark]
+    public bool MultiMapLock_IsSubsetOf()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return target.IsSubsetOf(other);
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_IsSupersetOf()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return target.IsSupersetOf(other);
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_Overlaps()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return target.Overlaps(other);
+    }
+
+    [Benchmark]
+    public bool MultiMapLock_SetEquals()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other = new MultiMapLock<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return target.SetEquals(other);
+    }
+
     #endregion
 }

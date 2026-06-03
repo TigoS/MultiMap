@@ -220,4 +220,28 @@ public class SimpleMultiMapBenchmarks
     {
         return _map.Equals((IReadOnlySimpleMultiMap<string, int>)_mapDifferent);
     }
+
+    // --- Clear benchmarks ---
+    [Benchmark]
+    public void SimpleMultiMap_Clear()
+    {
+        var map = new SimpleMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.KeyCount; k++)
+        {
+            for (int v = 0; v < Consts.ValuesPerKey; v++)
+            {
+                map.Add($"{Consts.KeyPrefix}{k}", v);
+            }
+        }
+
+        map.Clear();
+    }
+
+    [Benchmark]
+    public void SimpleMultiMap_Clear_Empty()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        map.Clear();
+    }
 }
