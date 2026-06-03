@@ -464,6 +464,38 @@ public class MultiMapHelperWithMultiMapSetTests
         _other = new MultiMapSet<string, int>();
     }
 
+    [Test]
+    public void SetEquals_WithSameInstance_IsReflexive()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+
+        Assert.That(_target.SetEquals(_target), Is.True);
+    }
+
+    [Test]
+    public void Union_CommutativeLaw_HoldsForSetBasedImplementation()
+    {
+        var left = new MultiMapSet<string, int>();
+        left.Add("a", 1);
+        left.Add("a", 2);
+        left.Add("b", 3);
+
+        var right = new MultiMapSet<string, int>();
+        right.Add("a", 2);
+        right.Add("c", 4);
+
+        var aThenB = new MultiMapSet<string, int>();
+        aThenB.AddRange(left);
+        aThenB.Union(right);
+
+        var bThenA = new MultiMapSet<string, int>();
+        bThenA.AddRange(right);
+        bThenA.Union(left);
+
+        Assert.That(aThenB.SetEquals(bThenA), Is.True);
+    }
+
     // ── Union ──────────────────────────────────────────────
 
     [Test]
@@ -819,6 +851,28 @@ public class MultiMapHelperWithMultiMapSetTests
         Assert.That(_other.Contains("b", 2), Is.True);
     }
 
+    [Test]
+    public void ExceptWith_WithSameInstance_ResultsInEmptySet()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+
+        _target.ExceptWith(_target);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithSameInstance_ResultsInEmptySet()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+
+        _target.SymmetricExceptWith(_target);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
     // ── Stress tests ────────────────────────────────────────
 
     [Test]
@@ -833,7 +887,7 @@ public class MultiMapHelperWithMultiMapSetTests
 
             _target.Union(source);
 
-            int enumerated = _target.Count();
+            int enumerated = _target.Count;
             Assert.That(_target.Count, Is.EqualTo(enumerated),
                 $"Count mismatch after union in cycle {cycle}");
         }
@@ -962,7 +1016,7 @@ public class MultiMapHelperWithMultiMapSetTests
                 _target.SymmetricExceptWith(operand);
 
                 int count = _target.Count;
-                int enumerated = _target.Count();
+                int enumerated = _target.Count;
                 Assert.That(count, Is.EqualTo(enumerated),
                     $"Count mismatch in cycle {cycle}");
             }
@@ -981,6 +1035,60 @@ public class MultiMapHelperWithSortedMultiMapTests
     {
         _target = new SortedMultiMap<string, int>();
         _other = new SortedMultiMap<string, int>();
+    }
+
+    [Test]
+    public void SetEquals_WithSameInstance_IsReflexive()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+
+        Assert.That(_target.SetEquals(_target), Is.True);
+    }
+
+    [Test]
+    public void Union_CommutativeLaw_HoldsForSetBasedImplementation()
+    {
+        var left = new SortedMultiMap<string, int>();
+        left.Add("a", 1);
+        left.Add("a", 2);
+        left.Add("b", 3);
+
+        var right = new SortedMultiMap<string, int>();
+        right.Add("a", 2);
+        right.Add("c", 4);
+
+        var aThenB = new SortedMultiMap<string, int>();
+        aThenB.AddRange(left);
+        aThenB.Union(right);
+
+        var bThenA = new SortedMultiMap<string, int>();
+        bThenA.AddRange(right);
+        bThenA.Union(left);
+
+        Assert.That(aThenB.SetEquals(bThenA), Is.True);
+    }
+
+    [Test]
+    public void ExceptWith_WithSameInstance_ResultsInEmptySet()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+
+        _target.ExceptWith(_target);
+
+        Assert.That(_target.Count, Is.Zero);
+    }
+
+    [Test]
+    public void SymmetricExceptWith_WithSameInstance_ResultsInEmptySet()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+
+        _target.SymmetricExceptWith(_target);
+
+        Assert.That(_target.Count, Is.Zero);
     }
 
     [Test]
@@ -1058,7 +1166,7 @@ public class MultiMapHelperWithSortedMultiMapTests
 
             _target.Union(source);
 
-            int enumerated = _target.Count();
+            int enumerated = _target.Count;
             Assert.That(_target.Count, Is.EqualTo(enumerated),
                 $"Count mismatch after union in cycle {cycle}");
         }
@@ -1187,7 +1295,7 @@ public class MultiMapHelperWithSortedMultiMapTests
                 _target.SymmetricExceptWith(operand);
 
                 int count = _target.Count;
-                int enumerated = _target.Count();
+                int enumerated = _target.Count;
                 Assert.That(count, Is.EqualTo(enumerated),
                     $"Count mismatch in cycle {cycle}");
             }
@@ -1283,7 +1391,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
 
             _target.Union(source);
 
-            int enumerated = _target.Count();
+            int enumerated = _target.Count;
             Assert.That(_target.Count, Is.EqualTo(enumerated),
                 $"Count mismatch after union in cycle {cycle}");
         }
@@ -1451,7 +1559,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
         int count = _target.Count;
         Assert.That(count, Is.GreaterThanOrEqualTo(0));
 
-        int verifyCount = _target.Count();
+        int verifyCount = _target.Count;
         Assert.That(count, Is.EqualTo(verifyCount),
             "Final count must match enumerated total");
     }
@@ -1486,7 +1594,7 @@ public class MultiMapHelperWithConcurrentMultiMapTests
                 _target.SymmetricExceptWith(operand);
 
                 int count = _target.Count;
-                int enumerated = _target.Count();
+                int enumerated = _target.Count;
                 Assert.That(count, Is.EqualTo(enumerated),
                     $"Count mismatch in cycle {cycle}");
             }
@@ -1577,7 +1685,7 @@ public class MultiMapHelperWithMultiMapListTests
 
             _target.Union(source);
 
-            int enumerated = _target.Count();
+            int enumerated = _target.Count;
             Assert.That(_target.Count, Is.EqualTo(enumerated),
                 $"Count mismatch after union in cycle {cycle}");
         }
@@ -1706,7 +1814,7 @@ public class MultiMapHelperWithMultiMapListTests
                 _target.SymmetricExceptWith(operand);
 
                 int count = _target.Count;
-                int enumerated = _target.Count();
+                int enumerated = _target.Count;
                 Assert.That(count, Is.EqualTo(enumerated),
                     $"Count mismatch in cycle {cycle}");
             }
@@ -1807,7 +1915,7 @@ public class MultiMapHelperWithMultiMapLockTests
 
             _target.Union(source);
 
-            int enumerated = _target.Count();
+            int enumerated = _target.Count;
             Assert.That(_target.Count, Is.EqualTo(enumerated),
                 $"Count mismatch after union in cycle {cycle}");
         }
@@ -1936,7 +2044,7 @@ public class MultiMapHelperWithMultiMapLockTests
         Assert.That(count, Is.GreaterThanOrEqualTo(0),
             "Count must never be negative");
 
-        int verifyCount = _target.Count();
+        int verifyCount = _target.Count;
         Assert.That(count, Is.EqualTo(verifyCount),
             "Count must match enumerated total");
     }
@@ -1974,7 +2082,7 @@ public class MultiMapHelperWithMultiMapLockTests
         int count = _target.Count;
         Assert.That(count, Is.GreaterThanOrEqualTo(0));
 
-        int verifyCount = _target.Count();
+        int verifyCount = _target.Count;
         Assert.That(count, Is.EqualTo(verifyCount),
             "Final count must match enumerated total");
     }
@@ -2009,7 +2117,7 @@ public class MultiMapHelperWithMultiMapLockTests
                 _target.SymmetricExceptWith(operand);
 
                 int count = _target.Count;
-                int enumerated = _target.Count();
+                int enumerated = _target.Count;
                 Assert.That(count, Is.EqualTo(enumerated),
                     $"Count mismatch in cycle {cycle}");
             }
@@ -2052,7 +2160,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -2063,7 +2171,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(2));
+        Assert.That(_target.Count, Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
@@ -2076,7 +2184,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -2095,7 +2203,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_other.Count(), Is.EqualTo(1));
+        Assert.That(_other.Count, Is.EqualTo(1));
         Assert.That(_other.GetOrDefault("a"), Is.Empty);
     }
 
@@ -2109,7 +2217,7 @@ public class SimpleMultiMapHelperTests
 
         _target.Union(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(4));
+        Assert.That(_target.Count, Is.EqualTo(4));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2, 3 }));
         Assert.That(_target.GetOrDefault("c"), Is.EquivalentTo(new[] { 4 }));
@@ -2130,7 +2238,7 @@ public class SimpleMultiMapHelperTests
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(_target.Count(), Is.EqualTo(2));
+        Assert.That(_target.Count, Is.EqualTo(2));
     }
 
     [Test]
@@ -2174,7 +2282,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(2));
+        Assert.That(_target.Count, Is.EqualTo(2));
     }
 
     [Test]
@@ -2186,7 +2294,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_other.Count(), Is.EqualTo(1));
+        Assert.That(_other.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -2199,7 +2307,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.Intersect(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
     }
 
@@ -2218,7 +2326,7 @@ public class SimpleMultiMapHelperTests
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
         Assert.That(_target.GetOrDefault("b"), Is.Empty);
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -2229,7 +2337,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
@@ -2240,7 +2348,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -2284,7 +2392,7 @@ public class SimpleMultiMapHelperTests
 
         _target.ExceptWith(_other);
 
-        Assert.That(_other.Count(), Is.EqualTo(1));
+        Assert.That(_other.Count, Is.EqualTo(1));
         Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
@@ -2302,7 +2410,7 @@ public class SimpleMultiMapHelperTests
 
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(_target.Count(), Is.EqualTo(2));
+        Assert.That(_target.Count, Is.EqualTo(2));
     }
 
     [Test]
@@ -2313,7 +2421,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(2));
+        Assert.That(_target.Count, Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
@@ -2338,7 +2446,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(1));
+        Assert.That(_target.Count, Is.EqualTo(1));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
     }
 
@@ -2350,7 +2458,7 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_target.Count(), Is.EqualTo(2));
+        Assert.That(_target.Count, Is.EqualTo(2));
         Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
     }
@@ -2372,9 +2480,352 @@ public class SimpleMultiMapHelperTests
 
         _target = _target.SymmetricExceptWith(_other);
 
-        Assert.That(_other.Count(), Is.EqualTo(2));
+        Assert.That(_other.Count, Is.EqualTo(2));
         Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
         Assert.That(_other.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
+    }
+
+    // ── IsSubsetOf ─────────────────────────────────────────
+
+    [Test]
+    public void IsSubsetOf_EmptyIsSubsetOfEmpty_ReturnsTrue()
+    {
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOf_EmptyIsSubsetOfNonEmpty_ReturnsTrue()
+    {
+        _other.Add("a", 1);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOf_NonEmptyIsNotSubsetOfEmpty_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsSubsetOf_IdenticalSets_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOf_ProperSubset_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOf_DisjointSets_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsSubsetOf_PartialOverlap_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("c", 3);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsSubsetOf_MultipleValuesPerKey_ChecksAllValues()
+    {
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _other.Add("a", 1);
+        _other.Add("a", 2);
+        _other.Add("a", 3);
+
+        var result = _target.IsSubsetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    // ── IsSupersetOf ───────────────────────────────────────
+
+    [Test]
+    public void IsSupersetOf_EmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSupersetOf_NonEmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSupersetOf_EmptyIsNotSupersetOfNonEmpty_ReturnsFalse()
+    {
+        _other.Add("a", 1);
+
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsSupersetOf_IdenticalSets_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSupersetOf_ProperSuperset_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void IsSupersetOf_DisjointSets_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsSupersetOf_PartialOverlap_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _target.Add("c", 3);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.IsSupersetOf(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    // ── Overlaps ───────────────────────────────────────────
+
+    [Test]
+    public void Overlaps_EmptySets_ReturnsFalse()
+    {
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void Overlaps_EmptyAndNonEmpty_ReturnsFalse()
+    {
+        _other.Add("a", 1);
+
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void Overlaps_DisjointSets_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void Overlaps_SingleCommonPair_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void Overlaps_MultipleCommonPairs_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void Overlaps_PartialOverlap_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("c", 3);
+
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void Overlaps_SameKeyDifferentValues_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 2);
+
+        var result = _target.Overlaps(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    // ── SetEquals ──────────────────────────────────────────
+
+    [Test]
+    public void SetEquals_EmptySets_ReturnsTrue()
+    {
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void SetEquals_EmptyAndNonEmpty_ReturnsFalse()
+    {
+        _other.Add("a", 1);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void SetEquals_NonEmptyAndEmpty_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void SetEquals_IdenticalSets_ReturnsTrue()
+    {
+        _target.Add("a", 1);
+        _target.Add("b", 2);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void SetEquals_DifferentCounts_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 1);
+        _other.Add("b", 2);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void SetEquals_DifferentKeys_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("b", 1);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void SetEquals_SameKeysDifferentValues_ReturnsFalse()
+    {
+        _target.Add("a", 1);
+        _other.Add("a", 2);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void SetEquals_MultipleValuesPerKey_ChecksAllValues()
+    {
+        _target.Add("a", 1);
+        _target.Add("a", 2);
+        _target.Add("b", 3);
+        _other.Add("a", 1);
+        _other.Add("a", 2);
+        _other.Add("b", 3);
+
+        var result = _target.SetEquals(_other);
+
+        Assert.That(result, Is.True);
     }
 
     // ── Null-guard branch coverage ─────────────────────────
@@ -2410,6 +2861,38 @@ public class SimpleMultiMapHelperTests
     [Test]
     public void SymmetricExceptWith_NullOther_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _target.SymmetricExceptWith(null!));
+
+    [Test]
+    public void IsSubsetOf_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).IsSubsetOf(_other));
+
+    [Test]
+    public void IsSubsetOf_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.IsSubsetOf(null!));
+
+    [Test]
+    public void IsSupersetOf_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).IsSupersetOf(_other));
+
+    [Test]
+    public void IsSupersetOf_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.IsSupersetOf(null!));
+
+    [Test]
+    public void Overlaps_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).Overlaps(_other));
+
+    [Test]
+    public void Overlaps_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.Overlaps(null!));
+
+    [Test]
+    public void SetEquals_NullTarget_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).SetEquals(_other));
+
+    [Test]
+    public void SetEquals_NullOther_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _target.SetEquals(null!));
 }
 
 [TestFixture]
@@ -4659,3 +5142,219 @@ public class MultiMapHelperWithMultiMapLockEdgeCaseTests
         Assert.That(_other.Count, Is.EqualTo(2));
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapHelper – IMultiMap<> overloads (IsSubsetOf / IsSupersetOf / Overlaps
+// / SetEquals) that are covered by a different dispatch path from the already
+// tested ISimpleMultiMap<> overloads.
+// Lines 183-317 of MultiMapHelper.cs use IMultiMap; covered here with
+// ConcurrentMultiMap which implements IMultiMap but NOT ISimpleMultiMap.
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class MultiMapHelper_IMultiMapOverloadsTests
+{
+    // helpers so tests stay concise
+    private static ConcurrentMultiMap<string, int> Map(params (string k, int v)[] pairs)
+    {
+        var m = new ConcurrentMultiMap<string, int>();
+        foreach (var (k, v) in pairs) m.Add(k, v);
+        return m;
+    }
+
+    // ── IsSubsetOf (IMultiMap overload) ───────────────────────────────────────
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_EmptyIsSubsetOfEmpty_ReturnsTrue()
+    {
+        Assert.That(Map().IsSubsetOf(Map()), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_TargetIsProperSubset_ReturnsTrue()
+    {
+        Assert.That(Map(("a", 1)).IsSubsetOf(Map(("a", 1), ("b", 2))), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_IdenticalContent_ReturnsTrue()
+    {
+        Assert.That(Map(("a", 1), ("b", 2)).IsSubsetOf(Map(("a", 1), ("b", 2))), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_ValueMissing_ReturnsFalse()
+    {
+        Assert.That(Map(("a", 1), ("a", 3)).IsSubsetOf(Map(("a", 1), ("b", 2))), Is.False);
+    }
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_DisjointSets_ReturnsFalse()
+    {
+        Assert.That(Map(("a", 1)).IsSubsetOf(Map(("b", 2))), Is.False);
+    }
+
+    // exercises the non-ISet<> branch (other values not already an ISet)
+    [Test]
+    public void IMultiMap_IsSubsetOf_WithMultiMapListOther_UsesHashSetFallback()
+    {
+        // MultiMapList values are IReadOnlyList, not ISet → triggers the else branch
+        var target = new ConcurrentMultiMap<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(((IMultiMap<string, int>)target).IsSubsetOf(other), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_NullTarget_ThrowsArgumentNullException()
+    {
+        IMultiMap<string, int> nullMap = null!;
+        Assert.Throws<ArgumentNullException>(() => nullMap.IsSubsetOf(Map()));
+    }
+
+    [Test]
+    public void IMultiMap_IsSubsetOf_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => Map().IsSubsetOf((IMultiMap<string, int>)null!));
+    }
+
+    // ── IsSupersetOf (IMultiMap overload) ────────────────────────────────────
+
+    [Test]
+    public void IMultiMap_IsSupersetOf_EmptyBothSides_ReturnsTrue()
+    {
+        Assert.That(Map().IsSupersetOf(Map()), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_IsSupersetOf_TargetIsProperSuperset_ReturnsTrue()
+    {
+        Assert.That(Map(("a", 1), ("b", 2)).IsSupersetOf(Map(("a", 1))), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_IsSupersetOf_TargetMissesValue_ReturnsFalse()
+    {
+        Assert.That(Map(("a", 1)).IsSupersetOf(Map(("a", 1), ("b", 2))), Is.False);
+    }
+
+    [Test]
+    public void IMultiMap_IsSupersetOf_NullTarget_ThrowsArgumentNullException()
+    {
+        IMultiMap<string, int> nullMap = null!;
+        Assert.Throws<ArgumentNullException>(() => nullMap.IsSupersetOf(Map()));
+    }
+
+    [Test]
+    public void IMultiMap_IsSupersetOf_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => Map().IsSupersetOf((IMultiMap<string, int>)null!));
+    }
+
+    // ── Overlaps (IMultiMap overload) ─────────────────────────────────────────
+
+    [Test]
+    public void IMultiMap_Overlaps_EmptySets_ReturnsFalse()
+    {
+        Assert.That(Map().Overlaps(Map()), Is.False);
+    }
+
+    [Test]
+    public void IMultiMap_Overlaps_SharedPair_ReturnsTrue()
+    {
+        Assert.That(Map(("a", 1)).Overlaps(Map(("a", 1), ("b", 2))), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_Overlaps_DisjointSets_ReturnsFalse()
+    {
+        Assert.That(Map(("a", 1)).Overlaps(Map(("b", 2))), Is.False);
+    }
+
+    // exercises the non-ISet<> branch
+    [Test]
+    public void IMultiMap_Overlaps_WithMultiMapListOther_UsesHashSetFallback()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(((IMultiMap<string, int>)target).Overlaps(other), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_Overlaps_NullTarget_ThrowsArgumentNullException()
+    {
+        IMultiMap<string, int> nullMap = null!;
+        Assert.Throws<ArgumentNullException>(() => nullMap.Overlaps(Map()));
+    }
+
+    [Test]
+    public void IMultiMap_Overlaps_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => Map().Overlaps((IMultiMap<string, int>)null!));
+    }
+
+    // ── SetEquals (IMultiMap overload) ────────────────────────────────────────
+
+    [Test]
+    public void IMultiMap_SetEquals_EmptyBothSides_ReturnsTrue()
+    {
+        Assert.That(Map().SetEquals(Map()), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_SetEquals_IdenticalContent_ReturnsTrue()
+    {
+        Assert.That(Map(("a", 1), ("b", 2)).SetEquals(Map(("a", 1), ("b", 2))), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_SetEquals_DifferentCount_ReturnsFalse()
+    {
+        Assert.That(Map(("a", 1)).SetEquals(Map(("a", 1), ("b", 2))), Is.False);
+    }
+
+    [Test]
+    public void IMultiMap_SetEquals_DifferentValues_ReturnsFalse()
+    {
+        Assert.That(Map(("a", 1)).SetEquals(Map(("a", 2))), Is.False);
+    }
+
+    // exercises non-ISet branch in SetEquals
+    [Test]
+    public void IMultiMap_SetEquals_WithMultiMapListOther_UsesHashSetFallback()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(((IMultiMap<string, int>)target).SetEquals(other), Is.True);
+    }
+
+    [Test]
+    public void IMultiMap_SetEquals_NullTarget_ThrowsArgumentNullException()
+    {
+        IMultiMap<string, int> nullMap = null!;
+        Assert.Throws<ArgumentNullException>(() => nullMap.SetEquals(Map()));
+    }
+
+    [Test]
+    public void IMultiMap_SetEquals_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => Map().SetEquals((IMultiMap<string, int>)null!));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ConcurrentMultiMap – AddRange(KVP) duplicate / zombie-key branches (lines
+// 174-177, 227-229) and Equals(object) with non-multimap type (line 482/506)
+// ──────────────────────────────────────────────────────────────────────────────

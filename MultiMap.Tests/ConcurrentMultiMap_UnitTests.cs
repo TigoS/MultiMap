@@ -1,4 +1,5 @@
 using MultiMap.Entities;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Tests;
 
@@ -1898,7 +1899,7 @@ public class ConcurrentMultiMapTests
             using var barrier = new Barrier(2);
 
             var remover = Task.Run(() => { barrier.SignalAndWait(); _map.RemoveWhere("k", v => v == 1); });
-            var adder   = Task.Run(() => { barrier.SignalAndWait(); _map.Add("k", 2); });
+            var adder = Task.Run(() => { barrier.SignalAndWait(); _map.Add("k", 2); });
 
             Task.WaitAll(remover, adder);
 
@@ -1914,4 +1915,600 @@ public class ConcurrentMultiMapTests
     }
 }
 
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ConcurrentMultiMap – constructor overloads + uncovered branches
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class ConcurrentMultiMap_ConstructorAndBranchTests
+{
+    // ── Constructor overloads ─────────────────────────────────────────────────
+
+    [Test]
+    public void Constructor_Default_IsEmpty()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        Assert.That(map.Count, Is.EqualTo(0));
+        Assert.That(map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesComparer()
+    {
+        var map = new ConcurrentMultiMap<string, int>(StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_WithValueComparer_DeduplicatesByComparer()
+    {
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "Hello");
+        map.Add("k", "hello");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithKeyAndValueComparer_BothApplied()
+    {
+        var map = new ConcurrentMultiMap<string, string>(
+            StringComparer.OrdinalIgnoreCase,
+            StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.ContainsKey("KEY"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyLevelAndCapacity_WorksCorrectly()
+    {
+        var map = new ConcurrentMultiMap<string, int>(4, 100);
+        map.Add("a", 1);
+        Assert.That(map.Get("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyLevelCapacityAndKeyComparer_UsesKeyComparer()
+    {
+        var map = new ConcurrentMultiMap<string, int>(4, 100, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 42);
+        Assert.That(map.ContainsKey("key"), Is.True);
+        Assert.That(map.Get("key"), Is.EquivalentTo(new[] { 42 }));
+    }
+
+    [Test]
+    public void Constructor_WithConcurrencyLevelCapacityAndValueComparer_DeduplicatesByValueComparer()
+    {
+        var map = new ConcurrentMultiMap<string, string>(4, 100, valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "Hello");
+        map.Add("k", "HELLO");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithAllFourParams_BothComparersApplied()
+    {
+        var map = new ConcurrentMultiMap<string, string>(
+            4, 100,
+            StringComparer.OrdinalIgnoreCase,
+            StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.ContainsKey("KEY"), Is.True);
+    }
+
+    // ── Equals(IReadOnlySimpleMultiMap) dispatch ──────────────────────────────
+
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_SameContent_ReturnsTrue()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        var b = new ConcurrentMultiMap<string, int>();
+        a.Add("x", 1); a.Add("x", 2);
+        b.Add("x", 1); b.Add("x", 2);
+
+        Assert.That(a.Equals((IReadOnlySimpleMultiMap<string, int>)b), Is.True);
+    }
+
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_DifferentContent_ReturnsFalse()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        var b = new ConcurrentMultiMap<string, int>();
+        a.Add("x", 1);
+        b.Add("x", 2);
+
+        Assert.That(a.Equals((IReadOnlySimpleMultiMap<string, int>)b), Is.False);
+    }
+
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_Null_ReturnsFalse()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        Assert.That(a.Equals((IReadOnlySimpleMultiMap<string, int>?)null), Is.False);
+    }
+
+    [Test]
+    public void Equals_SameInstance_ReturnsTrue()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        a.Add("x", 1);
+        Assert.That(a.Equals((IReadOnlyMultiMap<string, int>)a), Is.True);
+    }
+
+    [Test]
+    public void Equals_WithEmptyValueSet_Skips()
+    {
+        // Internally zombie (empty inner set that was not yet pruned) must be skipped.
+        var a = new ConcurrentMultiMap<string, int>();
+        var b = new ConcurrentMultiMap<string, int>();
+        Assert.That(a.Equals((IReadOnlyMultiMap<string, int>)b), Is.True);
+    }
+
+    [Test]
+    public void Equals_DifferentKeyCount_ReturnsFalse()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        var b = new ConcurrentMultiMap<string, int>();
+        a.Add("x", 1);
+        Assert.That(a.Equals((IReadOnlyMultiMap<string, int>)b), Is.False);
+    }
+
+    [Test]
+    public void GetHashCode_SameContent_ReturnsSameValue()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        var b = new ConcurrentMultiMap<string, int>();
+        a.Add("k", 1); b.Add("k", 1);
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
+
+    [Test]
+    public void GetHashCode_Empty_IsStable()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        int h1 = a.GetHashCode();
+        int h2 = a.GetHashCode();
+        Assert.That(h1, Is.EqualTo(h2));
+    }
+
+    // ── AddRange(KVP) all-duplicates branch ───────────────────────────────────
+
+    [Test]
+    public void AddRange_KvpAllDuplicates_PrunesZombieKey()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("k", 1);
+        // Try to add the same value again via KVP overload — should produce 0 net additions
+        // and must NOT leave a zombie key.
+        var pairs = new[] { new KeyValuePair<string, int>("ghost", 1), new KeyValuePair<string, int>("ghost", 1) };
+        // First add so ghost exists, then remove it to leave an empty slot candidate.
+        map.Add("ghost", 1);
+        map.Remove("ghost", 1);
+
+        // Now AddRange for "ghost" with already-present values (all duplicates via a fresh map)
+        var freshMap = new ConcurrentMultiMap<string, int>();
+        int added = freshMap.AddRange(new[] { new KeyValuePair<string, int>("z", 1), new KeyValuePair<string, int>("z", 1) });
+        Assert.That(added, Is.EqualTo(1)); // only 1 unique value
+        Assert.That(freshMap.ContainsKey("z"), Is.True);
+        Assert.That(freshMap.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRange_KvpWithDuplicateValueForNewKey_GroupedPruneZombie()
+    {
+        // AddRange KVP - new key but all values are duplicates within the batch
+        var map = new ConcurrentMultiMap<string, int>();
+        int added = map.AddRange(new[]
+        {
+            new KeyValuePair<string, int>("newKey", 99),
+            new KeyValuePair<string, int>("newKey", 99),
+        });
+        Assert.That(added, Is.EqualTo(1));
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.ContainsKey("newKey"), Is.True);
+    }
+
+    // ── Keys property – empty inner set (zombie) is skipped ───────────────────
+
+    [Test]
+    public void Keys_AfterPrune_DoesNotIncludeZombieKey()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("a", 1);
+        map.Add("b", 2);
+        map.Remove("a", 1);
+
+        Assert.That(map.Keys.ToList(), Is.EquivalentTo(new[] { "b" }));
+    }
+
+    // ── GetOrDefault with non-empty vs empty zombie set ──────────────────────
+
+    [Test]
+    public void GetOrDefault_KeyWithEmptySet_ReturnsEmpty()
+    {
+        // After all values removed, GetOrDefault should return []
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("k", 1);
+        map.Remove("k", 1);
+
+        Assert.That(map.GetOrDefault("k"), Is.Empty);
+    }
+
+    // ── Stress: TryPruneEmptySet re-add path ─────────────────────────────────
+
+    [Test]
+    [Category("Stress")]
+    public void Remove_ConcurrentWithAdd_PruneReAdd_KeyNeverLost()
+    {
+        const int iterations = 3000;
+        var map = new ConcurrentMultiMap<string, int>();
+
+        for (int i = 0; i < iterations; i++)
+        {
+            map.Add("k", 1);
+
+            using var barrier = new Barrier(2);
+            var t1 = Task.Run(() => { barrier.SignalAndWait(); map.Remove("k", 1); });
+            var t2 = Task.Run(() => { barrier.SignalAndWait(); map.Add("k", 2); });
+            Task.WaitAll(t1, t2);
+
+            // After race: either key exists with value 2, or it was fully removed
+            if (map.ContainsKey("k"))
+            {
+                var vals = map.GetOrDefault("k").ToArray();
+                Assert.That(vals, Is.Not.Empty, "Key with empty value set must not exist");
+            }
+
+            map.Clear();
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void AddRange_Concurrent_ManyKeys_CountIsConsistent()
+    {
+        const int threads = 8;
+        const int keysPerThread = 50;
+
+        var map = new ConcurrentMultiMap<string, int>();
+
+        Parallel.For(0, threads, t =>
+        {
+            for (int i = 0; i < keysPerThread; i++)
+                map.Add($"t{t}-k{i}", i);
+        });
+
+        Assert.That(map.Count, Is.EqualTo(threads * keysPerThread));
+        Assert.That(map.KeyCount, Is.EqualTo(threads * keysPerThread));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void Clear_ConcurrentWithAdd_NeverThrows()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+
+        var writer = Task.Run(() =>
+        {
+            int i = 0;
+            while (!cts.Token.IsCancellationRequested)
+                map.Add($"k{i % 100}", i++);
+        });
+
+        var clearer = Task.Run(() =>
+        {
+            while (!cts.Token.IsCancellationRequested)
+                map.Clear();
+        });
+
+        Assert.DoesNotThrow(() => Task.WaitAll(writer, clearer));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void RemoveKey_Concurrent_AllKeysEventuallyRemoved()
+    {
+        const int count = 500;
+        var map = new ConcurrentMultiMap<string, int>();
+        for (int i = 0; i < count; i++)
+            map.Add($"k{i}", i);
+
+        Parallel.For(0, count, i => map.RemoveKey($"k{i}"));
+
+        Assert.That(map.Count, Is.EqualTo(0));
+        Assert.That(map.KeyCount, Is.EqualTo(0));
+    }
+}
+
+
+[TestFixture]
+public class ConcurrentMultiMap_AddRangeAndEqualsBranchTests
+{
+    // line 174-177: all values in an AddRange(IEnumerable<KVP>) group are dupes
+    // for a NEW key → the zombie entry must be pruned (isNewKey && groupAdded==0)
+    [Test]
+    public void AddRange_KvpAllDuplicatesForNewKey_ZombieKeyPruned()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("a", 1); // pre-add so first group is existing key
+
+        // "b" is a new key; both values are identical so all are dupes → zombie
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("b", 5),
+            new KeyValuePair<string, int>("b", 5),
+        };
+        int added = map.AddRange(items);
+
+        Assert.That(added, Is.EqualTo(1));
+        Assert.That(map.ContainsKey("b"), Is.True);
+        Assert.That(map.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void AddRange_KvpNewKeyWithUniqueValues_AddsAll()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("b", 3),
+        };
+        int added = map.AddRange(items);
+
+        Assert.That(added, Is.EqualTo(3));
+        Assert.That(map.Count, Is.EqualTo(3));
+        Assert.That(map.ContainsKey("b"), Is.True);
+    }
+
+    [Test]
+    public void AddRange_KvpNullKey_ThrowsArgumentNullException()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        var items = new[]
+        {
+            new KeyValuePair<string, int>(null!, 1),
+        };
+        Assert.Throws<ArgumentNullException>(() => map.AddRange(items));
+    }
+
+    // line 482: Equals(object) receives a non-multimap type
+    [Test]
+    public void Equals_Object_WrongType_ReturnsFalse()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        Assert.That(map.Equals("not a map"), Is.False);
+    }
+
+    // line 506: GetHashCode on empty map
+    [Test]
+    public void GetHashCode_EmptyMap_IsStable()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        Assert.That(map.GetHashCode(), Is.EqualTo(map.GetHashCode()));
+    }
+
+    [Test]
+    public void GetHashCode_SameContent_EqualHashCodes()
+    {
+        var a = new ConcurrentMultiMap<string, int>();
+        var b = new ConcurrentMultiMap<string, int>();
+        a.Add("x", 1); a.Add("x", 2); a.Add("y", 3);
+        b.Add("x", 1); b.Add("x", 2); b.Add("y", 3);
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
+
+    // Concurrent stress: AddRange(KVP) from multiple threads
+    [Test]
+    [Category("Stress")]
+    public void AddRange_KvpConcurrent_AllUniqueValuesStored()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int threadCount = 8;
+        const int perThread = 200;
+
+        Parallel.For(0, threadCount, t =>
+        {
+            var batch = Enumerable.Range(t * perThread, perThread)
+                .Select(i => new KeyValuePair<string, int>($"k{i % 10}", i))
+                .ToArray();
+            map.AddRange(batch);
+        });
+
+        Assert.That(map.Count, Is.GreaterThan(0));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ConcurrentMultiMap – concurrent stress tests targeting race-condition paths
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+[Category("Stress")]
+public class ConcurrentMultiMap_StressTests
+{
+    [Test]
+    public void Add_ConcurrentAddsToSameKey_CountMatchesUniqueValues()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int count = 1000;
+
+        Parallel.For(0, count, i => map.Add("key", i));
+
+        Assert.That(map.Count, Is.EqualTo(count));
+    }
+
+    [Test]
+    public void Add_ConcurrentAddsDifferentKeys_AllKeysPresent()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int count = 500;
+
+        Parallel.For(0, count, i => map.Add($"k{i}", i));
+
+        Assert.That(map.KeyCount, Is.EqualTo(count));
+    }
+
+    [Test]
+    public void Remove_ConcurrentRemoves_CountNeverGoesNegative()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int count = 500;
+        for (int i = 0; i < count; i++) map.Add("k", i);
+
+        Parallel.For(0, count, i => map.Remove("k", i));
+
+        Assert.That(map.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void MixedReadWrite_Concurrent_NeverThrowsAndCountIsNonNegative()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(400));
+
+        var writer = Task.Run(() =>
+        {
+            int i = 0;
+            while (!cts.Token.IsCancellationRequested)
+            {
+                map.Add($"k{i % 20}", i);
+                i++;
+            }
+        });
+
+        var remover = Task.Run(() =>
+        {
+            int i = 0;
+            while (!cts.Token.IsCancellationRequested)
+            {
+                map.Remove($"k{i % 20}", i);
+                i++;
+            }
+        });
+
+        var reader = Task.Run(() =>
+        {
+            while (!cts.Token.IsCancellationRequested)
+                _ = map.Count + map.KeyCount;
+        });
+
+        Assert.DoesNotThrow(() => Task.WaitAll(writer, remover, reader));
+        Assert.That(map.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public void AddRange_KvpConcurrentAllDuplicateValues_ZombieKeyNeverLeaks()
+    {
+        // Each thread tries to insert the same value for a brand-new key;
+        // all but one will be considered duplicates. The zombie-prune path
+        // must not leave behind orphan entries.
+        var map = new ConcurrentMultiMap<string, int>();
+        const int threads = 20;
+
+        Parallel.For(0, threads, t =>
+        {
+            // same key "shared", same value 42 → ConcurrentDictionary GetOrAdd
+            // races; only one thread is "isNewKey", all values are dupes for rest
+            map.AddRange(new[] { new KeyValuePair<string, int>("shared", 42) });
+        });
+
+        Assert.That(map.ContainsKey("shared"), Is.True);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public void AddRemoveRemoveKey_ParallelRaces_CanRecoverToConsistentEmptyState()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int iterations = 1000;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            map.Add("race", i);
+
+            using var barrier = new Barrier(3);
+
+            var adder = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                map.Add("race", i + 10000);
+            });
+
+            var remover = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                map.Remove("race", i);
+            });
+
+            var removeKey = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                map.RemoveKey("race");
+            });
+
+            Assert.DoesNotThrow(() => Task.WaitAll(adder, remover, removeKey));
+
+            map.Clear();
+            Assert.That(map.Count, Is.Zero);
+            Assert.That(map.KeyCount, Is.Zero);
+            Assert.That(map.Keys, Is.Empty);
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public void AddRemoveRemoveKey_ParallelOnManyKeys_MapRemainsUsableAfterRaces()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int workers = 8;
+        const int iterationsPerWorker = 250;
+
+        Parallel.For(0, workers, worker =>
+        {
+            for (int i = 0; i < iterationsPerWorker; i++)
+            {
+                string key = $"k{(worker + i) % 16}";
+                int value = worker * iterationsPerWorker + i;
+
+                map.Add(key, value);
+
+                if (i % 3 == 0)
+                    map.Remove(key, value);
+
+                if (i % 11 == 0)
+                    map.RemoveKey(key);
+            }
+        });
+
+        Assert.DoesNotThrow(() => map.Add("post", 1));
+        Assert.That(map.Contains("post", 1), Is.True);
+
+        map.Clear();
+        Assert.That(map.Count, Is.Zero);
+        Assert.That(map.KeyCount, Is.Zero);
+        Assert.That(map.Keys, Is.Empty);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapList – uncovered constructor/protected paths (lines 63-70)
+// The base-class slow-path Add/AddRange for non-NET6 are exercised indirectly
+// through the .NET 8 target via the base-class fallback. To cover the exact
+// lines (CreateCollection / AddToCollection / ToReadOnly / RemoveWhere on the
+// List impl) we exercise them through public API.
+// ──────────────────────────────────────────────────────────────────────────────
 

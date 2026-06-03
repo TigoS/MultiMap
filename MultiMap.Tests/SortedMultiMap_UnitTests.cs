@@ -1424,3 +1424,40 @@ public class SortedMultiMapTests
     public void GetValuesCount_NullKey_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SortedMultiMap – constructor overloads + GetHashCode / Equals
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class SortedMultiMap_ConstructorAndHashTests
+{
+    [Test]
+    public void Constructor_Default_IsEmpty()
+    {
+        var map = new SortedMultiMap<string, int>();
+        Assert.That(map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void GetHashCode_SameContent_EqualHashCodes()
+    {
+        var a = new SortedMultiMap<string, int>();
+        var b = new SortedMultiMap<string, int>();
+        a.Add("k", 3); a.Add("k", 1); a.Add("k", 2);
+        b.Add("k", 1); b.Add("k", 2); b.Add("k", 3);
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
+
+    [Test]
+    public void GetHashCode_Empty_IsStable()
+    {
+        var map = new SortedMultiMap<string, int>();
+        Assert.That(map.GetHashCode(), Is.EqualTo(map.GetHashCode()));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional MultiMapBase contract tests through concrete subtypes
+// ──────────────────────────────────────────────────────────────────────────────
+

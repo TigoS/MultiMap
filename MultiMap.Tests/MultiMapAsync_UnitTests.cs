@@ -1,6 +1,6 @@
+using System.Reflection;
 using MultiMap.Entities;
 using MultiMap.Interfaces;
-using System.Reflection;
 
 namespace MultiMap.Tests;
 
@@ -78,6 +78,42 @@ public class MultiMapAsyncTests
         await _map.AddRangeAsync("a", new[] { 1, 2, 3 });
 
         Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public void AddRangeAsync_Key_NullKey_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync(null!, new[] { 1 }));
+
+    [Test]
+    public void AddRangeAsync_Key_NullValues_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync("key", (IEnumerable<int>)null!));
+
+    [Test]
+    public void AddRangeAsync_Key_NullElementInValues_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapAsync<string, string>();
+        Assert.ThrowsAsync<ArgumentNullException>(async () => await map.AddRangeAsync("key", new string?[] { "a", null }!));
+        map.Dispose();
+    }
+
+    [Test]
+    public void AddRangeAsync_Items_NullItems_ThrowsArgumentNullException()
+        => Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void AddRangeAsync_Items_NullKey_ThrowsArgumentNullException()
+    {
+        var items = new[] { new KeyValuePair<string, int>(null!, 1) };
+        Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync(items));
+    }
+
+    [Test]
+    public void AddRangeAsync_Items_NullValue_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapAsync<string, string>();
+        var items = new[] { new KeyValuePair<string, string>("k", null!) };
+        Assert.ThrowsAsync<ArgumentNullException>(async () => await map.AddRangeAsync(items));
+        map.Dispose();
     }
 
     [Test]
@@ -2194,6 +2230,165 @@ public class MultiMapAsyncTests
         }
     }
 
+    [Test]
+    [Category("Concurrency")]
+    public async Task IsSubsetOfAsync_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        // Pre-populate both maps
+        for (int i = 0; i < 20; i++)
+        {
+            await _map.AddAsync($"key{i}", i);
+            await other.AddAsync($"key{i}", i);
+        }
+
+        var tasks = new List<Task>();
+
+        // Multiple subset checks while modifying _map
+        for (int i = 0; i < 10; i++)
+        {
+            tasks.Add(_map.IsSubsetOfAsync(other));
+            tasks.Add(_map.AddAsync($"new{i}", i * 100).AsTask());
+        }
+
+        await Task.WhenAll(tasks);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task IsSupersetOfAsync_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        // Pre-populate maps
+        for (int i = 0; i < 20; i++)
+        {
+            await _map.AddAsync($"key{i}", i);
+        }
+        for (int i = 0; i < 10; i++)
+        {
+            await other.AddAsync($"key{i}", i);
+        }
+
+        var tasks = new List<Task>();
+
+        // Multiple superset checks while modifying
+        for (int i = 0; i < 10; i++)
+        {
+            tasks.Add(_map.IsSupersetOfAsync(other));
+            tasks.Add(other.AddAsync($"new{i}", i * 100).AsTask());
+        }
+
+        await Task.WhenAll(tasks);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task OverlapsAsync_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        // Pre-populate with some overlap
+        for (int i = 0; i < 20; i++)
+        {
+            await _map.AddAsync($"key{i}", i);
+        }
+        for (int i = 10; i < 30; i++)
+        {
+            await other.AddAsync($"key{i}", i);
+        }
+
+        var tasks = new List<Task>();
+
+        // Multiple overlap checks with concurrent modifications
+        for (int i = 0; i < 10; i++)
+        {
+            tasks.Add(_map.OverlapsAsync(other));
+            tasks.Add(_map.RemoveAsync($"key{i}", i).AsTask());
+            tasks.Add(other.RemoveAsync($"key{i + 10}", i + 10).AsTask());
+        }
+
+        await Task.WhenAll(tasks);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public async Task SetEqualsAsync_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        // Pre-populate both identically
+        for (int i = 0; i < 20; i++)
+        {
+            await _map.AddAsync($"key{i}", i);
+            await other.AddAsync($"key{i}", i);
+        }
+
+        var tasks = new List<Task>();
+
+        // Multiple equality checks while modifying
+        for (int i = 0; i < 10; i++)
+        {
+            tasks.Add(_map.SetEqualsAsync(other));
+            tasks.Add(_map.AddAsync($"diff{i}", i * 100).AsTask());
+        }
+
+        await Task.WhenAll(tasks);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    [Category("Stress")]
+    public async Task SetQueryMethods_HighConcurrency_MaintainConsistency()
+    {
+        const int iterations = 50;
+        var other = new MultiMapAsync<string, int>();
+
+        // Pre-populate
+        for (int i = 0; i < 30; i++)
+        {
+            await _map.AddAsync($"key{i}", i);
+            await other.AddAsync($"key{i % 20}", i);
+        }
+
+        var tasks = new List<Task>();
+
+        for (int i = 0; i < iterations; i++)
+        {
+            int value = i;
+
+            // Mix of all query methods
+            switch (value % 4)
+            {
+                case 0:
+                    tasks.Add(_map.IsSubsetOfAsync(other));
+                    break;
+                case 1:
+                    tasks.Add(_map.IsSupersetOfAsync(other));
+                    break;
+                case 2:
+                    tasks.Add(_map.OverlapsAsync(other));
+                    break;
+                case 3:
+                    tasks.Add(_map.SetEqualsAsync(other));
+                    break;
+            }
+        }
+
+        // All should complete without exception
+        await Task.WhenAll(tasks);
+
+        await other.DisposeAsync();
+    }
+
     // ── Dispose Guard Tests ──────────────────────────────────
 
     [Test]
@@ -2717,6 +2912,421 @@ public class MultiMapAsyncTests
         Assert.That(ex, Is.Not.Null);
 
         await other.DisposeAsync();
+    }
+
+    // ── IsSubsetOfAsync Instance Method ────────────────────
+
+    [Test]
+    public async Task IsSubsetOfAsync_EmptyIsSubsetOfEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(await _map.IsSubsetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_EmptyIsSubsetOfNonEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSubsetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_NonEmptyIsNotSubsetOfEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSubsetOfAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_IdenticalSets_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.IsSubsetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_ProperSubset_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.IsSubsetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_DisjointSets_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.IsSubsetOfAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_WithSameInstance_ReturnsTrue()
+    {
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSubsetOfAsync(_map), Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOfAsync_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await _map.IsSubsetOfAsync(null!));
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_DisposedThis_ThrowsObjectDisposedException()
+    {
+        var other = new MultiMapAsync<string, int>();
+        _map.Dispose();
+
+        Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+            await _map.IsSubsetOfAsync(other));
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_WithCancellation_ThrowsOperationCanceled()
+    {
+        var other = new MultiMapAsync<string, int>();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var ex = Assert.CatchAsync<OperationCanceledException>(async () =>
+            await _map.IsSubsetOfAsync(other, cts.Token));
+        Assert.That(ex, Is.Not.Null);
+
+        await other.DisposeAsync();
+    }
+
+    // ── IsSupersetOfAsync Instance Method ─────────────────
+
+    [Test]
+    public async Task IsSupersetOfAsync_EmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(await _map.IsSupersetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_NonEmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSupersetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_EmptyIsNotSupersetOfNonEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSupersetOfAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_IdenticalSets_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.IsSupersetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_ProperSuperset_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSupersetOfAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_DisjointSets_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.IsSupersetOfAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_WithSameInstance_ReturnsTrue()
+    {
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.IsSupersetOfAsync(_map), Is.True);
+    }
+
+    [Test]
+    public void IsSupersetOfAsync_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await _map.IsSupersetOfAsync(null!));
+    }
+
+    // ── OverlapsAsync Instance Method ─────────────────────
+
+    [Test]
+    public async Task OverlapsAsync_EmptySets_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(await _map.OverlapsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OverlapsAsync_DisjointSets_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.OverlapsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OverlapsAsync_SingleCommonPair_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.OverlapsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OverlapsAsync_MultipleCommonPairs_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.OverlapsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OverlapsAsync_PartialOverlap_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("c", 3);
+
+        Assert.That(await _map.OverlapsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OverlapsAsync_SameKeyDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+
+        Assert.That(await _map.OverlapsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task OverlapsAsync_WithSameInstance_ReturnsTrueIfNotEmpty()
+    {
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.OverlapsAsync(_map), Is.True);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_WithSameInstanceEmpty_ReturnsFalse()
+    {
+        Assert.That(await _map.OverlapsAsync(_map), Is.False);
+    }
+
+    [Test]
+    public void OverlapsAsync_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await _map.OverlapsAsync(null!));
+    }
+
+    // ── SetEqualsAsync Instance Method ────────────────────
+
+    [Test]
+    public async Task SetEqualsAsync_EmptySets_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_EmptyAndNonEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_NonEmptyAndEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_IdenticalSets_ReturnsTrue()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_DifferentCounts_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_DifferentKeys_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("b", 1);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_SameKeysDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.False);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_MultipleValuesPerKey_ChecksAllValues()
+    {
+        var other = new MultiMapAsync<string, int>();
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("a", 2);
+        await _map.AddAsync("b", 3);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("a", 2);
+        await other.AddAsync("b", 3);
+
+        Assert.That(await _map.SetEqualsAsync(other), Is.True);
+
+        await other.DisposeAsync();
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_WithSameInstance_ReturnsTrue()
+    {
+        await _map.AddAsync("a", 1);
+
+        Assert.That(await _map.SetEqualsAsync(_map), Is.True);
+    }
+
+    [Test]
+    public void SetEqualsAsync_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            await _map.SetEqualsAsync(null!));
     }
 
     [Test]
@@ -3289,4 +3899,304 @@ internal sealed class EmptyAsyncEnumerator<T> : IAsyncEnumerator<T>
     public T Current => default!;
     public ValueTask<bool> MoveNextAsync() => ValueTask.FromResult(false);
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+public class MultiMapAsync_EqualsBranchTests
+{
+    // line 1089: Equals(IReadOnlyMultiMapAsync?) general (non-concrete) path.
+    // We need an IReadOnlyMultiMapAsync<> that is NOT a MultiMapAsync instance.
+    // We create a minimal stub adapter.
+    private sealed class ReadOnlyAsyncAdapter<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
+        where TKey : notnull, IEquatable<TKey>
+        where TValue : notnull, IEquatable<TValue>
+    {
+        private readonly MultiMapAsync<TKey, TValue> _inner;
+        public ReadOnlyAsyncAdapter(MultiMapAsync<TKey, TValue> inner) => _inner = inner;
+
+        public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken ct = default) => _inner.ContainsKeyAsync(key, ct);
+        public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken ct = default) => _inner.ContainsAsync(key, value, ct);
+        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken ct = default) => _inner.GetKeysAsync(ct);
+        public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken ct = default) => _inner.GetAsync(key, ct);
+        public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken ct = default) => _inner.GetOrDefaultAsync(key, ct);
+        public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken ct = default) => _inner.TryGetAsync(key, ct);
+        public ValueTask<int> GetCountAsync(CancellationToken ct = default) => _inner.GetCountAsync(ct);
+        public ValueTask<int> GetKeyCountAsync(CancellationToken ct = default) => _inner.GetKeyCountAsync(ct);
+        public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken ct = default) => _inner.GetValuesCountAsync(key, ct);
+        public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken ct = default) => _inner.GetValuesAsync(ct);
+        public IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(CancellationToken ct = default) => _inner.GetAsyncEnumerator(ct);
+        public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other) => _inner.Equals(other);
+        public void Dispose() { /* adapter does not own the inner instance */ }
+        public ValueTask DisposeAsync() => default;
+    }
+
+    [Test]
+    public async Task Equals_IReadOnlyMultiMapAsync_GeneralPath_SameContent_ReturnsTrue()
+    {
+        await using var concrete = new MultiMapAsync<string, int>();
+        await concrete.AddAsync("a", 1);
+        await concrete.AddAsync("b", 2);
+
+        // wrap so the fast path (is MultiMapAsync) is skipped
+        var adapter = new ReadOnlyAsyncAdapter<string, int>(concrete);
+
+        Assert.That(concrete.Equals(adapter), Is.True);
+    }
+
+    [Test]
+    public async Task Equals_IReadOnlyMultiMapAsync_GeneralPath_DifferentContent_ReturnsFalse()
+    {
+        await using var concrete = new MultiMapAsync<string, int>();
+        await concrete.AddAsync("a", 1);
+
+        await using var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 2);
+        var adapter = new ReadOnlyAsyncAdapter<string, int>(other);
+
+        Assert.That(concrete.Equals(adapter), Is.False);
+    }
+
+    [Test]
+    public async Task Equals_IReadOnlyMultiMapAsync_GeneralPath_Null_ReturnsFalse()
+    {
+        await using var concrete = new MultiMapAsync<string, int>();
+        Assert.That(concrete.Equals((IReadOnlyMultiMapAsync<string, int>?)null), Is.False);
+    }
+
+    [Test]
+    public async Task Equals_IReadOnlyMultiMapAsync_GeneralPath_KeyCountMismatch_ReturnsFalse()
+    {
+        await using var concrete = new MultiMapAsync<string, int>();
+        await concrete.AddAsync("a", 1);
+        await concrete.AddAsync("b", 2);
+
+        await using var other = new MultiMapAsync<string, int>();
+        await other.AddAsync("a", 1);
+        var adapter = new ReadOnlyAsyncAdapter<string, int>(other);
+
+        Assert.That(concrete.Equals(adapter), Is.False);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapAsync – concurrent stress tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+[Category("Stress")]
+public class MultiMapAsync_StressTests
+{
+    [Test]
+    public async Task AddAsync_ConcurrentAdds_AllUniqueValuesPresent()
+    {
+        await using var map = new MultiMapAsync<string, int>();
+        const int count = 500;
+
+        await Task.WhenAll(Enumerable.Range(0, count).Select(i =>
+            map.AddAsync("key", i).AsTask()));
+
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(count));
+    }
+
+    [Test]
+    public async Task AddAndRemoveAsync_Concurrent_NeverThrows()
+    {
+        await using var map = new MultiMapAsync<string, int>();
+        const int count = 300;
+
+        var adds = Enumerable.Range(0, count)
+            .Select(i => map.AddAsync($"k{i % 10}", i).AsTask());
+        var removes = Enumerable.Range(0, count)
+            .Select(i => map.RemoveAsync($"k{i % 10}", i).AsTask());
+
+        await Task.WhenAll(adds.Concat(removes));
+
+        Assert.That(await map.GetCountAsync(), Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_TwoConcreteInstances_SameContent_ReturnsTrue()
+    {
+        await using var a = new MultiMapAsync<string, int>();
+        await using var b = new MultiMapAsync<string, int>();
+
+        await a.AddAsync("x", 1);
+        await a.AddAsync("y", 2);
+        await b.AddAsync("x", 1);
+        await b.AddAsync("y", 2);
+
+        Assert.That(await a.SetEqualsAsync(b), Is.True);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_TwoConcreteInstances_DifferentContent_ReturnsFalse()
+    {
+        await using var a = new MultiMapAsync<string, int>();
+        await using var b = new MultiMapAsync<string, int>();
+
+        await a.AddAsync("x", 1);
+        await b.AddAsync("x", 2);
+
+        Assert.That(await a.SetEqualsAsync(b), Is.False);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Subset_ReturnsTrue()
+    {
+        await using var target = new MultiMapAsync<string, int>();
+        await using var other = new MultiMapAsync<string, int>();
+
+        await target.AddAsync("a", 1);
+        await other.AddAsync("a", 1);
+        await other.AddAsync("b", 2);
+
+        Assert.That(await target.IsSubsetOfAsync(other), Is.True);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Superset_ReturnsTrue()
+    {
+        await using var target = new MultiMapAsync<string, int>();
+        await using var other = new MultiMapAsync<string, int>();
+
+        await target.AddAsync("a", 1);
+        await target.AddAsync("b", 2);
+        await other.AddAsync("a", 1);
+
+        Assert.That(await target.IsSupersetOfAsync(other), Is.True);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_SharedPair_ReturnsTrue()
+    {
+        await using var a = new MultiMapAsync<string, int>();
+        await using var b = new MultiMapAsync<string, int>();
+
+        await a.AddAsync("a", 1);
+        await b.AddAsync("a", 1);
+        await b.AddAsync("b", 2);
+
+        Assert.That(await a.OverlapsAsync(b), Is.True);
+    }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public async Task AddRemoveRemoveKey_ParallelRaces_CountAndKeyCountRemainConsistent()
+    {
+        await using var map = new MultiMapAsync<string, int>();
+        const int iterations = 500;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            await map.AddAsync("race", i);
+
+            using var barrier = new Barrier(3);
+
+            var adder = Task.Run(async () =>
+            {
+                barrier.SignalAndWait();
+                await map.AddAsync("race", i + 10000);
+            });
+
+            var remover = Task.Run(async () =>
+            {
+                barrier.SignalAndWait();
+                await map.RemoveAsync("race", i);
+            });
+
+            var removeKey = Task.Run(async () =>
+            {
+                barrier.SignalAndWait();
+                await map.RemoveKeyAsync("race");
+            });
+
+            await Task.WhenAll(adder, remover, removeKey);
+
+            int count = await map.GetCountAsync();
+            int keyCount = await map.GetKeyCountAsync();
+
+            Assert.That(count, Is.GreaterThanOrEqualTo(0));
+            Assert.That(keyCount, Is.GreaterThanOrEqualTo(0));
+
+            int aggregated = 0;
+            foreach (var key in await map.GetKeysAsync())
+                aggregated += await map.GetValuesCountAsync(key);
+
+            Assert.That(count, Is.EqualTo(aggregated));
+
+            await map.ClearAsync();
+            Assert.That(await map.GetCountAsync(), Is.Zero);
+            Assert.That(await map.GetKeyCountAsync(), Is.Zero);
+        }
+    }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public async Task DisposeAsync_RacingWithOperations_OnlyExpectedExceptionsOccur()
+    {
+        await using var map = new MultiMapAsync<string, int>();
+
+        var operations = Enumerable.Range(0, 300).Select(async i =>
+        {
+            try
+            {
+                await map.AddAsync($"k{i % 10}", i);
+                await map.RemoveAsync($"k{i % 10}", i);
+                await map.RemoveKeyAsync($"k{i % 10}");
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+        }).ToArray();
+
+        var disposer = Task.Run(async () =>
+        {
+            await Task.Delay(5);
+            await map.DisposeAsync();
+        });
+
+        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(operations.Append(disposer)));
+    }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public async Task CanceledToken_ConcurrentOperations_ThrowOnlyOperationCanceledException()
+    {
+        await using var map = new MultiMapAsync<string, int>();
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        var tasks = Enumerable.Range(0, 120).Select(async i =>
+        {
+            try
+            {
+                await map.AddAsync("cancel", i, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            try
+            {
+                await map.RemoveAsync("cancel", i, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
+            try
+            {
+                await map.RemoveKeyAsync("cancel", cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+        }).ToArray();
+
+        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(tasks));
+        Assert.That(await map.GetCountAsync(), Is.Zero);
+        Assert.That(await map.GetKeyCountAsync(), Is.Zero);
+    }
 }
