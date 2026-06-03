@@ -1,4 +1,4 @@
-﻿namespace MultiMap.Interfaces
+namespace MultiMap.Interfaces
 {
     /// <summary>
     /// Defines a collection that associates multiple values with each key, allowing retrieval, addition, and removal of key-value pairs.
@@ -59,10 +59,5 @@
         /// Thrown when <paramref name="key"/> or <paramref name="predicate"/> is <see langword="null"/>.
         /// </exception>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate);
-
-        /// <summary>
-        /// Removes all items from the collection.
-        /// </summary>
-        public void Clear();
     }
 }

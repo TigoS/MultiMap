@@ -1,4 +1,4 @@
-﻿namespace MultiMap.Interfaces
+namespace MultiMap.Interfaces
 {
     /// <summary>
     /// Represents a read-only collection that maps keys to one or more values, allowing retrieval of all values associated with a given key.
