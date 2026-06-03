@@ -30,4 +30,38 @@ multiMap2 = TestDataHelper.CreateSampleMultiMap2();
 multiMap1 = multiMap1.SymmetricExceptWith(multiMap2);
 TestDataHelper.PrintMultiMap("SYMMETRIC EXCEPT WITH", multiMap1);
 
+multiMap1 = TestDataHelper.CreateSampleMultiMap1();
+multiMap2 = TestDataHelper.CreateSampleMultiMap1();
+multiMap2.Add("D", 4);
+bool isSubset = multiMap1.IsSubsetOf(multiMap2);
+TestDataHelper.PrintLineBreak();
+TestDataHelper.PrintMultiMap("MULTI MAP 1", multiMap1);
+TestDataHelper.PrintMultiMap("MULTI MAP 2", multiMap2);
+Console.WriteLine($"1 IS SUBSET OF 2: {isSubset}{Environment.NewLine}");
+
+multiMap1 = TestDataHelper.CreateSampleMultiMap1();
+multiMap2 = TestDataHelper.CreateSampleMultiMap1();
+multiMap2.RemoveKey("B");
+bool isSuperset = multiMap1.IsSupersetOf(multiMap2);
+TestDataHelper.PrintLineBreak();
+TestDataHelper.PrintMultiMap("MULTI MAP 1", multiMap1);
+TestDataHelper.PrintMultiMap("MULTI MAP 2", multiMap2);
+Console.WriteLine($"1 IS SUPERSET OF 2: {isSuperset}{Environment.NewLine}");
+
+multiMap1 = TestDataHelper.CreateSampleMultiMap1();
+multiMap2 = TestDataHelper.CreateSampleMultiMap2();
+bool overlaps = multiMap1.Overlaps(multiMap2);
+TestDataHelper.PrintLineBreak();
+TestDataHelper.PrintMultiMap("MULTI MAP 1", multiMap1);
+TestDataHelper.PrintMultiMap("MULTI MAP 2", multiMap2);
+Console.WriteLine($"1 OVERLAPS WITH 2: {overlaps}{Environment.NewLine}");
+
+multiMap1 = TestDataHelper.CreateSampleMultiMap1();
+multiMap2 = TestDataHelper.CreateSampleMultiMap1();
+bool isSetEqual = multiMap1.SetEquals(multiMap2);
+TestDataHelper.PrintLineBreak();
+TestDataHelper.PrintMultiMap("MULTI MAP 1", multiMap1);
+TestDataHelper.PrintMultiMap("MULTI MAP 2", multiMap2);
+Console.WriteLine($"1 IS SET EQUAL TO 2: {isSetEqual}{Environment.NewLine}");
+
 Console.ReadLine();
