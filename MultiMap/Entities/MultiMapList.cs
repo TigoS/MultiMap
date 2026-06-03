@@ -60,7 +60,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        protected override List<TValue> CreateCollection() => new List<TValue>();
+        protected override List<TValue> CreateCollection() => new();
 
         /// <inheritdoc/>
         protected override bool AddToCollection(List<TValue> collection, TValue value)
@@ -79,10 +79,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-
-            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
             list ??= new List<TValue>();
 
             list.Add(value);
@@ -95,8 +94,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(values);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (values is null) throw new ArgumentNullException(nameof(values));
+#endif
 
 #if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
@@ -130,11 +134,11 @@ namespace MultiMap.Entities
             return added;
         }
 
-        #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (items is null) throw new ArgumentNullException(nameof(items));
+            ArgumentNullException.ThrowIfNull(items);
 
             int added = 0;
             var dict = (Dictionary<TKey, List<TValue>>)_dictionary;

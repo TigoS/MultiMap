@@ -107,7 +107,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        protected override HashSet<TValue> CreateCollection() => new HashSet<TValue>(_valueComparer);
+        protected override HashSet<TValue> CreateCollection() => new(_valueComparer);
 
         /// <inheritdoc/>
         protected override bool AddToCollection(HashSet<TValue> collection, TValue value) => collection.Add(value);
@@ -125,10 +125,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
             hashset ??= new HashSet<TValue>(_valueComparer);
 
             if (hashset.Add(value))
@@ -143,8 +142,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(values);
 
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
             hashset ??= new HashSet<TValue>(_valueComparer);
@@ -152,6 +151,8 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
+                if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+
                 if (hashset.Add(value))
                 {
                     _count++;
@@ -168,7 +169,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (items is null) throw new ArgumentNullException(nameof(items));
+            ArgumentNullException.ThrowIfNull(items);
 
             int added = 0;
             var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;

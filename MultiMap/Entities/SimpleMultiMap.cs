@@ -116,8 +116,13 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Add(TKey key, TValue value)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
+#endif
 
 #if NET6_0_OR_GREATER
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
@@ -138,7 +143,11 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerable<TValue> Get(TKey key)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
+#endif
 
             if (_dictionary.TryGetValue(key, out var hashset))
 #if NET9_0_OR_GREATER
@@ -153,7 +162,11 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
+#endif
 
             if (_dictionary.TryGetValue(key, out var hashset))
 #if NET9_0_OR_GREATER
@@ -168,8 +181,13 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Remove(TKey key, TValue value)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
+#endif
 
             if (_dictionary.TryGetValue(key, out var hashset))
             {
@@ -191,7 +209,11 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool RemoveKey(TKey key)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
+#endif
 
             if (_dictionary.TryGetValue(key, out var hashset))
             {
@@ -200,6 +222,13 @@ namespace MultiMap.Entities
             }
 
             return false;
+        }
+
+        /// <inheritdoc/>
+        public void Clear()
+        {
+            _dictionary.Clear();
+            _count = 0;
         }
 
         /// <inheritdoc />
@@ -220,7 +249,11 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool ContainsKey(TKey key)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
+#endif
 
             return _dictionary.ContainsKey(key);
         }
@@ -228,8 +261,13 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Contains(TKey key, TValue value)
         {
+#if NET6_0_OR_GREATER
+            ArgumentNullException.ThrowIfNull(key);
+            ArgumentNullException.ThrowIfNull(value);
+#else
             if (key is null) throw new ArgumentNullException(nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
+#endif
 
             return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
         }
