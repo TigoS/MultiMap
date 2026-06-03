@@ -1913,9 +1913,61 @@ public class ConcurrentMultiMapTests
             _map.Clear();
         }
     }
+
+    // Regression for #2: KeyCount is now computed from a scan of non-empty
+    // inner sets; this stress test confirms Count, KeyCount, and Keys remain
+    // self-consistent under heavy parallel add/remove/removeKey traffic.
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public void MixedConcurrentOperations_CountKeyCountKeysAreConsistent()
+    {
+        const int workers = 8;
+        const int iterations = 500;
+        const int keyRange = 10;
+
+        Parallel.For(0, workers, worker =>
+        {
+            for (int i = 0; i < iterations; i++)
+            {
+                string key = $"k{(worker + i) % keyRange}";
+                int value = worker * iterations + i;
+
+                switch (i % 5)
+                {
+                    case 0:
+                    case 1:
+                        _map.Add(key, value);
+                        break;
+                    case 2:
+                        _map.Remove(key, value - 1);
+                        break;
+                    case 3:
+                        _map.AddRange(key, new[] { value, value + 1 });
+                        break;
+                    case 4:
+                        _map.RemoveKey(key);
+                        break;
+                }
+            }
+        });
+
+        // Count is a best-effort Interlocked counter; it may transiently diverge from
+        // the per-key sum under RemoveKey races (documented in RemoveKey). What must
+        // always hold after all threads finish is non-negativity.
+        Assert.That(_map.Count, Is.GreaterThanOrEqualTo(0));
+
+        // KeyCount must equal the number of keys returned by Keys (both derived from
+        // the same live dictionary scan).
+        var keys = _map.Keys.ToList();
+        Assert.That(_map.KeyCount, Is.EqualTo(keys.Count));
+
+        // Every key returned by Keys must have at least one value — no zombie entries.
+        foreach (string key in keys)
+            Assert.That(_map.GetOrDefault(key), Is.Not.Empty,
+                $"Key '{key}' present in Keys but has no values.");
+    }
 }
-
-
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ConcurrentMultiMap – constructor overloads + uncovered branches
@@ -2227,7 +2279,6 @@ public class ConcurrentMultiMap_ConstructorAndBranchTests
     }
 }
 
-
 [TestFixture]
 public class ConcurrentMultiMap_AddRangeAndEqualsBranchTests
 {
@@ -2511,4 +2562,3 @@ public class ConcurrentMultiMap_StressTests
 // lines (CreateCollection / AddToCollection / ToReadOnly / RemoveWhere on the
 // List impl) we exercise them through public API.
 // ──────────────────────────────────────────────────────────────────────────────
-

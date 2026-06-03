@@ -489,6 +489,69 @@ public abstract class MultiMapBaseTests
         Assert.That(_map.Count, Is.EqualTo(1));
     }
 
+    // Regression for #1: RemoveKey must only adjust Count after the key is
+    // actually present, so Count stays accurate regardless of call order.
+    [Test]
+    public void RemoveKey_LastValueKey_CountReachesZero()
+    {
+        _map.Add("a", 1);
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveKey_ThenRemoveKeyAgain_CountRemainsZero()
+    {
+        _map.Add("a", 1);
+        _map.RemoveKey("a");
+        _map.RemoveKey("a"); // should be a no-op
+
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveKey_AfterRemoveWhere_EmptiedKey_CountIsConsistent()
+    {
+        // Simulate the exact path that #1 protected: RemoveWhere empties the
+        // collection so that subsequent RemoveKey finds nothing to remove and
+        // must NOT decrement Count a second time.
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.RemoveWhere("a", _ => true); // empties "a" and removes the key
+
+        // Key no longer exists; RemoveKey must be a no-op.
+        bool removed = _map.RemoveKey("a");
+
+        Assert.That(removed, Is.False);
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveKey_OnMultipleKeys_CountAndKeyCountStayConsistent()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        _map.Add("c", 4);
+        _map.Add("c", 5);
+
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+        Assert.That(_map.KeyCount, Is.EqualTo(2));
+        Assert.That(_map.ContainsKey("a"), Is.False);
+
+        _map.RemoveKey("c");
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+        Assert.That(_map.ContainsKey("c"), Is.False);
+    }
+
     // ── ContainsKey ───────────────────────────────────────────
 
     [Test]
@@ -1077,4 +1140,3 @@ public class MultiMapBase_EqualsDispatchTests
         Assert.That(b.Equals(a), Is.True);
     }
 }
-
