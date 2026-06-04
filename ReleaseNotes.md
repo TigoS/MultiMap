@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.6%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-96.8%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -22,12 +22,16 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
   - `IsSupersetOf` / `IsSupersetOfAsync` — Check if the current multimap is a superset of another (contains all pairs from the other)
   - `Overlaps` / `OverlapsAsync` — Check if the current multimap shares any key-value pairs with another
   - `SetEquals` / `SetEqualsAsync` — Check if the current multimap contains exactly the same key-value pairs as another
-- Comprehensive unit test coverage for all new set query operations including:
-  - 48 tests for `MultiMapHelper` sync extensions (including null guards)
-  - 26 tests for `MultiMapHelper` async extensions
-  - 56 tests for `MultiMapAsync` atomic methods (including stress/concurrency tests)
-  - 54 tests for `MultiMapLock` atomic methods (including stress/concurrency tests)
+- Comprehensive unit test coverage for all new set query operations (see **Tests** section below for per-class breakdown)
 - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
+- `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
+
+- **2,045 tests** per target framework — **4,090 total executions** on `net10.0` + `net8.0`.
+- Coverlet: **96.8% line coverage** (2,784/2,877), **93.4% branch coverage** (988/1,058).
+- Added **67 new sync set-query tests** in `MultiMapHelper_UnitTests.cs` for `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (sync `IMultiMap`, `ISimpleMultiMap`, and `IMultiMap` overloads, including null guards and edge cases)
+- Added **17 new async set-query tests** in `MultiMapHelperExtensionAsync_UnitTests.cs` for `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`
+- Added **46 new tests** in `MultiMapAsync_UnitTests.cs` for atomic `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync` (including concurrency and cancellation tests)
+- Added **52 new tests** in `MultiMapLock_UnitTests.cs` for atomic `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (including concurrency and lock-ordering tests)
 
 **Implementation Details**
 
