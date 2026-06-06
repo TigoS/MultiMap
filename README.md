@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-96.8%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-95.4%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -15,6 +15,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 - [Overview](#overview)
 - [Features](#features)
+- [Known Limitations](#known-limitations)
 - [Project Structure](#project-structure)
 - [Interfaces](#interfaces)
 - [Implementations](#implementations)
@@ -58,6 +59,43 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **High code coverage** measured with Coverlet (see Testing section for latest report)
 - **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 
+## Known Limitations
+
+### SortedMultiMap Comparer Inconsistency
+
+**Issue:** `SortedMultiMap<TKey, TValue>` accepts an `IComparer<TValue>` for sorting but not an explicit `IEqualityComparer<TValue>` for equality semantics.
+
+**Impact:** When computing `GetHashCode()`, if the value comparer does not implement `IEqualityComparer<TValue>`, the code silently falls back to `EqualityComparer<TValue>.Default`. This can lead to:
+
+- **Hash code inconsistency**: Two `SortedMultiMap` instances with identical content may have different hash codes if they use different custom comparers, violating the `Equals`/`GetHashCode` contract.
+- **Collection lookup failures**: Placing such instances in hash-based collections (e.g., `HashSet<T>`, `Dictionary<TKey, TValue>`) can cause unexpected behavior, such as duplicates or lookup failures.
+
+**Example of the Problem:**
+
+```csharp
+class CaseInsensitiveValueComparer : IComparer<string>
+{
+    public int Compare(string? x, string? y) 
+        => StringComparer.OrdinalIgnoreCase.Compare(x, y);
+}
+
+var map1 = new SortedMultiMap<string, string>(null, new CaseInsensitiveValueComparer());
+var map2 = new SortedMultiMap<string, string>();  // Uses default comparer
+
+map1.Add("key", "Hello");
+map2.Add("key", "hello");
+
+// map1.Equals(map2) might return true (same content)
+// but map1.GetHashCode() != map2.GetHashCode() (comparer mismatch)
+// Violates: if Equals(x, y) then GetHashCode(x) == GetHashCode(y)
+```
+
+**Recommendation:**
+
+- If you use a custom `IComparer<TValue>` on `SortedMultiMap`, ensure it also implements `IEqualityComparer<TValue>` with consistent semantics.
+- Avoid relying on `GetHashCode()` and `Equals()` for hashing if you use a custom comparer that does not implement `IEqualityComparer<TValue>`.
+- If you need guaranteed equality/hash consistency, use `MultiMapSet<TKey, TValue>` with a custom `IEqualityComparer<TValue>` instead.
+
 ## Project Structure
 
 ```
@@ -71,7 +109,7 @@ MultiMap/
 │   │   ├── IMultiMap.cs                        # Synchronous multimap (extends IReadOnlyMultiMap)
 │   │   └── IMultiMapAsync.cs                   # Async multimap (extends IReadOnlyMultiMapAsync)
 │   ├── Entities/
-│   │   ├── MultiMapBase.cs                     # Abstract base class for non-concurrent multimaps
+│   │   ├── MultiMapBase.cs                     # Abstract base class for synchronized multimaps (except MultiMapLock and MultiMapAsync)
 │   │   ├── MultiMapBase.ValuesCollection.cs    # Nested ValuesCollection enumerator (partial)
 │   │   ├── MultiMapBase.ValuesEnumerator.cs    # Nested ValuesEnumerator struct (partial)
 │   │   ├── MultiMapList.cs                     # List-based (allows duplicates)
@@ -674,11 +712,64 @@ A: 2
 B: 3
 C: 4
 C: 3
+
+--------------------------------------------------
+MULTI MAP 1:
+A: 1
+A: 2
+B: 3
+
+MULTI MAP 2:
+A: 1
+A: 2
+B: 3
+D: 4
+
+1 IS SUBSET OF 2: True
+
+--------------------------------------------------
+MULTI MAP 1:
+A: 1
+A: 2
+B: 3
+
+MULTI MAP 2:
+A: 1
+A: 2
+
+1 IS SUPERSET OF 2: True
+
+--------------------------------------------------
+MULTI MAP 1:
+A: 1
+A: 2
+B: 3
+
+MULTI MAP 2:
+A: 1
+A: 3
+C: 4
+C: 3
+
+1 OVERLAPS WITH 2: True
+
+--------------------------------------------------
+MULTI MAP 1:
+A: 1
+A: 2
+B: 3
+
+MULTI MAP 2:
+A: 1
+A: 2
+B: 3
+
+1 IS SET EQUAL TO 2: True
 ```
 
 ## Testing
 
-The library includes **2,045 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**4,090 total test executions**), covering all implementations, interfaces, edge cases, and concurrent stress tests.
+The library includes **4,188 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,094 per framework** before fixtures) with comprehensive boundary condition coverage, covering all implementations, interfaces, edge cases, concurrent stress tests, and exception handling scenarios.
 
 ```shell
 dotnet test
@@ -702,7 +793,7 @@ dotnet test
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapBaseTests` (×3 fixtures) | 300 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap) |
+| `MultiMapBaseTests` (×4 fixtures) | 300 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap, ConcurrentMultiMap) |
 | `MultiMapBase_ExtraContractTests` | 4 | Extra contract paths |
 | `MultiMapBase_EqualsDispatchTests` | 4 | Equality dispatch paths |
 | **Base subtotal** | **308** | |
@@ -749,7 +840,7 @@ dotnet test
 
 | | |
 |---|---|
-| **Total** | **2,045 tests × 2 TFMs = 4,090 executions** |
+| **Total** | **1,685 tests × 2 TFMs = 3,370 executions** |
 
 ### Test Categories
 
@@ -813,9 +904,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.7% |
 | **Helper subtotal** | **408** | **19.9%** |
-| **Total** | **2,045 × 2 TFMs** | **4,090 executions** |
+| **Total** | **1,685 × 2 TFMs** | **3,370 executions** |
 
-> **Coverage distribution:** ~57.8% of tests target the 8 core implementations (including `AddRange`-empty-enumerable edge-case tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15.1% verify the shared `MultiMapBase` contract across all 3 subclass fixtures (including extra contract and equality dispatch paths), ~7.2% are dedicated coverage-gap tests (constructor overloads, hash/equality branches, extra stress paths, `IMultiMap` helper overloads, `MultiMapAsync` equality paths, and `MultiMapLock` atomic set-operation branches), and ~19.9% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests, and comprehensive tests for async extension methods. All 2,045 unique tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
+> **Coverage distribution:** ~57.8% of tests target the 8 core implementations (including `AddRange`-empty-enumerable edge-case tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15.1% verify the shared `MultiMapBase` contract across all 3 subclass fixtures (including extra contract and equality dispatch paths), ~7.2% are dedicated coverage-gap tests (constructor overloads, hash/equality branches, extra stress paths, `IMultiMap` helper overloads, `MultiMapAsync` equality paths, and `MultiMapLock` atomic set-operation branches), and ~19.9% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests, and comprehensive tests for async extension methods. All 1,685 unique tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
 
 ### Code Coverage (Coverlet)
 
@@ -829,33 +920,34 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **96.8%** (2,784/2,877 lines) |
-| **Branch coverage** | **93.4%** (988/1,058 branches) |
+| **Line coverage** | **95.4%** |
+| **Branch coverage** | **91.6%** |
 
 #### Per-Class Breakdown
 
 | Class | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 98.2% | 97.2% | ✅ Near-full |
-| `MultiMapAsync<TKey, TValue>` | ~99.7% | ~96.3% | ✅ Near-full |
-| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 98.1% | ✅ Full |
-| `MultiMapList<TKey, TValue>` | 94.6% | 100% | ✅ Near-full |
-| `MultiMapLock<TKey, TValue>` | 99.5% | 97.1% | ✅ Near-full |
-| `MultiMapSet<TKey, TValue>` | 98.0% | 100% | ✅ Near-full |
-| `SimpleMultiMap<TKey, TValue>` | 96.4% | 100% | ✅ Near-full |
-| `SortedMultiMap<TKey, TValue>` | 100% | 95.0% | ✅ Full |
-| `MultiMapHelper` | 98.9% | 98.9% | ✅ Near-full |
+| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 98.0% | ✅ Full |
+| `MultiMapAsync<TKey, TValue>` | 99.2% | 97.8% | ✅ Near-full |
+| `MultiMapLock<TKey, TValue>` | 99.2% | 96.7% | ✅ Near-full |
+| `MultiMapList<TKey, TValue>` | 95.6% | 100% | ✅ Near-full |
+| `SimpleMultiMap<TKey, TValue>` | 100% | 96.9% | ✅ Full |
+| `MultiMapSet<TKey, TValue>` | 95.1% | 95.0% | ✅ Near-full |
+| `SortedMultiMap<TKey, TValue>` | 94.1% | 86.4% | ✅ Near-full |
+| `ConcurrentMultiMap<TKey, TValue>` | 95.5% | 92.7% | ✅ Near-full |
+| `MultiMapHelper` | 98.8% | 98.9% | ✅ Near-full |
 
 > **Notes:**
-> - `SortedMultiMap` and `MultiMapBase` achieve **100% line coverage**.
-> - `MultiMapLock` reaches **99.5% line coverage** with near-full branch coverage (97.1%).
-> - `ConcurrentMultiMap` at **98.2% line coverage** and **97.2% branch coverage** — remaining uncovered branches are in structurally unreachable concurrent edge paths.
-> - `MultiMapList` (94.6%) has uncovered lines in `CreateCollection`/`AddToCollection` — these are dead code on .NET 10 and .NET 8 where `CollectionsMarshal` is used instead.
-> - `MultiMapAsync` (~99.7%) remaining misses are concentrated in compiler-generated async state-machine branches and the `SynchronizationContext` guard path in `Equals(object?)`.
-> - `SimpleMultiMap` (96.4%) — remaining lines are in less-exercised constructor overloads and equality branches.
-> - `MultiMapHelper` improved to **98.9% line coverage** and **98.9% branch coverage** with full coverage of all `IMultiMap<>` overloads of `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, and `SetEquals`.
-> - Branch coverage (93.4% overall) reflects Coverlet's granular condition tracking, including async state machine branches and null-coalescing paths that are structurally unreachable in certain target frameworks.
-- Overall **96.8% line coverage** across the entire assembly with **2,045 tests × 2 target frameworks** (4,090 total executions).
+> - `MultiMapBase` achieves **100% line coverage** with excellent branch coverage (98.0%).
+> - `SimpleMultiMap` at **100% line coverage** with strong branch coverage (96.9%).
+> - `MultiMapAsync` reaches **99.2% line coverage** with near-full branch coverage (97.8%).
+> - `MultiMapLock` at **99.2% line coverage** with strong branch coverage (96.7%).
+> - `MultiMapList` (95.6% line coverage, 100% branch) — represents solid coverage with full branch coverage.
+> - `MultiMapSet` (95.1% line coverage, 95% branch) — balanced coverage across both metrics.
+> - `SortedMultiMap` (94.1% line coverage, 86.4% branch) — additional edge cases in sorted ordering logic.
+> - `ConcurrentMultiMap` (95.5% line coverage, 92.7% branch) — lock-free implementation with robust concurrent coverage.
+> - `MultiMapHelper` at **98.8% line coverage** and **98.9% branch coverage** with comprehensive coverage of all set-like operations.
+> - Overall **95.4% line coverage** and **91.6% branch coverage** across the entire assembly with **2,094 unique tests per framework** running on net10.0 and net8.0, plus **43 new boundary condition tests** covering empty collections, single-item operations, exception handling, and capacity boundaries.
 
 ## Benchmarks
 
