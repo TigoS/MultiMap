@@ -15,19 +15,6 @@ namespace MultiMap.Interfaces
         where TValue : notnull, IEquatable<TValue>
     {
         /// <summary>
-        /// Attempts to retrieve the collection of values associated with the specified key.
-        /// </summary>
-        /// <remarks>The method does not throw an exception if the key is not found.
-        /// The returned collection in the out parameter is empty if the key does not exist.</remarks>
-        /// <param name="key">The key whose associated values are to be retrieved.</param>
-        /// <param name="values">When this method returns, contains the collection of values associated with the specified key, if the key is found; otherwise, an empty collection.</param>
-        /// <returns>true if the key was found and values were retrieved; otherwise, false.</returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
-        /// </exception>
-        public bool TryGet(TKey key, out IEnumerable<TValue> values);
-
-        /// <summary>
         /// Gets the number of keys contained in the collection.
         /// </summary>
         public int KeyCount { get; }
