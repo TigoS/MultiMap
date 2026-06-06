@@ -1,3 +1,4 @@
+using MultiMap.Helpers;
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
@@ -162,7 +163,7 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
-                if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
 
                 if (hashset!.Add(value))
                 {
@@ -195,8 +196,9 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var item in items)
             {
-                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
-                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item, nameof(items), "Sequence contains a null item.");
+                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
 #if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);

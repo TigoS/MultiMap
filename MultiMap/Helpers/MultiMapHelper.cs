@@ -22,13 +22,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             target.AddRange(other);
 
@@ -49,13 +44,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var keysToRemove = new HashSet<TKey>();
             // Cache of other's value sets per key (materialised to avoid aliasing a live set).
@@ -118,13 +108,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             if (ReferenceEquals(target, other))
             {
@@ -155,13 +140,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var otherCount = other.Count;
             var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
@@ -210,13 +190,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
@@ -252,13 +227,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             return other.IsSubsetOf(target);
         }
@@ -280,13 +250,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
@@ -322,13 +287,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             if (target.Count != other.Count || target.KeyCount != other.KeyCount)
                 return false;
@@ -363,13 +323,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             foreach (var kvp in other)
             {
@@ -390,13 +345,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var toRemove = new List<KeyValuePair<TKey, TValue>>(target.Count);
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
@@ -434,13 +384,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             if (ReferenceEquals(target, other))
             {
@@ -468,13 +413,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var otherCount = other.Count;
             var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
@@ -518,13 +458,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             foreach (var kvp in target)
             {
@@ -547,13 +482,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             return other.IsSubsetOf(target);
         }
@@ -570,13 +500,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             foreach (var kvp in target)
             {
@@ -599,13 +524,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             if (target.Count != other.Count)
                 return false;
@@ -638,13 +558,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var keys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
 
@@ -674,13 +589,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var keysToRemove = new List<TKey>();
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
@@ -730,13 +640,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             if (ReferenceEquals(target, other))
             {
@@ -779,13 +684,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();
@@ -830,13 +730,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
@@ -874,13 +769,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             return await other.IsSubsetOfAsync(target, cancellationToken).ConfigureAwait(false);
         }
@@ -903,13 +793,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
@@ -947,13 +832,8 @@ namespace MultiMap.Helpers
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(target);
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (target is null) throw new ArgumentNullException(nameof(target));
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(target, nameof(target));
+            Guard.NotNull(other, nameof(other));
 
             var targetCount = await target.GetCountAsync(cancellationToken).ConfigureAwait(false);
             var otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);

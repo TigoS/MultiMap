@@ -85,10 +85,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -120,15 +121,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(TKey key, IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -139,7 +136,7 @@ namespace MultiMap.Entities
                 int added = 0;
                 foreach (var value in values)
                 {
-                    if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+                    Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
 
                     if (hashset!.Add(value))
                     {
@@ -162,21 +159,19 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
                 int added = 0;
                 foreach (var item in items)
                 {
-                    if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
-                    if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+                    Guard.NotNull(item, nameof(items), "Sequence contains a null item.");
+                    Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                    Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
 #if NET6_0_OR_GREATER
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
@@ -207,9 +202,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -227,9 +223,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -247,9 +244,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -268,10 +266,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -300,13 +299,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -335,15 +331,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(predicate);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -367,13 +359,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -394,9 +383,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -411,10 +401,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -510,9 +501,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -555,13 +547,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are added to this instance.</param>
         public void Union(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -609,13 +598,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map that defines the pairs to keep.</param>
         public void Intersect(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
@@ -666,13 +652,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
         public void ExceptWith(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -716,13 +699,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map to compare against.</param>
         public void SymmetricExceptWith(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -781,13 +761,10 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in this instance exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
         public bool IsSubsetOf(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -832,13 +809,10 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in this instance; otherwise, <see langword="false"/>.</returns>
         public bool IsSupersetOf(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -881,13 +855,10 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
         public bool Overlaps(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -930,11 +901,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
         public bool SetEquals(IMultiMap<TKey, TValue> other)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
 

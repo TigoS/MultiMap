@@ -111,24 +111,13 @@ namespace MultiMap.Entities
             _valueComparer = valueComparer;
         }
 
-        private ConcurrentDictionary<TValue, byte> CreateValueSet() => new(_valueComparer);
-
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
-            if (!_dictionary.TryGetValue(key, out var valuesSet))
-            {
-                var candidate = CreateValueSet();
-                valuesSet = _dictionary.GetOrAdd(key, candidate);
-            }
+            var valuesSet = _dictionary.GetOrAdd(key, _ => new ConcurrentDictionary<TValue, byte>(_valueComparer));
 
             if (valuesSet.TryAdd(value, 0))
             {
@@ -142,13 +131,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(TKey key, IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
             var items = values as ICollection<TValue> ?? values.ToArray();
             if (items.Count == 0)
@@ -156,11 +140,7 @@ namespace MultiMap.Entities
                 return 0;
             }
 
-            if (!_dictionary.TryGetValue(key, out var valuesSet))
-            {
-                var candidate = CreateValueSet();
-                valuesSet = _dictionary.GetOrAdd(key, candidate);
-            }
+            var valuesSet = _dictionary.GetOrAdd(key, _ => new ConcurrentDictionary<TValue, byte>(_valueComparer));
 
             int added = 0;
             foreach (var value in items)
@@ -182,21 +162,15 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             // Group by key so we call GetOrAdd at most once per unique key instead of once per item.
             var grouped = new Dictionary<TKey, List<TValue>>();
             foreach (var item in items)
             {
-                if (item.Key is null)
-                    throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
-
-                if (item.Value is null)
-                    throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item, nameof(items), "Sequence contains a null item.");
+                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
                 if (!grouped.TryGetValue(item.Key, out var list))
                 {
@@ -210,11 +184,7 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var group in grouped)
             {
-                if (!_dictionary.TryGetValue(group.Key, out var valuesSet))
-                {
-                    var candidate = CreateValueSet();
-                    valuesSet = _dictionary.GetOrAdd(group.Key, candidate);
-                }
+                var valuesSet = _dictionary.GetOrAdd(group.Key, _ => new ConcurrentDictionary<TValue, byte>(_valueComparer));
 
                 int groupAdded = 0;
                 foreach (var value in group.Value)
@@ -238,11 +208,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var valuesSet) && !valuesSet.IsEmpty)
             {
@@ -255,28 +221,20 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var valuesSet) && !valuesSet.IsEmpty)
             {
                 return valuesSet.Keys.ToArray();
             }
 
-            return [];
+            return Array.Empty<TValue>();
         }
 
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var valuesSet) && !valuesSet.IsEmpty)
             {
@@ -292,13 +250,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             if (!_dictionary.TryGetValue(key, out var valuesSet))
             {
@@ -324,11 +277,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             int removedCount = 0;
 
@@ -346,13 +295,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(predicate);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(predicate, nameof(predicate));
 
             if (!_dictionary.TryGetValue(key, out var valuesSet))
             {
@@ -380,11 +324,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             if (!_dictionary.TryRemove(key, out var removedSet))
             {
@@ -407,11 +347,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             return _dictionary.TryGetValue(key, out var valuesSet) && !valuesSet.IsEmpty;
         }
@@ -419,13 +355,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             return _dictionary.TryGetValue(key, out var valuesSet) && valuesSet.ContainsKey(value);
         }
@@ -481,11 +412,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             return _dictionary.TryGetValue(key, out var valuesSet) ? valuesSet.Count : 0;
         }
@@ -550,39 +477,30 @@ namespace MultiMap.Entities
         public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
-            {
                 return false;
-            }
 
             if (ReferenceEquals(this, other))
-            {
                 return true;
-            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
-            {
                 return false;
-            }
 
             foreach (var kvp in _dictionary)
             {
                 if (kvp.Value.IsEmpty)
-                {
                     continue;
-                }
 
                 if (!other.ContainsKey(kvp.Key) || GetValuesCount(kvp.Key) != other.GetValuesCount(kvp.Key))
-                {
                     return false;
-                }
 
-                var thisSet = new HashSet<TValue>(kvp.Value.Keys, _valueComparer);
                 var otherSet = new HashSet<TValue>(other[kvp.Key], _valueComparer);
-
-                if (!thisSet.SetEquals(otherSet))
-                {
+                if (kvp.Value.Count != otherSet.Count)
                     return false;
-                }
+
+                foreach (var value in kvp.Value.Keys)
+                    if (!otherSet.Contains(value))
+                        return false;
+
             }
 
             return true;

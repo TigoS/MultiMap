@@ -1,5 +1,6 @@
 using System.Collections;
 using MultiMap.Interfaces;
+using MultiMap.Helpers;
 
 namespace MultiMap.Entities
 {
@@ -54,13 +55,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public virtual bool Add(TKey key, TValue value)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             if (!_dictionary.TryGetValue(key, out var collection))
             {
@@ -80,13 +76,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public virtual int AddRange(TKey key, IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
             // Materialise the sequence upfront: we need Count to short-circuit on an empty
             // input without allocating a new inner collection, and we want to enumerate only
@@ -118,11 +109,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public virtual int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             int added = 0;
             foreach (var item in items)
@@ -137,11 +124,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var collection))
                 return ToReadOnly(collection);
@@ -152,11 +135,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var collection))
                 return ToReadOnly(collection);
@@ -167,11 +146,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             bool result = _dictionary.TryGetValue(key, out var collection);
 
@@ -183,13 +158,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             if (_dictionary.TryGetValue(key, out var collection))
             {
@@ -211,11 +181,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             int removedCount = 0;
             foreach (var item in items)
@@ -232,13 +198,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(predicate);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(predicate, nameof(predicate));
 
             if (!_dictionary.TryGetValue(key, out var collection))
                 return 0;
@@ -255,13 +216,13 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+            if (_dictionary.Remove(key, out var collection))
+#else
             if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
+#endif
             {
                 _count -= collection.Count;
                 return true;
@@ -273,11 +234,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             return _dictionary.ContainsKey(key);
         }
@@ -285,13 +242,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             return _dictionary.TryGetValue(key, out var collection) && collection.Contains(value);
         }
@@ -311,11 +263,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             return _dictionary.TryGetValue(key, out var collection) ? collection.Count : 0;
         }

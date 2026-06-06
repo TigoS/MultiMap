@@ -82,8 +82,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
+
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
             list ??= new List<TValue>();
 
@@ -97,13 +98,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
 #if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
@@ -119,7 +115,7 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
-                if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
 
                 list!.Add(value);
                 _count++;
@@ -128,7 +124,7 @@ namespace MultiMap.Entities
 
 #if NET6_0_OR_GREATER
             if (!exists && added == 0)
-                ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
+                    ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
 #else
             if (!exists && added > 0)
                 _dictionary[key] = list!;
@@ -141,15 +137,16 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            ArgumentNullException.ThrowIfNull(items);
+            Guard.NotNull(items, nameof(items));
 
             int added = 0;
             var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
 
             foreach (var item in items)
             {
-                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
-                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item, nameof(items), "Sequence contains a null item.");
+                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
                 ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
                 list ??= new List<TValue>();

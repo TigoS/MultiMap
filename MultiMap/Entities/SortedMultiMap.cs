@@ -83,10 +83,18 @@ namespace MultiMap.Entities
 
             foreach (var key in Keys)
             {
-                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
+                if (!other.TryGet(key, out var otherValues))
                     return false;
 
-                if (!this[key].SequenceEqual(other[key]))
+                var otherValuesSet = new SortedSet<TValue>(otherValues, _valueComparer);
+
+                if (!_dictionary.TryGetValue(key, out var targetValuesSet))
+                    return false;
+
+                if (targetValuesSet.Count != otherValuesSet.Count)
+                    return false;
+
+                if (!targetValuesSet.SetEquals(otherValuesSet))
                     return false;
             }
 

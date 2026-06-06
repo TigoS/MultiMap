@@ -111,10 +111,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
@@ -133,13 +134,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(values);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -160,11 +156,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -185,11 +177,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -210,11 +198,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -235,11 +219,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -260,13 +240,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -287,11 +262,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(items);
-#else
-            if (items is null) throw new ArgumentNullException(nameof(items));
-#endif
+            Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -312,13 +283,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(predicate);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -339,11 +305,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -364,11 +326,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-#endif
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -389,13 +347,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(key);
-            ArgumentNullException.ThrowIfNull(value);
-#else
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
-#endif
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -493,9 +446,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             cancellationToken.ThrowIfCancellationRequested();
             if (TryEnterReadLockSync())
             {
@@ -545,12 +499,10 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task UnionAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
+
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -582,12 +534,10 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task IntersectAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
+
             ThrowIfDisposed();
+
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -618,12 +568,10 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task ExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
+
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -655,12 +603,10 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task SymmetricExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
+
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
             {
@@ -693,11 +639,8 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in this instance exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> IsSubsetOfAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
+
             ThrowIfDisposed();
 
             // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
@@ -787,11 +730,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in this instance; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> IsSupersetOfAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -818,11 +757,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> OverlapsAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -916,11 +851,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> SetEqualsAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-#if NET6_0_OR_GREATER
-            ArgumentNullException.ThrowIfNull(other);
-#else
-            if (other is null) throw new ArgumentNullException(nameof(other));
-#endif
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
 
