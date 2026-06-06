@@ -118,6 +118,53 @@ public class SimpleMultiMapTests
         Assert.That(_map.GetOrDefault("a"), Is.Empty);
     }
 
+    // ── TryGet ────────────────────────────────────────────────
+
+    [Test]
+    public void TryGet_ExistingKey_ReturnsTrueWithValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGet_NonExistentKey_ReturnsFalseWithEmpty()
+    {
+        bool found = _map.TryGet("missing", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterRemovingLastValue_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Remove("a", 1);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterClear_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Clear();
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
     // ── Remove ─────────────────────────────────────────────
 
     [Test]

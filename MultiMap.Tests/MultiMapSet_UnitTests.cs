@@ -1026,7 +1026,8 @@ public class MultiMapSetTests
     {
         _map.Add("a", 1);
 
-        _map.TryGet("a", out var snapshot);
+        _map.TryGet("a", out var collection);
+        var snapshot = collection.ToList();
         _map.Add("a", 2);
 
         Assert.That(snapshot, Is.EquivalentTo(new[] { 1 }));
