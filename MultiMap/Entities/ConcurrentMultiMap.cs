@@ -213,7 +213,6 @@ namespace MultiMap.Entities
             var grouped = new Dictionary<TKey, List<TValue>>();
             foreach (var item in items)
             {
-                Guard.NotNull(item, nameof(items), "Sequence contains a null item.");
                 Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
                 Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
