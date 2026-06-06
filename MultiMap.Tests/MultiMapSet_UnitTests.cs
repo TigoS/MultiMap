@@ -93,6 +93,26 @@ public class MultiMapSetTests
     }
 
     [Test]
+    public void AddRange_EmptyCollection_NewKey_DoesNotCreateKey()
+    {
+        _map.AddRange("new", Enumerable.Empty<int>());
+
+        Assert.That(_map.ContainsKey("new"), Is.False);
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRange_Key_NullElementFirst_DoesNotCreateKey()
+    {
+        var map = new MultiMapSet<string, string>();
+
+        Assert.Throws<ArgumentNullException>(() => map.AddRange("key", new string?[] { null, "a" }!));
+
+        Assert.That(map.ContainsKey("key"), Is.False);
+        Assert.That(map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
     public void AddRange_DuplicateValues_IgnoresDuplicates()
     {
         _map.AddRange("a", new[] { 1, 1, 1 });
