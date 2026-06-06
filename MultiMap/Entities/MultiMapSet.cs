@@ -144,23 +144,30 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(values, nameof(values));
 
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
+            // Materialise first so that:
+            // 1. An empty sequence returns 0 without touching the dictionary.
+            // 2. All null-element checks happen before the dictionary slot is created,
+            //    keeping the dictionary pristine when the sequence is invalid.
+            var materialised = values as ICollection<TValue> ?? values.ToArray();
+            if (materialised.Count == 0)
+                return 0;
+
+            foreach (var value in materialised)
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+
+            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
             hashset ??= new HashSet<TValue>(_valueComparer);
 
             int added = 0;
-            foreach (var value in values)
+            foreach (var value in materialised)
             {
-                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
-
                 if (hashset.Add(value))
                 {
                     _count++;
                     added++;
                 }
             }
-
-            if (!exists && added == 0)
-                ((Dictionary<TKey, HashSet<TValue>>)_dictionary).Remove(key);
 
             return added;
         }
