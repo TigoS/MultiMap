@@ -57,6 +57,12 @@ dlldata.c
 
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
+BenchmarkSuite/BenchmarkDotNet.Artifacts/
+
+# Test and coverage artifacts (repository-specific)
+MultiMap.Tests/TestResults/
+MultiMap.Tests/TestResults/**
+coverage.cobertura.xml
 
 # .NET Core
 project.lock.json
