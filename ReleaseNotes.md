@@ -7,7 +7,7 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-96.8%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-95.4%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -26,12 +26,13 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
 - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
 
-- **2,045 tests** per target framework — **4,090 total executions** on `net10.0` + `net8.0`.
-- Coverlet: **96.8% line coverage** (2,784/2,877), **93.4% branch coverage** (988/1,058).
+- **2,094 tests** per target framework — **4,188 total executions** on `net10.0` + `net8.0`.
+- Coverlet: **95.4% line coverage**, **91.6% branch coverage**.
 - Added **67 new sync set-query tests** in `MultiMapHelper_UnitTests.cs` for `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (sync `IMultiMap`, `ISimpleMultiMap`, and `IMultiMap` overloads, including null guards and edge cases)
 - Added **17 new async set-query tests** in `MultiMapHelperExtensionAsync_UnitTests.cs` for `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`
 - Added **46 new tests** in `MultiMapAsync_UnitTests.cs` for atomic `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync` (including concurrency and cancellation tests)
 - Added **52 new tests** in `MultiMapLock_UnitTests.cs` for atomic `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (including concurrency and lock-ordering tests)
+- Added **43 new boundary condition and exception handling tests** in `MultiMapBoundaryConditions_UnitTests.cs` covering: empty collections, single-item operations, AddRange boundaries, MultiMapList duplicates, Clear operations, enumeration edges, capacity/resize scenarios, exception boundaries (null keys/values), ContainsKey/Contains edges, and count boundaries
 
 **Implementation Details**
 
