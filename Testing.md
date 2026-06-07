@@ -42,14 +42,14 @@ dotnet test
 | `MultiMapListTests` | 149 | List-based implementation |
 | `MultiMapSetTests` | 145 | HashSet-based implementation |
 | `SortedMultiMapTests` | 137 | Sorted implementation |
-| `SimpleMultiMapTests` | 70 | Lightweight implementation |
-| **Entity subtotal** | **1,182** | |
+| `SimpleMultiMapTests` | 76 | Lightweight implementation |
+| **Entity subtotal** | **1,186** | |
 
 ### Test Coverage by Base Class
 
 | Test Class | Tests | Category |
 |---|---|---|
-| `MultiMapBaseTests` (×4 fixtures) | 300 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap, ConcurrentMultiMap) |
+| `MultiMapBaseTests` (×3 fixtures) | 300 | Base class contract (MultiMapSet, MultiMapList, SortedMultiMap) |
 | `MultiMapBase_ExtraContractTests` | 4 | Extra contract paths |
 | `MultiMapBase_EqualsDispatchTests` | 4 | Equality dispatch paths |
 | **Base subtotal** | **308** | |
