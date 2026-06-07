@@ -12,6 +12,25 @@
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
+## Table of Contents
+
+- [Release Notes](#release-notes)
+  - [2.1.0](#210)
+  - [2.0.1](#201)
+  - [1.0.12](#1012)
+  - [1.0.11](#1011)
+  - [1.0.10](#110)
+  - [1.0.9](#109)
+  - [1.0.8](#108)
+  - [1.0.7](#107)
+  - [1.0.6](#106)
+  - [1.0.5](#105)
+  - [1.0.4](#104)
+  - [1.0.3](#103)
+  - [1.0.2](#102)
+  - [1.0.1](#101)
+  - [1.0.0](#100)
+
 ## Release Notes
 
 ### 2.1.0
@@ -23,24 +42,30 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
   - `IsSupersetOf` / `IsSupersetOfAsync` — Check if the current multimap is a superset of another (contains all pairs from the other)
   - `Overlaps` / `OverlapsAsync` — Check if the current multimap shares any key-value pairs with another
   - `SetEquals` / `SetEqualsAsync` — Check if the current multimap contains exactly the same key-value pairs as another
-- Comprehensive unit test coverage for all new set query operations (see **Tests** section below for per-class breakdown)
-- Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
-- `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
 
-- **2,094 tests** per target framework — **4,188 total executions** on `net10.0` + `net8.0`.
-- Coverlet: **95.4% line coverage**, **91.6% branch coverage**.
-- Added **67 new sync set-query tests** in `MultiMapHelper_UnitTests.cs` for `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (sync `IMultiMap`, `ISimpleMultiMap`, and `IMultiMap` overloads, including null guards and edge cases)
-- Added **17 new async set-query tests** in `MultiMapHelperExtensionAsync_UnitTests.cs` for `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`
-- Added **46 new tests** in `MultiMapAsync_UnitTests.cs` for atomic `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync` (including concurrency and cancellation tests)
-- Added **52 new tests** in `MultiMapLock_UnitTests.cs` for atomic `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (including concurrency and lock-ordering tests)
-- Added **43 new boundary condition and exception handling tests** in `MultiMapBoundaryConditions_UnitTests.cs` covering: empty collections, single-item operations, AddRange boundaries, MultiMapList duplicates, Clear operations, enumeration edges, capacity/resize scenarios, exception boundaries (null keys/values), ContainsKey/Contains edges, and count boundaries
+- Benchmarks
+  - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
+  - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
+
+- Tests
+  - Comprehensive unit test coverage for all new set query operations (see **Tests** section below for per-class breakdown)
+  - **2,094 tests** per target framework — **4,188 total executions** on `net10.0` + `net8.0`.
+  - Coverlet: **95.4% line coverage**, **91.6% branch coverage**.
+  - Added **67 new sync set-query tests** in `MultiMapHelper_UnitTests.cs` for `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (sync `IMultiMap`, `ISimpleMultiMap`, and `IMultiMap` overloads, including null guards and edge cases)
+  - Added **17 new async set-query tests** in `MultiMapHelperExtensionAsync_UnitTests.cs` for `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`
+  - Added **46 new tests** in `MultiMapAsync_UnitTests.cs` for atomic `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync` (including concurrency and cancellation tests)
+  - Added **52 new tests** in `MultiMapLock_UnitTests.cs` for atomic `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (including concurrency and lock-ordering tests)
+  - Added **43 new boundary condition and exception handling tests** in `MultiMapBoundaryConditions_UnitTests.cs` covering: empty collections, single-item operations, AddRange boundaries, MultiMapList duplicates, Clear operations, enumeration edges, capacity/resize scenarios, exception boundaries (null keys/values), ContainsKey/Contains edges, and count boundaries
 
 **Implementation Details**
 
 - `MultiMapHelper` extensions provide read-only query semantics for `IMultiMap<TKey, TValue>`, `ISimpleMultiMap<TKey, TValue>`, and `IMultiMapAsync<TKey, TValue>` interfaces
 - `MultiMapAsync` instance methods implement atomic snapshot-based comparisons with ordered semaphore acquisition to prevent deadlocks when comparing two `MultiMapAsync` instances
 - `MultiMapLock` instance methods implement atomic read-lock-based comparisons, snapshotting the other map before acquiring locks to avoid lock-ordering issues
+
+**Performance**
 - All query methods use `HashSet<TValue>` for efficient O(1) value lookups and short-circuit on first definitive result for optimal performance
+- Comprehensive performance optimizations were done across all entities
 
 ### 2.0.1
 
