@@ -46,11 +46,16 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - Benchmarks
   - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
   - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
+  - `SimpleMultiMap.TryGet` benchmarks: **39.30 ns** (hit) and **34.29 ns** (missing key)
 
 - Tests
   - Comprehensive unit test coverage for all new set query operations (see **Tests** section below for per-class breakdown)
-  - **2,094 tests** per target framework — **4,188 total executions** on `net10.0` + `net8.0`.
-  - Coverlet: **95.4% line coverage**, **91.6% branch coverage**.
+  - Added helper branch-gap tests for recently identified paths:
+    - `ExceptWith_SameInstance_ClearsTarget`
+    - `ExceptWithAsync_SameInstance_ClearsTarget`
+    - `SetEqualsAsync_SameCountsButDifferentValues_ReturnsFalse`
+  - **2,097 tests** per target framework — **4,194 total executions** on `net10.0` + `net8.0`.
+  - Coverlet: **95.9% line coverage**, **92.3% branch coverage**, **95.2% method coverage**.
   - Added **67 new sync set-query tests** in `MultiMapHelper_UnitTests.cs` for `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (sync `IMultiMap`, `ISimpleMultiMap`, and `IMultiMap` overloads, including null guards and edge cases)
   - Added **17 new async set-query tests** in `MultiMapHelperExtensionAsync_UnitTests.cs` for `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`
   - Added **46 new tests** in `MultiMapAsync_UnitTests.cs` for atomic `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync` (including concurrency and cancellation tests)
