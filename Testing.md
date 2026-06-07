@@ -8,7 +8,7 @@
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-95.4%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-95.9%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -25,7 +25,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Testing
 
-The library includes **4,188 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,094 per framework** before fixtures) with comprehensive boundary condition coverage, covering all implementations, interfaces, edge cases, concurrent stress tests, and exception handling scenarios.
+The library includes **4,194 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,097 per framework** before fixtures) with comprehensive boundary condition coverage, covering all implementations, interfaces, edge cases, concurrent stress tests, and exception handling scenarios.
 
 ```shell
 dotnet test
@@ -96,7 +96,7 @@ dotnet test
 
 | | |
 |---|---|
-| **Total** | **1,685 tests × 2 TFMs = 3,370 executions** |
+| **Total** | **2,097 tests × 2 TFMs = 4,194 executions** |
 
 ### Test Categories
 
@@ -160,9 +160,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.7% |
 | **Helper subtotal** | **408** | **19.9%** |
-| **Total** | **1,685 × 2 TFMs** | **3,370 executions** |
+| **Total** | **2,097 × 2 TFMs** | **4,194 executions** |
 
-> **Coverage distribution:** ~57.8% of tests target the 8 core implementations (including `AddRange`-empty-enumerable edge-case tests, concurrent stress tests, snapshot/defensive copy tests, slow path contention tests, custom value comparer tests, key comparer constructor tests, and initial capacity constructor tests), ~15.1% verify the shared `MultiMapBase` contract across all 3 subclass fixtures (including extra contract and equality dispatch paths), ~7.2% are dedicated coverage-gap tests (constructor overloads, hash/equality branches, extra stress paths, `IMultiMap` helper overloads, `MultiMapAsync` equality paths, and `MultiMapLock` atomic set-operation branches), and ~19.9% cover the set-like extension methods across all interface families — including concurrent and sequential stress tests, edge cases, deep iteration tests, and comprehensive tests for async extension methods. All 1,685 unique tests run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
+> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,097 unique tests** run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
 
 ### Code Coverage (Coverlet)
 
@@ -176,32 +176,26 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Method coverage** | **93.8%** |
-| **Line coverage** | **95.4%** |
-| **Branch coverage** | **91.6%** |
+| **Method coverage** | **95.2%** |
+| **Line coverage** | **95.9%** |
+| **Branch coverage** | **92.3%** |
 
 #### Per-Class Breakdown
 
 | Class | Method Coverage | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|---|
-| `SimpleMultiMap<TKey, TValue>` | 100% | 100% | 96.9% | ✅ Full |
-| `MultiMapBase<TKey, TValue, TCollection>` | 100% | 100% | 98.0% | ✅ Full |
-| `MultiMapList<TKey, TValue>` | 95.6% | 95.6% | 100% | ✅ Near-full |
-| `MultiMapSet<TKey, TValue>` | 95.1% | 95.1% | 95.0% | ✅ Near-full |
-| `SortedMultiMap<TKey, TValue>` | 94.1% | 94.1% | 86.4% | ✅ Near-full |
-| `ConcurrentMultiMap<TKey, TValue>` | 95.5% | 95.5% | 92.7% | ✅ Near-full |
-| `MultiMapLock<TKey, TValue>` | 99.2% | 99.2% | 96.7% | ✅ Near-full |
-| `MultiMapAsync<TKey, TValue>` | 99.2% | 99.2% | 97.8% | ✅ Near-full |
-| `MultiMapHelper` | 98.8% | 98.8% | 98.9% | ✅ Near-full |
+| `SimpleMultiMap<TKey, TValue>` | 100% | 100% | 97.2% | ✅ Full |
+| `MultiMapBase<TKey, TValue, TCollection>` | 99.4% | 99.4% | 98.4% | ✅ Near-full |
+| `MultiMapList<TKey, TValue>` | 94.6% | 94.6% | 100% | ✅ Near-full |
+| `MultiMapSet<TKey, TValue>` | 96.2% | 96.2% | 95.0% | ✅ Near-full |
+| `SortedMultiMap<TKey, TValue>` | 95.3% | 95.3% | 90.9% | ✅ Near-full |
+| `ConcurrentMultiMap<TKey, TValue>` | 94.4% | 94.4% | 92.0% | ✅ Near-full |
+| `MultiMapLock<TKey, TValue>` | 99.4% | 99.4% | 97.3% | ✅ Near-full |
+| `MultiMapAsync<TKey, TValue>` | 93.6% | 93.6% | 88.4% | ✅ Near-full |
+| `MultiMapHelper` | 99.0% | 99.0% | 99.3% | ✅ Near-full |
 
 > **Notes:**
-> - `SimpleMultiMap` at **100% line coverage** with strong branch coverage (96.9%).
-> - `MultiMapBase` achieves **100% line coverage** with excellent branch coverage (98.0%).
-> - `MultiMapList` (95.6% line coverage, 100% branch) — represents solid coverage with full branch coverage.
-> - `MultiMapSet` (95.1% line coverage, 95% branch) — balanced coverage across both metrics.
-> - `SortedMultiMap` (94.1% line coverage, 86.4% branch) — additional edge cases in sorted ordering logic.
-> - `ConcurrentMultiMap` (95.5% line coverage, 92.7% branch) — lock-free implementation with robust concurrent coverage.
-> - `MultiMapLock` at **99.2% line coverage** with strong branch coverage (96.7%).
-> - `MultiMapAsync` reaches **99.2% line coverage** with near-full branch coverage (97.8%).
-> - `MultiMapHelper` at **98.8% line coverage** and **98.9% branch coverage** with comprehensive coverage of all set-like operations.
-> - Overall **95.4% line coverage** and **91.6% branch coverage** across the entire assembly with **2,094 unique tests per framework** running on net10.0 and net8.0, plus **43 new boundary condition tests** covering empty collections, single-item operations, exception handling, and capacity boundaries.
+> - Coverage is computed from the latest combined Coverlet reports for **net10.0** and **net8.0** using ReportGenerator.
+> - `MultiMapHelper` improved to **99.0% line coverage** and **99.3% branch coverage** after adding targeted branch tests.
+> - Overall coverage is now **95.9% line**, **92.3% branch**, and **95.2% method** across the assembly.
+> - The latest run executed **2,097 tests per framework** (**4,194 total executions**) with zero failures.
