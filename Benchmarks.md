@@ -104,6 +104,8 @@ Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
 | **Get** (100 keys) | 7,631 ns |
 | **GetOrDefault** (100 keys) | 7,674 ns |
 | **GetOrDefault (missing)** (100 keys) | 2,134 ns |
+| **TryGet** | 39.30 ns |
+| **TryGet (missing)** | 34.29 ns |
 | **Contains** | 5.60 ns |
 | **ContainsKey** | 2.97 ns |
 | **Remove** (5,000 pairs) | 121,900 ns |
