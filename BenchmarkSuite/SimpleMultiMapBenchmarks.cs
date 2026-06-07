@@ -121,6 +121,25 @@ public class SimpleMultiMapBenchmarks
         return sum;
     }
 
+    // --- TryGet benchmarks ---
+    [Benchmark]
+    public bool SimpleMultiMap_TryGet()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.Key50Prefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
+    [Benchmark]
+    public bool SimpleMultiMap_TryGet_Missing()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        map.Add(Consts.Key50Prefix, Consts.KeyOffset);
+
+        return map.TryGet(Consts.KeyMissingPrefix, out var values) && values.Contains(Consts.KeyOffset);
+    }
+
     // --- Contains benchmarks ---
 
     [Benchmark]
