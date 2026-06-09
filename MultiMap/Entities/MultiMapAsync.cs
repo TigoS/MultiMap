@@ -909,7 +909,7 @@ namespace MultiMap.Entities
             try
             {
                 thisCount = _count;
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
             }
             finally
             {
