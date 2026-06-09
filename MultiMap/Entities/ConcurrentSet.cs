@@ -63,11 +63,9 @@ namespace MultiMap.Entities
         /// </summary>
         public bool Contains(T item) => _inner.ContainsKey(item);
 
-        /// <summary>
         /// Copies the elements of the set to an array, starting at a particular array index.
-        /// Under concurrent removal, the set size may decrease between the enumerator being created
-        /// and elements being copied, which can cause the destination array to be too small.
-        /// To handle this gracefully, we enumerate and add only the elements that fit.
+        /// Under concurrent modification, the set size can change during enumeration.
+        /// This method follows <see cref="ICollection{T}.CopyTo"/> semantics and throws if the destination array is not large enough.
         /// </summary>
         public void CopyTo(T[] array, int arrayIndex)
         {
