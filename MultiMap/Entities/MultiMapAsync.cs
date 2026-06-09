@@ -812,7 +812,7 @@ namespace MultiMap.Entities
             await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
             }
             finally
             {
