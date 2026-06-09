@@ -14,7 +14,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Benchmarks
 
-Benchmarks are run with **BenchmarkDotNet v0.15.0** with `CPUUsageDiagnoser`.
+Benchmarks are run with **BenchmarkDotNet v0.15.8** with `CPUUsageDiagnoser`.
 
 **Environment:** .NET 10.0.8, SDK 10.0.300, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
 
