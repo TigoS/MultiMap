@@ -1,9 +1,6 @@
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
-#if NET8_0_OR_GREATER
-using System.Collections.Frozen;
-#endif
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
@@ -107,7 +104,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        protected override HashSet<TValue> CreateCollection() => new HashSet<TValue>(_valueComparer);
+        protected override HashSet<TValue> CreateCollection() => new(_valueComparer);
 
         /// <inheritdoc/>
         protected override bool AddToCollection(HashSet<TValue> collection, TValue value) => collection.Add(value);
@@ -115,20 +112,21 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
-#if NET8_0_OR_GREATER
+#if NET9_0_OR_GREATER
         /// <inheritdoc/>
-        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection)
-            => collection.ToFrozenSet(_valueComparer);
+        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => collection.AsReadOnly();
+#else
+        // default base-class ToReadOnly (ToArray snapshot) will be used, which is fine since we don't have a more efficient option in .NET Standard 2.0 or .NET Core 3.1
 #endif
 
 #if NET6_0_OR_GREATER
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
             hashset ??= new HashSet<TValue>(_valueComparer);
 
             if (hashset.Add(value))
@@ -143,14 +141,26 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out bool exists);
+            // Materialise first so that:
+            // 1. An empty sequence returns 0 without touching the dictionary.
+            // 2. All null-element checks happen before the dictionary slot is created,
+            //    keeping the dictionary pristine when the sequence is invalid.
+            var materialised = values as ICollection<TValue> ?? values.ToArray();
+            if (materialised.Count == 0)
+                return 0;
+
+            foreach (var value in materialised)
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+
+            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
             hashset ??= new HashSet<TValue>(_valueComparer);
 
             int added = 0;
-            foreach (var value in values)
+            foreach (var value in materialised)
             {
                 if (hashset.Add(value))
                 {
@@ -159,24 +169,21 @@ namespace MultiMap.Entities
                 }
             }
 
-            if (!exists && added == 0)
-                ((Dictionary<TKey, HashSet<TValue>>)_dictionary).Remove(key);
-
             return added;
         }
 
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (items is null) throw new ArgumentNullException(nameof(items));
+            Guard.NotNull(items, nameof(items));
 
             int added = 0;
             var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
 
             foreach (var item in items)
             {
-                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
-                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
                 hashset ??= new HashSet<TValue>(_valueComparer);
@@ -209,16 +216,19 @@ namespace MultiMap.Entities
 
             foreach (var key in Keys)
             {
-                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
+                if (!other.TryGet(key, out var otherValues))
                     return false;
 
-                // Compare values as sets
-                var otherValuesSet = new HashSet<TValue>(other[key], _valueComparer);
-                foreach (var value in this[key])
-                {
-                    if (!otherValuesSet.Contains(value))
-                        return false;
-                }
+                var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
+
+                if (!_dictionary.TryGetValue(key, out var targetValuesSet))
+                    return false;
+
+                if (targetValuesSet.Count != otherValuesSet.Count)
+                    return false;
+
+                if (!targetValuesSet.SetEquals(otherValuesSet))
+                    return false;
             }
 
             return true;

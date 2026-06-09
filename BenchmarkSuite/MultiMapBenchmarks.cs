@@ -860,6 +860,78 @@ public class MultiMapBenchmarks
         target.SymmetricExceptWith(other);
     }
 
+    [Benchmark]
+    public bool MultiMapHelper_IsSubsetOf()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.IsSubsetOf(target, other);
+    }
+
+    [Benchmark]
+    public bool MultiMapHelper_IsSupersetOf()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.IsSupersetOf(target, other);
+    }
+
+    [Benchmark]
+    public bool MultiMapHelper_Overlaps()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.Overlaps(target, other);
+    }
+
+    [Benchmark]
+    public bool MultiMapHelper_SetEquals()
+    {
+        var target = new MultiMapSet<string, int>();
+        var other = new MultiMapSet<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.SetEquals(target, other);
+    }
+
     // --- ConcurrentMultiMap set-operation benchmarks ---
     [Benchmark]
     public void ConcurrentMultiMap_Union()
@@ -933,6 +1005,78 @@ public class MultiMapBenchmarks
         target.SymmetricExceptWith(other);
     }
 
+    [Benchmark]
+    public bool ConcurrentMultiMap_IsSubsetOf()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.IsSubsetOf(target, other);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_IsSupersetOf()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.IsSupersetOf(target, other);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_Overlaps()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.Overlaps(target, other);
+    }
+
+    [Benchmark]
+    public bool ConcurrentMultiMap_SetEquals()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other = new ConcurrentMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.SetEquals(target, other);
+    }
+
     // --- SortedMultiMap set-operation benchmarks ---
     [Benchmark]
     public void SortedMultiMap_Union()
@@ -1004,6 +1148,78 @@ public class MultiMapBenchmarks
         }
 
         target.SymmetricExceptWith(other);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_IsSubsetOf()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.IsSubsetOf(target, other);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_IsSupersetOf()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.IsSupersetOf(target, other);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_Overlaps()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.Overlaps(target, other);
+    }
+
+    [Benchmark]
+    public bool SortedMultiMap_SetEquals()
+    {
+        var target = new SortedMultiMap<string, int>();
+        var other = new SortedMultiMap<string, int>();
+
+        for (int k = 0; k < Consts.SetOpKeyCount; k++)
+        {
+            for (int v = 0; v < Consts.SetOpValuesPerKey; v++)
+            {
+                target.Add($"{Consts.KeyPrefix}{k}", v);
+                other.Add($"{Consts.KeyPrefix}{k + Consts.KeyOffset}", v + Consts.ValueOffset);
+            }
+        }
+
+        return MultiMapHelper.SetEquals(target, other);
     }
 
     // --- MultiMapList set-operation benchmarks ---

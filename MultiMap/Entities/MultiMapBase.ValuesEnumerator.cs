@@ -8,7 +8,9 @@ namespace MultiMap.Entities
         where TCollection : ICollection<TValue>
     {
         /// <summary>
-        /// A struct enumerator that walks every value in every inner collection without allocating a heap iterator object.
+        /// A struct enumerator that walks every value in every inner collection.
+        /// The struct itself is stack-allocated when used via the concrete <see cref="ValuesCollection.GetEnumerator"/> overload, avoiding boxing of the enumerator.
+        /// The <see cref="_outerEnumerator"/> field is still a heap-allocated <see cref="System.Collections.Generic.IEnumerator{T}"/> object.
         /// </summary>
         internal struct ValuesEnumerator : IEnumerator<TValue>
         {

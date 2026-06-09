@@ -57,6 +57,12 @@ dlldata.c
 
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
+BenchmarkSuite/BenchmarkDotNet.Artifacts/
+
+# Test and coverage artifacts (repository-specific)
+MultiMap.Tests/TestResults/
+MultiMap.Tests/TestResults/**
+coverage.cobertura.xml
 
 # .NET Core
 project.lock.json
@@ -363,3 +369,7 @@ MigrationBackup/
 FodyWeavers.xsd
 *.diagsession
 /coveragereport
+/coverage/report
+/coverage_report
+/coverage_report_detailed
+/coverage_report_csv

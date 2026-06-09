@@ -391,4 +391,199 @@ public class MultiMapHelperExtensionAsyncTests
     }
 
     #endregion
+
+    #region IsSubsetOfAsync Extension Method Tests
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_EmptyIsSubsetOfEmpty_ReturnsTrue()
+    {
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_EmptyIsSubsetOfNonEmpty_ReturnsTrue()
+    {
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_NonEmptyIsNotSubsetOfEmpty_ReturnsFalse()
+    {
+        await _target.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_IdenticalSets_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_ProperSubset_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    #endregion
+
+    #region IsSupersetOfAsync Extension Method Tests
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_EmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_NonEmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_EmptyIsNotSupersetOfNonEmpty_ReturnsFalse()
+    {
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_ProperSuperset_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    #endregion
+
+    #region OverlapsAsync Extension Method Tests
+
+    [Test]
+    public async Task OverlapsAsync_Extension_EmptySets_ReturnsFalse()
+    {
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_Extension_DisjointSets_ReturnsFalse()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_Extension_SingleCommonPair_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_Extension_PartialOverlap_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("c", 3);
+
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    #endregion
+
+    #region SetEqualsAsync Extension Method Tests
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_EmptySets_ReturnsTrue()
+    {
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_EmptyAndNonEmpty_ReturnsFalse()
+    {
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_IdenticalSets_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_DifferentCounts_ReturnsFalse()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    #endregion
 }

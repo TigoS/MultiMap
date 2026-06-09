@@ -1,4 +1,4 @@
-﻿namespace MultiMap.Interfaces
+namespace MultiMap.Interfaces
 {
     /// <summary>
     /// Defines a collection that associates multiple values with each key, allowing retrieval, addition, and removal of key-value pairs.
@@ -19,7 +19,11 @@
         /// </summary>
         /// <param name="key">The key to which the values will be added.</param>
         /// <param name="values">The collection of values to add to the key. Cannot be null.</param>
-        /// <returns>The number of values that were actually added (excluding duplicates or already-existing values).</returns>
+        /// <returns>
+        /// The number of values that were actually added.
+        /// For set-based implementations, duplicates and already-existing values are excluded from the count.
+        /// For list-based implementations, every appended value is counted.
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> or <paramref name="values"/> is <see langword="null"/>.
         /// </exception>
@@ -28,9 +32,13 @@
         /// <summary>
         /// Adds the elements of the specified collection to the current collection.
         /// </summary>
-        /// <remarks>The order in which the elements are added is preserved. Duplicate key-value pairs that already exist are ignored.</remarks>
+        /// <remarks>The order in which the elements are added is preserved.</remarks>
         /// <param name="items">The collection of key/value pairs to add.</param>
-        /// <returns>The number of key/value pairs that were actually added (excluding duplicates or already-existing pairs).</returns>
+        /// <returns>
+        /// The number of key/value pairs that were actually added.
+        /// For set-based implementations, duplicate or already-existing pairs are excluded from the count.
+        /// For list-based implementations, every appended pair is counted.
+        /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="items"/> is <see langword="null"/>.
         /// </exception>
@@ -59,10 +67,5 @@
         /// Thrown when <paramref name="key"/> or <paramref name="predicate"/> is <see langword="null"/>.
         /// </exception>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate);
-
-        /// <summary>
-        /// Removes all items from the collection.
-        /// </summary>
-        public void Clear();
     }
 }

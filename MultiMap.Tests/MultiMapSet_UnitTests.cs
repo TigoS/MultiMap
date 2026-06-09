@@ -93,6 +93,26 @@ public class MultiMapSetTests
     }
 
     [Test]
+    public void AddRange_EmptyCollection_NewKey_DoesNotCreateKey()
+    {
+        _map.AddRange("new", Enumerable.Empty<int>());
+
+        Assert.That(_map.ContainsKey("new"), Is.False);
+        Assert.That(_map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void AddRange_Key_NullElementFirst_DoesNotCreateKey()
+    {
+        var map = new MultiMapSet<string, string>();
+
+        Assert.Throws<ArgumentNullException>(() => map.AddRange("key", new string?[] { null, "a" }!));
+
+        Assert.That(map.ContainsKey("key"), Is.False);
+        Assert.That(map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
     public void AddRange_DuplicateValues_IgnoresDuplicates()
     {
         _map.AddRange("a", new[] { 1, 1, 1 });
@@ -1026,7 +1046,8 @@ public class MultiMapSetTests
     {
         _map.Add("a", 1);
 
-        _map.TryGet("a", out var snapshot);
+        _map.TryGet("a", out var collection);
+        var snapshot = collection.ToList();
         _map.Add("a", 2);
 
         Assert.That(snapshot, Is.EquivalentTo(new[] { 1 }));
@@ -1316,6 +1337,13 @@ public class MultiMapSetTests
         => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
 
     [Test]
+    public void AddRange_Key_NullElementInValues_ThrowsArgumentNullException()
+    {
+        var map = new MultiMapSet<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.AddRange("key", new string?[] { "a", null }!));
+    }
+
+    [Test]
     public void AddRange_Items_NullItems_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
 
@@ -1389,3 +1417,153 @@ public class MultiMapSetTests
         => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
 }
 
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapSet – constructor overloads + GetHashCode coverage
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class MultiMapSet_ConstructorAndHashTests
+{
+    [Test]
+    public void Constructor_WithCapacity_WorksCorrectly()
+    {
+        var map = new MultiMapSet<string, int>(100);
+        map.Add("a", 1);
+        Assert.That(map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndKeyComparer_UsesKeyComparer()
+    {
+        var map = new MultiMapSet<string, int>(10, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndValueComparer_DeduplicatesByValueComparer()
+    {
+        var map = new MultiMapSet<string, string>(10, valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "Hello");
+        map.Add("k", "HELLO");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityKeyAndValueComparer_BothApplied()
+    {
+        var map = new MultiMapSet<string, string>(10, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+        Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_WithValueComparer_DeduplicatesByValueComparer()
+    {
+        var map = new MultiMapSet<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "Hello");
+        map.Add("k", "hello");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void GetHashCode_SameContent_EqualHashCodes()
+    {
+        var a = new MultiMapSet<string, int>();
+        var b = new MultiMapSet<string, int>();
+        a.Add("k", 1); a.Add("k", 2); a.Add("m", 3);
+        b.Add("k", 2); b.Add("k", 1); b.Add("m", 3); // different insertion order
+
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
+
+    [Test]
+    public void GetHashCode_Empty_IsStable()
+    {
+        var map = new MultiMapSet<string, int>();
+        Assert.That(map.GetHashCode(), Is.EqualTo(map.GetHashCode()));
+    }
+
+    [Test]
+    public void Equals_Object_NullObj_ReturnsFalse()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("a", 1);
+        Assert.That(map.Equals((object?)null), Is.False);
+    }
+
+    [Test]
+    public void Equals_Object_SameContent_ReturnsTrue()
+    {
+        var a = new MultiMapSet<string, int>();
+        var b = new MultiMapSet<string, int>();
+        a.Add("a", 1); b.Add("a", 1);
+        Assert.That(a.Equals((object)b), Is.True);
+    }
+
+    [Test]
+    public void Equals_Object_DifferentType_ReturnsFalse()
+    {
+        var map = new MultiMapSet<string, int>();
+        Assert.That(map.Equals("not a map"), Is.False);
+    }
+
+    [Test]
+    public void Equals_SameInstance_ReturnsTrue()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("a", 1);
+        Assert.That(map.Equals(map), Is.True);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapList – constructor overloads + GetHashCode / Equals coverage
+// ──────────────────────────────────────────────────────────────────────────────
+
+
+public class MultiMapSet_CapacityComparerConstructorTests
+{
+    // line 110-113: constructor(capacity, keyComparer, valueComparer)
+    [Test]
+    public void Constructor_CapacityKeyAndValueComparer_KeyComparerApplied()
+    {
+        var map = new MultiMapSet<string, string>(10, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "Hello");
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_CapacityKeyAndValueComparer_ValueComparerApplied()
+    {
+        var map = new MultiMapSet<string, string>(10, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("a", "Hello");
+        map.Add("a", "HELLO"); // duplicate under OrdinalIgnoreCase
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_CapacityKeyAndValueComparer_RemoveWhereUses_ValueComparer()
+    {
+        var map = new MultiMapSet<string, string>(10, null, StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "apple");
+        map.Add("k", "banana");
+
+        int removed = map.RemoveWhere("k", v => v == "APPLE");
+
+        // RemoveWhere predicate uses object equality, not comparer; value "apple" != "APPLE" → 0 removed
+        Assert.That(removed, Is.EqualTo(0));
+        Assert.That(map.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void AddRange_WithCapacityComparerMap_AllValuesAdded()
+    {
+        var map = new MultiMapSet<string, int>(5, null, null);
+        int added = map.AddRange("x", new[] { 1, 2, 3 });
+        Assert.That(added, Is.EqualTo(3));
+    }
+}

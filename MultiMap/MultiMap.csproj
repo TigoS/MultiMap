@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFrameworks>net10.0;net8.0;netstandard2.0</TargetFrameworks>
@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>2.0.1</Version>
+    <Version>2.1.0</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 8, and .NET Standard 2.0.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
@@ -23,19 +23,21 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon>icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>2.0.1
+    <PackageReleaseNotes>2.1.0
 
-Breaking Changes
+New Features / Breaking Changes
 
-- `ISimpleMultiMap.Clear(TKey)` removed — was deprecated in v1.0.12 as an alias for `RemoveKey(TKey)`. Use `RemoveKey(key)` instead
-- `ISimpleMultiMap.Flatten()` removed — was deprecated in v1.0.12. Enumerate the map directly with `foreach`, `ToList()`, or LINQ instead
+- 4 new set-algebra helpers (IsSubsetOf / IsSupersetOf / Overlaps / SetEquals) added to:
+  - MultiMapHelper (extension methods)
+  - MultiMapAsync (atomic)
+  - MultiMapLock (atomic)
 
-See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/ReleaseNotes.md</PackageReleaseNotes>
+See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\icons8-nuget-shadow\icons8-nuget-48.png">
+    <None Include="..\icons8-nuget-shadow\icons8-nuget-48.png" Link="Icons\icons8-nuget-48.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -44,12 +46,20 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Re
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
-	<None Include="..\ReleaseNotes.md" Pack="true" PackagePath="\" />
+	<None Include="..\Docs\ReleaseNotes.md" Pack="true" PackagePath="\" Link="Docs\ReleaseNotes.md" />
+	<None Include="..\Docs\Benchmarks.md" Pack="true" PackagePath="\" Link="Docs\Benchmarks.md" />
+	<None Include="..\Docs\MigrationGuide.md" Pack="true" PackagePath="\" Link="Docs\MigrationGuide.md" />
+	<None Include="..\Docs\Testing.md" Pack="true" PackagePath="\" Link="Docs\Testing.md" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
+    <PackageReference Include="Microsoft.Bcl.HashCode" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Docs\" />
+    <Folder Include="Icons\" />
   </ItemGroup>
 
 </Project>

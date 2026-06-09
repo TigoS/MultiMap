@@ -4,14 +4,86 @@
 [![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
-[![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.0-blue)](https://benchmarkdotnet.org/)
+[![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.6%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-98.3%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
+## Table of Contents
+
+- [Release Notes](#release-notes)
+  - [2.1.0](#210)
+  - [2.0.1](#201)
+  - [1.0.12](#1012)
+  - [1.0.11](#1011)
+  - [1.0.10](#110)
+  - [1.0.9](#109)
+  - [1.0.8](#108)
+  - [1.0.7](#107)
+  - [1.0.6](#106)
+  - [1.0.5](#105)
+  - [1.0.4](#104)
+  - [1.0.3](#103)
+  - [1.0.2](#102)
+  - [1.0.1](#101)
+  - [1.0.0](#100)
+
 ## Release Notes
+
+### 2.1.0
+
+**Added**
+
+- **Read-only set query operations**: Added four new set algebra query methods to `MultiMapHelper` (extension methods), `MultiMapAsync` (atomic instance methods), and `MultiMapLock` (atomic instance methods):
+  - `IsSubsetOf` / `IsSubsetOfAsync` — Check if the current multimap is a subset of another (all key-value pairs exist in the other)
+  - `IsSupersetOf` / `IsSupersetOfAsync` — Check if the current multimap is a superset of another (contains all pairs from the other)
+  - `Overlaps` / `OverlapsAsync` — Check if the current multimap shares any key-value pairs with another
+  - `SetEquals` / `SetEqualsAsync` — Check if the current multimap contains exactly the same key-value pairs as another
+
+- Benchmarks
+  - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
+  - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
+  - `SimpleMultiMap.TryGet` benchmarks: **39.30 ns** (hit) and **34.29 ns** (missing key)
+
+- Tests
+  - Comprehensive unit test coverage for all new set query operations (see **Tests** section below for per-class breakdown)
+  - Added helper branch-gap tests for recently identified paths:
+    - `ExceptWith_SameInstance_ClearsTarget`
+    - `ExceptWithAsync_SameInstance_ClearsTarget`
+    - `SetEqualsAsync_SameCountsButDifferentValues_ReturnsFalse`
+  - **2,120 tests** per target framework — **4,240 total executions** on `net10.0` + `net8.0`.
+  - Coverlet: **98.35% line coverage**, **93.20% branch coverage**, **96.8% method coverage**.
+  - Added **67 new sync set-query tests** in `MultiMapHelper_UnitTests.cs` for `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (sync `IMultiMap`, `ISimpleMultiMap`, and `IMultiMap` overloads, including null guards and edge cases)
+  - Added **17 new async set-query tests** in `MultiMapHelperExtensionAsync_UnitTests.cs` for `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`
+  - Added **46 new tests** in `MultiMapAsync_UnitTests.cs` for atomic `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync` (including concurrency and cancellation tests)
+  - Added **52 new tests** in `MultiMapLock_UnitTests.cs` for atomic `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals` (including concurrency and lock-ordering tests)
+  - Added **43 new boundary condition and exception handling tests** in `MultiMapBoundaryConditions_UnitTests.cs` covering: empty collections, single-item operations, AddRange boundaries, MultiMapList duplicates, Clear operations, enumeration edges, capacity/resize scenarios, exception boundaries (null keys/values), ContainsKey/Contains edges, and count boundaries
+  - **Added 46 comprehensive edge-case and boundary-condition tests** in `AdditionalCoverage_UnitTests.cs` covering:
+    - **MultiMapSet duplicate value handling** — verify duplicate prevention and partial range removal
+    - **MultiMapList duplicate handling** — confirm duplicate storage support and ordering preservation
+    - **SortedMultiMap value sorting** — validate value sorting across multiple keys and correct sort order maintenance
+    - **ConcurrentMultiMap concurrent safety** — concurrent add operations without value loss and thread-safety validation
+    - **MultiMapAsync async completion** — async operation completion, concurrent task safety without race conditions
+    - **MultiMapLock atomic operations** — atomic set operations and proper enumeration during concurrent modifications
+    - **SimpleMultiMap snapshot semantics** — get snapshot isolation and duplicate prevention behavior
+    - **Complex key scenarios** — strings with spaces, special characters, and large keys
+    - **Boundary conditions** — operations at zero counts, single-item boundaries, large enumerable handling
+    - **Enumeration consistency** — keys/values enumeration consistency and count accuracy through sequences
+    - **Count consistency** — count accuracy after multiple mixed operations (add/remove sequences)
+    - **Predicate-based removal** — RemoveWhere with matching/partial/non-matching conditions
+
+**Implementation Details**
+
+- `MultiMapHelper` extensions provide read-only query semantics for `IMultiMap<TKey, TValue>`, `ISimpleMultiMap<TKey, TValue>`, and `IMultiMapAsync<TKey, TValue>` interfaces
+- `MultiMapAsync` instance methods implement atomic snapshot-based comparisons with ordered semaphore acquisition to prevent deadlocks when comparing two `MultiMapAsync` instances
+- `MultiMapLock` instance methods implement atomic read-lock-based comparisons, snapshotting the other map before acquiring locks to avoid lock-ordering issues
+
+**Performance**
+- All query methods use `HashSet<TValue>` for efficient O(1) value lookups and short-circuit on first definitive result for optimal performance
+- Comprehensive performance optimizations were done across all entities
 
 ### 2.0.1
 

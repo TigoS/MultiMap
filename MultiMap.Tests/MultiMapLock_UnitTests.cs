@@ -811,6 +811,402 @@ public class MultiMapLockTests
         other.Dispose();
     }
 
+    // ── IsSubsetOf Instance Method ────────────────────────────
+
+    [Test]
+    public void IsSubsetOf_EmptyIsSubsetOfEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        Assert.That(_map.IsSubsetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSubsetOf_EmptyIsSubsetOfNonEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.IsSubsetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSubsetOf_NonEmptyIsNotSubsetOfEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+
+        Assert.That(_map.IsSubsetOf(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSubsetOf_IdenticalSets_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.IsSubsetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSubsetOf_ProperSubset_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.IsSubsetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSubsetOf_DisjointSets_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.IsSubsetOf(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSubsetOf_WithSameInstance_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.IsSubsetOf(_map), Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOf_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.IsSubsetOf(null!));
+    }
+
+    [Test]
+    public void IsSubsetOf_DisposedThis_ThrowsObjectDisposedException()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => _map.IsSubsetOf(other));
+
+        other.Dispose();
+    }
+
+    // ── IsSupersetOf Instance Method ──────────────────────────
+
+    [Test]
+    public void IsSupersetOf_EmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        Assert.That(_map.IsSupersetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSupersetOf_NonEmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+
+        Assert.That(_map.IsSupersetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSupersetOf_EmptyIsNotSupersetOfNonEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.IsSupersetOf(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSupersetOf_IdenticalSets_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.IsSupersetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSupersetOf_ProperSuperset_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        other.Add("a", 1);
+
+        Assert.That(_map.IsSupersetOf(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSupersetOf_DisjointSets_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.IsSupersetOf(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void IsSupersetOf_WithSameInstance_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.IsSupersetOf(_map), Is.True);
+    }
+
+    [Test]
+    public void IsSupersetOf_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.IsSupersetOf(null!));
+    }
+
+    // ── Overlaps Instance Method ──────────────────────────────
+
+    [Test]
+    public void Overlaps_EmptySets_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        Assert.That(_map.Overlaps(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Overlaps_DisjointSets_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Overlaps(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Overlaps_SingleCommonPair_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+
+        Assert.That(_map.Overlaps(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Overlaps_MultipleCommonPairs_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.Overlaps(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Overlaps_PartialOverlap_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        other.Add("a", 1);
+        other.Add("c", 3);
+
+        Assert.That(_map.Overlaps(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Overlaps_SameKeyDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.Overlaps(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void Overlaps_WithSameInstance_ReturnsTrueIfNotEmpty()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.Overlaps(_map), Is.True);
+    }
+
+    [Test]
+    public void Overlaps_WithSameInstanceEmpty_ReturnsFalse()
+    {
+        Assert.That(_map.Overlaps(_map), Is.False);
+    }
+
+    [Test]
+    public void Overlaps_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.Overlaps(null!));
+    }
+
+    // ── SetEquals Instance Method ─────────────────────────────
+
+    [Test]
+    public void SetEquals_EmptySets_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        Assert.That(_map.SetEquals(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_EmptyAndNonEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(_map.SetEquals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_NonEmptyAndEmpty_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+
+        Assert.That(_map.SetEquals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_IdenticalSets_ReturnsTrue()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.SetEquals(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_DifferentCounts_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(_map.SetEquals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_DifferentKeys_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("b", 1);
+
+        Assert.That(_map.SetEquals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_SameKeysDifferentValues_ReturnsFalse()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(_map.SetEquals(other), Is.False);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_MultipleValuesPerKey_ChecksAllValues()
+    {
+        var other = new MultiMapLock<string, int>();
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        other.Add("a", 1);
+        other.Add("a", 2);
+        other.Add("b", 3);
+
+        Assert.That(_map.SetEquals(other), Is.True);
+
+        other.Dispose();
+    }
+
+    [Test]
+    public void SetEquals_WithSameInstance_ReturnsTrue()
+    {
+        _map.Add("a", 1);
+
+        Assert.That(_map.SetEquals(_map), Is.True);
+    }
+
+    [Test]
+    public void SetEquals_NullOther_ThrowsArgumentNullException()
+    {
+        Assert.Throws<ArgumentNullException>(() => _map.SetEquals(null!));
+    }
+
     [Test]
     public void Clear_RemovesAllEntries()
     {
@@ -918,6 +1314,162 @@ public class MultiMapLockTests
             totalCount += _map.GetOrDefault(key).Count();
 
         Assert.That(_map.Count, Is.EqualTo(totalCount));
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void IsSubsetOf_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        // Pre-populate both maps
+        for (int i = 0; i < 20; i++)
+        {
+            _map.Add($"key{i}", i);
+            other.Add($"key{i}", i);
+        }
+
+        Parallel.For(0, 50, i =>
+        {
+            if (i % 2 == 0)
+                _map.IsSubsetOf(other);
+            else
+                _map.Add($"new{i}", i * 100);
+        });
+
+        // Should complete without exception
+        Assert.That(_map.Count, Is.GreaterThanOrEqualTo(20));
+
+        other.Dispose();
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void IsSupersetOf_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        // Pre-populate maps
+        for (int i = 0; i < 20; i++)
+        {
+            _map.Add($"key{i}", i);
+        }
+        for (int i = 0; i < 10; i++)
+        {
+            other.Add($"key{i}", i);
+        }
+
+        Parallel.For(0, 50, i =>
+        {
+            if (i % 2 == 0)
+                _map.IsSupersetOf(other);
+            else
+                other.Add($"new{i}", i * 100);
+        });
+
+        // Should complete without exception
+        Assert.Pass();
+
+        other.Dispose();
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void Overlaps_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        // Pre-populate with some overlap
+        for (int i = 0; i < 20; i++)
+        {
+            _map.Add($"key{i}", i);
+        }
+        for (int i = 10; i < 30; i++)
+        {
+            other.Add($"key{i}", i);
+        }
+
+        Parallel.For(0, 50, i =>
+        {
+            if (i % 3 == 0)
+                _map.Overlaps(other);
+            else if (i % 3 == 1)
+                _map.Remove($"key{i % 20}", i % 20);
+            else
+                other.Remove($"key{(i % 20) + 10}", (i % 20) + 10);
+        });
+
+        // Should complete without exception
+        Assert.Pass();
+
+        other.Dispose();
+    }
+
+    [Test]
+    [Category("Concurrency")]
+    public void SetEquals_ConcurrentWithMutations_ExecutesCorrectly()
+    {
+        var other = new MultiMapLock<string, int>();
+
+        // Pre-populate both identically
+        for (int i = 0; i < 20; i++)
+        {
+            _map.Add($"key{i}", i);
+            other.Add($"key{i}", i);
+        }
+
+        Parallel.For(0, 50, i =>
+        {
+            if (i % 2 == 0)
+                _map.SetEquals(other);
+            else
+                _map.Add($"diff{i}", i * 100);
+        });
+
+        // Should complete without exception
+        Assert.Pass();
+
+        other.Dispose();
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void SetQueryMethods_HighConcurrency_MaintainConsistency()
+    {
+        const int iterations = 200;
+        var other = new MultiMapLock<string, int>();
+
+        // Pre-populate
+        for (int i = 0; i < 30; i++)
+        {
+            _map.Add($"key{i}", i);
+            other.Add($"key{i % 20}", i);
+        }
+
+        Parallel.For(0, iterations, i =>
+        {
+            // Mix of all query methods
+            switch (i % 4)
+            {
+                case 0:
+                    _map.IsSubsetOf(other);
+                    break;
+                case 1:
+                    _map.IsSupersetOf(other);
+                    break;
+                case 2:
+                    _map.Overlaps(other);
+                    break;
+                case 3:
+                    _map.SetEquals(other);
+                    break;
+            }
+        });
+
+        // All should complete without exception
+        Assert.Pass();
+
+        other.Dispose();
     }
 
     [Test]
@@ -2002,8 +2554,30 @@ public class MultiMapLockTests
         => Assert.Throws<ArgumentNullException>(() => _map.AddRange("key", (IEnumerable<int>)null!));
 
     [Test]
+    public void AddRange_Key_NullElementInValues_ThrowsArgumentNullException()
+    {
+        using var map = new MultiMapLock<string, string>();
+        Assert.Throws<ArgumentNullException>(() => map.AddRange("key", new string?[] { "a", null }!));
+    }
+
+    [Test]
     public void AddRange_Items_NullItems_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _map.AddRange((IEnumerable<KeyValuePair<string, int>>)null!));
+
+    [Test]
+    public void AddRange_Items_NullKey_ThrowsArgumentNullException()
+    {
+        var items = new[] { new KeyValuePair<string, int>(null!, 1) };
+        Assert.Throws<ArgumentNullException>(() => _map.AddRange(items));
+    }
+
+    [Test]
+    public void AddRange_Items_NullValue_ThrowsArgumentNullException()
+    {
+        using var map = new MultiMapLock<string, string>();
+        var items = new[] { new KeyValuePair<string, string>("k", null!) };
+        Assert.Throws<ArgumentNullException>(() => map.AddRange(items));
+    }
 
     [Test]
     public void Get_NullKey_ThrowsArgumentNullException()
@@ -2079,3 +2653,311 @@ public class MultiMapLockTests
     public void SymmetricExceptWith_NullOther_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _map.SymmetricExceptWith(null!));
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapLock – additional concurrent stress tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class MultiMapLock_ExtraStressTests
+{
+    [Test]
+    [Category("Stress")]
+    public void Add_ConcurrentAdds_AllUniqueValuesStored()
+    {
+        using var map = new MultiMapLock<string, int>();
+        const int count = 1000;
+
+        Parallel.For(0, count, i => map.Add("k", i));
+
+        Assert.That(map.Count, Is.EqualTo(count));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void RemoveKey_Concurrent_AllKeysRemoved()
+    {
+        using var map = new MultiMapLock<string, int>();
+        const int count = 500;
+
+        for (int i = 0; i < count; i++)
+            map.Add($"k{i}", i);
+
+        Parallel.For(0, count, i => map.RemoveKey($"k{i}"));
+
+        Assert.That(map.Count, Is.EqualTo(0));
+        Assert.That(map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void ReadWrite_Concurrent_NeverThrows()
+    {
+        using var map = new MultiMapLock<string, int>();
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+
+        var writer = Task.Run(() =>
+        {
+            int i = 0;
+            while (!cts.Token.IsCancellationRequested)
+                map.Add($"k{i % 50}", i++);
+        });
+
+        var reader = Task.Run(() =>
+        {
+            while (!cts.Token.IsCancellationRequested)
+                _ = map.Count;
+        });
+
+        Assert.DoesNotThrow(() => Task.WaitAll(writer, reader));
+    }
+
+    [Test]
+    [Category("Stress")]
+    public void AddAndRemoveWhere_Concurrent_NoExceptions()
+    {
+        using var map = new MultiMapLock<string, int>();
+        const int iterations = 500;
+
+        Parallel.For(0, iterations, i =>
+        {
+            map.Add("k", i);
+            map.RemoveWhere("k", v => v == i);
+        });
+
+        Assert.That(map.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void Dispose_CalledTwice_DoesNotThrow()
+    {
+        var map = new MultiMapLock<string, int>();
+        map.Dispose();
+        Assert.DoesNotThrow(() => map.Dispose());
+    }
+
+    [Test]
+    public void Add_AfterDispose_ThrowsObjectDisposedException()
+    {
+        var map = new MultiMapLock<string, int>();
+        map.Dispose();
+        Assert.Throws<ObjectDisposedException>(() => map.Add("k", 1));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SortedMultiMap – constructor overloads + GetHashCode / Equals
+// ──────────────────────────────────────────────────────────────────────────────
+
+
+public class MultiMapLock_AtomicSetOperationTests
+{
+    // line 766: IsSubsetOf — value in target that is absent from other
+    [Test]
+    public void IsSubsetOf_IMultiMap_MissingValueInOther_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+        target.Add("a", 99); // 99 is not in other
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(target.IsSubsetOf(other), Is.False);
+    }
+
+    [Test]
+    public void IsSubsetOf_IMultiMap_AllValuesPresent_ReturnsTrue()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("a", 2);
+
+        Assert.That(target.IsSubsetOf(other), Is.True);
+    }
+
+    [Test]
+    public void IsSubsetOf_IMultiMap_KeyMissingInOther_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("missing", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(target.IsSubsetOf(other), Is.False);
+    }
+
+    // line 898: IsSupersetOf — key from other not in _dictionary
+    [Test]
+    public void IsSupersetOf_IMultiMap_OtherHasMissingKey_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("z", 99); // "z" not in target
+
+        Assert.That(target.IsSupersetOf(other), Is.False);
+    }
+
+    // line 906: IsSupersetOf — key present but value absent
+    [Test]
+    public void IsSupersetOf_IMultiMap_OtherHasMissingValue_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 99); // value 99 not in target
+
+        Assert.That(target.IsSupersetOf(other), Is.False);
+    }
+
+    [Test]
+    public void IsSupersetOf_IMultiMap_TargetIsSuperset_ReturnsTrue()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+        target.Add("a", 2);
+        target.Add("b", 3);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+
+        Assert.That(target.IsSupersetOf(other), Is.True);
+    }
+
+    // Overlaps — already indirectly hit; explicit false path
+    [Test]
+    public void Overlaps_IMultiMap_DisjointSets_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("b", 2);
+
+        Assert.That(target.Overlaps(other), Is.False);
+    }
+
+    [Test]
+    public void Overlaps_IMultiMap_SharedPair_ReturnsTrue()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(target.Overlaps(other), Is.True);
+    }
+
+    // line 954: SetEquals — snapshot count mismatch inside lock
+    [Test]
+    public void SetEquals_IMultiMap_DifferentKeyCount_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+        target.Add("b", 2);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1); // only one key vs two
+
+        Assert.That(target.SetEquals(other), Is.False);
+    }
+
+    [Test]
+    public void SetEquals_IMultiMap_SameContent_ReturnsTrue()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+        target.Add("b", 2);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        Assert.That(target.SetEquals(other), Is.True);
+    }
+
+    [Test]
+    public void SetEquals_IMultiMap_DifferentValues_ReturnsFalse()
+    {
+        using var target = new MultiMapLock<string, int>();
+        target.Add("a", 1);
+
+        var other = new MultiMapSet<string, int>();
+        other.Add("a", 2);
+
+        Assert.That(target.SetEquals(other), Is.False);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapLock – concurrent stress tests
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+[Category("Stress")]
+public class MultiMapLock_StressTests
+{
+    [Test]
+    public void AddAndRemoveKey_HighConcurrency_NeverThrows()
+    {
+        using var map = new MultiMapLock<string, int>();
+        const int threads = 8;
+        const int perThread = 250;
+
+        Parallel.For(0, threads, t =>
+        {
+            for (int i = 0; i < perThread; i++)
+            {
+                map.Add($"k{i % 20}", i + t * perThread);
+                if (i % 5 == 0) map.RemoveKey($"k{i % 20}");
+            }
+        });
+
+        Assert.That(map.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    [Test]
+    public void IsSubsetOf_UnderConcurrentMutation_NeverThrows()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other = new MultiMapLock<string, int>();
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+
+        var mutator = Task.Run(() =>
+        {
+            int i = 0;
+            while (!cts.Token.IsCancellationRequested)
+            {
+                target.Add($"k{i % 10}", i % 50);
+                other.Add($"k{i % 10}", i % 50);
+                i++;
+            }
+        });
+
+        var checker = Task.Run(() =>
+        {
+            while (!cts.Token.IsCancellationRequested)
+                _ = target.IsSubsetOf(other);
+        });
+
+        Assert.DoesNotThrow(() => Task.WaitAll(mutator, checker));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapAsync – uncovered paths
+// line 1001: Equals(object?) → SynchronizationContext guard (InvalidOperationException)
+// line 1089: Equals(IReadOnlyMultiMapAsync?) general path when other is not
+//            a concrete MultiMapAsync<> instance (uses GetCountAsync etc.)
+// ──────────────────────────────────────────────────────────────────────────────

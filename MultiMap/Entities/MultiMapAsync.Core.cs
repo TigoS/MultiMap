@@ -1,3 +1,4 @@
+using MultiMap.Helpers;
 #if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
 #endif
@@ -12,8 +13,12 @@ namespace MultiMap.Entities
 
         private void ThrowIfDisposed()
         {
+#if NET6_0_OR_GREATER
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, GetType()?.FullName ?? string.Empty);
+#else
             if (Volatile.Read(ref _disposed) != 0)
                 throw new ObjectDisposedException(GetType().FullName);
+#endif
         }
 
         private static bool IsCompletedSuccessfully(Task task)
@@ -158,6 +163,8 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+
                 if (hashset!.Add(value))
                 {
                     _count++;
@@ -189,6 +196,9 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var item in items)
             {
+                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
+
 #if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
                 hashset ??= new HashSet<TValue>(_valueComparer);
@@ -225,7 +235,7 @@ namespace MultiMap.Entities
 
         // ── Get ───────────────────────────────────────────────
 
-        private IEnumerable<TValue> GetCore(TKey key)
+        private TValue[] GetCore(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset.ToArray();
@@ -248,12 +258,12 @@ namespace MultiMap.Entities
 
         // ── GetOrDefault ──────────────────────────────────────
 
-        private IEnumerable<TValue> GetOrDefaultCore(TKey key)
+        private TValue[] GetOrDefaultCore(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
                 return hashset.ToArray();
 
-            return [];
+            return Array.Empty<TValue>();
         }
 
         private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(TKey key, CancellationToken cancellationToken)

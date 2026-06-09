@@ -57,5 +57,13 @@ namespace MultiMap.Demo
 
             Console.WriteLine();
         }
+
+        /// <summary>
+        /// Prints a line break to the console for visual separation of output sections.
+        /// </summary>
+        public static void PrintLineBreak()
+        {
+            Console.WriteLine("--------------------------------------------------");
+        }
     }
 }

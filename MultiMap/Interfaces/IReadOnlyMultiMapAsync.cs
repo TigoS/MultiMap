@@ -1,4 +1,4 @@
-﻿namespace MultiMap.Interfaces
+namespace MultiMap.Interfaces
 {
     /// <summary>
     /// Represents a read-only, asynchronous multimap that allows enumeration and retrieval of multiple values associated with a single key.
@@ -33,8 +33,7 @@
         /// <param name="key">The key whose values to retrieve. Cannot be null.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to cancel the asynchronous operation.</param>
         /// <returns>
-        /// A task that represents the asynchronous operation. The task result contains an enumerable collection of values associated with the specified key,
-        /// or an empty sequence if the key does not exist.
+        /// A task that represents the asynchronous operation. The task result contains an enumerable collection of values associated with the specified key, or an empty sequence if the key does not exist.
         /// </returns>
         /// <exception cref="ArgumentNullException">
         /// Thrown when <paramref name="key"/> is <see langword="null"/>.

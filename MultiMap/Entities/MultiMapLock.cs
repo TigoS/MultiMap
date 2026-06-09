@@ -17,13 +17,21 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
-    public sealed class MultiMapLock<TKey, TValue> : IMultiMap<TKey, TValue>, IDisposable
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
+    /// </remarks>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public sealed class MultiMapLock<TKey, TValue>(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer) : IMultiMap<TKey, TValue>, IDisposable
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {
-        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
-        private readonly ReaderWriterLockSlim _lock;
-        private readonly IEqualityComparer<TValue>? _valueComparer;
+        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
+                ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
+                : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+        private readonly ReaderWriterLockSlim _lock = new();
+        private readonly IEqualityComparer<TValue>? _valueComparer = valueComparer;
         private int _count;
         private int _disposed;
 
@@ -64,34 +72,24 @@ namespace MultiMap.Entities
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapLock(int capacity, IEqualityComparer<TValue>? valueComparer) : this(capacity, null, valueComparer) { }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapLock(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = capacity > 0
-                ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
-                : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
-            _lock = new ReaderWriterLockSlim();
-            _valueComparer = valueComparer;
-        }
-
         private void ThrowIfDisposed()
         {
+#if NET6_0_OR_GREATER
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, GetType()?.FullName ?? string.Empty);
+#else
             if (Volatile.Read(ref _disposed) != 0)
                 throw new ObjectDisposedException(GetType().FullName);
+#endif
         }
 
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -123,10 +121,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -137,6 +136,8 @@ namespace MultiMap.Entities
                 int added = 0;
                 foreach (var value in values)
                 {
+                    Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+
                     if (hashset!.Add(value))
                     {
                         _count++;
@@ -158,15 +159,19 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (items is null) throw new ArgumentNullException(nameof(items));
+            Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
                 int added = 0;
                 foreach (var item in items)
                 {
+                    Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                    Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
+
 #if NET6_0_OR_GREATER
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
                     hashset ??= new HashSet<TValue>(_valueComparer);
@@ -196,9 +201,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -216,9 +222,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -236,9 +243,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -257,10 +265,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -289,9 +298,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (items is null) throw new ArgumentNullException(nameof(items));
+            Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -320,10 +330,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (predicate is null) throw new ArgumentNullException(nameof(predicate));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -347,9 +358,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterWriteLock();
             try
             {
@@ -370,9 +382,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -387,10 +400,11 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -486,9 +500,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
+            Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
+
             _lock.EnterReadLock();
             try
             {
@@ -531,9 +546,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are added to this instance.</param>
         public void Union(IMultiMap<TKey, TValue> other)
         {
-            if (other is null) throw new ArgumentNullException(nameof(other));
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -581,9 +597,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map that defines the pairs to keep.</param>
         public void Intersect(IMultiMap<TKey, TValue> other)
         {
-            if (other is null) throw new ArgumentNullException(nameof(other));
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
@@ -634,9 +651,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
         public void ExceptWith(IMultiMap<TKey, TValue> other)
         {
-            if (other is null) throw new ArgumentNullException(nameof(other));
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -680,9 +698,10 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map to compare against.</param>
         public void SymmetricExceptWith(IMultiMap<TKey, TValue> other)
         {
-            if (other is null) throw new ArgumentNullException(nameof(other));
+            Guard.NotNull(other, nameof(other));
 
             ThrowIfDisposed();
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
@@ -725,6 +744,210 @@ namespace MultiMap.Entities
             finally
             {
                 _lock.ExitWriteLock();
+            }
+        }
+
+        /// <summary>
+        /// Atomically determines whether this multi-map is a subset of <paramref name="other"/>.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted before the read lock is acquired,
+        /// so <paramref name="other"/> may be the same instance or another locked collection without
+        /// risk of deadlock. The entire comparison executes under a single read lock, guaranteeing
+        /// consistent results.
+        /// </remarks>
+        /// <param name="other">The multi-map to compare against.</param>
+        /// <returns><see langword="true"/> if every key-value pair in this instance exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
+        public bool IsSubsetOf(IMultiMap<TKey, TValue> other)
+        {
+            Guard.NotNull(other, nameof(other));
+
+            ThrowIfDisposed();
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
+            foreach (var key in other.Keys)
+            {
+                var values = other.GetOrDefault(key).ToArray();
+                otherIndex[key] = new HashSet<TValue>(values, _valueComparer);
+            }
+
+            _lock.EnterReadLock();
+            try
+            {
+                foreach (var kvp in _dictionary)
+                {
+                    if (!otherIndex.TryGetValue(kvp.Key, out var otherSet) || otherSet.Count == 0)
+                        return false;
+
+                    foreach (var value in kvp.Value)
+                    {
+                        if (!otherSet.Contains(value))
+                            return false;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Atomically determines whether this multi-map is a superset of <paramref name="other"/>.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted before the read lock is acquired,
+        /// so <paramref name="other"/> may be the same instance or another locked collection without
+        /// risk of deadlock. The entire comparison executes under a single read lock, guaranteeing
+        /// consistent results.
+        /// </remarks>
+        /// <param name="other">The multi-map to compare against.</param>
+        /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in this instance; otherwise, <see langword="false"/>.</returns>
+        public bool IsSupersetOf(IMultiMap<TKey, TValue> other)
+        {
+            Guard.NotNull(other, nameof(other));
+
+            ThrowIfDisposed();
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            foreach (var key in other.Keys)
+            {
+                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
+            }
+
+            _lock.EnterReadLock();
+            try
+            {
+                foreach (var (key, values) in snapshot)
+                {
+                    if (!_dictionary.TryGetValue(key, out var thisSet))
+                        return false;
+
+                    foreach (var value in values)
+                    {
+                        if (!thisSet.Contains(value))
+                            return false;
+                    }
+                }
+
+                return true;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Atomically determines whether this multi-map and <paramref name="other"/> share at least one key-value pair.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted before the read lock is acquired,
+        /// so <paramref name="other"/> may be the same instance or another locked collection without
+        /// risk of deadlock. The entire comparison executes under a single read lock, guaranteeing
+        /// consistent results.
+        /// </remarks>
+        /// <param name="other">The multi-map to compare against.</param>
+        /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
+        public bool Overlaps(IMultiMap<TKey, TValue> other)
+        {
+            Guard.NotNull(other, nameof(other));
+
+            ThrowIfDisposed();
+
+            if (ReferenceEquals(this, other))
+                return Count > 0;
+
+            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            foreach (var key in other.Keys)
+            {
+                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
+            }
+
+            _lock.EnterReadLock();
+            try
+            {
+                foreach (var (key, values) in snapshot)
+                {
+                    if (_dictionary.TryGetValue(key, out var thisSet))
+                    {
+                        foreach (var value in values)
+                        {
+                            if (thisSet.Contains(value))
+                                return true;
+                        }
+                    }
+                }
+
+                return false;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// Atomically determines whether this multi-map and <paramref name="other"/> contain the same key-value pairs.
+        /// </summary>
+        /// <remarks>
+        /// The data from <paramref name="other"/> is snapshotted before the read lock is acquired,
+        /// so <paramref name="other"/> may be the same instance or another locked collection without
+        /// risk of deadlock. The entire comparison executes under a single read lock, guaranteeing
+        /// consistent results.
+        /// </remarks>
+        /// <param name="other">The multi-map to compare against.</param>
+        /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
+        public bool SetEquals(IMultiMap<TKey, TValue> other)
+        {
+            Guard.NotNull(other, nameof(other));
+
+            ThrowIfDisposed();
+
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (other.Count != Count || other.KeyCount != KeyCount)
+                return false;
+
+            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            foreach (var key in other.Keys)
+            {
+                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
+            }
+
+            _lock.EnterReadLock();
+            try
+            {
+                if (_dictionary.Count != snapshot.Count)
+                    return false;
+
+                foreach (var (key, values) in snapshot)
+                {
+                    if (!_dictionary.TryGetValue(key, out var thisSet))
+                        return false;
+
+                    if (thisSet.Count != values.Length)
+                        return false;
+
+                    var otherHashSet = new HashSet<TValue>(values, _valueComparer);
+                    if (!thisSet.SetEquals(otherHashSet))
+                        return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                _lock.ExitReadLock();
             }
         }
 

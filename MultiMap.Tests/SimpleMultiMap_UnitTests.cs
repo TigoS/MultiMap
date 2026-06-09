@@ -118,6 +118,53 @@ public class SimpleMultiMapTests
         Assert.That(_map.GetOrDefault("a"), Is.Empty);
     }
 
+    // ── TryGet ────────────────────────────────────────────────
+
+    [Test]
+    public void TryGet_ExistingKey_ReturnsTrueWithValues()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.True);
+        Assert.That(values, Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGet_NonExistentKey_ReturnsFalseWithEmpty()
+    {
+        bool found = _map.TryGet("missing", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterRemovingLastValue_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Remove("a", 1);
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
+    [Test]
+    public void TryGet_AfterClear_ReturnsFalseWithEmpty()
+    {
+        _map.Add("a", 1);
+        _map.Clear();
+
+        bool found = _map.TryGet("a", out var values);
+
+        Assert.That(found, Is.False);
+        Assert.That(values, Is.Empty);
+    }
+
     // ── Remove ─────────────────────────────────────────────
 
     [Test]
@@ -413,7 +460,7 @@ public class SimpleMultiMapTests
         map.Add("key", "Hello");
         map.Add("key", "hello");
 
-    Assert.That(map.Count, Is.EqualTo(1));
+        Assert.That(map.Count, Is.EqualTo(1));
     }
 
     [Test]
@@ -683,3 +730,136 @@ public class SimpleMultiMapTests
         Assert.Throws<ArgumentNullException>(() => _map.RemoveKey(null!));
     }
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SimpleMultiMap – remaining constructor overloads
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class SimpleMultiMap_ConstructorCoverageTests
+{
+    [Test]
+    public void Constructor_Default_IsEmpty()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        Assert.That(map.Count, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesComparer()
+    {
+        var map = new SimpleMultiMap<string, int>(StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_WithCapacity_AcceptsEntries()
+    {
+        var map = new SimpleMultiMap<string, int>(50);
+        map.Add("a", 1);
+        Assert.That(map.Get("a").Single(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndKeyComparer_BothApplied()
+    {
+        var map = new SimpleMultiMap<string, int>(10, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 7);
+        Assert.That(map.Get("key").Single(), Is.EqualTo(7));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndValueComparer_DeduplicatesByValueComparer()
+    {
+        var map = new SimpleMultiMap<string, string>(10, valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "Hello");
+        map.Add("k", "HELLO");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithCapacityKeyAndValueComparer_BothApplied()
+    {
+        var map = new SimpleMultiMap<string, string>(10, StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithKeyAndValueComparer_BothApplied()
+    {
+        var map = new SimpleMultiMap<string, string>(StringComparer.OrdinalIgnoreCase, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", "ABC");
+        map.Add("key", "abc");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Constructor_WithValueComparer_DeduplicatesByValueComparer()
+    {
+        var map = new SimpleMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        map.Add("k", "Hello");
+        map.Add("k", "hello");
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void Contains_ExistingKeyAndValue_ReturnsTrue()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        map.Add("a", 1);
+        Assert.That(map.Contains("a", 1), Is.True);
+    }
+
+    [Test]
+    public void Contains_WrongValue_ReturnsFalse()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        map.Add("a", 1);
+        Assert.That(map.Contains("a", 99), Is.False);
+    }
+
+    [Test]
+    public void Contains_NonExistentKey_ReturnsFalse()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        Assert.That(map.Contains("missing", 1), Is.False);
+    }
+
+    [Test]
+    public void ContainsKey_ExistingKey_ReturnsTrue()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        map.Add("a", 1);
+        Assert.That(map.ContainsKey("a"), Is.True);
+    }
+
+    [Test]
+    public void ContainsKey_NonExistentKey_ReturnsFalse()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        Assert.That(map.ContainsKey("missing"), Is.False);
+    }
+
+    [Test]
+    public void Equals_ObjectOverload_WrongType_ReturnsFalse()
+    {
+        var map = new SimpleMultiMap<string, int>();
+        Assert.That(map.Equals(42), Is.False);
+    }
+
+    [Test]
+    public void GetHashCode_SameContent_EqualHashCodes()
+    {
+        var a = new SimpleMultiMap<string, int>();
+        var b = new SimpleMultiMap<string, int>();
+        a.Add("k", 1); b.Add("k", 1);
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapLock – additional concurrent stress tests
+// ──────────────────────────────────────────────────────────────────────────────

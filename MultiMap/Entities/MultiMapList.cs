@@ -12,6 +12,9 @@ namespace MultiMap.Entities
     /// <remarks>
     /// This class is useful for scenarios where a key can have multiple associated values, such as grouping or indexing.
     /// The collection maintains insertion order for values under each key.
+    /// Unlike set-based implementations, <see cref="MultiMapList{TKey, TValue}"/> allows duplicate values per key;
+    /// <see cref="MultiMapBase{TKey,TValue,TCollection}.Add"/> always returns <see langword="true"/> and
+    /// <c>AddRange</c> returns the count of every value appended, regardless of whether that value already existed under the key.
     /// Keys and values must be non-null. Thread safety is not guaranteed;
     /// external synchronization is required for concurrent access.
     /// </remarks>
@@ -60,7 +63,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        protected override List<TValue> CreateCollection() => new List<TValue>();
+        protected override List<TValue> CreateCollection() => new();
 
         /// <inheritdoc/>
         protected override bool AddToCollection(List<TValue> collection, TValue value)
@@ -79,10 +82,10 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (value is null) throw new ArgumentNullException(nameof(value));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
-            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
             list ??= new List<TValue>();
 
             list.Add(value);
@@ -95,8 +98,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            if (key is null) throw new ArgumentNullException(nameof(key));
-            if (values is null) throw new ArgumentNullException(nameof(values));
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
 #if NET6_0_OR_GREATER
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
@@ -112,7 +115,7 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
-                if (value is null) throw new ArgumentNullException(nameof(values), "Sequence contains a null value.");
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
 
                 list!.Add(value);
                 _count++;
@@ -121,7 +124,7 @@ namespace MultiMap.Entities
 
 #if NET6_0_OR_GREATER
             if (!exists && added == 0)
-                ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
+                    ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
 #else
             if (!exists && added > 0)
                 _dictionary[key] = list!;
@@ -130,19 +133,19 @@ namespace MultiMap.Entities
             return added;
         }
 
-        #if NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            if (items is null) throw new ArgumentNullException(nameof(items));
+            Guard.NotNull(items, nameof(items));
 
             int added = 0;
             var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
 
             foreach (var item in items)
             {
-                if (item.Key is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null key.");
-                if (item.Value is null) throw new ArgumentNullException(nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
 
                 ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
                 list ??= new List<TValue>();

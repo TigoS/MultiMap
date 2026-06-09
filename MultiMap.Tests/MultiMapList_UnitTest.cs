@@ -1,4 +1,4 @@
-﻿using MultiMap.Entities;
+using MultiMap.Entities;
 using MultiMap.Interfaces;
 
 namespace MultiMap.Tests;
@@ -1443,3 +1443,191 @@ public class MultiMapListTests
         => Assert.Throws<ArgumentNullException>(() => _map.GetValuesCount(null!));
 }
 
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapList – constructor overloads + GetHashCode / Equals coverage
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class MultiMapList_ConstructorAndHashTests
+{
+    [Test]
+    public void Constructor_WithCapacity_WorksCorrectly()
+    {
+        var map = new MultiMapList<string, int>(100);
+        map.Add("a", 1);
+        Assert.That(map.GetOrDefault("a"), Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void Constructor_WithKeyComparer_UsesComparer()
+    {
+        var map = new MultiMapList<string, int>(StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    [Test]
+    public void Constructor_WithCapacityAndKeyComparer_UsesKeyComparer()
+    {
+        var map = new MultiMapList<string, int>(10, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 1);
+        Assert.That(map.ContainsKey("key"), Is.True);
+        Assert.That(map.Get("key"), Is.EqualTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void GetHashCode_SameContent_EqualHashCodes()
+    {
+        var a = new MultiMapList<string, int>();
+        var b = new MultiMapList<string, int>();
+        a.Add("k", 1); a.Add("k", 2);
+        b.Add("k", 1); b.Add("k", 2);
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
+
+    [Test]
+    public void GetHashCode_Empty_IsStable()
+    {
+        var map = new MultiMapList<string, int>();
+        Assert.That(map.GetHashCode(), Is.EqualTo(map.GetHashCode()));
+    }
+
+    [Test]
+    public void Equals_Object_NullObj_ReturnsFalse()
+    {
+        var map = new MultiMapList<string, int>();
+        Assert.That(map.Equals((object?)null), Is.False);
+    }
+
+    [Test]
+    public void Equals_Object_SameContent_ReturnsTrue()
+    {
+        var a = new MultiMapList<string, int>();
+        var b = new MultiMapList<string, int>();
+        a.Add("a", 1); b.Add("a", 1);
+        Assert.That(a.Equals((object)b), Is.True);
+    }
+
+    [Test]
+    public void Equals_SameInstance_ReturnsTrue()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 1);
+        Assert.That(map.Equals(map), Is.True);
+    }
+
+    [Test]
+    public void Equals_DifferentType_ReturnsFalse()
+    {
+        var map = new MultiMapList<string, int>();
+        Assert.That(map.Equals("not a list"), Is.False);
+    }
+
+    [Test]
+    public void AddRange_Kvp_MultipleKeys_StoresAll()
+    {
+        var map = new MultiMapList<string, int>();
+        map.AddRange(new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("b", 3),
+        });
+        Assert.That(map.GetOrDefault("a"), Is.EqualTo(new[] { 1, 2 }));
+        Assert.That(map.GetOrDefault("b"), Is.EqualTo(new[] { 3 }));
+        Assert.That(map.Count, Is.EqualTo(3));
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SimpleMultiMap – remaining constructor overloads
+// ──────────────────────────────────────────────────────────────────────────────
+
+
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapList – uncovered constructor/protected paths (lines 63-70)
+// The base-class slow-path Add/AddRange for non-NET6 are exercised indirectly
+// through the .NET 8 target via the base-class fallback. To cover the exact
+// lines (CreateCollection / AddToCollection / ToReadOnly / RemoveWhere on the
+// List impl) we exercise them through public API.
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class MultiMapList_CoverageTests
+{
+    // lines 63-70: CreateCollection, AddToCollection, ToReadOnly, RemoveWhereFromCollection
+    // These protected methods are exercised via Add / GetOrDefault / RemoveWhere.
+
+    [Test]
+    public void Add_NewKey_CreatesListAndStoresValue()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 10);
+        Assert.That(map.GetOrDefault("a"), Is.EquivalentTo(new[] { 10 }));
+    }
+
+    [Test]
+    public void Add_SameKey_AllowsDuplicates()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 1);
+        map.Add("a", 1); // duplicates allowed in List
+        Assert.That(map.Count, Is.EqualTo(2));
+    }
+
+    [Test]
+    public void GetOrDefault_ReturnsReadOnlyView()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 5);
+        map.Add("a", 6);
+        var values = map.GetOrDefault("a");
+        Assert.That(values, Is.EquivalentTo(new[] { 5, 6 }));
+    }
+
+    [Test]
+    public void RemoveWhere_RemovesMatchingValues()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 1);
+        map.Add("a", 2);
+        map.Add("a", 3);
+
+        int removed = map.RemoveWhere("a", v => v % 2 == 0);
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 3 }));
+    }
+
+    [Test]
+    public void RemoveWhere_AllValuesRemoved_KeyRemoved()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 2);
+        map.Add("a", 4);
+
+        map.RemoveWhere("a", v => v % 2 == 0);
+
+        Assert.That(map.ContainsKey("a"), Is.False);
+    }
+
+    // capacity + comparer constructor overload
+    [Test]
+    public void Constructor_CapacityAndComparer_UsesKeyComparer()
+    {
+        var map = new MultiMapList<string, int>(20, StringComparer.OrdinalIgnoreCase);
+        map.Add("KEY", 99);
+        Assert.That(map.ContainsKey("key"), Is.True);
+    }
+
+    // exercises AddRange with the List-based fast-path/base-path
+    [Test]
+    public void AddRange_MultipleValuesToSameKey_AllAdded()
+    {
+        var map = new MultiMapList<string, int>();
+        int added = map.AddRange("a", new[] { 1, 2, 3 });
+        Assert.That(added, Is.EqualTo(3));
+        Assert.That(map.Count, Is.EqualTo(3));
+    }
+}

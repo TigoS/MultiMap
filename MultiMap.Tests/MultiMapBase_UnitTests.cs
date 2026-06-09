@@ -489,6 +489,69 @@ public abstract class MultiMapBaseTests
         Assert.That(_map.Count, Is.EqualTo(1));
     }
 
+    // Regression for #1: RemoveKey must only adjust Count after the key is
+    // actually present, so Count stays accurate regardless of call order.
+    [Test]
+    public void RemoveKey_LastValueKey_CountReachesZero()
+    {
+        _map.Add("a", 1);
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveKey_ThenRemoveKeyAgain_CountRemainsZero()
+    {
+        _map.Add("a", 1);
+        _map.RemoveKey("a");
+        _map.RemoveKey("a"); // should be a no-op
+
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveKey_AfterRemoveWhere_EmptiedKey_CountIsConsistent()
+    {
+        // Simulate the exact path that #1 protected: RemoveWhere empties the
+        // collection so that subsequent RemoveKey finds nothing to remove and
+        // must NOT decrement Count a second time.
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.RemoveWhere("a", _ => true); // empties "a" and removes the key
+
+        // Key no longer exists; RemoveKey must be a no-op.
+        bool removed = _map.RemoveKey("a");
+
+        Assert.That(removed, Is.False);
+        Assert.That(_map.Count, Is.EqualTo(0));
+        Assert.That(_map.KeyCount, Is.EqualTo(0));
+    }
+
+    [Test]
+    public void RemoveKey_OnMultipleKeys_CountAndKeyCountStayConsistent()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+        _map.Add("c", 4);
+        _map.Add("c", 5);
+
+        _map.RemoveKey("a");
+
+        Assert.That(_map.Count, Is.EqualTo(3));
+        Assert.That(_map.KeyCount, Is.EqualTo(2));
+        Assert.That(_map.ContainsKey("a"), Is.False);
+
+        _map.RemoveKey("c");
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+        Assert.That(_map.ContainsKey("c"), Is.False);
+    }
+
     // ── ContainsKey ───────────────────────────────────────────
 
     [Test]
@@ -962,4 +1025,118 @@ public sealed class MultiMapListBaseTests : MultiMapBaseTests
 public sealed class SortedMultiMapBaseTests : MultiMapBaseTests
 {
     protected override IMultiMap<string, int> CreateMap() => new SortedMultiMap<string, int>();
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Additional MultiMapBase contract tests through concrete subtypes
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class MultiMapBase_ExtraContractTests
+{
+    [Test]
+    public void AddRange_LazySequence_EnumeratedOnce_WhenNonEmpty()
+    {
+        var map = new MultiMapSet<string, int>();
+        int enumerations = 0;
+        IEnumerable<int> LazyItems()
+        {
+            enumerations++;
+            yield return 1;
+            yield return 2;
+        }
+
+        map.AddRange("a", LazyItems());
+
+        Assert.That(enumerations, Is.EqualTo(1));
+        Assert.That(map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void RemoveRange_PartialOverlap_RemovesOnlyExistingPairs()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("a", 1);
+        map.Add("a", 2);
+        map.Add("b", 3);
+
+        int removed = map.RemoveRange(new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 99), // non-existent value
+            new KeyValuePair<string, int>("c", 1),  // non-existent key
+        });
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(map.Count, Is.EqualTo(2));
+        Assert.That(map.Contains("a", 2), Is.True);
+        Assert.That(map.Contains("b", 3), Is.True);
+    }
+
+    [Test]
+    public void GetValuesCount_AfterRemoveAll_ReturnsZero()
+    {
+        var map = new MultiMapSet<string, int>();
+        map.Add("a", 1);
+        map.Add("a", 2);
+        map.RemoveKey("a");
+
+        Assert.That(map.GetValuesCount("a"), Is.EqualTo(0));
+    }
+
+    [Test]
+    public void Values_MultipleKeys_AllValuesPresent()
+    {
+        var map = new MultiMapList<string, int>();
+        map.Add("a", 1);
+        map.Add("a", 1); // duplicate allowed in List
+        map.Add("b", 2);
+
+        Assert.That(map.Values, Is.EquivalentTo(new[] { 1, 1, 2 }));
+    }
+}
+
+public class MultiMapBase_EqualsDispatchTests
+{
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_SameContent_ReturnsTrue()
+    {
+        IReadOnlySimpleMultiMap<string, int> a = new MultiMapSet<string, int>();
+        var b = new MultiMapSet<string, int>();
+        ((MultiMapSet<string, int>)a).Add("x", 1);
+        b.Add("x", 1);
+
+        // Calls the Equals(IReadOnlySimpleMultiMap<>) overload in MultiMapBase
+        Assert.That(b.Equals(a), Is.True);
+    }
+
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_DifferentContent_ReturnsFalse()
+    {
+        IReadOnlySimpleMultiMap<string, int> a = new MultiMapSet<string, int>();
+        var b = new MultiMapSet<string, int>();
+        ((MultiMapSet<string, int>)a).Add("x", 1);
+        b.Add("x", 2);
+
+        Assert.That(b.Equals(a), Is.False);
+    }
+
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_Null_ReturnsFalse()
+    {
+        var map = new MultiMapSet<string, int>();
+        Assert.That(map.Equals((IReadOnlySimpleMultiMap<string, int>?)null), Is.False);
+    }
+
+    [Test]
+    public void Equals_IReadOnlySimpleMultiMap_WithMultiMapList_ReturnsExpected()
+    {
+        IReadOnlySimpleMultiMap<string, int> a = new MultiMapList<string, int>();
+        ((MultiMapList<string, int>)a).Add("k", 7);
+
+        var b = new MultiMapSet<string, int>();
+        b.Add("k", 7);
+
+        Assert.That(b.Equals(a), Is.True);
+    }
 }
