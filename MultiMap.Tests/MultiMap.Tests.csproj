@@ -5,6 +5,7 @@
     <LangVersion>14.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Test fixtures initialize shared fields in [SetUp], so suppress constructor-only nullability warning. -->
     <NoWarn>$(NoWarn);CS8618</NoWarn>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
