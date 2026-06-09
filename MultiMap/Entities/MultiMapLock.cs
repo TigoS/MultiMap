@@ -912,6 +912,9 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
+            if (ReferenceEquals(this, other))
+                return true;
+
             if (other.Count != Count || other.KeyCount != KeyCount)
                 return false;
 
