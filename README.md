@@ -1,4 +1,4 @@
-﻿# MultiMap
+# MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
@@ -8,7 +8,7 @@
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-95.4%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-98.3%25-brightgreen)]()
 
 A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
@@ -51,7 +51,11 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
-- **Comprehensive NUnit 4 test suite** running on **net10.0** and **net8.0**
+- **Comprehensive NUnit 4 test suite**: 
+  - **4,240 total tests** (2,120 per framework) running on **net10.0** and **net8.0**
+  - **98.3% line coverage**, **93.20% branch coverage**, **96.8% method coverage** (latest Coverlet metrics)
+  - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, and exception handling scenarios
+  - 46 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
 - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
 ## Known Limitations
@@ -104,7 +108,7 @@ MultiMap/
 │   │   ├── IMultiMap.cs                      # Synchronous multimap (extends IReadOnlyMultiMap)
 │   │   └── IMultiMapAsync.cs                 # Async multimap (extends IReadOnlyMultiMapAsync)
 │   ├── Entities/
-│   │   ├── MultiMapBase.cs                   # Abstract base class for synchronized multimaps (except MultiMapLock)
+│   │   ├── MultiMapBase.cs                   # Abstract dictionary-backed base for MultiMapList/Set/Sorted/Concurrent
 │   │   ├── MultiMapBase.ValuesCollection.cs  # Nested ValuesCollection enumerator (partial)
 │   │   ├── MultiMapBase.ValuesEnumerator.cs  # Nested ValuesEnumerator struct (partial)
 │   │   ├── MultiMapList.cs                   # List-based (allows duplicates)
@@ -163,10 +167,11 @@ A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`
 | `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
 | `Remove(key, value)` | `bool` | Removes a specific pair; returns `true` if removed |
 | `RemoveKey(key)` | `bool` | Removes all values for a key; returns `true` when the key existed |
+| `Clear()` | `void` | Removes all entries |
 
 > **Migration note:** legacy `ISimpleMultiMap.Clear(TKey)`/void patterns were removed; use `RemoveKey(TKey)` and consume its `bool` result.
 
-**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`
+**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`
 
 ### `IReadOnlyMultiMap<TKey, TValue>`
 
@@ -316,7 +321,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. Prov
 | `SortedMultiMap` | `SortedDictionary<TKey, SortedSet<TValue>>` | `SortedSet<TValue>` | O(log n) operations; keys & values sorted |
 | `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ConcurrentSet<TValue>>` | `ConcurrentSet<TValue>` | Fully lock-free via nested `ConcurrentDictionary`; `Count` and `KeyCount` are O(1) via `Interlocked`-maintained counters |
 | `MultiMapLock` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `ReaderWriterLockSlim` |
-| `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `SemaphoreSlim(1,1)`; all operations (reads and writes) acquire the same exclusive permit — see writer-starvation note above |
+| `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by a custom readers-writer protocol over two `SemaphoreSlim(1,1)` instances (`_writeLock` + `_readerLock`) |
 
 ### API Behavior Differences
 
