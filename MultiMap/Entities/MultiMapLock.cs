@@ -814,6 +814,9 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
+            if (ReferenceEquals(this, other))
+                return true;
+
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
             {
