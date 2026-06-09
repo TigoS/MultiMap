@@ -14,7 +14,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Benchmarks
 
-Benchmarks are run with **BenchmarkDotNet v0.15.0** with `CPUUsageDiagnoser`.
+Benchmarks are run with **BenchmarkDotNet v0.15.8** with `CPUUsageDiagnoser`.
 
 **Environment:** .NET 10.0.8, SDK 10.0.300, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
 
@@ -51,7 +51,7 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 | **RemoveWhere** / **RemoveWhereAsync** | 1,371 ns | 664 ns | 5,600 ns | 3,355 ns | 2,365 ns | 3,664 ns |
 
 > **Notes:**
-> - **KeyCount**: O(1) for all synchronous implementations (< 1 ns). `ConcurrentMultiMap` now maintains a cached `_keyCount` counter updated via `Interlocked` operations — read is a single field load (< 1 ns). `MultiMapLock` acquires a read lock (~12 ns). `MultiMapAsync` acquires a semaphore (~81 ns).
+> - **KeyCount**: O(1) for non-concurrent implementations (< 1 ns). `ConcurrentMultiMap.KeyCount` scans the live dictionary for non-empty inner sets (O(k)). `MultiMapLock` acquires a read lock (~12 ns). `MultiMapAsync` acquires a semaphore (~81 ns).
 > - **Indexer**: Not available for `MultiMapAsync` (async API uses `GetAsync` instead).
 > - **AddRange(items)**: The KVP overload is ~3–5x slower than `AddRange(key, values)` because it groups items by key and processes multiple keys across the map.
 > - **RemoveWhere**: Very efficient (0.7–8.9 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.

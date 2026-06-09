@@ -26,6 +26,15 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ### Upgrading to Version 2.1.0+
 
+Version 2.1.0 adds read-only set query operations (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) and updates the interface surface.
+
+#### Interface Additions (may affect custom implementations)
+
+- `IReadOnlySimpleMultiMap<TKey, TValue>.TryGet(TKey key, out IEnumerable<TValue> values)` was added.
+- `ISimpleMultiMap<TKey, TValue>.Clear()` was added.
+
+If you implement these interfaces directly, add the new members to your implementation.
+
 ### Upgrading to Version 2.0.1+
 
 Version 2.0.1 removes two `ISimpleMultiMap` members that were soft-deprecated in v1.0.12 and completes their removal as a **source-breaking change**.

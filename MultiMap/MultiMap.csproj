@@ -32,7 +32,7 @@ New Features / Breaking Changes
   - MultiMapAsync (atomic)
   - MultiMapLock (atomic)
 
-See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/ReleaseNotes.md</PackageReleaseNotes>
+See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
