@@ -37,7 +37,7 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Re
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\icons8-nuget-shadow\icons8-nuget-48.png">
+    <None Include="..\icons8-nuget-shadow\icons8-nuget-48.png" Link="Icons\icons8-nuget-48.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -46,15 +46,20 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Re
       <PackagePath>\</PackagePath>
     </None>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
-	<None Include="..\ReleaseNotes.md" Pack="true" PackagePath="\" />
-	<None Include="..\Benchmarks.md" Pack="true" PackagePath="\" />
-	<None Include="..\MigrationGuide.md" Pack="true" PackagePath="\" />
-	<None Include="..\Testing.md" Pack="true" PackagePath="\" />
+	<None Include="..\Docs\ReleaseNotes.md" Pack="true" PackagePath="\" Link="Docs\ReleaseNotes.md" />
+	<None Include="..\Docs\Benchmarks.md" Pack="true" PackagePath="\" Link="Docs\Benchmarks.md" />
+	<None Include="..\Docs\MigrationGuide.md" Pack="true" PackagePath="\" Link="Docs\MigrationGuide.md" />
+	<None Include="..\Docs\Testing.md" Pack="true" PackagePath="\" Link="Docs\Testing.md" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
     <PackageReference Include="Microsoft.Bcl.HashCode" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Docs\" />
+    <Folder Include="Icons\" />
   </ItemGroup>
 
 </Project>
