@@ -712,19 +712,19 @@ bool setEquals = map.SetEquals(otherMap);
 
 ## Testing
 
-See [Testing](./Testing.md) for the full unit test details.
+See [Testing](./Docs/Testing.md) for the full unit test details.
 
 ## Benchmarks
 
-See [Benchmarks](./Benchmarks.md) for the full benchmark details.
+See [Benchmarks](./Docs/Benchmarks.md) for the full benchmark details.
 
 ## Migration Guide
 
-See [MigrationGuide](./MigrationGuide.md) for the full migration guide.
+See [MigrationGuide](./Docs/MigrationGuide.md) for the full migration guide.
 
 ## Release Notes
 
-See [ReleaseNotes](./ReleaseNotes.md) for the full version history.
+See [ReleaseNotes](./Docs/ReleaseNotes.md) for the full version history.
 
 ## License
 
