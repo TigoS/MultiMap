@@ -87,18 +87,6 @@ namespace MultiMap.Entities
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level, initial capacity, and equality comparer for values.
-        /// </summary>
-        /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity))
-        {
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparer for values.
         /// </summary>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>

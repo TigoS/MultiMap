@@ -1477,7 +1477,7 @@ public class ConcurrentMultiMapTests
     [Test]
     public void Constructor_WithConcurrencyCapacityAndValueComparer_WorksCorrectly()
     {
-        var map = new ConcurrentMultiMap<string, string>(4, 100, valueComparer: StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(4, 100, keyComparer: null, valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("key", "Hello");
         bool added = map.Add("key", "hello");
 
@@ -2035,7 +2035,7 @@ public class ConcurrentMultiMap_ConstructorAndBranchTests
     [Test]
     public void Constructor_WithConcurrencyLevelCapacityAndValueComparer_DeduplicatesByValueComparer()
     {
-        var map = new ConcurrentMultiMap<string, string>(4, 100, valueComparer: StringComparer.OrdinalIgnoreCase);
+        var map = new ConcurrentMultiMap<string, string>(4, 100, keyComparer: null, valueComparer: StringComparer.OrdinalIgnoreCase);
         map.Add("k", "Hello");
         map.Add("k", "HELLO");
         Assert.That(map.Count, Is.EqualTo(1));
