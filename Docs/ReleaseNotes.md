@@ -45,7 +45,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 - Benchmarks
   - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
-  - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
+  - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for a 5,000-pair map; **4.025 ns** for an empty map
   - `SimpleMultiMap.TryGet` benchmarks: **39.30 ns** (hit) and **34.29 ns** (missing key)
 
 - Tests
@@ -82,7 +82,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `MultiMapLock` instance methods implement atomic read-lock-based comparisons, snapshotting the other map before acquiring locks to avoid lock-ordering issues
 
 **Performance**
-- All query methods use `HashSet<TValue>` for efficient O(1) value lookups and short-circuit on first definitive result for optimal performance
+- All query methods use `HashSet<TValue>` for efficient O(1) value lookups and short-circuit on the first definitive result for optimal performance
 - Comprehensive performance optimizations were done across all entities
 
 ### 2.0.1
