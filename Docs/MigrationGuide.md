@@ -37,7 +37,7 @@ If you implement these interfaces directly, add the new members to your implemen
 
 ### Upgrading to Version 2.0.1+
 
-Version 2.0.1 removes two `ISimpleMultiMap` members that were soft-deprecated in v1.0.12 and completes their removal as a **source-breaking change**.
+Version 2.0.1 removes two `ISimpleMultiMap` members that were soft-deprecated in v1.0.12, completing their removal as a **source-breaking change**.
 
 #### Breaking Changes
 
@@ -126,7 +126,7 @@ map.Clear("keyA");  // removes all values for "keyA"
 map.RemoveKey("keyA");  // removes all values for "keyA"
 ```
 
-For backward compatibility, `Clear(TKey key)` is retained in `ISimpleMultiMap` as an `[Obsolete]` alias that forwards directly to `RemoveKey(TKey key)`. Existing call sites continue to compile and run; a compiler warning (`CS0618`) is emitted to guide migration. Migrate call sites to `map.RemoveKey(key)` before the next major version when `Clear(key)` will be removed. Note: the parameterless `Clear()` on `IMultiMap` implementations is unaffected.
+For backward compatibility, `Clear(TKey key)` is retained in `ISimpleMultiMap` as an `[Obsolete]` alias that forwards directly to `RemoveKey(TKey key)`. Existing call sites continue to compile and run; a compiler warning (`CS0618`) is emitted to guide migration. Migrate call sites to `map.RemoveKey(key)` before the next major version, when `Clear(key)` will be removed. Note: the parameterless `Clear()` on `IMultiMap` implementations is unaffected.
 
 ---
 
@@ -168,15 +168,15 @@ This is a **soft deprecation** — existing call sites continue to compile and r
 
 - **All concrete classes are now `sealed`:** Every concrete implementation (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`) is declared `sealed`, enabling JIT devirtualization on hot paths such as `Add` and `Remove`.
 
-- **Null-value guard on `AddRange`:** A runtime guard was added to prevent `null` values from silently entering list-backed collections, preserving the `TValue : notnull` contract at runtime.
+- **Null-value guard on `AddRange`:** A runtime guard was added to prevent `null` values from silently entering list-backed collections, preserving the `TValue: notnull` contract at runtime.
 
-- **`MultiMapList` equality fix:** `MultiMapList.Equals(object?)` previously used `SequenceEqual`, which is order-dependent. The comparison now uses set-based equality so two lists with the same content in a different insertion order compare equal.
+- **`MultiMapList` equality fix:** `MultiMapList.Equals(object?)` previously used `SequenceEqual`, which is order-dependent. The comparison now uses set-based equality, so two lists with the same content in a different insertion order compare equal.
 
 - **`MultiMapSet(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` constructor added:** A combined key-and-value comparer overload fills the gap between the separate key-only and value-only overloads, bringing `MultiMapSet` to a full 8-overload family.
 
 - **`ConcurrentMultiMap` key-comparer constructors added:** `ConcurrentMultiMap(IEqualityComparer<TKey>?)` and `ConcurrentMultiMap(IEqualityComparer<TKey>?, IEqualityComparer<TValue>?)` overloads are now available, bringing `ConcurrentMultiMap` to a full 8-overload family on par with the other implementations.
 
-- **`MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` optimised on .NET 6+:** The KVP-sequence overload now overrides the base-class implementation and uses `CollectionsMarshal.GetValueRefOrAddDefault` on .NET 6 and later, eliminating the per-item virtual dispatch through the base class and matching the existing `Add` and `AddRange(key, values)` fast paths.
+- **`MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` optimized on .NET 6+:** The KVP-sequence overload now overrides the base-class implementation and uses `CollectionsMarshal.GetValueRefOrAddDefault` on .NET 6 and later, eliminating the per-item virtual dispatch through the base class and matching the existing `Add` and `AddRange(key, values)` fast paths.
 
 #### Recommended Upgrade Steps
 
@@ -225,7 +225,7 @@ All other APIs are **fully backward-compatible**. The one source-breaking change
 
 ### Upgrading to Version 1.0.11+
 
-Version 1.0.11 changes the return types of `AddRange` and `AddRangeAsync` to report how many pairs were actually added. This is a **source-breaking change** if you relied on the previous `void`/`Task` signatures.
+Version 1.0.11 changes the return types of `AddRange` and `AddRangeAsync` to report the number of pairs actually added. This is a **source-breaking change** if you relied on the previous `void`/`Task` signatures.
 
 #### Breaking Changes
 
@@ -263,7 +263,7 @@ int added = await map.AddRangeAsync(items);  // Returns number of pairs actually
    ```
 
 2. **Update call sites:**
-   - If you ignored the return value, no changes needed — the call still compiles
+   - If you ignored the return value, no changes are needed — the call still compiles
    - If you assigned the result or passed it to a method expecting `void`/`Task`, update to handle the `int`/`Task<int>` return type
 
 3. **If you implement `IMultiMap` or `IMultiMapAsync` directly:**
@@ -329,7 +329,7 @@ int keyCount = map.KeyCount;  // O(1) - instant
 
 ##### 2. Values Property
 
-**Before:** Getting all values required flattening
+**Before:** Getting all values required for flattening
 ```csharp
 var allValues = map.Select(kvp => kvp.Value);  // enumerate directly
 ```
@@ -399,7 +399,7 @@ int removedCount = map.RemoveRange(toRemove);  // Returns number actually remove
 
 **New capability:** Conditional removal with predicate
 ```csharp
-// Remove all even numbers associated with "numbers" key
+// Remove all even numbers associated with the "numbers" key
 int removed = map.RemoveWhere("numbers", n => n % 2 == 0);
 Console.WriteLine($"Removed {removed} even numbers");
 ```
@@ -449,7 +449,7 @@ Version 1.0.7 introduced a new interface hierarchy with read-only base interface
 **Why this matters:** You can now accept read-only interfaces in methods that don't need to modify the map, improving API design and enabling safer contracts.
 
 ```csharp
-// OLD: Accepts mutable interface even though it doesn't modify
+// OLD: Accepts a mutable interface even though it doesn't modify
 public void DisplayStats(IMultiMap<string, int> map)
 {
     Console.WriteLine($"Keys: {map.Keys.Count()}");

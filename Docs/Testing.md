@@ -25,7 +25,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 ## Testing
 
-The library includes **4,240 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,120 per framework** before fixtures) with comprehensive boundary condition coverage, covering all implementations, interfaces, edge cases, concurrent stress tests, and exception handling scenarios.
+The library includes **4,240 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,120 per framework** before fixtures), with comprehensive boundary-condition coverage across all implementations and interfaces, edge cases, concurrent stress tests, and exception-handling scenarios.
 
 **Recent additions (v2.1.0 coverage expansion):**
 - **46 new tests** in `AdditionalCoverage_UnitTests.cs` covering:
