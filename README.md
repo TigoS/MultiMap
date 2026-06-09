@@ -10,7 +10,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![Coverage](https://img.shields.io/badge/coverage-98.3%25-brightgreen)]()
 
-A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
+A **.NET** library providing various generic multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 ## Table of Contents
 
@@ -243,19 +243,19 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 
 ### `MultiMapBase<TKey, TValue, TCollection>` — Abstract Base Class
 
-Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. On .NET 6+ subclasses may also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup.
+Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. On .NET 6+, subclasses may also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup.
 
 **Encapsulation:** The underlying `_dictionary` field and the `_count` field are `protected`, preventing external subclasses from bypassing the count-bookkeeping invariant.
 
 ### `MultiMapList<TKey, TValue>` — List-Based
 
-Extends `MultiMapBase<TKey, TValue, List<TValue>>`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized. On .NET 6+ uses `CollectionsMarshal` for optimized `Add`/`AddRange`. Returns a zero-copy `ReadOnlyCollection<TValue>` from `Get`.
+Extends `MultiMapBase<TKey, TValue, List<TValue>>`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized. On .NET 6+, it uses `CollectionsMarshal` for optimized `Add`/`AddRange`. Returns a zero-copy `ReadOnlyCollection<TValue>` from `Get`.
 
 **Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`
 
 ### `MultiMapSet<TKey, TValue>` — HashSet-Based
 
-Extends `MultiMapBase<TKey, TValue, HashSet<TValue>>`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios requiring fast lookups and unique value semantics. On .NET 6+ uses `CollectionsMarshal` for optimized `Add`/`AddRange`.
+Extends `MultiMapBase<TKey, TValue, HashSet<TValue>>`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios that require fast lookups and unique-value semantics. On .NET 6+, it uses `CollectionsMarshal` for optimized `Add`/`AddRange`.
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
@@ -369,7 +369,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. Prov
 
 ## Extension Methods
 
-For all 3 interface families the `MultiMapHelper` provides:
+For all 3 interface families, the `MultiMapHelper` provides:
 
 1. **Set-like operations as extension methods:**
 
@@ -393,7 +393,7 @@ These signatures return `bool`, while async extensions complete via `Task<bool>`
 
 > **Note:** When used with concurrent implementations, these methods are **not atomic**. Individual operations are thread-safe, but the overall result may reflect interleaved concurrent modifications. No structural corruption or count drift will occur.
 
-> **Performance notes for set-like helpers:** `Intersect` and `SymmetricExceptWith` build a per-key `HashSet<TValue>` lookup to avoid O(n²) inner-loop scans. When the per-key value collection already implements `ISet<TValue>` (for example, when the underlying map is a `MultiMapSet`), the existing set is used directly and no allocation occurs. `ExceptWith` and `Union` iterate directly without any temporary collection. `GetHashCode()` on all concrete implementations uses the key and value equality comparers stored by that instance, so hash codes remain consistent with the equality semantics used by the map — custom comparers are fully respected.
+> **Performance notes for set-like helpers:** `Intersect` and `SymmetricExceptWith` build a per-key `HashSet<TValue>` lookup to avoid O(n²) inner-loop scans. When the per-key value collection already implements `ISet<TValue>` (for example, when the underlying map is a `MultiMapSet`), the existing set is used directly, and no allocation occurs. `ExceptWith` and `Union` iterate directly without any temporary collection. `GetHashCode()` on all concrete implementations uses the key and value equality comparers stored by that instance, so hash codes remain consistent with the equality semantics used by the map — custom comparers are fully respected.
 
 ## Installation
 
@@ -443,14 +443,14 @@ map.Add("A", 1);
 map.Add("A", 2);
 map.Add("B", 3);
 
-// KeyCount returns number of unique keys (not total pairs)
+// KeyCount returns the number of unique keys (not total pairs)
 int keyCount = map.KeyCount;        // 2 (keys: "A", "B")
 int totalCount = map.Count;         // 3 (pairs: A→1, A→2, B→3)
 
 // Values property returns all values across all keys
 IEnumerable<int> allValues = map.Values;  // [1, 2, 3]
 
-// GetValuesCount returns count for a specific key
+// GetValuesCount returns the count for a specific key
 int valuesForA = map.GetValuesCount("A");  // 2
 int valuesForB = map.GetValuesCount("B");  // 1
 int noKey = map.GetValuesCount("C");       // 0 (key doesn't exist)
@@ -475,7 +475,7 @@ var items = new[]
 };
 map.AddRange(items);
 
-// RemoveRange returns count of actually removed pairs
+// RemoveRange returns the count of actually removed pairs
 var toRemove = new[]
 {
     new KeyValuePair<string, int>("A", 1),

@@ -10,7 +10,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![Coverage](https://img.shields.io/badge/coverage-98.3%25-brightgreen)]()
 
-A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
+A **.NET** library providing various generic multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 ## Table of Contents
 
@@ -98,15 +98,15 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 - `ConcurrentMultiMap.Remove` — eliminated a TOCTOU race condition using the `TryPruneEmptySet` helper.
 - `ConcurrentMultiMap.RemoveWhere` — same TOCTOU race as `Remove`; fixed with the same `TryPruneEmptySet` helper.
-- `ConcurrentMultiMap.GetOrDefault(TKey)` — now returns an empty sequence instead of a snapshot of a live-but-empty inner `ConcurrentDictionary` after concurrent removals. Behaviour is now consistent with `Get` and `TryGet`.
-- `ConcurrentMultiMap.AddRange(TKey, IEnumerable<TValue>)` — short-circuits when the materialised collection is empty, preventing a transient orphan key registration via a no-op `GetOrAdd`.
-- `MultiMapBase.AddRange(TKey, IEnumerable<TValue>)` — eliminated an unnecessary `CreateCollection()` allocation when the value sequence is empty. The method materialises the sequence first and short-circuits before allocating a collection; an empty sequence returns `0` and does not create an orphan key entry.
+- `ConcurrentMultiMap.GetOrDefault(TKey)` — now returns an empty sequence instead of a snapshot of a live-but-empty inner `ConcurrentDictionary` after concurrent removals. Behavior is now consistent with `Get` and `TryGet`.
+- `ConcurrentMultiMap.AddRange(TKey, IEnumerable<TValue>)` — short-circuits when the materialized collection is empty, preventing a transient orphan key registration via a no-op `GetOrAdd`.
+- `MultiMapBase.AddRange(TKey, IEnumerable<TValue>)` — eliminated an unnecessary `CreateCollection()` allocation when the value sequence is empty. The method materializes the sequence first and short-circuits before allocating a collection; an empty sequence returns `0` and does not create an orphan key entry.
 - `SimpleMultiMap.Get` and `SimpleMultiMap.GetOrDefault` — no longer call `.ToArray()` on the backing `HashSet<TValue>` on every read.
 
 **Performance**
 
 - `ConcurrentMultiMap.Count` and `KeyCount` are now **O(1)** — backed by dedicated `_count` and `_keyCount` fields updated via `Interlocked` in every mutating path (`Add`, `AddRange`, `Remove`, `RemoveWhere`, `RemoveKey`, `Clear`). BenchmarkDotNet reports both as ZeroMeasurement (< 1 ns) on .NET 10.0.8.
-- `ConcurrentMultiMap.Keys` and `Values` are now **lazy iterators** (`yield return` over the live dictionary) instead of fully materialised `List<T>` snapshots. Call `.ToList()` / `.ToArray()` explicitly when a stable snapshot is needed.
+- `ConcurrentMultiMap.Keys` and `Values` are now **lazy iterators** (`yield return` over the live dictionary) instead of fully materialized `List<T>` snapshots. Call `.ToList()` / `.ToArray()` explicitly when a stable snapshot is needed.
 - `MultiMapSet.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — on .NET 6+, now uses `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup per item, matching the fast path in `MultiMapSet.Add` and `MultiMapSet.AddRange(TKey, IEnumerable<TValue>)`. The `.NET Standard 2.0` path is unchanged.
 
 **Added**
@@ -126,7 +126,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `MultiMapAsync<TKey, TValue>` — added detailed XML doc comment explaining the custom readers-writer locking protocol: `_writeLock` (exclusive per write; held by the first reader for the duration of any concurrent read group) and `_readerLock` (guards the `_activeReaders` counter only). README updated with a matching **Locking protocol** callout.
 - `ConcurrentMultiMap<TKey, TValue>` XML doc updated to note that the class does not implement `IDisposable` — intentional, as it owns no disposable resources.
 - `MultiMapAsync<TKey, TValue>` XML doc corrected: removed a duplicate `<remarks>` block that was attached to the primary constructor declaration.
-- README synchronised with current codebase: interface hierarchy, constructor matrices, `MultiMapHelper` signatures, testing/coverage metrics, and per-class coverage breakdown.
+- README synchronized with current codebase: interface hierarchy, constructor matrices, `MultiMapHelper` signatures, testing/coverage metrics, and per-class coverage breakdown.
 
 **Tests**
 
@@ -227,7 +227,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 - `ConcurrentMultiMap.Keys` now returns a `.ToArray()` snapshot instead of exposing the live `ConcurrentDictionary` key collection — prevents enumeration errors under concurrent modification
 - `MultiMapLock.Equals` and `MultiMapAsync.Equals` now include a `_count` fast-exit comparison before iterating keys and values — short-circuits unequal maps early
-- `ConcurrentMultiMap.Equals` could return `true` for maps with different total counts but same key count (missing `_count` comparison)
+- `ConcurrentMultiMap.Equals` could return `true` for maps with different total counts but the same key count (missing `_count` comparison)
 - `GetHashCode()` used collision-prone XOR aggregation that produced identical hashes for maps with different key orderings — replaced with MurmurHash3 scramble
 
 ### 1.0.10
@@ -243,7 +243,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - Value-based `Equals()`/`GetHashCode()` implementations across all 7 multimap entities — objects with identical key-value content are now structurally equal
 - `IComparable<TKey>` and `IComparable<TValue>` generic constraints on `SortedMultiMap<TKey, TValue>` for compile-time safety
 - SimpleMultiMap benchmark suite (9 benchmarks) in `SimpleMultiMapBenchmarks.cs`
-- Defensive copy (snapshot) tests for `Get`, `GetOrDefault`, and `TryGet` across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, and `MultiMapLock` — ensures callers receive a point-in-time snapshot, not a live reference
+- Defensive copy (snapshot) tests for `Get`, `GetOrDefault`, and `TryGet` across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, and `MultiMapLock` — ensure callers receive a point-in-time snapshot, not a live reference
 - Equals edge-case tests (`DifferentContent`, `DifferentKeys`, `EmptyMaps`) for `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap`
 - 10 new unit tests for `SimpleMultiMap` Equals/GetHashCode behavior
 
@@ -251,7 +251,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 - Test count increased from 1,023 to **1,045 tests**
 - Code coverage: **94.3% line coverage**, **92.6% branch coverage**, **100% method coverage**
-- `Get`, `GetOrDefault`, and `TryGet` now return defensive `.ToArray()` copies across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap` — prevents callers from observing mutations after retrieval
+- `Get`, `GetOrDefault`, and `TryGet` now return defensive `.ToArray()` copies across `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, and `ConcurrentMultiMap` — preventing callers from observing mutations after retrieval
 - `ConcurrentMultiMap.Equals` uses deterministic dual-lock ordering via `RuntimeHelpers.GetHashCode` to prevent deadlocks when comparing two instances
 - `MultiMapAsync` now uses `ConfigureAwait(false)` on all `await` calls to avoid unnecessary synchronization context captures
 - `MultiMapLock.AddRange` and `MultiMapLock.RemoveRange` now execute under a single write lock for atomicity
@@ -269,7 +269,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `MultiMapAsync.GetValuesCountAsync` was ignoring the `key` parameter and always returning the total count instead of the per-key count
 - Thread-safety issue in `MultiMapLock.TryGet` that returned a live mutable reference to the internal `HashSet`
 - Thread-safety issue in `MultiMapLock.RemoveWhere` that reads without acquiring a lock
-- Thread-safety issue in `ConcurrentMultiMap.RemoveWhere` that reads without per-key lock
+- Thread-safety issue in `ConcurrentMultiMap.RemoveWhere` that reads without a per-key lock
 - Race condition in `ConcurrentMultiMap.Clear()` under concurrent access causing count drift
 - Misleading test name in `MultiMapAsync` dispose test
 
@@ -282,7 +282,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - `GetValuesCount(TKey key)` method to `IReadOnlyMultiMap` — returns 0 if key doesn't exist
 - `this[TKey key]` indexer to `IReadOnlyMultiMap` — convenient dictionary-style access
 - `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` overload to `IMultiMap` — bulk insert of key-value pairs
-- `RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>>)` method to `IMultiMap` — bulk removal returning count of removed pairs
+- `RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>>)` method to `IMultiMap` — bulk removal returning the count of removed pairs
 - `RemoveWhere(TKey key, Predicate<TValue>)` method to `IMultiMap` — conditional removal by predicate
 - `GetKeyCountAsync()` method to `IReadOnlyMultiMapAsync` — async equivalent of `KeyCount`
 - `GetValuesCountAsync(TKey key)` method to `IReadOnlyMultiMapAsync` — async equivalent of `GetValuesCount`
@@ -316,7 +316,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 
 **Changed**
 
-- Updated `Get()` and `GetAsync()` methods to throw `KeyNotFoundException` when key is not found (breaking change from previous behavior that returned empty)
+- Updated `Get()` and `GetAsync()` methods to throw `KeyNotFoundException` when the key is not found (breaking change from previous behavior that returned empty)
 - All implementations now support three retrieval patterns:
   - `Get(key)` / `GetAsync(key)` — throws exception if key not found
   - `GetOrDefault(key)` / `GetOrDefaultAsync(key)` — returns empty if key not found
@@ -377,7 +377,7 @@ A **.NET** library targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**
 - Async extension methods: `UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, `SymmetricExceptWithAsync`
 - BenchmarkDotNet benchmark suite
 - Concurrent and sequential stress tests
-- Atomic set-operations for thread-safe and async implementations
+- Atomic set operations for thread-safe and async implementations
 - Demo console application
 
 **Changed**
