@@ -720,11 +720,11 @@ See [Benchmarks](./Docs/Benchmarks.md) for the full benchmark details.
 
 ## Migration Guide
 
-See [MigrationGuide](./Docs/MigrationGuide.md) for the full migration guide.
+See [Migration Guide](./Docs/MigrationGuide.md) for the full migration guide.
 
 ## Release Notes
 
-See [ReleaseNotes](./Docs/ReleaseNotes.md) for the full version history.
+See [Release Notes](./Docs/ReleaseNotes.md) for the full version history.
 
 ## License
 
