@@ -370,3 +370,6 @@ FodyWeavers.xsd
 *.diagsession
 /coveragereport
 /coverage/report
+/coverage_report
+/coverage_report_detailed
+/coverage_report_csv
