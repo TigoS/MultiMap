@@ -660,8 +660,8 @@ namespace MultiMap.Entities
                     await second.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
                     try
                     {
-                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
+                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
+                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
                     }
                     finally
                     {
