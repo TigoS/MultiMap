@@ -47,6 +47,9 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Re
     </None>
     <None Include="..\README.md" Pack="true" PackagePath="\" />
 	<None Include="..\ReleaseNotes.md" Pack="true" PackagePath="\" />
+	<None Include="..\Benchmarks.md" Pack="true" PackagePath="\" />
+	<None Include="..\MigrationGuide.md" Pack="true" PackagePath="\" />
+	<None Include="..\Testing.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
