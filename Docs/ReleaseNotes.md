@@ -45,7 +45,7 @@ A **.NET** library providing various generic multimap implementations (set, list
 
 - Benchmarks
   - Benchmark coverage for all new set query operations across `MultiMapBenchmarks`, `MultiMapAsyncBenchmarks`, and `MultiMapLockBenchmarks` (20 new benchmarks total)
-  - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for 5,000-pair map; **4.025 ns** for empty map
+  - `SimpleMultiMap.Clear` benchmarks: **166,832 ns** for a 5,000-pair map; **4.025 ns** for an empty map
   - `SimpleMultiMap.TryGet` benchmarks: **39.30 ns** (hit) and **34.29 ns** (missing key)
 
 - Tests
