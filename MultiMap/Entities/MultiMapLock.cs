@@ -764,10 +764,14 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            var snapshot = new List<(TKey Key, TValue[] Values)>();
+            if (ReferenceEquals(this, other))
+                return true;
+
+            var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
-                snapshot.Add((key, other.GetOrDefault(key).ToArray()));
+                var values = other.GetOrDefault(key).ToArray();
+                otherIndex[key] = new HashSet<TValue>(values, _valueComparer);
             }
 
             _lock.EnterReadLock();
@@ -775,14 +779,12 @@ namespace MultiMap.Entities
             {
                 foreach (var kvp in _dictionary)
                 {
-                    var otherSet = snapshot.FirstOrDefault(s => s.Key.Equals(kvp.Key)).Values;
-                    if (otherSet == null || otherSet.Length == 0)
+                    if (!otherIndex.TryGetValue(kvp.Key, out var otherSet) || otherSet.Count == 0)
                         return false;
 
-                    var otherHashSet = new HashSet<TValue>(otherSet, _valueComparer);
                     foreach (var value in kvp.Value)
                     {
-                        if (!otherHashSet.Contains(value))
+                        if (!otherSet.Contains(value))
                             return false;
                     }
                 }
