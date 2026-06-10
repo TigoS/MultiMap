@@ -174,13 +174,19 @@ namespace MultiMap.Entities
 
             bool result = _dictionary.TryGetValue(key, out var hashset);
 
-            values = result ? hashset is not null ?
+            if (!result || hashset is null)
+            {
+                values = Array.Empty<TValue>();
+            }
+            else
+            {
+                values =
 #if NET9_0_OR_GREATER
-                hashset.AsReadOnly()
+                hashset.AsReadOnly();
 #else
-                hashset.ToArray()
+                hashset.ToArray();
 #endif
-                : Array.Empty<TValue>() : Array.Empty<TValue>();
+            }
 
             return result;
         }
