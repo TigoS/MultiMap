@@ -21,7 +21,7 @@
     <Title>Collections that maps each key to one or more values</Title>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
-    <PackageIcon>icons8-nuget-48.png</PackageIcon>
+    <PackageIcon Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')">icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
     <PackageReleaseNotes>2.1.0
 
@@ -37,15 +37,13 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Do
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\icons8-nuget-shadow\icons8-nuget-48.png" Link="Icons\icons8-nuget-48.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\LICENSE.txt">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-    <None Include="..\README.md" Pack="true" PackagePath="\" />
+	<None Include="..\icons8-nuget-shadow\icons8-nuget-48.png"
+		  Link="Icons\icons8-nuget-48.png"
+		  Pack="true"
+		  PackagePath="\"
+		  Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')" />
+	<None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
+	<None Include="..\README.md" Pack="true" PackagePath="\" />
 	<None Include="..\Docs\ReleaseNotes.md" Pack="true" PackagePath="\" Link="Docs\ReleaseNotes.md" />
 	<None Include="..\Docs\Benchmarks.md" Pack="true" PackagePath="\" Link="Docs\Benchmarks.md" />
 	<None Include="..\Docs\MigrationGuide.md" Pack="true" PackagePath="\" Link="Docs\MigrationGuide.md" />
