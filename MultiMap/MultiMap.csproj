@@ -10,7 +10,7 @@
     <PackageId>MultiMap</PackageId>
     <Version>2.1.0</Version>
     <Authors>TigoS</Authors>
-    <Description>A .NET library providing multiple multimap implementations — collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 8, and .NET Standard 2.0.</Description>
+    <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 8, and .NET Standard 2.0.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
     <RepositoryUrl>https://github.com/TigoS/MultiMap</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -37,11 +37,7 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Do
   </PropertyGroup>
 
   <ItemGroup>
-	<None Include="..\icons8-nuget-shadow\icons8-nuget-48.png"
-		  Link="Icons\icons8-nuget-48.png"
-		  Pack="true"
-		  PackagePath="\"
-		  Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')" />
+	<None Include="..\icons8-nuget-shadow\icons8-nuget-48.png" Link="Icons\icons8-nuget-48.png" Pack="true" PackagePath="\" Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')" />
 	<None Include="..\LICENSE.txt" Pack="true" PackagePath="\" />
 	<None Include="..\README.md" Pack="true" PackagePath="\" />
 	<None Include="..\Docs\ReleaseNotes.md" Pack="true" PackagePath="\" Link="Docs\ReleaseNotes.md" />
