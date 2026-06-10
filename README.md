@@ -714,19 +714,19 @@ bool setEquals = map.SetEquals(otherMap);
 
 ## Testing
 
-See [Testing](./Docs/Testing.md) for the full unit test details.
+See [Testing](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md) for the full unit test details.
 
 ## Benchmarks
 
-See [Benchmarks](./Docs/Benchmarks.md) for the full benchmark details.
+See [Benchmarks](https://github.com/TigoS/MultiMap/blob/master/Docs/Benchmarks.md) for the full benchmark details.
 
 ## Migration Guide
 
-See [Migration Guide](./Docs/MigrationGuide.md) for the full migration guide.
+See [Migration Guide](https://github.com/TigoS/MultiMap/blob/master/Docs/MigrationGuide.md) for the full migration guide.
 
 ## Release Notes
 
-See [Release Notes](./Docs/ReleaseNotes.md) for the full version history.
+See [Release Notes](https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md) for the full version history.
 
 ## License
 

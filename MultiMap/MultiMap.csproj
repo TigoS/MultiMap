@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 8, and .NET Standard 2.0.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
