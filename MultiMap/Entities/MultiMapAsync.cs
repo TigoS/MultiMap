@@ -62,10 +62,13 @@ namespace MultiMap.Entities
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
                 ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
                 : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+
         /// <summary>Exclusive write lock – held by the single active writer.</summary>
         private readonly SemaphoreSlim _writeLock = new(1, 1);
+
         /// <summary>Guards the <see cref="_activeReaders"/> counter; held only for the duration of an increment/decrement.</summary>
         private readonly SemaphoreSlim _readerLock = new(1, 1);
+
         private readonly IEqualityComparer<TValue>? _valueComparer = valueComparer;
         private int _activeReaders;
         private int _count;
