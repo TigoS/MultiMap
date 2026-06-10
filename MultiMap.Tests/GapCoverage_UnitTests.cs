@@ -31,7 +31,7 @@ public class ConcurrentSetPublicSurfaceTests
     private static ConcurrentSet<int> EmptySet()
     {
         var ctor = typeof(ConcurrentSet<int>)
-            .GetConstructor(BindingFlags.NonPublic | BindingFlags.Instance,
+            .GetConstructor(BindingFlags.Public | BindingFlags.Instance,
                             null, new[] { typeof(IEqualityComparer<int>) }, null)!;
         return (ConcurrentSet<int>)ctor.Invoke(new object?[] { null });
     }

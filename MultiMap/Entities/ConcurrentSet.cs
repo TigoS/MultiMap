@@ -18,7 +18,7 @@ namespace MultiMap.Entities
         /// <summary>
         /// Initializes a new instance of <see cref="ConcurrentSet{T}"/> with an optional value comparer.
         /// </summary>
-        internal ConcurrentSet(IEqualityComparer<T>? comparer = null)
+        public ConcurrentSet(IEqualityComparer<T>? comparer = null)
         {
             _inner = new ConcurrentDictionary<T, byte>(comparer);
         }
@@ -36,17 +36,17 @@ namespace MultiMap.Entities
         /// <summary>
         /// Gets a value indicating whether the underlying dictionary is empty.
         /// </summary>
-        internal bool IsEmpty => _inner.IsEmpty;
+        public bool IsEmpty => _inner.IsEmpty;
 
         /// <summary>
         /// Attempts to add an element to the set.
         /// </summary>
-        internal bool TryAdd(T item) => _inner.TryAdd(item, 0);
+        public bool TryAdd(T item) => _inner.TryAdd(item, 0);
 
         /// <summary>
         /// Attempts to remove an element from the set.
         /// </summary>
-        internal bool TryRemove(T item, out byte _) => _inner.TryRemove(item, out _);
+        public bool TryRemove(T item, out byte _) => _inner.TryRemove(item, out _);
 
         /// <summary>
         /// Adds an element to the set (always succeeds for set semantics; returns silently if already present).
