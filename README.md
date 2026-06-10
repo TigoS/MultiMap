@@ -57,7 +57,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
   - **4,452 total tests** (2,226 per framework) running on **net10.0** and **net8.0**
   - **98.7% line coverage**, **93.2% branch coverage**, **96.8% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, and exception handling scenarios
-  - 46 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
+  - 147 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
 - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
 ## Known Limitations
