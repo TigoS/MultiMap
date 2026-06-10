@@ -196,8 +196,8 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var item in items)
             {
-                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
 #if NET6_0_OR_GREATER
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);

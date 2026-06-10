@@ -159,6 +159,7 @@ namespace MultiMap.Entities
             Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
+
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
@@ -265,6 +266,7 @@ namespace MultiMap.Entities
             Guard.NotNull(items, nameof(items));
 
             ThrowIfDisposed();
+
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
