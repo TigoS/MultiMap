@@ -2553,6 +2553,45 @@ public class ConcurrentMultiMap_StressTests
         Assert.That(map.KeyCount, Is.Zero);
         Assert.That(map.Keys, Is.Empty);
     }
+
+    [Test]
+    [Category("Stress")]
+    [Category("Concurrent")]
+    public void RemoveKey_ConcurrentWithAddRange_SameKey_DoesNotLeaveEmptyKey()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        const int iterations = 2000;
+
+        for (int i = 0; i < iterations; i++)
+        {
+            map.Add("race", 1);
+
+            using var barrier = new Barrier(2);
+
+            var remover = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                map.RemoveKey("race");
+            });
+
+            var adder = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                map.AddRange("race", new[] { 2, 3 });
+            });
+
+            Assert.DoesNotThrow(() => Task.WaitAll(remover, adder));
+
+            if (map.ContainsKey("race"))
+            {
+                var values = map.GetOrDefault("race").ToArray();
+                Assert.That(values, Is.Not.Empty);
+                Assert.That(values, Does.Not.Contain(1));
+            }
+
+            map.Clear();
+        }
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
