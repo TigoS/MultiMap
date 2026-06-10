@@ -8,7 +8,7 @@
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-95.86%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-98.7%25-brightgreen)]()
 
 A **.NET** library providing various multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
