@@ -8,9 +8,9 @@
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.3%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-95.86%25-brightgreen)]()
 
-A **.NET** library providing various generic multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
+A **.NET** library providing various multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ A **.NET** library providing various generic multimap implementations (set, list
 
 ## Testing
 
-The library includes **4,240 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,120 per framework** before fixtures), with comprehensive boundary-condition coverage across all implementations and interfaces, edge cases, concurrent stress tests, and exception-handling scenarios.
+The library includes **4,244 unit tests** written with **NUnit 4**, running on both **net10.0** and **net8.0** (**2,122 per framework** before fixtures), with comprehensive boundary-condition coverage across all implementations and interfaces, edge cases, concurrent stress tests, and exception-handling scenarios.
 
 **Recent additions (v2.1.0 coverage expansion):**
 - **46 new tests** in `AdditionalCoverage_UnitTests.cs` covering:
@@ -112,7 +112,7 @@ dotnet test
 
 | | |
 |---|---|
-| **Total** | **2,120 tests × 2 TFMs = 4,240 executions** |
+| **Total** | **2,122 tests × 2 TFMs = 4,244 executions** |
 
 ### Test Categories
 
@@ -176,9 +176,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.7% |
 | **Helper subtotal** | **408** | **19.9%** |
-| **Total** | **2,120 × 2 TFMs** | **4,240 executions** |
+| **Total** | **2,122 × 2 TFMs** | **4,244 executions** |
 
-> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,120 unique tests** run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
+> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,122 unique tests** run on both **net10.0** and **net8.0**, validating `#if NET6_0_OR_GREATER` code paths on both target frameworks.
 
 ### Code Coverage (Coverlet)
 
@@ -192,9 +192,9 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Method coverage** | **96.8%** |
-| **Line coverage** | **98.35%** |
-| **Branch coverage** | **93.20%** |
+| **Method coverage** | **94.42%** |
+| **Line coverage** | **95.86%** |
+| **Branch coverage** | **92.04%** |
 
 #### Per-Class Breakdown
 
@@ -215,8 +215,8 @@ dotnet test --collect:"XPlat Code Coverage"
 
 > **Notes:**
 > - Coverage is computed from the latest combined Coverlet reports for **net10.0** and **net8.0** using ReportGenerator.
-> - **Latest Coverlet run (v2.1.0)**: Executed **4,240 total tests** (2,120 per framework) with **zero failures**.
-> - **Overall assembly coverage**: **96.8% method coverage**, **98.3% line coverage**, **93.2% branch coverage** across all MultiMap implementations and helpers.
+> - **Latest Coverlet run (v2.1.0)**: Executed **4,244 total tests** (2,122 per framework) with **zero failures**.
+> - **Overall assembly coverage**: **94.42% method coverage**, **95.86% line coverage**, **92.04% branch coverage** across all MultiMap implementations and helpers.
 > - **Per-class highlights**:
 >   - **SimpleMultiMap, MultiMapBase, MultiMapLock, Guard**: **100% line coverage** ✅
 >   - **MultiMapAsync**: **99.4% line coverage** (strong async safety coverage)

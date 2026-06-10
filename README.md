@@ -8,9 +8,9 @@
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.3%25-brightgreen)]()
+[![Coverage](https://img.shields.io/badge/coverage-95.86%25-brightgreen)]()
 
-A **.NET** library providing various generic multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
+A **.NET** library providing various multimap implementations (set, list, sorted, concurrent, lock-based, async) that map generic keys to collections of generic values with set operations, benchmarks, and thread-safe variants, targeting **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 ## Table of Contents
 
@@ -52,8 +52,8 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 4 test suite**: 
-  - **4,240 total tests** (2,120 per framework) running on **net10.0** and **net8.0**
-  - **98.3% line coverage**, **93.20% branch coverage**, **96.8% method coverage** (latest Coverlet metrics)
+  - **4,244 total tests** (2,122 per framework) running on **net10.0** and **net8.0**
+  - **95.86% line coverage**, **92.04% branch coverage**, **94.42% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, and exception handling scenarios
   - 46 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
 - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
