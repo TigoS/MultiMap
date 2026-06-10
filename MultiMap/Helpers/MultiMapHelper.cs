@@ -461,9 +461,18 @@ namespace MultiMap.Helpers
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
 
+            // Use default ctor because ISimpleMultiMap doesn't define KeyCount
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
+
             foreach (var kvp in target)
             {
-                if (!new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
+                if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
+                {
+                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherLookup[kvp.Key] = otherSet;
+                }
+
+                if (!otherSet.Contains(kvp.Value))
                     return false;
             }
 
