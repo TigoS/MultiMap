@@ -60,9 +60,12 @@ BenchmarkDotNet.Artifacts/
 BenchmarkSuite/BenchmarkDotNet.Artifacts/
 
 # Test and coverage artifacts (repository-specific)
+TestResults/
 MultiMap.Tests/TestResults/
-MultiMap.Tests/TestResults/**
+coverage/
+coverage_report*/
 coverage.cobertura.xml
+coverage_latest.cobertura.xml
 
 # .NET Core
 project.lock.json
