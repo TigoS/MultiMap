@@ -153,7 +153,7 @@ namespace MultiMap.Entities
                 return 0;
 
             foreach (var value in materialised)
-                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+                Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
 
             var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);

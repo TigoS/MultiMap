@@ -213,10 +213,14 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (_dictionary.TryGetValue(key, out var hashset))
+#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
+            if (_dictionary.Remove(key, out var collection))
+#else
+            if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
+#endif
             {
-                _count -= hashset.Count;
-                return _dictionary.Remove(key);
+                _count -= collection.Count;
+                return true;
             }
 
             return false;
