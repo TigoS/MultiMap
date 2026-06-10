@@ -30,6 +30,7 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap()
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>())
         {
+            _concurrentDictionary = InitializeDictionary();
         }
 
         /// <summary>
@@ -39,6 +40,7 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap(IEqualityComparer<TKey>? keyComparer)
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(keyComparer))
         {
+            _concurrentDictionary = InitializeDictionary();
         }
 
         /// <summary>
@@ -49,6 +51,7 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(keyComparer))
         {
+            _concurrentDictionary = InitializeDictionary();
             _valueComparer = valueComparer;
         }
 
@@ -60,6 +63,7 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap(int concurrencyLevel, int capacity)
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity))
         {
+            _concurrentDictionary = InitializeDictionary();
         }
 
         /// <summary>
@@ -71,6 +75,7 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity, keyComparer))
         {
+            _concurrentDictionary = InitializeDictionary();
         }
 
         /// <summary>
@@ -83,6 +88,7 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity, keyComparer))
         {
+            _concurrentDictionary = InitializeDictionary();
             _valueComparer = valueComparer;
         }
 
@@ -93,13 +99,29 @@ namespace MultiMap.Entities
         public ConcurrentMultiMap(IEqualityComparer<TValue>? valueComparer)
             : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>())
         {
+            _concurrentDictionary = InitializeDictionary();
             _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes the underlying dictionary as a <see cref="ConcurrentDictionary{TKey, TValue}"/> for efficient access.
+        /// </summary>
+        /// <returns>The initialized concurrent dictionary.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the underlying dictionary is not a <see cref="ConcurrentDictionary{TKey, TValue}"/>.</exception>
+        private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> InitializeDictionary()
+        {
+            if (!(_dictionary is ConcurrentDictionary<TKey, ConcurrentSet<TValue>> concurrentDict))
+            {
+                throw new InvalidOperationException("The underlying dictionary must be a ConcurrentDictionary<TKey, ConcurrentSet<TValue>>.");
+            }
+
+            return concurrentDict;
         }
 
         /// <summary>
         /// Gets a typed reference to the underlying concurrent dictionary for efficient access.
         /// </summary>
-        private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> _concurrentDictionary => (ConcurrentDictionary<TKey, ConcurrentSet<TValue>>)_dictionary;
+        private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> _concurrentDictionary;
 
         /// <inheritdoc/>
         protected override ConcurrentSet<TValue> CreateCollection() => new(_valueComparer);
@@ -201,8 +223,8 @@ namespace MultiMap.Entities
             var grouped = new Dictionary<TKey, List<TValue>>();
             foreach (var item in items)
             {
-                Guard.NotNull(item.Key, nameof(items), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(items), "Sequence contains a null value.");
+                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                 if (!grouped.TryGetValue(item.Key, out var list))
                 {
