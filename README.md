@@ -58,7 +58,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
   - **98.7% line coverage**, **93.2% branch coverage**, **96.8% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, and exception handling scenarios
   - 147 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
-- **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
+  - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
 ## Known Limitations
 
@@ -697,7 +697,7 @@ bool tryGetA = map.TryGet("A", out var values);                 // true; values 
 bool tryGetMissing = map.TryGet("missing", out var values);     // false; values = empty
 
 // Enumerate directly — ISimpleMultiMap implements IEnumerable<KeyValuePair<TKey, TValue>>
-foreach (var kvp in map) { /* ... */ }                  // replaces map.Flatten()
+foreach (var kvp in map) { /* ... */ }  // replaces map.Flatten()
 
 // Set operations return the modified map
 ISimpleMultiMap<string, int> union = map.Union(otherMap);
