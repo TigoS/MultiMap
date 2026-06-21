@@ -30,7 +30,11 @@ Targets **.NET 10**, **.NET 9**, **.NET 8**, and **.NET Standard 2.0**.
 
 The library includes **6,678 unit-test executions** written with **NUnit 4**, running on **net10.0**, **net9.0**, and **net8.0** (**2,226 per framework** before fixtures), with comprehensive boundary-condition coverage across all implementations and interfaces, edge cases, concurrent stress tests, and exception-handling scenarios.
 
-**Recent additions (v2.1.0 coverage expansion):**
+**Recent additions (v2.1.1 & v2.1.0 coverage expansion):**
+- net9.0 support added for all implementations and tests.
+- net10.0, net9.0, and net8.0 test runs now include **all `#if NET6_0_OR_GREATER` paths** for `MultiMapAsync` and `MultiMapHelperAsync` (async extension methods).
+- **15 new tests** in `ConcurrentSetPublicSurfaceTests.cs` covering:
+  - `ConcurrentSet<T>` full `ICollection<T>` surface: `IsReadOnly`, `void Add(T)`, `Clear`, `Remove`, all 8 `CopyTo` branches (null array, negative index, index > length, destination too small, valid copy, empty-set edge), and `IEnumerable.GetEnumerator`
 - **46 new tests** in `AdditionalCoverage_UnitTests.cs` covering:
   - MultiMapSet duplicate value handling and partial range removal
   - MultiMapList duplicate value storage and ordering guarantees
