@@ -1,18 +1,19 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.7%25-brightgreen)]()
+[![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-98.6%25%20line%20%7C%2096.2%25%20branch%20%7C%2097.2%25%20method-brightgreen)](Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-6678%2F6678%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
+Targets **.NET 10**, **.NET 9**, **.NET 8**, and **.NET Standard 2.0**.
 
 ## Table of Contents
 
@@ -44,7 +45,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 - **7 multimap implementations** covering a wide range of use cases
 - **6 interfaces** (3 read-only + 3 mutable): `IReadOnlySimpleMultiMap`, `IReadOnlyMultiMap`, `IReadOnlyMultiMapAsync`, `ISimpleMultiMap`, `IMultiMap`, `IMultiMapAsync` 
-- **Multi-target**: .NET 10, .NET 8, and .NET Standard 2.0
+- **Multi-target**: .NET 10, .NET 9, .NET 8, and .NET Standard 2.0
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Set algebra query methods**: `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`
 - **Thread-safe variants**: fully lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
@@ -54,11 +55,11 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 4 test suite**: 
-  - **4,452 total tests** (2,226 per framework) running on **net10.0** and **net8.0**
-  - **98.7% line coverage**, **93.2% branch coverage**, **96.8% method coverage** (latest Coverlet metrics)
+  - **6,678 total tests** (2,226 per framework) running on **net10.0**, **net9.0**, and **net8.0**
+  - **98.6% line coverage**, **96.2% branch coverage**, **97.2% method coverage** (latest combined Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, and exception handling scenarios
   - 147 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
-- **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
+  - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
 ## Known Limitations
 
@@ -124,7 +125,7 @@ MultiMap/
 │   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap implementation
 │   └── Helpers/
 │       └── MultiMapHelper.cs                 # Set-like extension methods
-├── MultiMap.Tests/                           # Unit tests (NUnit 4, multi-targeted: net10.0 and net8.0)
+├── MultiMap.Tests/                           # Unit tests (NUnit 4, multi-targeted: net10.0, net9.0, and net8.0)
 ├── MultiMap.Demo/                            # Console demo application
 │   ├── Program.cs                            # Demo entry point
 │   └── TestDataHelper.cs                     # Sample data factory for demos
@@ -697,7 +698,7 @@ bool tryGetA = map.TryGet("A", out var values);                 // true; values 
 bool tryGetMissing = map.TryGet("missing", out var values);     // false; values = empty
 
 // Enumerate directly — ISimpleMultiMap implements IEnumerable<KeyValuePair<TKey, TValue>>
-foreach (var kvp in map) { /* ... */ }                  // replaces map.Flatten()
+foreach (var kvp in map) { /* ... */ }  // replaces map.Flatten()
 
 // Set operations return the modified map
 ISimpleMultiMap<string, int> union = map.Union(otherMap);

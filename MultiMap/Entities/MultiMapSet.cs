@@ -112,7 +112,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
         /// <inheritdoc/>
         protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => collection.AsReadOnly();
 #else
