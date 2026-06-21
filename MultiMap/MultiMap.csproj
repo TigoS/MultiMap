@@ -23,14 +23,13 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')">icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>2.1.0
+    <PackageReleaseNotes>2.1.1
 
-New Features / Breaking Changes
-
-- 4 new set-algebra helpers (IsSubsetOf / IsSupersetOf / Overlaps / SetEquals) added to:
-  - MultiMapHelper (extension methods)
-  - MultiMapAsync (atomic)
-  - MultiMapLock (atomic)
+- Correctness &amp; Thread-Safety Fixes
+- Performance Improvements
+- Tests Enhancements and Coverage Increase
+- Benchmarks Updates
+- Documentation &amp; Notes Synchronization with the actual codebase
 
 See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
