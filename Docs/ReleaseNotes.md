@@ -1,15 +1,15 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.7%25%20line%20%7C%2093.2%25%20branch%20%7C%2096.8%25%20method-brightgreen)]()
-[![Build](https://img.shields.io/badge/tests-4452%2F4452%20passing-success)]()
+[![Coverage](https://img.shields.io/badge/coverage-98.6%25%20line%20%7C%2096.2%25%20branch%20%7C%2097.2%25%20method-brightgreen)]()
+[![Build](https://img.shields.io/badge/tests-6678%2F6678%20passing-success)]()
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -68,7 +68,8 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 - Added **3** new `ConcurrentMultiMap` stress tests for add/remove race safety.
 - Added **2** new shared `MultiMapBaseTests` for empty/lazy `AddRange` edge behavior.
-- Added **28** new `AddRange` empty-enumerable tests across map types (56 executions across 2 TFMs).
+- Added **28** new `AddRange` empty-enumerable tests across map types (84 executions across 3 TFMs).
+- Test validation matrix expanded to **net10.0**, **net9.0**, and **net8.0** (**2,226 tests per TFM; 6,678 total executions**).
 - Added set-query coverage:
   - **67** sync tests (`MultiMapHelper_UnitTests.cs`)
   - **17** async extension tests (`MultiMapHelperExtensionAsync_UnitTests.cs`)
@@ -88,6 +89,7 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 **Documentation & Notes**
 
+- Added explicit package target support for **.NET 9** alongside .NET 10/.NET 8/.NET Standard 2.0 and aligned docs/test matrix to the new target set.
 - Expanded `MultiMapAsync<TKey, TValue>` XML docs with detailed readers-writer locking protocol explanation (`_writeLock`, `_readerLock`, `_activeReaders`).
 - Updated `ConcurrentMultiMap<TKey, TValue>` XML docs to explicitly document non-`IDisposable` design.
 - Removed duplicate `<remarks>` block in `MultiMapAsync<TKey, TValue>` docs.
