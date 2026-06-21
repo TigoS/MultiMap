@@ -143,7 +143,7 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var hashset))
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
                 return hashset.AsReadOnly();
 #else
                 return hashset.ToArray();
@@ -158,7 +158,7 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var hashset))
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
                 return hashset.AsReadOnly();
 #else
                 return hashset.ToArray();
@@ -181,7 +181,7 @@ namespace MultiMap.Entities
             else
             {
                 values =
-#if NET9_0_OR_GREATER
+#if NET10_0_OR_GREATER
                 hashset.AsReadOnly();
 #else
                 hashset.ToArray();
