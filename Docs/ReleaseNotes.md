@@ -3,12 +3,13 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204-green)](https://nunit.org/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![Coverage](https://img.shields.io/badge/coverage-98.7%25-brightgreen)]()
+[![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-98.7%25%20line%20%7C%2093.2%25%20branch%20%7C%2096.8%25%20method-brightgreen)]()
+[![Build](https://img.shields.io/badge/tests-4452%2F4452%20passing-success)]()
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -17,6 +18,7 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [2.1.1](#211)
   - [2.1.0](#210)
   - [2.0.1](#201)
   - [1.0.12](#1012)
@@ -34,6 +36,62 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 2.1.1
+
+**Correctness & Thread-Safety Fixes**
+
+- `MultiMapAsync<TKey, TValue>.EqualsAsync` — fixed deadlock risk for `MultiMapAsync`-to-`MultiMapAsync` comparisons via stable dual-semaphore ordering (`RuntimeHelpers.GetHashCode`). `Equals(object?)` now throws `InvalidOperationException` under `SynchronizationContext`; use `EqualsAsync` in async contexts.
+- `MultiMapAsync<TKey, TValue>.GetValuesCountAsync` — fixed to return per-key count (it previously ignored `key` in one path).
+- `MultiMapLock<TKey, TValue>.TryGet` — now returns a snapshot copy instead of exposing a live `HashSet<TValue>` reference.
+- `MultiMapLock<TKey, TValue>.RemoveWhere` — now runs fully under write lock for atomic predicate evaluation/removal.
+- `ConcurrentMultiMap<TKey, TValue>.RemoveWhere` — fixed concurrent mutation hazard by protecting predicate/removal phase.
+- `ConcurrentMultiMap<TKey, TValue>.Clear` — fixed to execute atomically.
+- `ConcurrentMultiMap<TKey, TValue>.Keys` — fixed to return a snapshot, preventing live-collection enumeration issues.
+- Equality fast-exit fixes:
+  - `ConcurrentMultiMap<TKey, TValue>.Equals` now includes total-count check.
+  - `MultiMapLock<TKey, TValue>.Equals` and `MultiMapAsync<TKey, TValue>.Equals` now short-circuit using `_count` before deep comparison.
+- `GetHashCode()` across all 7 entities — replaced collision-prone XOR aggregation with scrambled hashing (Murmur-style finalization) for better distribution.
+- List-backed null guards — `MultiMapList` / `SimpleMultiMap` `AddRange` now reject null elements in enumerable input.
+- Equality semantics fixes:
+  - `MultiMapList.Equals(object?)` no longer depends on insertion order for value equality.
+  - `SimpleMultiMap.Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` now compares total pair counts correctly (`Count` vs `other.Count`).
+
+**Performance Improvements**
+
+- `MultiMapAsync.DisposeAsync` — removed unnecessary async state-machine allocation by returning `ValueTask` directly.
+- `MultiMapList.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` (.NET 6+) — now uses `CollectionsMarshal.GetValueRefOrAddDefault` fast path.
+- `SymmetricExceptWith` for `IMultiMap` — optimized with per-key lookup caching to reduce repeated dictionary lookups and lock churn.
+- Broader optimization pass across entities: reduced allocations and faster hot paths.
+
+**Tests**
+
+- Added **3** new `ConcurrentMultiMap` stress tests for add/remove race safety.
+- Added **2** new shared `MultiMapBaseTests` for empty/lazy `AddRange` edge behavior.
+- Added **28** new `AddRange` empty-enumerable tests across map types (56 executions across 2 TFMs).
+- Added set-query coverage:
+  - **67** sync tests (`MultiMapHelper_UnitTests.cs`)
+  - **17** async extension tests (`MultiMapHelperExtensionAsync_UnitTests.cs`)
+  - **46** `MultiMapAsync` atomic set-query tests
+  - **52** `MultiMapLock` atomic set-query tests
+- Added **43** boundary/exception tests (`MultiMapBoundaryConditions_UnitTests.cs`).
+- Added **46** comprehensive additional edge/boundary tests (`AdditionalCoverage_UnitTests.cs`).
+
+**Benchmarks**
+
+- Added benchmarks for previously unmeasured operations:
+  - `SimpleMultiMap_Contains`
+  - `SimpleMultiMap_ContainsKey`
+  - `MultiMapLock_TryGet`
+  - map enumeration benchmarks (`MultiMapSet_Enumerate`, `MultiMapList_Enumerate`, `ConcurrentMultiMap_Enumerate`, `SortedMultiMap_Enumerate`)
+- Refreshed benchmark results with BenchmarkDotNet v0.15.8.
+
+**Documentation & Notes**
+
+- Expanded `MultiMapAsync<TKey, TValue>` XML docs with detailed readers-writer locking protocol explanation (`_writeLock`, `_readerLock`, `_activeReaders`).
+- Updated `ConcurrentMultiMap<TKey, TValue>` XML docs to explicitly document non-`IDisposable` design.
+- Removed duplicate `<remarks>` block in `MultiMapAsync<TKey, TValue>` docs.
+- Synchronized README with current API/implementation state (interfaces, constructors, helper signatures, test/coverage data, and structure).
 
 ### 2.1.0
 
