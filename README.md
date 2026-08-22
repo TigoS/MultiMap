@@ -713,6 +713,26 @@ bool overlaps = map.Overlaps(otherMap);
 bool setEquals = map.SetEquals(otherMap);
 ```
 
+### Demo Console Output
+
+The `MultiMap.Demo` console project demonstrates set operations (Union, Intersect, ExceptWith, SymmetricExceptWith, IsSubsetOf, IsSupersetOf, Overlaps, SetEquals) on `ISimpleMultiMap` instances and prints their results to the console.
+
+Run it with:
+
+```shell
+dotnet run --project MultiMap.Demo
+```
+
+#### `--wait` flag
+
+Pass `--wait` to keep the console window open after all output has been printed — useful when launching from an IDE or a terminal that closes immediately on exit:
+
+```shell
+dotnet run --project MultiMap.Demo -- --wait
+```
+
+The process blocks on `Console.ReadLine()` until you press **Enter**.
+
 ## Testing
 
 See [Testing](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md) for the full unit test details.
