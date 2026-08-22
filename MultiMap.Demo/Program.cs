@@ -64,4 +64,7 @@ TestDataHelper.PrintMultiMap("MULTI MAP 1", multiMap1);
 TestDataHelper.PrintMultiMap("MULTI MAP 2", multiMap2);
 Console.WriteLine($"1 IS SET EQUAL TO 2: {isSetEqual}{Environment.NewLine}");
 
-Console.ReadLine();
+if (args.Contains("--wait", StringComparer.OrdinalIgnoreCase))
+{
+    Console.ReadLine();
+}
