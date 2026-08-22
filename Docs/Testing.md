@@ -265,3 +265,13 @@ dotnet test --collect:"XPlat Code Coverage"
 >   - All `Equals(IReadOnlyMultiMap<>)` false-path branches covered for every implementation
 >   - `MultiMapLock.SetEquals` all false-path branches covered
 >   - Disposed-state (`ObjectDisposedException`) branches for `MultiMapAsync` covered
+
+#### Keep this page in sync
+
+Use the automation script to generate an updated summary from the latest local test artifacts:
+
+```shell
+pwsh ./scripts/Update-TestingSummary.ps1
+```
+
+The script writes `Docs/GeneratedTestingSummary.md` with fresh test and coverage totals (from `coverage_latest.cobertura.xml` and the latest `.trx` file).
