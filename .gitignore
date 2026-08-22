@@ -58,6 +58,7 @@ dlldata.c
 # Benchmark Results
 BenchmarkDotNet.Artifacts/
 BenchmarkSuite/BenchmarkDotNet.Artifacts/
+/benchmarks/
 
 # Test and coverage artifacts (repository-specific)
 TestResults/
@@ -66,6 +67,9 @@ coverage/
 coverage_report*/
 coverage.cobertura.xml
 coverage_latest.cobertura.xml
+
+# Local package output
+/nupkgs/
 
 # .NET Core
 project.lock.json
