@@ -964,14 +964,6 @@ namespace MultiMap.Entities
             if (obj is not IReadOnlyMultiMapAsync<TKey, TValue> other)
                 return false;
 
-            if (ReferenceEquals(this, other))
-                return true;
-
-            if (SynchronizationContext.Current != null)
-                throw new InvalidOperationException(
-                    "Equals cannot be called synchronously when a SynchronizationContext is present. " +
-                    "Use EqualsAsync instead to avoid deadlocks.");
-
             return Equals(other);
         }
 
@@ -1034,8 +1026,10 @@ namespace MultiMap.Entities
             }
 
             // General path: snapshot this instance under its semaphore, then query
-            // the other side via the interface API (no sync-context risk here because
-            // the caller already opted into the synchronous overload).
+            // the other side via the interface API. All foreign async calls are run
+            // inside Task.Run so they execute on a thread-pool thread that has no
+            // SynchronizationContext — eliminating any deadlock risk regardless of the
+            // calling context (UI thread, ASP.NET classic, custom context, etc.).
             Dictionary<TKey, HashSet<TValue>> snapshot;
             int thisCount;
 
@@ -1050,27 +1044,30 @@ namespace MultiMap.Entities
                 ExitReadLock();
             }
 
-            int otherCount = other.GetCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
-            int otherKeyCount = other.GetKeyCountAsync(CancellationToken.None).AsTask().GetAwaiter().GetResult();
-
-            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
-                return false;
-
-            foreach (var kvp in snapshot)
+            return Task.Run(async () =>
             {
-                var (found, otherValues) = other.TryGetAsync(kvp.Key, CancellationToken.None).AsTask().GetAwaiter().GetResult();
-                if (!found)
+                int otherCount = await other.GetCountAsync(CancellationToken.None).ConfigureAwait(false);
+                int otherKeyCount = await other.GetKeyCountAsync(CancellationToken.None).ConfigureAwait(false);
+
+                if (thisCount != otherCount || snapshot.Count != otherKeyCount)
                     return false;
 
-                var otherSet = otherValues is HashSet<TValue> hs
-                    ? hs
-                    : new HashSet<TValue>(otherValues, _valueComparer);
+                foreach (var kvp in snapshot)
+                {
+                    var (found, otherValues) = await other.TryGetAsync(kvp.Key, CancellationToken.None).ConfigureAwait(false);
+                    if (!found)
+                        return false;
 
-                if (!kvp.Value.SetEquals(otherSet))
-                    return false;
-            }
+                    var otherSet = otherValues is HashSet<TValue> hs
+                        ? hs
+                        : new HashSet<TValue>(otherValues, _valueComparer);
 
-            return true;
+                    if (!kvp.Value.SetEquals(otherSet))
+                        return false;
+                }
+
+                return true;
+            }).GetAwaiter().GetResult();
         }
 
         /// <inheritdoc/>
