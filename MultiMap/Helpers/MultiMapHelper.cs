@@ -514,7 +514,7 @@ namespace MultiMap.Helpers
 
             foreach (var kvp in target)
             {
-                if (new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
+                if (other.Contains(kvp.Key, kvp.Value))
                     return true;
             }
 
