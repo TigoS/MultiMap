@@ -26,9 +26,23 @@ namespace MultiMap.Entities
         protected readonly IDictionary<TKey, TCollection> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
         /// <summary>
-        /// Represents the current count or number of items maintained by the containing type.
+        /// Gets a reference to the underlying value count field.
+        /// Intended for subclasses that need atomic <see cref="System.Threading.Interlocked"/> or
+        /// <see cref="System.Threading.Volatile"/> operations (e.g. <see cref="ConcurrentMultiMap{TKey, TValue}"/>).
+        /// All other subclasses should use <see cref="IncrementCount"/>, <see cref="DecrementCount"/>, and <see cref="ResetCount"/> instead.
         /// </summary>
-        protected int _count;
+        protected ref int CountRef => ref _count;
+
+        /// <summary>Increments the value count by one.</summary>
+        protected void IncrementCount() => _count++;
+
+        /// <summary>Decrements the value count by <paramref name="by"/>.</summary>
+        protected void DecrementCount(int by = 1) => _count -= by;
+
+        /// <summary>Resets the value count to zero.</summary>
+        protected void ResetCount() => _count = 0;
+
+        private int _count;
 
         /// <summary>
         /// Creates a new empty value collection for a key.
@@ -73,7 +87,7 @@ namespace MultiMap.Entities
 
             if (AddToCollection(collection, value))
             {
-                _count++;
+                IncrementCount();
                 return true;
             }
 
@@ -102,7 +116,7 @@ namespace MultiMap.Entities
             {
                 if (AddToCollection(collection!, value))
                 {
-                    _count++;
+                    IncrementCount();
                     added++;
                 }
             }
@@ -174,7 +188,7 @@ namespace MultiMap.Entities
 
                 if (removed)
                 {
-                    _count--;
+                    DecrementCount();
                     if (collection.Count == 0)
                         _dictionary.Remove(key);
                 }
@@ -212,7 +226,7 @@ namespace MultiMap.Entities
                 return 0;
 
             int removedCount = RemoveWhereFromCollection(collection, predicate);
-            _count -= removedCount;
+            DecrementCount(removedCount);
 
             if (collection.Count == 0)
                 _dictionary.Remove(key);
@@ -231,7 +245,7 @@ namespace MultiMap.Entities
             if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
 #endif
             {
-                _count -= collection.Count;
+                DecrementCount(collection.Count);
                 return true;
             }
 
@@ -282,7 +296,7 @@ namespace MultiMap.Entities
         public virtual void Clear()
         {
             _dictionary.Clear();
-            _count = 0;
+            ResetCount();
         }
 
         /// <inheritdoc/>
