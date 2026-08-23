@@ -46,9 +46,9 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 - `SortedMultiMap<TKey, TValue>` — fixed a potential `GetHashCode`/`Equals` contract violation when a custom `IComparer<TValue>` that does not also implement `IEqualityComparer<TValue>` was supplied. `GetHashCode` was silently falling back to `EqualityComparer<TValue>.Default` while `Equals` (via `SortedSet<TValue>.SetEquals`) continued using the custom comparer, making two equal instances produce different hash codes. Both `SortedMultiMap(IComparer<TValue>?)` and `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)` now throw `ArgumentException` at construction time when a non-null value comparer does not implement `IEqualityComparer<TValue>`.
 
-- `scripts/Update-TestingSummary.ps1` — added method coverage calculation. The script now queries all `<method>` nodes in the Cobertura XML via `SelectNodes('//method')`, counts covered methods (`line-rate > 0`), and writes a `Method coverage` row to `Docs/GeneratedTestingSummary.md` alongside the existing line and branch coverage rows.
+- `MultiMapAsync<TKey, TValue>` — added writer-preference logic to the custom `SemaphoreSlim`-based readers-writer protocol. Previously, new readers could enter the shared `_writeLock` group while a writer was already waiting, causing indefinite writer starvation under sustained read load. A new `_pendingWriters` counter (maintained atomically via `Interlocked`) is incremented by every writer before it waits on `_writeLock` and decremented once the lock is acquired. All three read-entry paths (`TryEnterReadLockSync`, `EnterReadLockSync`, `EnterReadLockAsync`) check this counter and yield — retrying after the writer finishes — when it is non-zero. A new stress test (`WriterPreference_UnderSustainedReads_WriterCompletesWithinTimeout`) verifies that a single writer completes within a 5-second timeout while 8 concurrent reader tasks run at full speed.
 
-- `MultiMapBase<TKey, TValue, TCollection>` — `_count` is now `private`. Subclasses that previously wrote to `_count` directly could silently corrupt the base-class invariant (`Count == total mapped values`). All mutation is now channelled through four protected helpers:
+- `MultiMapBase<TKey, TValue, TCollection>`
   - `IncrementCount()` — non-atomic increment (used by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`).
   - `DecrementCount(int by = 1)` — non-atomic decrement.
   - `ResetCount()` — sets the counter to zero (used by `Clear()`).
@@ -74,6 +74,7 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 - `MultiMapAsync_UnitTests.cs`
   - Replaced `Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException` with `Equals_WithSynchronizationContextAndDifferentInstance_DoesNotThrowAndReturnsCorrectResult` — asserts that `Equals` returns `true` (both maps empty) without throwing under a `SynchronizationContext`.
   - Replaced `Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException` with `Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue` — asserts that `Equals` returns `true` (both maps with identical content) without throwing under a `SynchronizationContext`.
+  - Added `WriterPreference_UnderSustainedReads_WriterCompletesWithinTimeout` (Category: `Stress`/`Concurrent`) — verifies that a single `AddAsync` writer completes within 5 seconds while 8 concurrent `GetOrDefaultAsync` reader tasks run at full speed, confirming the new writer-preference logic prevents starvation.
   - Restored `Equals_WithSynchronizationContextButDifferentType_ReturnsFalse` and `Equals_WithSynchronizationContextAndSelfReference_ReturnsTrue` short-circuit tests (type-check and `ReferenceEquals` still bypass all locking and `Task.Run`).
 
 ### 2.1.1
