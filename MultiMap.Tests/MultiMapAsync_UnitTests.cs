@@ -3957,6 +3957,47 @@ public class MultiMapAsync_EqualsBranchTests
 [Category("Stress")]
 public class MultiMapAsync_StressTests
 {
+    /// <summary>
+    /// Writer-preference regression: a single writer must be able to complete
+    /// within a reasonable timeout even when many reader tasks arrive
+    /// continuously. Without writer-preference the writer can be starved
+    /// indefinitely; with it, readers yield once _pendingWriters > 0.
+    /// </summary>
+    [Test]
+    [Category("Concurrent")]
+    public async Task AddAsync_UnderSustainedReads_WriterCompletesWithinTimeout()
+    {
+        await using var map = new MultiMapAsync<string, int>();
+        await map.AddAsync("seed", 0);
+
+        using var readerCts = new CancellationTokenSource();
+
+        // Continuous readers: re-enter as fast as possible until cancelled.
+        var readers = Enumerable.Range(0, 8).Select(_ => Task.Run(async () =>
+        {
+            while (!readerCts.Token.IsCancellationRequested)
+            {
+                try { await map.GetOrDefaultAsync("seed", readerCts.Token); }
+                catch (OperationCanceledException) { break; }
+            }
+        })).ToArray();
+
+        // Give readers a head start so they are definitely active when the writer tries.
+        await Task.Delay(20);
+
+        // The writer must complete well within 5 seconds even under sustained read load.
+        using var writerCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        bool added = await map.AddAsync("seed", 999, writerCts.Token);
+
+        // Stop readers and wait for them to drain.
+        readerCts.Cancel();
+        await Task.WhenAll(readers);
+
+        Assert.That(added, Is.True, "Writer should have successfully added a value.");
+        Assert.That(writerCts.IsCancellationRequested, Is.False,
+            "Writer was starved: it did not complete within the 5-second timeout.");
+    }
+
     [Test]
     public async Task AddAsync_ConcurrentAdds_AllUniqueValuesPresent()
     {
