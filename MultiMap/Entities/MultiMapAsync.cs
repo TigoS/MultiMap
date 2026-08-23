@@ -46,8 +46,7 @@ namespace MultiMap.Entities
     ///   <item>Each operation has a fast path (non-blocking <c>Wait(0)</c>) that avoids allocating a <c>Task</c>/continuation; falling back to the <c>SlowAsync</c> variant only when contention is detected.</item>
     /// </list>
     /// <para>
-    /// Because every read acquires the shared <c>_writeLock</c>, writers can be starved under sustained high-frequency concurrent reads.
-    /// Prefer <see cref="MultiMapLock{TKey,TValue}"/> (which uses <see cref="System.Threading.ReaderWriterLockSlim"/>) for read-heavy workloads with latency-sensitive writers.
+    /// <b>Writer-preference locking:</b> a <c>_pendingWriters</c> counter is incremented by every writer before it waits on <c>_writeLock</c> and decremented once the lock is acquired. Readers check this counter and back off when it is non-zero, preventing writer starvation under sustained high-frequency concurrent reads.
     /// </para>
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
@@ -59,6 +58,9 @@ namespace MultiMap.Entities
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
     {
+        /// <summary>
+        /// Dictionary mapping each key to a set of unique values.  The dictionary is keyed by <typeparamref name="TKey"/> and the values are stored in <see cref="HashSet{TValue}"/> instances, ensuring that each value associated with a key is distinct.
+        /// </summary>
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
                 ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
                 : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
@@ -69,9 +71,29 @@ namespace MultiMap.Entities
         /// <summary>Guards the <see cref="_activeReaders"/> counter; held only for the duration of an increment/decrement.</summary>
         private readonly SemaphoreSlim _readerLock = new(1, 1);
 
+        /// <summary>
+        /// Equality comparer used to compare values of type <typeparamref name="TValue"/>.
+        /// </summary>
         private readonly IEqualityComparer<TValue>? _valueComparer = valueComparer;
+
+        /// <summary>
+        /// The number of active readers currently accessing the resource.
+        /// </summary>
         private int _activeReaders;
+
+        /// <summary>
+        /// Number of writers waiting to acquire write access.
+        /// </summary>
+        private int _pendingWriters;
+
+        /// <summary>
+        /// The current count of elements.
+        /// </summary>
         private int _count;
+
+        /// <summary>
+        /// Indicates whether this instance has been disposed.
+        /// </summary>
         private int _disposed;
 
         /// <inheritdoc/>
@@ -82,16 +104,17 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<bool>(AddCore(key, value));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return AddSlowAsync(waitTask, key, value);
@@ -104,16 +127,17 @@ namespace MultiMap.Entities
             Guard.NotNull(values, nameof(values));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<int>(AddRangeCore(key, values));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return AddRangeSlowAsync(waitTask, key, values);
@@ -126,16 +150,17 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<int>(AddRangeCore(items));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return AddRangeSlowAsync(waitTask, items);
@@ -211,16 +236,17 @@ namespace MultiMap.Entities
             Guard.NotNull(value, nameof(value));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<bool>(RemoveCore(key, value));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveSlowAsync(waitTask, key, value);
@@ -233,16 +259,17 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<int>(RemoveRangeCore(items));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveRangeSlowAsync(waitTask, items);
@@ -255,16 +282,17 @@ namespace MultiMap.Entities
             Guard.NotNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<int>(RemoveWhereCore(key, predicate));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveWhereSlowAsync(waitTask, key, predicate);
@@ -276,16 +304,17 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     return new ValueTask<bool>(RemoveKeyCore(key));
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveKeySlowAsync(waitTask, key);
@@ -437,9 +466,10 @@ namespace MultiMap.Entities
         public Task ClearAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = EnterWriteLockAsync(cancellationToken);
             if (IsCompletedSuccessfully(waitTask))
             {
+                OnWriteLockAcquired();
                 try
                 {
                     _dictionary.Clear();
@@ -448,7 +478,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return ClearSlowAsync(waitTask);
@@ -477,14 +507,15 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EnterWriteLockAsync(cancellationToken).ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 UnionCore(snapshot);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -512,14 +543,15 @@ namespace MultiMap.Entities
                 otherIndex[key] = new HashSet<TValue>(await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EnterWriteLockAsync(cancellationToken).ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 IntersectCore(otherIndex);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -546,14 +578,15 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EnterWriteLockAsync(cancellationToken).ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 ExceptWithCore(snapshot);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -581,14 +614,15 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EnterWriteLockAsync(cancellationToken).ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 SymmetricExceptWithCore(snapshot);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 

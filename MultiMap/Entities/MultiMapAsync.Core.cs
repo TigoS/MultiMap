@@ -66,37 +66,73 @@ namespace MultiMap.Entities
             }
         }
 
-        /// <summary>Enters a read lock synchronously (blocking).</summary>
+        /// <summary>
+        /// Enters a read lock synchronously (blocking). Respects writer preference:
+        /// spins until all pending writers have been served before entering.
+        /// </summary>
         private void EnterReadLockSync()
         {
-            _readerLock.Wait();
-            try
+            while (true)
             {
-                if (_activeReaders == 0)
-                    _writeLock.Wait();
+                _readerLock.Wait();
 
-                _activeReaders++;
-            }
-            finally
-            {
-                _readerLock.Release();
+                if (Volatile.Read(ref _pendingWriters) > 0)
+                {
+                    // A writer is waiting — release _readerLock, wait for the writer
+                    // to finish, then retry.
+                    _readerLock.Release();
+                    _writeLock.Wait();
+                    _writeLock.Release();
+                    continue;
+                }
+
+                try
+                {
+                    if (_activeReaders == 0)
+                        _writeLock.Wait();
+
+                    _activeReaders++;
+                    return;
+                }
+                finally
+                {
+                    _readerLock.Release();
+                }
             }
         }
 
-        /// <summary>Enters a read lock asynchronously.</summary>
+        /// <summary>
+        /// Enters a read lock asynchronously. Respects writer preference: waits until
+        /// all pending writers have been served before incrementing the reader count.
+        /// </summary>
         private async Task EnterReadLockAsync(CancellationToken cancellationToken)
         {
-            await _readerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
+            while (true)
             {
-                if (_activeReaders == 0)
-                    await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await _readerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-                _activeReaders++;
-            }
-            finally
-            {
-                _readerLock.Release();
+                if (Volatile.Read(ref _pendingWriters) > 0)
+                {
+                    // A writer is waiting — release _readerLock, wait for the writer
+                    // to finish, then retry.
+                    _readerLock.Release();
+                    await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                    _writeLock.Release();
+                    continue;
+                }
+
+                try
+                {
+                    if (_activeReaders == 0)
+                        await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+                    _activeReaders++;
+                    return;
+                }
+                finally
+                {
+                    _readerLock.Release();
+                }
             }
         }
 
@@ -114,6 +150,35 @@ namespace MultiMap.Entities
                 _readerLock.Release();
             }
         }
+
+        // ── Write-lock helpers (writer-preference bookkeeping) ──────────────────────────
+        //
+        // Every writer calls EnterWriteLockAsync to increment _pendingWriters before
+        // competing for _writeLock, and ExitWriteLock to release it when done.
+        // The increment signals incoming readers to yield, implementing writer preference.
+
+        /// <summary>
+        /// Begins acquiring the write lock. Increments <c>_pendingWriters</c> to signal
+        /// readers to yield, then starts waiting on <c>_writeLock</c>.
+        /// Returns the <see cref="Task"/> from <see cref="SemaphoreSlim.WaitAsync(CancellationToken)"/>.
+        /// When the returned task completes, the caller must invoke <see cref="OnWriteLockAcquired"/>.
+        /// </summary>
+        private Task EnterWriteLockAsync(CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _pendingWriters);
+            return _writeLock.WaitAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Called once the write lock has been acquired (i.e. the task from
+        /// <see cref="EnterWriteLockAsync"/> completed successfully).
+        /// Decrements <c>_pendingWriters</c> so readers may proceed once this
+        /// writer releases <c>_writeLock</c>.
+        /// </summary>
+        private void OnWriteLockAcquired() => Interlocked.Decrement(ref _pendingWriters);
+
+        /// <summary>Releases the write lock.</summary>
+        private void ExitWriteLock() => _writeLock.Release();
 
         // ── Add ───────────────────────────────────────────────
 
@@ -142,13 +207,14 @@ namespace MultiMap.Entities
         private async ValueTask<bool> AddSlowAsync(Task waitTask, TKey key, TValue value)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return AddCore(key, value);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -181,13 +247,14 @@ namespace MultiMap.Entities
         private async ValueTask<int> AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return AddRangeCore(key, values);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -223,13 +290,14 @@ namespace MultiMap.Entities
         private async ValueTask<int> AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return AddRangeCore(items);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -327,13 +395,14 @@ namespace MultiMap.Entities
         private async ValueTask<bool> RemoveSlowAsync(Task waitTask, TKey key, TValue value)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return RemoveCore(key, value);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -356,13 +425,14 @@ namespace MultiMap.Entities
         private async ValueTask<int> RemoveRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return RemoveRangeCore(items);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -385,13 +455,14 @@ namespace MultiMap.Entities
         private async ValueTask<int> RemoveWhereSlowAsync(Task waitTask, TKey key, Predicate<TValue> predicate)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return RemoveWhereCore(key, predicate);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -411,13 +482,14 @@ namespace MultiMap.Entities
         private async ValueTask<bool> RemoveKeySlowAsync(Task waitTask, TKey key)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 return RemoveKeyCore(key);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -545,6 +617,7 @@ namespace MultiMap.Entities
         private async Task ClearSlowAsync(Task waitTask)
         {
             await waitTask.ConfigureAwait(false);
+            OnWriteLockAcquired();
             try
             {
                 _dictionary.Clear();
@@ -552,7 +625,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
