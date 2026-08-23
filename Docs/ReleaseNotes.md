@@ -48,6 +48,13 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 - `scripts/Update-TestingSummary.ps1` — added method coverage calculation. The script now queries all `<method>` nodes in the Cobertura XML via `SelectNodes('//method')`, counts covered methods (`line-rate > 0`), and writes a `Method coverage` row to `Docs/GeneratedTestingSummary.md` alongside the existing line and branch coverage rows.
 
+- `MultiMapBase<TKey, TValue, TCollection>` — `_count` is now `private`. Subclasses that previously wrote to `_count` directly could silently corrupt the base-class invariant (`Count == total mapped values`). All mutation is now channelled through four protected helpers:
+  - `IncrementCount()` — non-atomic increment (used by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`).
+  - `DecrementCount(int by = 1)` — non-atomic decrement.
+  - `ResetCount()` — sets the counter to zero (used by `Clear()`).
+  - `ref int CountRef` — exposes a `ref int` for `ConcurrentMultiMap`, which must use `Interlocked`/`Volatile` APIs directly.
+  All derived classes (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`) were updated accordingly.
+
 **Documentation**
 
 - `README.md` — added `### Demo Console Output` section under `## Usage` (resolving the pre-existing broken TOC anchor `#demo-console-output`). Documents how to run `MultiMap.Demo` with `dotnet run --project MultiMap.Demo` and explains the new `--wait` flag: passing `-- --wait` keeps the console window open (blocks on `Console.ReadLine()`) until Enter is pressed, which is useful when launching from an IDE or a terminal that closes immediately on exit.
