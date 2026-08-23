@@ -18,6 +18,7 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [2.1.2](#212)
   - [2.1.1](#211)
   - [2.1.0](#210)
   - [2.0.1](#201)
@@ -36,6 +37,37 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 2.1.2
+
+**Bug Fixes**
+
+- `MultiMapAsync<TKey, TValue>.Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` — fixed deadlock risk on the general (foreign-implementation) comparison path. The three `.GetAwaiter().GetResult()` calls that queried the foreign `IReadOnlyMultiMapAsync` instance are now wrapped in a single `Task.Run` lambda, ensuring all async continuations execute on a context-free thread-pool thread and cannot deadlock regardless of the caller's `SynchronizationContext` (UI thread, ASP.NET classic, custom context, etc.). The previously overly broad `SynchronizationContext.Current != null` guard — which also blocked the deadlock-safe fast path (both sides `MultiMapAsync`) — has been removed. `ConfigureAwait(false)` is applied to every `await` inside the lambda as an additional safeguard.
+
+- `SortedMultiMap<TKey, TValue>` — fixed a potential `GetHashCode`/`Equals` contract violation when a custom `IComparer<TValue>` that does not also implement `IEqualityComparer<TValue>` was supplied. `GetHashCode` was silently falling back to `EqualityComparer<TValue>.Default` while `Equals` (via `SortedSet<TValue>.SetEquals`) continued using the custom comparer, making two equal instances produce different hash codes. Both `SortedMultiMap(IComparer<TValue>?)` and `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)` now throw `ArgumentException` at construction time when a non-null value comparer does not implement `IEqualityComparer<TValue>`.
+
+- `scripts/Update-TestingSummary.ps1` — added method coverage calculation. The script now queries all `<method>` nodes in the Cobertura XML via `SelectNodes('//method')`, counts covered methods (`line-rate > 0`), and writes a `Method coverage` row to `Docs/GeneratedTestingSummary.md` alongside the existing line and branch coverage rows.
+
+**Documentation**
+
+- `README.md` — added `### Demo Console Output` section under `## Usage` (resolving the pre-existing broken TOC anchor `#demo-console-output`). Documents how to run `MultiMap.Demo` with `dotnet run --project MultiMap.Demo` and explains the new `--wait` flag: passing `-- --wait` keeps the console window open (blocks on `Console.ReadLine()`) until Enter is pressed, which is useful when launching from an IDE or a terminal that closes immediately on exit.
+
+- `SortedMultiMap<TKey, TValue>` XML docs — updated class-level `<remarks>`, both value-comparer constructor `<remarks>`, and the `GetHashCode()` doc comment to reflect that the comparer limitation is now **enforced** (throws `ArgumentException`) rather than merely documented as a warning.
+
+**Tests**
+
+- `SortedMultiMap_UnitTests.cs`
+  - Updated `Constructor_WithValueComparer_UsesReverseValueOrder` and `Constructor_WithKeyAndValueComparer_BothApplied` to use `ReverseIntComparer` (implements both `IComparer<int>` and `IEqualityComparer<int>`) instead of bare `Comparer<int>.Create(...)`, which now correctly throws at construction.
+  - Added `Constructor_WithValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TValue>?)`.
+  - Added `Constructor_WithKeyAndValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)`.
+  - Added `Constructor_WithNullValueComparer_DoesNotThrow` — confirms `null` is still accepted (uses default comparer).
+  - Added `GetHashCode_WithDualInterfaceValueComparer_EqualsContract` — end-to-end proof that `a.Equals(b) → a.GetHashCode() == b.GetHashCode()` when a dual-interface comparer is supplied.
+  - Added `ReverseIntComparer` helper class (implements both `IComparer<int>` and `IEqualityComparer<int>`) shared by the updated and new tests.
+
+- `MultiMapAsync_UnitTests.cs`
+  - Replaced `Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException` with `Equals_WithSynchronizationContextAndDifferentInstance_DoesNotThrowAndReturnsCorrectResult` — asserts that `Equals` returns `true` (both maps empty) without throwing under a `SynchronizationContext`.
+  - Replaced `Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException` with `Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue` — asserts that `Equals` returns `true` (both maps with identical content) without throwing under a `SynchronizationContext`.
+  - Restored `Equals_WithSynchronizationContextButDifferentType_ReturnsFalse` and `Equals_WithSynchronizationContextAndSelfReference_ReturnsTrue` short-circuit tests (type-check and `ReferenceEquals` still bypass all locking and `Task.Run`).
 
 ### 2.1.1
 
