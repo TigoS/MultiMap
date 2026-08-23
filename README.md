@@ -248,7 +248,7 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 
 Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. On .NET 6+, subclasses may also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup.
 
-**Encapsulation:** The underlying `_dictionary` field and the `_count` field are `protected`, preventing external subclasses from bypassing the count-bookkeeping invariant.
+**Encapsulation:** The underlying `_dictionary` field is `protected`. The value counter `_count` is `private`; subclasses mutate it exclusively through four protected helpers: `IncrementCount()`, `DecrementCount(int by = 1)`, `ResetCount()`, and `ref int CountRef` (for `Interlocked`/`Volatile` use in `ConcurrentMultiMap`). This prevents any subclass from silently corrupting the `Count == total mapped values` invariant.
 
 ### `MultiMapList<TKey, TValue>` — List-Based
 
