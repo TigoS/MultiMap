@@ -131,7 +131,7 @@ namespace MultiMap.Entities
 
             if (hashset.Add(value))
             {
-                _count++;
+                IncrementCount();
                 return true;
             }
 
@@ -164,7 +164,7 @@ namespace MultiMap.Entities
             {
                 if (hashset.Add(value))
                 {
-                    _count++;
+                    IncrementCount();
                     added++;
                 }
             }
@@ -190,7 +190,7 @@ namespace MultiMap.Entities
 
                 if (hashset.Add(item.Value))
                 {
-                    _count++;
+                    IncrementCount();
                     added++;
                 }
             }

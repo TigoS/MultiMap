@@ -89,7 +89,7 @@ namespace MultiMap.Entities
             list ??= new List<TValue>();
 
             list.Add(value);
-            _count++;
+            IncrementCount();
 
             return true;
         }
@@ -118,7 +118,7 @@ namespace MultiMap.Entities
                 Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
 
                 list!.Add(value);
-                _count++;
+                IncrementCount();
                 added++;
             }
 
@@ -151,7 +151,7 @@ namespace MultiMap.Entities
                 list ??= new List<TValue>();
 
                 list.Add(item.Value);
-                _count++;
+                IncrementCount();
                 added++;
             }
 

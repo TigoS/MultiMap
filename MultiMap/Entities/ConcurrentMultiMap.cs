@@ -182,7 +182,7 @@ namespace MultiMap.Entities
 
             if (valueSet.TryAdd(value))
             {
-                Interlocked.Increment(ref _count);
+                Interlocked.Increment(ref CountRef);
                 return true;
             }
 
@@ -209,7 +209,7 @@ namespace MultiMap.Entities
             }
 
             if (added > 0)
-                Interlocked.Add(ref _count, added);
+                Interlocked.Add(ref CountRef, added);
 
             return added;
         }
@@ -249,7 +249,7 @@ namespace MultiMap.Entities
 
                 if (groupAdded > 0)
                 {
-                    Interlocked.Add(ref _count, groupAdded);
+                    Interlocked.Add(ref CountRef, groupAdded);
                     added += groupAdded;
                 }
             }
@@ -269,7 +269,7 @@ namespace MultiMap.Entities
             if (!valueSet.TryRemove(value, out _))
                 return false;
 
-            Interlocked.Decrement(ref _count);
+            Interlocked.Decrement(ref CountRef);
 
             // Prune the outer key only when the inner set is confirmed empty.
             // Use the conditional-remove pattern: remove the entry, then re-add it
@@ -298,7 +298,7 @@ namespace MultiMap.Entities
 
             if (removedCount > 0)
             {
-                Interlocked.Add(ref _count, -removedCount);
+                Interlocked.Add(ref CountRef, -removedCount);
                 TryPruneEmptySet(key, valueSet);
             }
 
@@ -313,13 +313,13 @@ namespace MultiMap.Entities
             if (!_concurrentDictionary.TryRemove(key, out var removedSet))
                 return false;
 
-            // Snapshot the inner count at the moment of removal and adjust _count.
-            // Under a concurrent Add/Remove racing on the same key, _count may transiently
+            // Snapshot the inner count at the moment of removal and adjust the value counter.
+            // Under a concurrent Add/Remove racing on the same key, the counter may transiently
             // deviate from the true value by the number of values touched in that race window;
             // this is an accepted trade-off for O(1) Count.
             int c = removedSet.Count;
             if (c > 0)
-                Interlocked.Add(ref _count, -c);
+                Interlocked.Add(ref CountRef, -c);
 
             return true;
         }
@@ -328,11 +328,11 @@ namespace MultiMap.Entities
         public override void Clear()
         {
             _concurrentDictionary.Clear();
-            Interlocked.Exchange(ref _count, 0);
+            Interlocked.Exchange(ref CountRef, 0);
         }
 
         /// <inheritdoc/>
-        public override int Count => Volatile.Read(ref _count);
+        public override int Count => Volatile.Read(ref CountRef);
 
         /// <inheritdoc/>
         public override IEnumerable<TKey> Keys
