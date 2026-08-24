@@ -36,10 +36,17 @@ namespace MultiMap.Entities
         // the duration of an increment/decrement).  The first reader also acquires
         // _writeLock so that writers are blocked while any reader is active; the
         // last reader releases _writeLock.  Writers acquire _writeLock directly.
+        //
+        // Writer-preference: _pendingWriters is incremented (via Interlocked) by
+        // every writer *before* it waits on _writeLock and decremented *after* the
+        // lock is acquired.  All three read-entry paths check this counter and back
+        // off when it is non-zero, preventing writer starvation under sustained reads.
 
         /// <summary>
         /// Tries to enter a read lock without blocking.
         /// Returns <see langword="true"/> and increments the reader count when successful.
+        /// Returns <see langword="false"/> immediately when a writer is waiting
+        /// (<c>_pendingWriters &gt; 0</c>), so the caller falls through to the slow async path.
         /// </summary>
         private bool TryEnterReadLockSync()
         {
@@ -48,6 +55,10 @@ namespace MultiMap.Entities
 
             try
             {
+                // Writer-preference: yield so waiting writers are not starved.
+                if (Volatile.Read(ref _pendingWriters) > 0)
+                    return false;
+
                 if (_activeReaders == 0)
                 {
                     if (!_writeLock.Wait(0))
