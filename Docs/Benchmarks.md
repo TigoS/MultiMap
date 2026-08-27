@@ -17,7 +17,7 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 ## Table of Contents
 
-- [Benchmarks](#becnhmarks)
+- [Benchmarks](#benchmarks)
   - [Core Operations](#core-operations)
   - [New Interface Members](#new-interface-members)
   - [Set Operations (via `MultiMapHelper`)](#set-operations-via-multimaphelper)
