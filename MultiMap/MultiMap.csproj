@@ -1,16 +1,16 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net10.0;net9.0;net8.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net10.0;net9.0;net8.0</TargetFrameworks>
     <LangVersion>14.0</LangVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>2.1.2</Version>
+    <Version>3.0.0</Version>
     <Authors>TigoS</Authors>
-    <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 9, .NET 8, and .NET Standard 2.0.</Description>
+    <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 9, and .NET 8.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
     <RepositoryUrl>https://github.com/TigoS/MultiMap</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
@@ -23,13 +23,12 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')">icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>2.1.2
+    <PackageReleaseNotes>3.0.0
 
-- Correctness &amp; Thread-Safety Fixes
-- Performance Improvements
-- Tests Enhancements and Coverage Increase
-- Benchmarks Updates
-- Documentation &amp; Notes Synchronization with the actual codebase
+- BREAKING: Dropped .NET Standard 2.0 support (targets: net10.0, net9.0, net8.0)
+- Centralized all conditional compilation into a single Polyfills.cs helper
+- Removed scattered #if NET6_0_OR_GREATER / NETSTANDARD2_0 directives across 6+ files
+- Removed Microsoft.Bcl.AsyncInterfaces and Microsoft.Bcl.HashCode dependencies
 
 See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -43,11 +42,6 @@ See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Do
 	<None Include="..\Docs\Benchmarks.md" Pack="true" PackagePath="\" Link="Docs\Benchmarks.md" />
 	<None Include="..\Docs\MigrationGuide.md" Pack="true" PackagePath="\" Link="Docs\MigrationGuide.md" />
 	<None Include="..\Docs\Testing.md" Pack="true" PackagePath="\" Link="Docs\Testing.md" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" />
-    <PackageReference Include="Microsoft.Bcl.HashCode" />
   </ItemGroup>
 
   <ItemGroup>
