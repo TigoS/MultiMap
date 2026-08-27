@@ -1,7 +1,7 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
@@ -9,11 +9,11 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-98.6%25%20line%20%7C%2096.2%25%20branch%20%7C%2097.2%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6678%2F6678%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-6684%2F6684%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 9**, **.NET 8**, and **.NET Standard 2.0**.
+Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Table of Contents
 
@@ -45,7 +45,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 - **7 multimap implementations** covering a wide range of use cases
 - **6 interfaces** (3 read-only + 3 mutable): `IReadOnlySimpleMultiMap`, `IReadOnlyMultiMap`, `IReadOnlyMultiMapAsync`, `ISimpleMultiMap`, `IMultiMap`, `IMultiMapAsync` 
-- **Multi-target**: .NET 10, .NET 9, .NET 8, and .NET Standard 2.0
+- **Multi-target**: .NET 10, .NET 9, and .NET 8
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Set algebra query methods**: `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`
 - **Thread-safe variants**: fully lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
@@ -55,7 +55,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 4 test suite**: 
-  - **6,678 total tests** (2,226 per framework) running on **net10.0**, **net9.0**, and **net8.0**
+  - **6,684 total tests** (2,228 per framework) running on **net10.0**, **net9.0**, and **net8.0**
   - **98.6% line coverage**, **96.2% branch coverage**, **97.2% method coverage** (latest combined Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, and exception handling scenarios
   - 147 new comprehensive tests in v2.1.0 targeting edge cases, complex scenarios, and boundary conditions
@@ -63,42 +63,33 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 ## Known Limitations
 
-### SortedMultiMap Comparer Inconsistency
+### SortedMultiMap Value-Comparer Constraint
 
-**Issue:** `SortedMultiMap<TKey, TValue>` accepts an `IComparer<TValue>` for sorting but not an explicit `IEqualityComparer<TValue>` for equality semantics.
+**Design constraint:** `SortedMultiMap<TKey, TValue>` accepts an `IComparer<TValue>` for sorting but requires it to **also** implement `IEqualityComparer<TValue>` for hash-code consistency.
 
-**Impact:** When computing `GetHashCode()`, if the value comparer does not implement `IEqualityComparer<TValue>`, the code silently falls back to `EqualityComparer<TValue>.Default`. This can lead to:
+**Enforcement (v2.1.2+):** Both `SortedMultiMap(IComparer<TValue>?)` and `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)` throw `ArgumentException` at construction time when a non-null value comparer does not implement `IEqualityComparer<TValue>`. Passing `null` is still accepted and uses the default comparer.
 
-- **Hash code inconsistency**: Two `SortedMultiMap` instances with identical content may have different hash codes if they use different custom comparers, violating the `Equals`/`GetHashCode` contract.
-- **Collection lookup failures**: Placing such instances in hash-based collections (e.g., `HashSet<T>`, `Dictionary<TKey, TValue>`) can cause unexpected behavior, such as duplicates or lookup failures.
+**Why this matters:** `SortedSet<TValue>` uses `IComparer<TValue>` for ordering but `GetHashCode()` and `Equals()` rely on `IEqualityComparer<TValue>`. If the two interfaces were implemented inconsistently, two instances with identical content could produce different hash codes, violating the `Equals`/`GetHashCode` contract.
 
-**Example of the Problem:**
+**Recommended pattern:**
 
 ```csharp
-class CaseInsensitiveValueComparer : IComparer<string>
+// Implement both interfaces on the same comparer:
+class CaseInsensitiveStringComparer : IComparer<string>, IEqualityComparer<string>
 {
-    public int Compare(string? x, string? y) 
+    public int Compare(string? x, string? y)
         => StringComparer.OrdinalIgnoreCase.Compare(x, y);
+    public bool Equals(string? x, string? y)
+        => StringComparer.OrdinalIgnoreCase.Equals(x, y);
+    public int GetHashCode(string obj)
+        => StringComparer.OrdinalIgnoreCase.GetHashCode(obj);
 }
 
-var map1 = new SortedMultiMap<string, string>(null, new CaseInsensitiveValueComparer());
-var map2 = new SortedMultiMap<string, string>();  // Uses default comparer
-
-map1.Add("key", "Hello");
-map2.Add("key", "hello");
-
-// map1.Equals(map2) might return true (same content)
-// but map1.GetHashCode() != map2.GetHashCode() (comparer mismatch)
-// Violates: if Equals(x, y) then GetHashCode(x) == GetHashCode(y)
+var map = new SortedMultiMap<string, string>(new CaseInsensitiveStringComparer());
 ```
 
-**Recommendation:**
+If you need a value comparer that only sorts and does not participate in hashing, use `MultiMapList<TKey, TValue>` instead.
 
-- If you use a custom `IComparer<TValue>` on `SortedMultiMap`, ensure it also implements `IEqualityComparer<TValue>` with consistent semantics.
-- Avoid relying on `GetHashCode()` and `Equals()` for hashing if you use a custom comparer that does not implement `IEqualityComparer<TValue>`.
-- If you need guaranteed equality/hash consistency, use `MultiMapSet<TKey, TValue>` with a custom `IEqualityComparer<TValue>` instead.
-
-## Project Structure
 
 ```
 MultiMap/
@@ -125,7 +116,7 @@ MultiMap/
 │   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap implementation
 │   └── Helpers/
 │       ├── Guard.cs                          # Internal argument-validation helpers; [NotNull] applied unconditionally across all TFMs
-│       ├── NullableAttributes.cs             # netstandard2.0 polyfill for System.Diagnostics.CodeAnalysis.NotNullAttribute
+│       ├── Polyfills.cs                      # Single home for all version-gated conditionals (HashSet<T>.AsReadOnly on .NET 10+)
 │       └── MultiMapHelper.cs                 # Set-like extension methods
 ├── MultiMap.Tests/                           # Unit tests (NUnit 4, multi-targeted: net10.0, net9.0, and net8.0)
 ├── MultiMap.Demo/                            # Console demo application
@@ -248,19 +239,19 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 
 ### `MultiMapBase<TKey, TValue, TCollection>` — Abstract Base Class
 
-Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. On .NET 6+, subclasses may also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup.
+Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. `MultiMapList` and `MultiMapSet` also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup per operation.
 
 **Encapsulation:** The underlying `_dictionary` field is `protected`. The value counter `_count` is `private`; subclasses mutate it exclusively through four protected helpers: `IncrementCount()`, `DecrementCount(int by = 1)`, `ResetCount()`, and `ref int CountRef` (for `Interlocked`/`Volatile` use in `ConcurrentMultiMap`). This prevents any subclass from silently corrupting the `Count == total mapped values` invariant.
 
 ### `MultiMapList<TKey, TValue>` — List-Based
 
-Extends `MultiMapBase<TKey, TValue, List<TValue>>`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized. On .NET 6+, it uses `CollectionsMarshal` for optimized `Add`/`AddRange`. Returns a zero-copy `ReadOnlyCollection<TValue>` from `Get`.
+Extends `MultiMapBase<TKey, TValue, List<TValue>>`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized. Uses `CollectionsMarshal` for a single dictionary lookup per `Add`/`AddRange` operation. Returns a zero-copy `ReadOnlyCollection<TValue>` from `Get`.
 
 **Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`
 
 ### `MultiMapSet<TKey, TValue>` — HashSet-Based
 
-Extends `MultiMapBase<TKey, TValue, HashSet<TValue>>`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios that require fast lookups and unique-value semantics. On .NET 6+, it uses `CollectionsMarshal` for optimized `Add`/`AddRange`.
+Extends `MultiMapBase<TKey, TValue, HashSet<TValue>>`. Uses `Dictionary<TKey, HashSet<TValue>>` internally. **Ensures unique values** per key. Best for scenarios that require fast lookups and unique-value semantics. Uses `CollectionsMarshal` for a single dictionary lookup per `Add`/`AddRange` operation. On .NET 10+, `Get`/`GetOrDefault`/`TryGet` return a zero-copy `ReadOnlySet<TValue>` view instead of an array snapshot.
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
