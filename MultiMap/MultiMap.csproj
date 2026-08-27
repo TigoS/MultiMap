@@ -29,6 +29,7 @@
 - Centralized all conditional compilation into a single Polyfills.cs helper
 - Removed scattered #if NET6_0_OR_GREATER / NETSTANDARD2_0 directives across 6+ files
 - Removed Microsoft.Bcl.AsyncInterfaces and Microsoft.Bcl.HashCode dependencies
+- SimpleMultiMap becomes Obsolete
 
 See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
