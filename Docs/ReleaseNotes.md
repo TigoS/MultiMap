@@ -19,7 +19,6 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 - [Release Notes](#release-notes)
   - [3.0.0](#300)
-  - [2.1.2](#212)
   - [2.1.1](#211)
   - [2.1.0](#210)
   - [2.0.1](#201)
@@ -46,15 +45,6 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - Dropped **.NET Standard 2.0** support. The package now targets **net8.0**, **net9.0**, and **net10.0** only. Consumers still on netstandard2.0 should remain on v2.x.
 - Removed the `Microsoft.Bcl.AsyncInterfaces` and `Microsoft.Bcl.HashCode` package dependencies (they were netstandard2.0-only).
 
-**Code Quality**
-
-- Consolidated all conditional-compilation polyfills into a single `Helpers/Polyfills.cs`. Previously `#if NET6_0_OR_GREATER`, `#if NETSTANDARD2_0`, and `#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER` guards were scattered across 6+ files (`Guard.cs`, `MultiMapBase.cs`, `MultiMapList.cs`, `MultiMapSet.cs`, `SimpleMultiMap.cs`, `MultiMapLock.cs`, `MultiMapAsync.Core.cs`).
-- Since all remaining targets (net8/9/10) are ≥ .NET 6, every `#if NET6_0_OR_GREATER` and `#if NETSTANDARD2_1_OR_GREATER` branch is now unconditional — the dead fallback paths have been deleted.
-- The sole remaining version-gated feature (`HashSet<T>.AsReadOnly()`, available from .NET 10) is wrapped in `Polyfills.AsReadOnlyOrSnapshot<T>()`, keeping `#if NET10_0_OR_GREATER` in exactly one place.
-- Deleted `Helpers/NullableAttributes.cs` (netstandard2.0-only `NotNullAttribute` polyfill — no longer needed).
-
-### 2.1.2
-
 **Bug Fixes**
 
 - `MultiMapAsync<TKey, TValue>.Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` — fixed deadlock risk on the general (foreign-implementation) comparison path. The three `.GetAwaiter().GetResult()` calls that queried the foreign `IReadOnlyMultiMapAsync` instance are now wrapped in a single `Task.Run` lambda, ensuring all async continuations execute on a context-free thread-pool thread and cannot deadlock regardless of the caller's `SynchronizationContext` (UI thread, ASP.NET classic, custom context, etc.). The previously overly broad `SynchronizationContext.Current != null` guard — which also blocked the deadlock-safe fast path (both sides `MultiMapAsync`) — has been removed. `ConfigureAwait(false)` is applied to every `await` inside the lambda as an additional safeguard.
@@ -72,6 +62,10 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Code Quality**
 
+- Consolidated all conditional-compilation polyfills into a single `Helpers/Polyfills.cs`. Previously `#if NET6_0_OR_GREATER`, `#if NETSTANDARD2_0`, and `#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER` guards were scattered across 6+ files (`Guard.cs`, `MultiMapBase.cs`, `MultiMapList.cs`, `MultiMapSet.cs`, `SimpleMultiMap.cs`, `MultiMapLock.cs`, `MultiMapAsync.Core.cs`).
+- Since all remaining targets (net8/9/10) are ≥ .NET 6, every `#if NET6_0_OR_GREATER` and `#if NETSTANDARD2_1_OR_GREATER` branch is now unconditional — the dead fallback paths have been deleted.
+- The sole remaining version-gated feature (`HashSet<T>.AsReadOnly()`, available from .NET 10) is wrapped in `Polyfills.AsReadOnlyOrSnapshot<T>()`, keeping `#if NET10_0_OR_GREATER` in exactly one place.
+- Deleted `Helpers/NullableAttributes.cs` (netstandard2.0-only `NotNullAttribute` polyfill — no longer needed).
 - `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward; for `netstandard2.0` a new `Helpers/NullableAttributes.cs` polyfill declares an `internal` copy in `System.Diagnostics.CodeAnalysis` (compiled in only for that TFM via `#if NETSTANDARD2_0`). `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`, `netstandard2.0`).
 
 **Documentation**
@@ -93,8 +87,6 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - `MultiMapAsync_UnitTests.cs`
   - Replaced `Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException` with `Equals_WithSynchronizationContextAndDifferentInstance_DoesNotThrowAndReturnsCorrectResult` — asserts that `Equals` returns `true` (both maps empty) without throwing under a `SynchronizationContext`.
   - Replaced `Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException` with `Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue` — asserts that `Equals` returns `true` (both maps with identical content) without throwing under a `SynchronizationContext`.
-  - Added `WriterPreference_UnderSustainedReads_WriterCompletesWithinTimeout` (Category: `Stress`/`Concurrent`) — verifies that a single `AddAsync` writer completes within 5 seconds while 8 concurrent `GetOrDefaultAsync` reader tasks run at full speed, confirming the new writer-preference logic prevents starvation.
-  - Restored `Equals_WithSynchronizationContextButDifferentType_ReturnsFalse` and `Equals_WithSynchronizationContextAndSelfReference_ReturnsTrue` short-circuit tests (type-check and `ReferenceEquals` still bypass all locking and `Task.Run`).
 
 ### 2.1.1
 
