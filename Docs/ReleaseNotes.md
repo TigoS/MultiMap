@@ -40,9 +40,13 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ### 3.0.0
 
+**Deprecations**
+
+- `SimpleMultiMap<TKey, TValue>` — marked `[Obsolete]`. The class remains functional but will be removed in a future major version. Migrate to `MultiMapSet<TKey, TValue>`, which provides the same set-based, no-duplicate semantics under the full `IMultiMap` contract (including `AddRange`, `RemoveRange`, `RemoveWhere`, `KeyCount`, and all `IMultiMap` extension methods). The `ISimpleMultiMap` and `IReadOnlySimpleMultiMap` interfaces are not affected.
+
 **Breaking Changes**
 
-- Dropped **.NET Standard 2.0** support. The package now targets **net8.0**, **net9.0**, and **net10.0** only. Consumers still on netstandard2.0 should remain on v2.x.
+- Dropped **.NET Standard 2.0** support.
 - Removed the `Microsoft.Bcl.AsyncInterfaces` and `Microsoft.Bcl.HashCode` package dependencies (they were netstandard2.0-only).
 
 **Bug Fixes**
