@@ -72,6 +72,10 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - Deleted `Helpers/NullableAttributes.cs` (netstandard2.0-only `NotNullAttribute` polyfill — no longer needed).
 - `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward; for `netstandard2.0` a new `Helpers/NullableAttributes.cs` polyfill declares an `internal` copy in `System.Diagnostics.CodeAnalysis` (compiled in only for that TFM via `#if NETSTANDARD2_0`). `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`, `netstandard2.0`).
 
+**API Additions**
+
+- `MultiMapLock<TKey, TValue>` — added `CancellationToken` overloads for every write method: `Add`, `AddRange(TKey, IEnumerable<TValue>)`, `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, and `SymmetricExceptWith` (12 new overloads). `ReaderWriterLockSlim.EnterWriteLock()` blocks indefinitely and has no cancellation path; the new overloads use a private `EnterWriteLockCancellable` helper that polls with `TryEnterWriteLock(20 ms)` and calls `cancellationToken.ThrowIfCancellationRequested()` between attempts. Cancellation latency is at most ~20 ms. The existing no-`CancellationToken` overloads are unchanged. Also removed a duplicate `[DebuggerDisplay]` attribute that had been left on the class declaration.
+
 **Documentation**
 
 - `README.md` — added `### Demo Console Output` section under `## Usage` (resolving the pre-existing broken TOC anchor `#demo-console-output`). Documents how to run `MultiMap.Demo` with `dotnet run --project MultiMap.Demo` and explains the new `--wait` flag: passing `-- --wait` keeps the console window open (blocks on `Console.ReadLine()`) until Enter is pressed, which is useful when launching from an IDE or a terminal that closes immediately on exit.
