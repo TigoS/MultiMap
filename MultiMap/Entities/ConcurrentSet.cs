@@ -26,6 +26,9 @@ namespace MultiMap.Entities
         /// <summary>
         /// Gets the number of elements in the set.
         /// </summary>
+        /// <remarks>
+        /// Delegates to <see cref="ConcurrentDictionary{TKey, TValue}.Count"/>, which acquires all internal locks to produce a consistent snapshot count. The operation is effectively O(1) in practice (bounded by the number of internal segments) but is <b>not atomic with respect to concurrent mutations</b>: by the time the value is returned, other threads may have added or removed elements, so the count can be stale in concurrent scenarios. Prefer <see cref="IsEmpty"/> when you only need to test for emptiness.
+        /// </remarks>
         public int Count => _inner.Count;
 
         /// <summary>
