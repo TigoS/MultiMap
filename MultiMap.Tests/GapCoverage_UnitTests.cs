@@ -217,8 +217,8 @@ public class MultiMapAsync_GeneralInterfacePathTests
     // Adapter: wraps a MultiMapAsync<> but is NOT an instance of MultiMapAsync<>,
     // forcing the general (non-fast-path) branches.
     private sealed class WrappedMultiMapAsync<TKey, TValue> : IMultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly MultiMapAsync<TKey, TValue> _inner;
         public WrappedMultiMapAsync(MultiMapAsync<TKey, TValue> inner) => _inner = inner;
@@ -1448,5 +1448,97 @@ public class MultiMapAsync_FastPathBranchTests
         await using var b = new MultiMapAsync<string, int>();
 
         Assert.That(await a.OverlapsAsync(b), Is.False);
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// NonEquatable types — constraint-relaxation smoke tests
+//
+// Verifies that types that do NOT implement IEquatable<T> can be used as TKey
+// or TValue now that the IEquatable<T> constraint has been removed from all
+// multi-map interfaces and implementations.
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+public class NonEquatableConstraintTests
+{
+    // A plain class with no IEquatable<T> implementation.
+    private sealed class NoEquatableKey
+    {
+        public int Id { get; init; }
+        public override bool Equals(object? obj) => obj is NoEquatableKey other && Id == other.Id;
+        public override int GetHashCode() => Id.GetHashCode();
+    }
+
+    private sealed class NoEquatableValue
+    {
+        public string Label { get; init; } = "";
+        public override bool Equals(object? obj) => obj is NoEquatableValue other && Label == other.Label;
+        public override int GetHashCode() => Label.GetHashCode();
+    }
+
+    [Test]
+    public void MultiMapSet_WithNonEquatableTypes_AddAndRetrieve()
+    {
+        var map = new MultiMapSet<NoEquatableKey, NoEquatableValue>();
+        var key = new NoEquatableKey { Id = 1 };
+        var value = new NoEquatableValue { Label = "hello" };
+
+        map.Add(key, value);
+
+        Assert.That(map.Contains(key, value), Is.True);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void MultiMapList_WithNonEquatableTypes_AddAndRetrieve()
+    {
+        var map = new MultiMapList<NoEquatableKey, NoEquatableValue>();
+        var key = new NoEquatableKey { Id = 2 };
+        var value = new NoEquatableValue { Label = "world" };
+
+        map.Add(key, value);
+
+        Assert.That(map.Contains(key, value), Is.True);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void ConcurrentMultiMap_WithNonEquatableTypes_AddAndRetrieve()
+    {
+        var map = new ConcurrentMultiMap<NoEquatableKey, NoEquatableValue>();
+        var key = new NoEquatableKey { Id = 3 };
+        var value = new NoEquatableValue { Label = "concurrent" };
+
+        map.Add(key, value);
+
+        Assert.That(map.Contains(key, value), Is.True);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void MultiMapLock_WithNonEquatableTypes_AddAndRetrieve()
+    {
+        using var map = new MultiMapLock<NoEquatableKey, NoEquatableValue>();
+        var key = new NoEquatableKey { Id = 4 };
+        var value = new NoEquatableValue { Label = "locked" };
+
+        map.Add(key, value);
+
+        Assert.That(map.Contains(key, value), Is.True);
+        Assert.That(map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task MultiMapAsync_WithNonEquatableTypes_AddAndRetrieve()
+    {
+        await using var map = new MultiMapAsync<NoEquatableKey, NoEquatableValue>();
+        var key = new NoEquatableKey { Id = 5 };
+        var value = new NoEquatableValue { Label = "async" };
+
+        await map.AddAsync(key, value);
+
+        Assert.That(await map.ContainsAsync(key, value), Is.True);
+        Assert.That(await map.GetCountAsync(), Is.EqualTo(1));
     }
 }

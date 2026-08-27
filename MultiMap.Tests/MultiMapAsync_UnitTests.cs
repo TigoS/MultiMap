@@ -3453,8 +3453,8 @@ public class MultiMapAsyncTests
 /// used to exercise the generic-interface path in <c>MultiMapAsync.EqualsAsync</c>.
 /// </summary>
 internal sealed class FakeReadOnlyMultiMapAsync<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-    where TKey : notnull, IEquatable<TKey>
-    where TValue : notnull, IEquatable<TValue>
+    where TKey : notnull
+    where TValue : notnull
 {
     private readonly Dictionary<TKey, List<TValue>> _data = new();
 
@@ -3806,8 +3806,8 @@ public class MultiMapAsync_GenericInterfaceEqualsTests
 /// <c>otherValues is HashSet&lt;TValue&gt; hs</c> true-branch in Equals(IReadOnlyMultiMapAsync).
 /// </summary>
 internal sealed class FakeReadOnlyMultiMapAsyncWithHashSet<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-    where TKey : notnull, IEquatable<TKey>
-    where TValue : notnull, IEquatable<TValue>
+    where TKey : notnull
+    where TValue : notnull
 {
     private readonly Dictionary<TKey, HashSet<TValue>> _data = new();
 
@@ -3879,8 +3879,8 @@ public class MultiMapAsync_EqualsBranchTests
     // We need an IReadOnlyMultiMapAsync<> that is NOT a MultiMapAsync instance.
     // We create a minimal stub adapter.
     private sealed class ReadOnlyAsyncAdapter<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly MultiMapAsync<TKey, TValue> _inner;
         public ReadOnlyAsyncAdapter(MultiMapAsync<TKey, TValue> inner) => _inner = inner;
