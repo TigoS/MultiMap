@@ -289,11 +289,13 @@ Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `Semaph
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
-### `SimpleMultiMap<TKey, TValue>` — Lightweight
+### `SimpleMultiMap<TKey, TValue>` — Lightweight ⚠️ Deprecated
 
-Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
+> **Deprecated** — `SimpleMultiMap<TKey, TValue>` is marked `[Obsolete]` and may be removed in a future major version. Use [`MultiMapSet<TKey, TValue>`](#multimapsettkey-tvalue--set-based) instead; it provides the same set-based, no-duplicate semantics while implementing the richer `IMultiMap` contract (including `AddRange`, `RemoveRange`, `RemoveWhere`, `KeyCount`, and all extension methods).
 
-**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
+Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplified API. Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
+
+**Constructors:**
 
 ## Comparison Table
 
@@ -341,7 +343,7 @@ Implements `ISimpleMultiMap`. A lightweight multimap with a simplified API. Prov
 
 | Use Case | Recommended Implementation | Reason |
 |---|---|---|
-| Minimal API, quick prototyping | `SimpleMultiMap` | Simplified interface with direct enumeration |
+| ~~Minimal API, quick prototyping~~ (**deprecated**) | ~~`SimpleMultiMap`~~ → `MultiMapSet` | `SimpleMultiMap` is obsolete; `MultiMapSet` covers the same use case with a richer API |
 | General purpose, unique values | `MultiMapSet` | Fast O(1) lookups with uniqueness guarantee |
 | Duplicate values needed | `MultiMapList` | Only implementation allowing duplicate values per key |
 | Sorted enumeration / range queries | `SortedMultiMap` | Maintains key and value ordering |
