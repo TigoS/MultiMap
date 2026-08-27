@@ -186,7 +186,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="target"/> exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public static bool IsSubsetOf<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static bool IsSubsetOf<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -246,7 +246,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public static bool Overlaps<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static bool Overlaps<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -283,7 +283,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public static bool SetEquals<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static bool SetEquals<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -319,7 +319,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        public static ISimpleMultiMap<TKey, TValue> Union<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> Union<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -341,7 +341,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        public static ISimpleMultiMap<TKey, TValue> Intersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> Intersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -380,7 +380,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        public static ISimpleMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -409,7 +409,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        public static ISimpleMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static ISimpleMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -454,7 +454,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="target"/> exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public static bool IsSubsetOf<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static bool IsSubsetOf<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -505,7 +505,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public static bool Overlaps<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static bool Overlaps<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -529,7 +529,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public static bool SetEquals<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
+        public static bool SetEquals<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
             where TKey : notnull
             where TValue : notnull
         {
@@ -785,7 +785,7 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap to compare against.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="target"/> exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public static async Task<bool> IsSubsetOfAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task<bool> IsSubsetOfAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull
             where TValue : notnull
         {
@@ -867,7 +867,7 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap to compare against.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public static async Task<bool> OverlapsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task<bool> OverlapsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull
             where TValue : notnull
         {
@@ -917,7 +917,7 @@ namespace MultiMap.Helpers
         /// <param name="other">The multimap to compare against.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public static async Task<bool> SetEqualsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task<bool> SetEqualsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull
             where TValue : notnull
         {
