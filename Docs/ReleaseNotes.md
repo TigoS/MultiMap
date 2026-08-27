@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.6%25%20line%20%7C%2096.2%25%20branch%20%7C%2097.2%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6678%2F6678%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2099.3%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -90,7 +90,17 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Tests**
 
+- Added `MultiMapLock_CancellationTokenTests` in `MultiMapLock_CancellationToken_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) with both happy-path and contention-cancel scenarios. The "cancels while waiting" tests hold the write lock from a background thread and verify `OperationCanceledException` is raised in the polling loop.
+- Added `Guard_ThreeParamNotNullTests` — 2 tests covering the 3-parameter `Guard.NotNull<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
+- Added `CoverageBoost_UnitTests.cs` — targeted tests for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
 - Added `NonEquatableConstraintTests` in `GapCoverage_UnitTests.cs` — five tests (`MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) that instantiate each implementation with a `NoEquatableKey` / `NoEquatableValue` class pair that overrides `Equals`/`GetHashCode` without implementing `IEquatable<T>`. These tests verify the constraint relaxation is genuine and cover all main multimap variants.
+- Added `CoverageBoost_UnitTests.cs` — targeted tests for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
+- Added `MultiMapLock_CancellationToken_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` write overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`). Each has a happy-path test and a contention-cancel test (write lock held by a background thread, token cancelled after 80 ms) exercising the polling loop in `EnterWriteLockCancellable`.
+- Added `Guard_ThreeParamNotNullTests` — 2 tests covering the `Guard.NotNull<T>(value, paramName, message)` null and non-null paths via `MultiMapSet.AddRange` with a sequence containing a `null` element.
+- **Total: 6,924 tests** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`). All pass.
+- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
+- **Total test count: 6,924** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`).
+- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
 - `SortedMultiMap_UnitTests.cs`
   - Updated `Constructor_WithValueComparer_UsesReverseValueOrder` and `Constructor_WithKeyAndValueComparer_BothApplied` to use `ReverseIntComparer` (implements both `IComparer<int>` and `IEqualityComparer<int>`) instead of bare `Comparer<int>.Create(...)`, which now correctly throws at construction.
   - Added `Constructor_WithValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TValue>?)`.
