@@ -1,6 +1,7 @@
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace MultiMap.Entities
@@ -21,6 +22,8 @@ namespace MultiMap.Entities
     /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
     /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
     /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    [DebuggerDisplay("Keys={KeyCount}, Values={Count}")]
+    [DebuggerDisplay("Keys={KeyCount}, Values={Count}")]
     public sealed class MultiMapLock<TKey, TValue>(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer) : IMultiMap<TKey, TValue>, IDisposable
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>

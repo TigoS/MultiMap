@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using MultiMap.Interfaces;
 using MultiMap.Helpers;
 
@@ -15,6 +16,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <remarks>The provided dictionary is used directly and is not copied. Changes to the dictionary after construction will affect the multimap, and vice versa. Callers are responsible for ensuring the dictionary is in a valid state and not modified concurrently.</remarks>
     /// <param name="dictionary">The dictionary to use as the underlying storage for the multimap. Must not be null.</param>
+    [DebuggerDisplay("Keys={KeyCount}, Values={Count}")]
     public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionary<TKey, TCollection> dictionary) : IMultiMap<TKey, TValue>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>

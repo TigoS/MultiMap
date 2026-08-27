@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
@@ -16,6 +17,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    [DebuggerDisplay("Keys={_dictionary.Count}, Values={Count}")]
     [Obsolete("SimpleMultiMap<TKey, TValue> is deprecated. Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.")]
     public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
         where TKey : notnull, IEquatable<TKey>

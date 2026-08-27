@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
@@ -55,6 +56,7 @@ namespace MultiMap.Entities
     /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
     /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
     /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    [DebuggerDisplay("Keys={_dictionary.Count}, Values={_count}")]
     public sealed partial class MultiMapAsync<TKey, TValue>(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer) : IMultiMapAsync<TKey, TValue>
         where TKey : notnull, IEquatable<TKey>
         where TValue : notnull, IEquatable<TValue>
