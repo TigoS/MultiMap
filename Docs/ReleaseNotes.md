@@ -75,8 +75,9 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 **Documentation**
 
 - `README.md` — added `### Demo Console Output` section under `## Usage` (resolving the pre-existing broken TOC anchor `#demo-console-output`). Documents how to run `MultiMap.Demo` with `dotnet run --project MultiMap.Demo` and explains the new `--wait` flag: passing `-- --wait` keeps the console window open (blocks on `Console.ReadLine()`) until Enter is pressed, which is useful when launching from an IDE or a terminal that closes immediately on exit.
-
 - `SortedMultiMap<TKey, TValue>` XML docs — updated class-level `<remarks>`, both value-comparer constructor `<remarks>`, and the `GetHashCode()` doc comment to reflect that the comparer limitation is now **enforced** (throws `ArgumentException`) rather than merely documented as a warning.
+- Added `[DebuggerDisplay("Keys={KeyCount}, Values={Count}")]` to all public collection classes (`MultiMapBase`, `MultiMapLock`, `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `SimpleMultiMap`), and `[DebuggerDisplay("Keys={_dictionary.Count}, Values={_count}")]` to `MultiMapAsync` (which exposes counts only via async methods). VS now shows `Keys=n, Values=m` in the debugger instead of the generic `{Count=n}` tooltip.
+- `ConcurrentSet<T>.Count` — added `<remarks>` documenting that the property delegates to `ConcurrentDictionary.Count`, which acquires all internal segment locks and is effectively O(1) but **not atomic**: the returned value may be stale by the time it is observed in concurrent scenarios. Callers should prefer `IsEmpty` when testing for emptiness and avoid building control-flow logic around the count.
 
 **Tests**
 
