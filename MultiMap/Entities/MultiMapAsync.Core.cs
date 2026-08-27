@@ -1,5 +1,5 @@
-using MultiMap.Helpers;
 using System.Runtime.InteropServices;
+using MultiMap.Helpers;
 
 namespace MultiMap.Entities
 {
@@ -33,7 +33,9 @@ namespace MultiMap.Entities
         private bool TryEnterReadLockSync()
         {
             if (!_readerLock.Wait(0))
+            {
                 return false;
+            }
 
             try
             {
@@ -62,7 +64,9 @@ namespace MultiMap.Entities
             try
             {
                 if (_activeReaders == 0)
+                {
                     _writeLock.Wait();
+                }
 
                 _activeReaders++;
             }
@@ -79,7 +83,9 @@ namespace MultiMap.Entities
             try
             {
                 if (_activeReaders == 0)
+                {
                     await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
 
                 _activeReaders++;
             }
@@ -96,7 +102,9 @@ namespace MultiMap.Entities
             try
             {
                 if (--_activeReaders == 0)
+                {
                     _writeLock.Release();
+                }
             }
             finally
             {
@@ -108,8 +116,8 @@ namespace MultiMap.Entities
 
         private bool AddCore(TKey key, TValue value)
         {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out _);
+            hashset ??= new HashSet<TValue>(_valueComparer);
 
             if (hashset.Add(value))
             {
@@ -139,7 +147,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         {
             bool exists = _dictionary.TryGetValue(key, out var hashset);
             if (!exists)
+            {
                 hashset = new HashSet<TValue>(_valueComparer);
+            }
 
             int added = 0;
             foreach (var value in values)
@@ -154,7 +164,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
             }
 
             if (!exists && added > 0)
+            {
                 _dictionary[key] = hashset!;
+            }
 
             return added;
         }
@@ -180,8 +192,8 @@ hashset ??= new HashSet<TValue>(_valueComparer);
                 Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
                 Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
 
                 if (hashset.Add(item.Value))
                 {
@@ -211,7 +223,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         private TValue[] GetCore(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToArray();
+            {
+                return [.. hashset];
+            }
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -234,9 +248,11 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         private TValue[] GetOrDefaultCore(TKey key)
         {
             if (_dictionary.TryGetValue(key, out var hashset))
-                return hashset.ToArray();
+            {
+                return [.. hashset];
+            }
 
-            return Array.Empty<TValue>();
+            return [];
         }
 
         private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(TKey key, CancellationToken cancellationToken)
@@ -288,7 +304,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
                 {
                     _count--;
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
 
                 return removed;
@@ -344,13 +362,17 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         private int RemoveWhereCore(TKey key, Predicate<TValue> predicate)
         {
             if (!_dictionary.TryGetValue(key, out var hashset))
+            {
                 return 0;
+            }
 
             int removedCount = hashset.RemoveWhere(predicate);
             _count -= removedCount;
 
             if (hashset.Count == 0)
+            {
                 _dictionary.Remove(key);
+            }
 
             return removedCount;
         }
@@ -446,7 +468,7 @@ hashset ??= new HashSet<TValue>(_valueComparer);
             await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                return _dictionary.Keys.ToArray();
+                return [.. _dictionary.Keys];
             }
             finally
             {
@@ -541,7 +563,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
                 foreach (var value in values)
                 {
                     if (hashset.Add(value))
+                    {
                         _count++;
+                    }
                 }
             }
         }
@@ -563,7 +587,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
                 _count -= removed;
 
                 if (kvp.Value.Count == 0)
+                {
                     keysToRemove.Add(kvp.Key);
+                }
             }
 
             foreach (var key in keysToRemove)
@@ -577,16 +603,22 @@ hashset ??= new HashSet<TValue>(_valueComparer);
             foreach (var (key, values) in snapshot)
             {
                 if (!_dictionary.TryGetValue(key, out var hashset))
+                {
                     continue;
+                }
 
                 foreach (var value in values)
                 {
                     if (hashset.Remove(value))
+                    {
                         _count--;
+                    }
                 }
 
                 if (hashset.Count == 0)
+                {
                     _dictionary.Remove(key);
+                }
             }
         }
 
@@ -594,7 +626,7 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         {
             foreach (var (key, values) in snapshot)
             {
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
                 hashset ??= new HashSet<TValue>(_valueComparer);
 
                 foreach (var value in values)
@@ -611,7 +643,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
                 }
 
                 if (hashset.Count == 0)
+                {
                     _dictionary.Remove(key);
+                }
             }
         }
 
@@ -624,7 +658,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         private void DisposeCore()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
                 return;
+            }
 
             try
             {

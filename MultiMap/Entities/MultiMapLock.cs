@@ -1,8 +1,8 @@
-using MultiMap.Helpers;
-using MultiMap.Interfaces;
 using System.Collections;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -117,10 +117,10 @@ namespace MultiMap.Entities
             _lock.EnterWriteLock();
             try
             {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
 
-if (hashset.Add(value))
+                if (hashset.Add(value))
                 {
                     _count++;
                     return true;
@@ -147,7 +147,9 @@ if (hashset.Add(value))
             {
                 bool exists = _dictionary.TryGetValue(key, out var hashset);
                 if (!exists)
+                {
                     hashset = new HashSet<TValue>(_valueComparer);
+                }
 
                 int added = 0;
                 foreach (var value in values)
@@ -162,7 +164,9 @@ if (hashset.Add(value))
                 }
 
                 if (!exists && added > 0)
+                {
                     _dictionary[key] = hashset!;
+                }
 
                 return added;
             }
@@ -188,10 +192,10 @@ if (hashset.Add(value))
                     Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
                     Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+                    hashset ??= new HashSet<TValue>(_valueComparer);
 
-if (hashset.Add(item.Value))
+                    if (hashset.Add(item.Value))
                     {
                         _count++;
                         added++;
@@ -227,10 +231,10 @@ if (hashset.Add(item.Value))
             EnterWriteLockCancellable(cancellationToken);
             try
             {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
 
-if (hashset.Add(value))
+                if (hashset.Add(value))
                 {
                     _count++;
                     return true;
@@ -268,7 +272,9 @@ if (hashset.Add(value))
             {
                 bool exists = _dictionary.TryGetValue(key, out var hashset);
                 if (!exists)
+                {
                     hashset = new HashSet<TValue>(_valueComparer);
+                }
 
                 int added = 0;
                 foreach (var value in values)
@@ -283,7 +289,9 @@ if (hashset.Add(value))
                 }
 
                 if (!exists && added > 0)
+                {
                     _dictionary[key] = hashset!;
+                }
 
                 return added;
             }
@@ -319,10 +327,10 @@ if (hashset.Add(value))
                     Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
                     Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+                    hashset ??= new HashSet<TValue>(_valueComparer);
 
-if (hashset.Add(item.Value))
+                    if (hashset.Add(item.Value))
                     {
                         _count++;
                         added++;
@@ -347,10 +355,7 @@ if (hashset.Add(item.Value))
             _lock.EnterReadLock();
             try
             {
-                if (_dictionary.TryGetValue(key, out var hashset))
-                    return hashset.ToArray();
-
-                throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+                return _dictionary.TryGetValue(key, out var hashset) ? hashset.ToArray() : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
             }
             finally
             {
@@ -368,10 +373,7 @@ if (hashset.Add(item.Value))
             _lock.EnterReadLock();
             try
             {
-                if (_dictionary.TryGetValue(key, out var hashset))
-                    return hashset.ToArray();
-
-                return [];
+                return _dictionary.TryGetValue(key, out var hashset) ? [.. hashset] : [];
             }
             finally
             {
@@ -420,7 +422,9 @@ if (hashset.Add(item.Value))
                     {
                         _count--;
                         if (hashset.Count == 0)
+                        {
                             _dictionary.Remove(key);
+                        }
                     }
 
                     return removed;
@@ -463,7 +467,9 @@ if (hashset.Add(item.Value))
                     {
                         _count--;
                         if (hashset.Count == 0)
+                        {
                             _dictionary.Remove(key);
+                        }
                     }
 
                     return removed;
@@ -497,7 +503,9 @@ if (hashset.Add(item.Value))
                             _count--;
                             removedCount++;
                             if (hashset.Count == 0)
+                            {
                                 _dictionary.Remove(item.Key);
+                            }
                         }
                     }
                 }
@@ -538,7 +546,9 @@ if (hashset.Add(item.Value))
                             _count--;
                             removedCount++;
                             if (hashset.Count == 0)
+                            {
                                 _dictionary.Remove(item.Key);
+                            }
                         }
                     }
                 }
@@ -562,13 +572,17 @@ if (hashset.Add(item.Value))
             try
             {
                 if (!_dictionary.TryGetValue(key, out var hashset))
+                {
                     return 0;
+                }
 
                 int removedCount = hashset.RemoveWhere(predicate);
                 _count -= removedCount;
 
                 if (hashset.Count == 0)
+                {
                     _dictionary.Remove(key);
+                }
 
                 return removedCount;
             }
@@ -601,13 +615,17 @@ if (hashset.Add(item.Value))
             try
             {
                 if (!_dictionary.TryGetValue(key, out var hashset))
+                {
                     return 0;
+                }
 
                 int removedCount = hashset.RemoveWhere(predicate);
                 _count -= removedCount;
 
                 if (hashset.Count == 0)
+                {
                     _dictionary.Remove(key);
+                }
 
                 return removedCount;
             }
@@ -739,7 +757,7 @@ if (hashset.Add(item.Value))
                 _lock.EnterReadLock();
                 try
                 {
-                    return _dictionary.Keys.ToArray();
+                    return [.. _dictionary.Keys];
                 }
                 finally
                 {
@@ -881,13 +899,15 @@ if (hashset.Add(item.Value))
             {
                 foreach (var (key, values) in snapshot)
                 {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                    hashset ??= new HashSet<TValue>(_valueComparer);
 
-foreach (var value in values)
-{
-    if (hashset.Add(value))
-        _count++;
+                    foreach (var value in values)
+                    {
+                        if (hashset.Add(value))
+                        {
+                            _count++;
+                        }
                     }
                 }
             }
@@ -929,13 +949,15 @@ foreach (var value in values)
             {
                 foreach (var (key, values) in snapshot)
                 {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                    hashset ??= new HashSet<TValue>(_valueComparer);
 
-foreach (var value in values)
-{
-    if (hashset.Add(value))
-        _count++;
+                    foreach (var value in values)
+                    {
+                        if (hashset.Add(value))
+                        {
+                            _count++;
+                        }
                     }
                 }
             }
@@ -964,7 +986,7 @@ foreach (var value in values)
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
-                otherIndex[key] = new HashSet<TValue>(other.GetOrDefault(key));
+                otherIndex[key] = new HashSet<TValue>([.. other.GetOrDefault(key)]);
             }
 
             _lock.EnterWriteLock();
@@ -985,7 +1007,9 @@ foreach (var value in values)
                     _count -= removed;
 
                     if (kvp.Value.Count == 0)
+                    {
                         keysToRemove.Add(kvp.Key);
+                    }
                 }
 
                 foreach (var key in keysToRemove)
@@ -1022,7 +1046,7 @@ foreach (var value in values)
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
             {
-                otherIndex[key] = new HashSet<TValue>(other.GetOrDefault(key));
+                otherIndex[key] = new HashSet<TValue>([.. other.GetOrDefault(key)]);
             }
 
             EnterWriteLockCancellable(cancellationToken);
@@ -1043,7 +1067,9 @@ foreach (var value in values)
                     _count -= removed;
 
                     if (kvp.Value.Count == 0)
+                    {
                         keysToRemove.Add(kvp.Key);
+                    }
                 }
 
                 foreach (var key in keysToRemove)
@@ -1085,16 +1111,22 @@ foreach (var value in values)
                 foreach (var (key, values) in snapshot)
                 {
                     if (!_dictionary.TryGetValue(key, out var hashset))
+                    {
                         continue;
+                    }
 
                     foreach (var value in values)
                     {
                         if (hashset.Remove(value))
+                        {
                             _count--;
+                        }
                     }
 
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
             }
             finally
@@ -1135,16 +1167,22 @@ foreach (var value in values)
                 foreach (var (key, values) in snapshot)
                 {
                     if (!_dictionary.TryGetValue(key, out var hashset))
+                    {
                         continue;
+                    }
 
                     foreach (var value in values)
                     {
                         if (hashset.Remove(value))
+                        {
                             _count--;
+                        }
                     }
 
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
             }
             finally
@@ -1181,13 +1219,13 @@ foreach (var value in values)
             {
                 foreach (var (key, values) in snapshot)
                 {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
+                    hashset ??= new HashSet<TValue>(_valueComparer);
 
-foreach (var value in values)
-{
-    if (!hashset.Remove(value))
-    {
+                    foreach (var value in values)
+                    {
+                        if (!hashset.Remove(value))
+                        {
                             hashset.Add(value);
                             _count++;
                         }
@@ -1198,7 +1236,9 @@ foreach (var value in values)
                     }
 
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
             }
             finally
@@ -1238,13 +1278,13 @@ foreach (var value in values)
             {
                 foreach (var (key, values) in snapshot)
                 {
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
+                    hashset ??= new HashSet<TValue>(_valueComparer);
 
-foreach (var value in values)
-{
-    if (!hashset.Remove(value))
-    {
+                    foreach (var value in values)
+                    {
+                        if (!hashset.Remove(value))
+                        {
                             hashset.Add(value);
                             _count++;
                         }
@@ -1255,7 +1295,9 @@ foreach (var value in values)
                     }
 
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
             }
             finally
@@ -1282,7 +1324,9 @@ foreach (var value in values)
             ThrowIfDisposed();
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in other.Keys)
@@ -1297,12 +1341,16 @@ foreach (var value in values)
                 foreach (var kvp in _dictionary)
                 {
                     if (!otherIndex.TryGetValue(kvp.Key, out var otherSet) || otherSet.Count == 0)
+                    {
                         return false;
+                    }
 
                     foreach (var value in kvp.Value)
                     {
                         if (!otherSet.Contains(value))
+                        {
                             return false;
+                        }
                     }
                 }
 
@@ -1332,7 +1380,9 @@ foreach (var value in values)
             ThrowIfDisposed();
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
@@ -1346,12 +1396,16 @@ foreach (var value in values)
                 foreach (var (key, values) in snapshot)
                 {
                     if (!_dictionary.TryGetValue(key, out var thisSet))
+                    {
                         return false;
+                    }
 
                     foreach (var value in values)
                     {
                         if (!thisSet.Contains(value))
+                        {
                             return false;
+                        }
                     }
                 }
 
@@ -1381,7 +1435,9 @@ foreach (var value in values)
             ThrowIfDisposed();
 
             if (ReferenceEquals(this, other))
+            {
                 return Count > 0;
+            }
 
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
@@ -1399,7 +1455,9 @@ foreach (var value in values)
                         foreach (var value in values)
                         {
                             if (thisSet.Contains(value))
+                            {
                                 return true;
+                            }
                         }
                     }
                 }
@@ -1430,10 +1488,14 @@ foreach (var value in values)
             ThrowIfDisposed();
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (other.Count != Count || other.KeyCount != KeyCount)
+            {
                 return false;
+            }
 
             var snapshot = new List<(TKey Key, TValue[] Values)>();
             foreach (var key in other.Keys)
@@ -1445,19 +1507,23 @@ foreach (var value in values)
             try
             {
                 if (_dictionary.Count != snapshot.Count)
+                {
                     return false;
+                }
 
                 foreach (var (key, values) in snapshot)
                 {
-                    if (!_dictionary.TryGetValue(key, out var thisSet))
+                    if (!_dictionary.TryGetValue(key, out var thisSet) ||
+                        thisSet.Count != values.Length)
+                    {
                         return false;
-
-                    if (thisSet.Count != values.Length)
-                        return false;
+                    }
 
                     var otherHashSet = new HashSet<TValue>(values, _valueComparer);
                     if (!thisSet.SetEquals(otherHashSet))
+                    {
                         return false;
+                    }
                 }
 
                 return true;
@@ -1507,10 +1573,14 @@ foreach (var value in values)
         public bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             ThrowIfDisposed();
 
@@ -1520,19 +1590,25 @@ foreach (var value in values)
                 ThrowIfDisposed();
 
                 if (_dictionary.Count != other.KeyCount || _count != other.Count)
+                {
                     return false;
+                }
 
                 foreach (var key in _dictionary.Keys)
                 {
                     var thisValues = _dictionary[key];
 
                     if (!other.ContainsKey(key) || thisValues.Count != other.GetValuesCount(key))
+                    {
                         return false;
+                    }
 
                     foreach (var value in thisValues)
                     {
                         if (!other.Contains(key, value))
+                        {
                             return false;
+                        }
                     }
                 }
 
@@ -1565,7 +1641,9 @@ foreach (var value in values)
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)
+            {
                 return;
+            }
 
             try
             {

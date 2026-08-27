@@ -31,7 +31,9 @@ namespace MultiMap.Helpers
         internal static void NotNull<T>(T? value, string paramName, string message)
         {
             if (value is null)
+            {
                 throw new ArgumentNullException(paramName, message);
+            }
         }
     }
 }

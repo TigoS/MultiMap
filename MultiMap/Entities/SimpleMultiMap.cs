@@ -32,7 +32,7 @@ namespace MultiMap.Entities
         /// </summary>
         public SimpleMultiMap()
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
+            _dictionary = [];
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace MultiMap.Entities
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public SimpleMultiMap(IEqualityComparer<TValue>? valueComparer)
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
+            _dictionary = [];
             _valueComparer = valueComparer;
         }
 
@@ -122,11 +122,15 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(value, nameof(value));
 
-ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-hashset ??= new HashSet<TValue>(_valueComparer);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
+            hashset ??= new HashSet<TValue>(_valueComparer);
 
             bool added = hashset.Add(value);
-            if (added) _count++;
+            if (added)
+            {
+                _count++;
+            }
+
             return added;
         }
 
@@ -135,10 +139,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         {
             Guard.NotNull(key, nameof(key));
 
-            if (_dictionary.TryGetValue(key, out var hashset))
-                return Polyfills.AsReadOnlyOrSnapshot(hashset);
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+            return _dictionary.TryGetValue(key, out var hashset)
+                ? Polyfills.AsReadOnlyOrSnapshot(hashset)
+                : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
 
         /// <inheritdoc />
@@ -146,10 +149,7 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         {
             Guard.NotNull(key, nameof(key));
 
-            if (_dictionary.TryGetValue(key, out var hashset))
-                return Polyfills.AsReadOnlyOrSnapshot(hashset);
-
-            return Array.Empty<TValue>();
+            return _dictionary.TryGetValue(key, out var hashset) ? Polyfills.AsReadOnlyOrSnapshot(hashset) : [];
         }
 
         /// <inheritdoc/>
@@ -161,7 +161,7 @@ hashset ??= new HashSet<TValue>(_valueComparer);
 
             if (!result || hashset is null)
             {
-                values = Array.Empty<TValue>();
+                values = [];
             }
             else
             {
@@ -185,7 +185,9 @@ hashset ??= new HashSet<TValue>(_valueComparer);
                 {
                     _count--;
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
 
                 return removed;
@@ -199,7 +201,7 @@ hashset ??= new HashSet<TValue>(_valueComparer);
         {
             Guard.NotNull(key, nameof(key));
 
-if (_dictionary.Remove(key, out var collection))
+            if (_dictionary.Remove(key, out var collection))
             {
                 _count -= collection.Count;
                 return true;
@@ -254,18 +256,26 @@ if (_dictionary.Remove(key, out var collection))
         public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var kvp in _dictionary)
             {
                 if (!kvp.Value.SetEquals(other.GetOrDefault(kvp.Key)))
+                {
                     return false;
+                }
             }
 
             return true;

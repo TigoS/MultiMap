@@ -92,12 +92,14 @@ namespace MultiMap.Entities
         public SortedMultiMap(IComparer<TValue>? valueComparer)
             : base(new SortedDictionary<TKey, SortedSet<TValue>>())
         {
-            if (valueComparer is not null && valueComparer is not IEqualityComparer<TValue>)
+            if (valueComparer is not null and not IEqualityComparer<TValue>)
+            {
                 throw new ArgumentException(
-                    $"The value comparer must implement both {nameof(IComparer<TValue>)} and " +
-                    $"{nameof(IEqualityComparer<TValue>)} to ensure consistent Equals/GetHashCode semantics. " +
-                    $"See the {nameof(SortedMultiMap<TKey, TValue>)} class remarks for details.",
+                    $"The value comparer must implement both {nameof(IComparer<>)} and " +
+                    $"{nameof(IEqualityComparer<>)} to ensure consistent Equals/GetHashCode semantics. " +
+                    $"See the {nameof(SortedMultiMap<,>)} class remarks for details.",
                     nameof(valueComparer));
+            }
 
             _valueComparer = valueComparer;
         }
@@ -120,18 +122,20 @@ namespace MultiMap.Entities
         public SortedMultiMap(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)
             : base(new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer))
         {
-            if (valueComparer is not null && valueComparer is not IEqualityComparer<TValue>)
+            if (valueComparer is not null and not IEqualityComparer<TValue>)
+            {
                 throw new ArgumentException(
-                    $"The value comparer must implement both {nameof(IComparer<TValue>)} and " +
-                    $"{nameof(IEqualityComparer<TValue>)} to ensure consistent Equals/GetHashCode semantics. " +
-                    $"See the {nameof(SortedMultiMap<TKey, TValue>)} class remarks for details.",
+                    $"The value comparer must implement both {nameof(IComparer<>)} and " +
+                    $"{nameof(IEqualityComparer<>)} to ensure consistent Equals/GetHashCode semantics. " +
+                    $"See the {nameof(SortedMultiMap<,>)} class remarks for details.",
                     nameof(valueComparer));
+            }
 
             _valueComparer = valueComparer;
         }
 
         /// <inheritdoc/>
-        protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? new SortedSet<TValue>() : new SortedSet<TValue>(_valueComparer);
+        protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? [] : new SortedSet<TValue>(_valueComparer);
 
         /// <inheritdoc/>
         protected override bool AddToCollection(SortedSet<TValue> collection, TValue value) => collection.Add(value);
@@ -146,29 +150,35 @@ namespace MultiMap.Entities
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var key in Keys)
             {
                 if (!other.TryGet(key, out var otherValues))
+                {
                     return false;
+                }
 
                 var otherValuesSet = new SortedSet<TValue>(otherValues, _valueComparer);
 
-                if (!_dictionary.TryGetValue(key, out var targetValuesSet))
+                if (!_dictionary.TryGetValue(key, out var targetValuesSet) ||
+                    targetValuesSet.Count != otherValuesSet.Count ||
+                    !targetValuesSet.SetEquals(otherValuesSet))
+                {
                     return false;
-
-                if (targetValuesSet.Count != otherValuesSet.Count)
-                    return false;
-
-                if (!targetValuesSet.SetEquals(otherValuesSet))
-                    return false;
+                }
             }
 
             return true;

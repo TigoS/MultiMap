@@ -61,7 +61,7 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
-        protected override List<TValue> CreateCollection() => new();
+        protected override List<TValue> CreateCollection() => [];
 
         /// <inheritdoc/>
         protected override bool AddToCollection(List<TValue> collection, TValue value)
@@ -76,20 +76,20 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override IEnumerable<TValue> ToReadOnly(List<TValue> collection) => collection.AsReadOnly();
 
-/// <inheritdoc/>
-public override bool Add(TKey key, TValue value)
-{
-    Guard.NotNull(key, nameof(key));
-    Guard.NotNull(value, nameof(value));
+        /// <inheritdoc/>
+        public override bool Add(TKey key, TValue value)
+        {
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
 
-    ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
-    list ??= new List<TValue>();
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
+            list ??= [];
 
-    list.Add(value);
-    IncrementCount();
+            list.Add(value);
+            IncrementCount();
 
-    return true;
-}
+            return true;
+        }
 
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
@@ -97,8 +97,8 @@ public override bool Add(TKey key, TValue value)
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(values, nameof(values));
 
-ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
-list ??= new List<TValue>();
+            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
+            list ??= [];
 
             // Prevent null values in the enumerable silently enter the list,
             // violating the TValue : notnull constraint at runtime.
@@ -112,35 +112,37 @@ list ??= new List<TValue>();
                 added++;
             }
 
-if (!exists && added == 0)
-        ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
+            if (!exists && added == 0)
+            {
+                ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
+            }
 
             return added;
         }
 
-/// <inheritdoc/>
-public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-{
-    Guard.NotNull(items, nameof(items));
+        /// <inheritdoc/>
+        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            Guard.NotNull(items, nameof(items));
 
-    int added = 0;
-    var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
+            int added = 0;
+            var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
 
-    foreach (var item in items)
-    {
-        Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-        Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+            foreach (var item in items)
+            {
+                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-        ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
-        list ??= new List<TValue>();
+                ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
+                list ??= [];
 
-        list.Add(item.Value);
-        IncrementCount();
-        added++;
-    }
+                list.Add(item.Value);
+                IncrementCount();
+                added++;
+            }
 
-    return added;
-}
+            return added;
+        }
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapList<TKey, TValue>);
@@ -149,21 +151,31 @@ public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var key in Keys)
             {
                 if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
+                {
                     return false;
+                }
 
                 if (!this[key].SequenceEqual(other[key]))
+                {
                     return false;
+                }
             }
 
             return true;

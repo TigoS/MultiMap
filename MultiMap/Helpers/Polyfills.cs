@@ -18,7 +18,7 @@ namespace MultiMap.Helpers
 #if NET10_0_OR_GREATER
             return source.AsReadOnly();
 #else
-            return source.ToArray();
+            return [.. source];
 #endif
         }
     }

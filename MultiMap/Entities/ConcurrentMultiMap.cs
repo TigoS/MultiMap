@@ -110,7 +110,7 @@ namespace MultiMap.Entities
         /// <exception cref="InvalidOperationException">Thrown if the underlying dictionary is not a <see cref="ConcurrentDictionary{TKey, TValue}"/>.</exception>
         private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> InitializeDictionary()
         {
-            if (!(_dictionary is ConcurrentDictionary<TKey, ConcurrentSet<TValue>> concurrentDict))
+            if (_dictionary is not ConcurrentDictionary<TKey, ConcurrentSet<TValue>> concurrentDict)
             {
                 throw new InvalidOperationException("The underlying dictionary must be a ConcurrentDictionary<TKey, ConcurrentSet<TValue>>.");
             }
@@ -121,7 +121,7 @@ namespace MultiMap.Entities
         /// <summary>
         /// Gets a typed reference to the underlying concurrent dictionary for efficient access.
         /// </summary>
-        private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> _concurrentDictionary;
+        private readonly ConcurrentDictionary<TKey, ConcurrentSet<TValue>> _concurrentDictionary;
 
         /// <inheritdoc/>
         protected override ConcurrentSet<TValue> CreateCollection() => new(_valueComparer);
@@ -136,8 +136,11 @@ namespace MultiMap.Entities
             foreach (var value in collection)
             {
                 if (predicate(value) && collection.TryRemove(value, out _))
+                {
                     removed++;
+                }
             }
+
             return removed;
         }
 
@@ -152,6 +155,7 @@ namespace MultiMap.Entities
             {
                 result.Add(item);
             }
+
             return result;
         }
 
@@ -195,9 +199,11 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(values, nameof(values));
 
-            var items = values as ICollection<TValue> ?? values.ToArray();
+            var items = values as ICollection<TValue> ?? [.. values];
             if (items.Count == 0)
+            {
                 return 0;
+            }
 
             var valueSet = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
 
@@ -205,11 +211,15 @@ namespace MultiMap.Entities
             foreach (var value in items)
             {
                 if (valueSet.TryAdd(value))
+                {
                     added++;
+                }
             }
 
             if (added > 0)
+            {
                 InterlockedAddCount(added);
+            }
 
             return added;
         }
@@ -228,7 +238,7 @@ namespace MultiMap.Entities
 
                 if (!grouped.TryGetValue(item.Key, out var list))
                 {
-                    list = new List<TValue>();
+                    list = [];
                     grouped[item.Key] = list;
                 }
 
@@ -244,7 +254,9 @@ namespace MultiMap.Entities
                 foreach (var value in group.Value)
                 {
                     if (valueSet.TryAdd(value))
+                    {
                         groupAdded++;
+                    }
                 }
 
                 if (groupAdded > 0)
@@ -264,10 +276,14 @@ namespace MultiMap.Entities
             Guard.NotNull(value, nameof(value));
 
             if (!_dictionary.TryGetValue(key, out var valueSet))
+            {
                 return false;
+            }
 
             if (!valueSet.TryRemove(value, out _))
+            {
                 return false;
+            }
 
             InterlockedAddCount(-1);
 
@@ -287,13 +303,17 @@ namespace MultiMap.Entities
             Guard.NotNull(predicate, nameof(predicate));
 
             if (!_dictionary.TryGetValue(key, out var valueSet))
+            {
                 return 0;
+            }
 
             int removedCount = 0;
             foreach (var value in valueSet)
             {
                 if (predicate(value) && valueSet.TryRemove(value, out _))
+                {
                     removedCount++;
+                }
             }
 
             if (removedCount > 0)
@@ -311,7 +331,9 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             if (!_concurrentDictionary.TryRemove(key, out var removedSet))
+            {
                 return false;
+            }
 
             // Snapshot the inner count at the moment of removal and adjust the value counter.
             // Under a concurrent Add/Remove racing on the same key, the counter may transiently
@@ -319,7 +341,9 @@ namespace MultiMap.Entities
             // this is an accepted trade-off for O(1) Count.
             int c = removedSet.Count;
             if (c > 0)
+            {
                 InterlockedAddCount(-c);
+            }
 
             return true;
         }
@@ -342,7 +366,9 @@ namespace MultiMap.Entities
                 foreach (var kvp in _concurrentDictionary)
                 {
                     if (!kvp.Value.IsEmpty)
+                    {
                         yield return kvp.Key;
+                    }
                 }
             }
         }
@@ -356,7 +382,9 @@ namespace MultiMap.Entities
                 foreach (var kvp in _concurrentDictionary)
                 {
                     if (!kvp.Value.IsEmpty)
+                    {
                         count++;
+                    }
                 }
                 return count;
             }
@@ -377,7 +405,9 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             if (!TryGetCollection(key, out var collection))
+            {
                 return 0;
+            }
 
             return collection.Count;
         }
@@ -389,29 +419,45 @@ namespace MultiMap.Entities
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var kvp in _concurrentDictionary)
             {
                 if (kvp.Value.IsEmpty)
+                {
                     continue;
+                }
 
                 if (!other.ContainsKey(kvp.Key) || GetValuesCount(kvp.Key) != other.GetValuesCount(kvp.Key))
+                {
                     return false;
+                }
 
                 var otherSet = new HashSet<TValue>(other[kvp.Key], _valueComparer);
                 if (kvp.Value.Count != otherSet.Count)
+                {
                     return false;
+                }
 
                 foreach (var value in kvp.Value)
+                {
                     if (!otherSet.Contains(value))
+                    {
                         return false;
+                    }
+                }
             }
 
             return true;
@@ -426,7 +472,9 @@ namespace MultiMap.Entities
                 foreach (var kvp in _concurrentDictionary)
                 {
                     if (kvp.Value.IsEmpty)
+                    {
                         continue;
+                    }
 
                     int valueHash = 0;
                     foreach (var value in kvp.Value)
@@ -449,7 +497,9 @@ namespace MultiMap.Entities
         private void TryPruneEmptySet(TKey key, ConcurrentSet<TValue> valueSet)
         {
             if (!valueSet.IsEmpty)
+            {
                 return;
+            }
 
             // Attempt to remove the outer entry only while the inner set is still empty.
             // If TryRemove succeeds but the set was concurrently populated, put it back.

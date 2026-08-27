@@ -66,7 +66,7 @@ namespace MultiMap.Helpers
                 {
                     // Always materialise into a fresh HashSet to avoid aliasing a live
                     // mutable set that could be modified concurrently on the source.
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = new HashSet<TValue>([.. other.GetOrDefault(kvp.Key)]);
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -74,7 +74,7 @@ namespace MultiMap.Helpers
                 {
                     if (!removeByKey.TryGetValue(kvp.Key, out var toRemove))
                     {
-                        toRemove = new HashSet<TValue>();
+                        toRemove = [];
                         removeByKey[kvp.Key] = toRemove;
                     }
                     toRemove.Add(kvp.Value);
@@ -153,7 +153,7 @@ namespace MultiMap.Helpers
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
-                    targetSet = new HashSet<TValue>(target.GetOrDefault(kvp.Key));
+                    targetSet = [.. target.GetOrDefault(kvp.Key)];
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -199,12 +199,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -259,12 +261,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (otherSet.Contains(kvp.Value))
+                {
                     return true;
+                }
             }
 
             return false;
@@ -291,7 +295,9 @@ namespace MultiMap.Helpers
             Guard.NotNull(other, nameof(other));
 
             if (target.Count != other.Count || target.KeyCount != other.KeyCount)
+            {
                 return false;
+            }
 
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
@@ -299,12 +305,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -355,7 +363,7 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -426,7 +434,7 @@ namespace MultiMap.Helpers
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
-                    targetSet = new HashSet<TValue>(target.GetOrDefault(kvp.Key));
+                    targetSet = [.. target.GetOrDefault(kvp.Key)];
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -440,8 +448,15 @@ namespace MultiMap.Helpers
                 }
             }
 
-            foreach (var kvp in toRemove) target.Remove(kvp.Key, kvp.Value);
-            foreach (var kvp in toAdd) target.Add(kvp.Key, kvp.Value);
+            foreach (var kvp in toRemove)
+            {
+                target.Remove(kvp.Key, kvp.Value);
+            }
+
+            foreach (var kvp in toAdd)
+            {
+                target.Add(kvp.Key, kvp.Value);
+            }
 
             return target;
         }
@@ -468,12 +483,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -515,7 +532,9 @@ namespace MultiMap.Helpers
             foreach (var kvp in target)
             {
                 if (other.Contains(kvp.Key, kvp.Value))
+                {
                     return true;
+                }
             }
 
             return false;
@@ -537,12 +556,16 @@ namespace MultiMap.Helpers
             Guard.NotNull(other, nameof(other));
 
             if (target.Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var kvp in target)
             {
                 if (!new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -803,7 +826,9 @@ namespace MultiMap.Helpers
                 foreach (var value in targetValues)
                 {
                     if (!otherSet.Contains(value))
+                    {
                         return false;
+                    }
                 }
             }
 
@@ -885,7 +910,9 @@ namespace MultiMap.Helpers
                 foreach (var value in targetValues)
                 {
                     if (otherSet.Contains(value))
+                    {
                         return true;
+                    }
                 }
             }
 
@@ -930,7 +957,9 @@ namespace MultiMap.Helpers
             var otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
 
             if (targetCount != otherCount || targetKeyCount != otherKeyCount)
+            {
                 return false;
+            }
 
             var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
@@ -943,7 +972,9 @@ namespace MultiMap.Helpers
                 foreach (var value in targetValues)
                 {
                     if (!otherSet.Contains(value))
+                    {
                         return false;
+                    }
                 }
             }
 

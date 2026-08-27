@@ -10,18 +10,13 @@ namespace MultiMap.Entities
     /// Provides thread-safe <see cref="TryAdd"/>, <see cref="TryRemove"/>, and <see cref="IsEmpty"/> operations.
     /// </summary>
     /// <typeparam name="T">The type of elements in the set.</typeparam>
-    public sealed class ConcurrentSet<T> : ICollection<T>
+    /// <remarks>
+    /// Initializes a new instance of <see cref="ConcurrentSet{T}"/> with an optional value comparer.
+    /// </remarks>
+    public sealed class ConcurrentSet<T>(IEqualityComparer<T>? comparer = null) : ICollection<T>
         where T : notnull
     {
-        private readonly ConcurrentDictionary<T, byte> _inner;
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="ConcurrentSet{T}"/> with an optional value comparer.
-        /// </summary>
-        public ConcurrentSet(IEqualityComparer<T>? comparer = null)
-        {
-            _inner = new ConcurrentDictionary<T, byte>(comparer);
-        }
+        private readonly ConcurrentDictionary<T, byte> _inner = new(comparer);
 
         /// <summary>
         /// Gets the number of elements in the set.
@@ -76,13 +71,17 @@ namespace MultiMap.Entities
             Guard.NotNull(array, nameof(array));
 
             if (arrayIndex < 0 || arrayIndex > array.Length)
+            {
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
 
             int index = arrayIndex;
             foreach (var item in _inner.Keys)
             {
                 if (index >= array.Length)
+                {
                     throw new ArgumentException("Destination array was not long enough.");
+                }
                 array[index++] = item;
             }
         }

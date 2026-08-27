@@ -365,7 +365,7 @@ namespace MultiMap.Entities
             {
                 try
                 {
-                    return new ValueTask<IEnumerable<TKey>>(_dictionary.Keys.ToArray());
+                    return new ValueTask<IEnumerable<TKey>>([.. _dictionary.Keys]);
                 }
                 finally
                 {
@@ -511,7 +511,7 @@ namespace MultiMap.Entities
             var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
             foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
             {
-                otherIndex[key] = new HashSet<TValue>(await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false));
+                otherIndex[key] = new HashSet<TValue>([.. await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)]);
             }
 
             await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -646,12 +646,16 @@ namespace MultiMap.Entities
                 foreach (var kvp in thisSnapshot)
                 {
                     if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    {
                         return false;
+                    }
 
                     foreach (var value in kvp.Value)
                     {
                         if (!otherSet.Contains(value))
+                        {
                             return false;
+                        }
                     }
                 }
 
@@ -681,7 +685,9 @@ namespace MultiMap.Entities
                 foreach (var value in kvp.Value)
                 {
                     if (!otherSet.Contains(value))
+                    {
                         return false;
+                    }
                 }
             }
 
@@ -768,7 +774,9 @@ namespace MultiMap.Entities
                         foreach (var value in kvp.Value)
                         {
                             if (otherSet.Contains(value))
+                            {
                                 return true;
+                            }
                         }
                     }
                 }
@@ -799,7 +807,9 @@ namespace MultiMap.Entities
                 foreach (var value in kvp.Value)
                 {
                     if (otherSet.Contains(value))
+                    {
                         return true;
+                    }
                 }
             }
 
@@ -844,7 +854,9 @@ namespace MultiMap.Entities
                     {
                         if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
                             _dictionary.Count != concreteOther._dictionary.Count)
+                        {
                             return false;
+                        }
 
                         thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
                         otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
@@ -862,10 +874,14 @@ namespace MultiMap.Entities
                 foreach (var kvp in thisSnapshot)
                 {
                     if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    {
                         return false;
+                    }
 
                     if (!kvp.Value.SetEquals(otherSet))
+                    {
                         return false;
+                    }
                 }
 
                 return true;
@@ -890,20 +906,26 @@ namespace MultiMap.Entities
             int otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
 
             if (thisCount != otherCount || snapshot.Count != otherKeyCount)
+            {
                 return false;
+            }
 
             foreach (var kvp in snapshot)
             {
                 var (found, otherValues) = await other.TryGetAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
                 if (!found)
+                {
                     return false;
+                }
 
                 var otherSet = otherValues is HashSet<TValue> hs
                     ? hs
                     : new HashSet<TValue>(otherValues, _valueComparer);
 
                 if (!kvp.Value.SetEquals(otherSet))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -963,20 +985,21 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Equals(object? obj)
         {
-            if (obj is not IReadOnlyMultiMapAsync<TKey, TValue> other)
-                return false;
-
-            return Equals(other);
+            return obj is IReadOnlyMultiMapAsync<TKey, TValue> other && Equals(other);
         }
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             ThrowIfDisposed();
 
@@ -1000,7 +1023,9 @@ namespace MultiMap.Entities
                     {
                         if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
                             _dictionary.Count != concreteOther._dictionary.Count)
+                        {
                             return false;
+                        }
 
                         thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
                         otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
@@ -1018,10 +1043,14 @@ namespace MultiMap.Entities
                 foreach (var kvp in thisSnapshot)
                 {
                     if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    {
                         return false;
+                    }
 
                     if (!kvp.Value.SetEquals(otherSet))
+                    {
                         return false;
+                    }
                 }
 
                 return true;
@@ -1052,20 +1081,26 @@ namespace MultiMap.Entities
                 int otherKeyCount = await other.GetKeyCountAsync(CancellationToken.None).ConfigureAwait(false);
 
                 if (thisCount != otherCount || snapshot.Count != otherKeyCount)
+                {
                     return false;
+                }
 
                 foreach (var kvp in snapshot)
                 {
                     var (found, otherValues) = await other.TryGetAsync(kvp.Key, CancellationToken.None).ConfigureAwait(false);
                     if (!found)
+                    {
                         return false;
+                    }
 
                     var otherSet = otherValues is HashSet<TValue> hs
                         ? hs
                         : new HashSet<TValue>(otherValues, _valueComparer);
 
                     if (!kvp.Value.SetEquals(otherSet))
+                    {
                         return false;
+                    }
                 }
 
                 return true;
@@ -1079,10 +1114,14 @@ namespace MultiMap.Entities
         public async ValueTask<bool> EqualsAsync(IReadOnlyMultiMapAsync<TKey, TValue>? other, CancellationToken cancellationToken = default)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             ThrowIfDisposed();
 
@@ -1105,7 +1144,9 @@ namespace MultiMap.Entities
                     {
                         if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
                             _dictionary.Count != concreteOther._dictionary.Count)
+                        {
                             return false;
+                        }
 
                         thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
                         otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
@@ -1123,10 +1164,14 @@ namespace MultiMap.Entities
                 foreach (var kvp in thisSnapshot)
                 {
                     if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
+                    {
                         return false;
+                    }
 
                     if (!kvp.Value.SetEquals(otherSet))
+                    {
                         return false;
+                    }
                 }
 
                 return true;
@@ -1151,20 +1196,26 @@ namespace MultiMap.Entities
             int otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
 
             if (thisCount != otherCount || snapshot.Count != otherKeyCount)
+            {
                 return false;
+            }
 
             foreach (var kvp in snapshot)
             {
                 var (found, otherValues) = await other.TryGetAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
                 if (!found)
+                {
                     return false;
+                }
 
                 var otherSet = otherValues is HashSet<TValue> hs
                     ? hs
                     : new HashSet<TValue>(otherValues, _valueComparer);
 
                 if (!kvp.Value.SetEquals(otherSet))
+                {
                     return false;
+                }
             }
 
             return true;

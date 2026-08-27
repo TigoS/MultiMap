@@ -110,86 +110,90 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
-/// <inheritdoc/>
-protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => Polyfills.AsReadOnlyOrSnapshot(collection);
+        /// <inheritdoc/>
+        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => Polyfills.AsReadOnlyOrSnapshot(collection);
 
-/// <inheritdoc/>
-public override bool Add(TKey key, TValue value)
-{
-    Guard.NotNull(key, nameof(key));
-    Guard.NotNull(value, nameof(value));
-
-    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
-    hashset ??= new HashSet<TValue>(_valueComparer);
-
-    if (hashset.Add(value))
-    {
-        IncrementCount();
-        return true;
-    }
-
-    return false;
-}
-
-/// <inheritdoc/>
-public override int AddRange(TKey key, IEnumerable<TValue> values)
-{
-    Guard.NotNull(key, nameof(key));
-    Guard.NotNull(values, nameof(values));
-
-    // Materialise first so that:
-    // 1. An empty sequence returns 0 without touching the dictionary.
-    // 2. All null-element checks happen before the dictionary slot is created,
-    //    keeping the dictionary pristine when the sequence is invalid.
-    var materialised = values as ICollection<TValue> ?? values.ToArray();
-    if (materialised.Count == 0)
-        return 0;
-
-    foreach (var value in materialised)
-        Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
-
-    var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
-    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
-    hashset ??= new HashSet<TValue>(_valueComparer);
-
-    int added = 0;
-    foreach (var value in materialised)
-    {
-        if (hashset.Add(value))
+        /// <inheritdoc/>
+        public override bool Add(TKey key, TValue value)
         {
-            IncrementCount();
-            added++;
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(value, nameof(value));
+
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
+            hashset ??= new HashSet<TValue>(_valueComparer);
+
+            if (hashset.Add(value))
+            {
+                IncrementCount();
+                return true;
+            }
+
+            return false;
         }
-    }
 
-    return added;
-}
-
-/// <inheritdoc/>
-public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-{
-    Guard.NotNull(items, nameof(items));
-
-    int added = 0;
-    var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
-
-    foreach (var item in items)
-    {
-        Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-        Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
-
-        ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
-        hashset ??= new HashSet<TValue>(_valueComparer);
-
-        if (hashset.Add(item.Value))
+        /// <inheritdoc/>
+        public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            IncrementCount();
-            added++;
-        }
-    }
+            Guard.NotNull(key, nameof(key));
+            Guard.NotNull(values, nameof(values));
 
-    return added;
-}
+            // Materialise first so that:
+            // 1. An empty sequence returns 0 without touching the dictionary.
+            // 2. All null-element checks happen before the dictionary slot is created,
+            //    keeping the dictionary pristine when the sequence is invalid.
+            var materialised = values as ICollection<TValue> ?? [.. values];
+            if (materialised.Count == 0)
+            {
+                return 0;
+            }
+
+            foreach (var value in materialised)
+            {
+                Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
+            }
+
+            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
+            hashset ??= new HashSet<TValue>(_valueComparer);
+
+            int added = 0;
+            foreach (var value in materialised)
+            {
+                if (hashset.Add(value))
+                {
+                    IncrementCount();
+                    added++;
+                }
+            }
+
+            return added;
+        }
+
+        /// <inheritdoc/>
+        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            Guard.NotNull(items, nameof(items));
+
+            int added = 0;
+            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+
+            foreach (var item in items)
+            {
+                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
+
+                if (hashset.Add(item.Value))
+                {
+                    IncrementCount();
+                    added++;
+                }
+            }
+
+            return added;
+        }
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
@@ -198,29 +202,35 @@ public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var key in Keys)
             {
                 if (!other.TryGet(key, out var otherValues))
+                {
                     return false;
+                }
 
                 var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
 
-                if (!_dictionary.TryGetValue(key, out var targetValuesSet))
+                if (!_dictionary.TryGetValue(key, out var targetValuesSet) ||
+                    targetValuesSet.Count != otherValuesSet.Count ||
+                    !targetValuesSet.SetEquals(otherValuesSet))
+                {
                     return false;
-
-                if (targetValuesSet.Count != otherValuesSet.Count)
-                    return false;
-
-                if (!targetValuesSet.SetEquals(otherValuesSet))
-                    return false;
+                }
             }
 
             return true;

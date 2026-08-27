@@ -14,7 +14,7 @@ namespace MultiMap.Entities
         /// </summary>
         internal struct ValuesEnumerator : IEnumerator<TValue>
         {
-            private IEnumerator<TCollection> _outerEnumerator;
+            private readonly IEnumerator<TCollection> _outerEnumerator;
             private IEnumerator<TValue>? _innerEnumerator;
             private TValue _current;
 
@@ -28,7 +28,7 @@ namespace MultiMap.Entities
             /// <inheritdoc/>
             public readonly TValue Current => _current;
 
-            object IEnumerator.Current => _current;
+            readonly object IEnumerator.Current => _current;
 
             /// <inheritdoc/>
             public bool MoveNext()
@@ -45,7 +45,9 @@ namespace MultiMap.Entities
                     _innerEnumerator = null;
 
                     if (!_outerEnumerator.MoveNext())
+                    {
                         return false;
+                    }
 
                     _innerEnumerator = _outerEnumerator.Current.GetEnumerator();
                 }
@@ -61,7 +63,7 @@ namespace MultiMap.Entities
             }
 
             /// <inheritdoc/>
-            public void Dispose()
+            public readonly void Dispose()
             {
                 _innerEnumerator?.Dispose();
                 _outerEnumerator.Dispose();

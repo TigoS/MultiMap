@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Diagnostics;
-using MultiMap.Interfaces;
 using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -109,13 +109,17 @@ namespace MultiMap.Entities
             // Materialise the sequence upfront: we need Count to short-circuit on an empty
             // input without allocating a new inner collection, and we want to enumerate only
             // once even if the caller passes a non-replayable IEnumerable<T>.
-            var materialised = values as ICollection<TValue> ?? values.ToArray();
+            var materialised = values as ICollection<TValue> ?? [.. values];
             if (materialised.Count == 0)
+            {
                 return 0;
+            }
 
             bool exists = _dictionary.TryGetValue(key, out var collection);
             if (!exists)
+            {
                 collection = CreateCollection();
+            }
 
             int added = 0;
             foreach (var value in materialised)
@@ -128,7 +132,9 @@ namespace MultiMap.Entities
             }
 
             if (!exists && added > 0)
+            {
                 _dictionary[key] = collection!;
+            }
 
             return added;
         }
@@ -142,7 +148,9 @@ namespace MultiMap.Entities
             foreach (var item in items)
             {
                 if (Add(item.Key, item.Value))
+                {
                     added++;
+                }
             }
 
             return added;
@@ -153,10 +161,9 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (TryGetCollection(key, out var collection))
-                return ToReadOnly(collection);
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+            return TryGetCollection(key, out var collection)
+                ? ToReadOnly(collection)
+                : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
 
         /// <inheritdoc/>
@@ -164,10 +171,7 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (TryGetCollection(key, out var collection))
-                return ToReadOnly(collection);
-
-            return [];
+            return TryGetCollection(key, out var collection) ? ToReadOnly(collection) : [];
         }
 
         /// <inheritdoc/>
@@ -196,7 +200,9 @@ namespace MultiMap.Entities
                 {
                     DecrementCount();
                     if (collection.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
 
                 return removed;
@@ -229,13 +235,17 @@ namespace MultiMap.Entities
             Guard.NotNull(predicate, nameof(predicate));
 
             if (!_dictionary.TryGetValue(key, out var collection))
+            {
                 return 0;
+            }
 
             int removedCount = RemoveWhereFromCollection(collection, predicate);
             DecrementCount(removedCount);
 
             if (collection.Count == 0)
+            {
                 _dictionary.Remove(key);
+            }
 
             return removedCount;
         }
