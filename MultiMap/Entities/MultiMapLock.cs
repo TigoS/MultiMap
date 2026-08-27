@@ -79,7 +79,7 @@ namespace MultiMap.Entities
 
         /// <summary>
         /// Polling interval (ms) used by <see cref="EnterWriteLockCancellable"/> between
-        /// <see cref="ReaderWriterLockSlim.TryEnterWriteLock"/> attempts.
+        /// <see cref="ReaderWriterLockSlim.TryEnterWriteLock(int)"/> attempts.
         /// 20 ms gives sub-20 ms cancellation latency with negligible CPU cost.
         /// </summary>
         private const int WriteLockPollIntervalMs = 20;
@@ -89,7 +89,7 @@ namespace MultiMap.Entities
         /// </summary>
         /// <remarks>
         /// <see cref="ReaderWriterLockSlim"/> does not expose a cancellable entry point, so this
-        /// helper polls with <see cref="ReaderWriterLockSlim.TryEnterWriteLock"/> at
+        /// helper polls with <see cref="ReaderWriterLockSlim.TryEnterWriteLock(int)"/> at
         /// <see cref="WriteLockPollIntervalMs"/> intervals. Cancellation is observed within at most
         /// one polling interval (~20 ms). On cancellation, <see cref="OperationCanceledException"/>
         /// is thrown and the lock is <b>not</b> held.
