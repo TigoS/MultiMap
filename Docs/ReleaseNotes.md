@@ -90,28 +90,25 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Tests**
 
-- Added `MultiMapLock_CancellationTokenTests` in `MultiMapLock_CancellationToken_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) with both happy-path and contention-cancel scenarios. The "cancels while waiting" tests hold the write lock from a background thread and verify `OperationCanceledException` is raised in the polling loop.
+- Added `MultiMapLock_CancellationTokenTests` in `MultiMapLock_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` write overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`). Each has a happy-path test and a contention-cancel test (write lock held by a background thread, token cancelled after 80 ms) exercising the polling loop in `EnterWriteLockCancellable`.
 - Added `Guard_ThreeParamNotNullTests` — 2 tests covering the 3-parameter `Guard.NotNull<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
-- Added `CoverageBoost_UnitTests.cs` — targeted tests for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
-- Added `NonEquatableConstraintTests` in `GapCoverage_UnitTests.cs` — five tests (`MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) that instantiate each implementation with a `NoEquatableKey` / `NoEquatableValue` class pair that overrides `Equals`/`GetHashCode` without implementing `IEquatable<T>`. These tests verify the constraint relaxation is genuine and cover all main multimap variants.
-- Added `CoverageBoost_UnitTests.cs` — targeted tests for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
-- Added `MultiMapLock_CancellationToken_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` write overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`). Each has a happy-path test and a contention-cancel test (write lock held by a background thread, token cancelled after 80 ms) exercising the polling loop in `EnterWriteLockCancellable`.
-- Added `Guard_ThreeParamNotNullTests` — 2 tests covering the `Guard.NotNull<T>(value, paramName, message)` null and non-null paths via `MultiMapSet.AddRange` with a sequence containing a `null` element.
-- **Total: 6,924 tests** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`). All pass.
-- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
-- **Total test count: 6,924** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`).
-- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
-- `SortedMultiMap_UnitTests.cs`
+- Added targeted tests to `AdditionalBoundaryTests.cs` for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
+- Added `NonEquatableConstraintTests` in `AdditionalBoundaryTests.cs` — five tests (`MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) that instantiate each implementation with a `NoEquatableKey` / `NoEquatableValue` class pair that overrides `Equals`/`GetHashCode` without implementing `IEquatable<T>`. These tests verify the constraint relaxation is genuine and cover all main multimap variants.
+- - `SortedMultiMap_UnitTests.cs`
   - Updated `Constructor_WithValueComparer_UsesReverseValueOrder` and `Constructor_WithKeyAndValueComparer_BothApplied` to use `ReverseIntComparer` (implements both `IComparer<int>` and `IEqualityComparer<int>`) instead of bare `Comparer<int>.Create(...)`, which now correctly throws at construction.
   - Added `Constructor_WithValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TValue>?)`.
   - Added `Constructor_WithKeyAndValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)`.
   - Added `Constructor_WithNullValueComparer_DoesNotThrow` — confirms `null` is still accepted (uses default comparer).
   - Added `GetHashCode_WithDualInterfaceValueComparer_EqualsContract` — end-to-end proof that `a.Equals(b) → a.GetHashCode() == b.GetHashCode()` when a dual-interface comparer is supplied.
   - Added `ReverseIntComparer` helper class (implements both `IComparer<int>` and `IEqualityComparer<int>`) shared by the updated and new tests.
-
 - `MultiMapAsync_UnitTests.cs`
   - Replaced `Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException` with `Equals_WithSynchronizationContextAndDifferentInstance_DoesNotThrowAndReturnsCorrectResult` — asserts that `Equals` returns `true` (both maps empty) without throwing under a `SynchronizationContext`.
   - Replaced `Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException` with `Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue` — asserts that `Equals` returns `true` (both maps with identical content) without throwing under a `SynchronizationContext`.
+  - 
+- **Total: 6,924 tests** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`). All pass.
+- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
+- **Total test count: 6,924** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`).
+- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
 
 ### 2.1.1
 
