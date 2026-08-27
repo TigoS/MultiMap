@@ -83,6 +83,10 @@ class CaseInsensitiveStringComparer : IComparer<string>, IEqualityComparer<strin
         => StringComparer.OrdinalIgnoreCase.Equals(x, y);
     public int GetHashCode(string obj)
         => StringComparer.OrdinalIgnoreCase.GetHashCode(obj);
+
+### ConcurrentSet.Count Staleness
+
+`ConcurrentSet<T>.Count` (and therefore `ConcurrentMultiMap`'s value-collection count) delegates to `ConcurrentDictionary<TKey, TValue>.Count`. The BCL acquires all internal segment locks to produce a consistent snapshot, so the operation is effectively O(1) in practice, but the value can be **stale by the time it is observed** — other threads may add or remove elements between the read and any subsequent decision. Use `IsEmpty` when you only need to test for emptiness, and avoid building control-flow logic around the count in concurrent scenarios.
 }
 
 var map = new SortedMultiMap<string, string>(new CaseInsensitiveStringComparer());
@@ -268,6 +272,8 @@ Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<
 Extends `MultiMapBase<TKey, TValue, ConcurrentSet<TValue>>`. Uses `ConcurrentDictionary<TKey, ConcurrentSet<TValue>>` for fully lock-free concurrent access — no explicit locks are held for per-key operations. `Count` and `KeyCount` are **O(1)**, backed by `_count` and `_keyCount` fields maintained via `Interlocked` in every mutating path. `Keys` and `Values` are **lazy iterators** that yield directly from the live dictionary (call `.ToList()` / `.ToArray()` when a stable snapshot is needed). Suitable for high-concurrency scenarios.
 
 > **Note:** `ConcurrentMultiMap` does **not** implement `IDisposable`. Unlike `MultiMapLock` (which disposes a `ReaderWriterLockSlim`) and `MultiMapAsync` (which disposes two `SemaphoreSlim` instances), `ConcurrentMultiMap` owns no disposable resources — the underlying `ConcurrentDictionary` requires no explicit cleanup.
+
+> **Note:** `ConcurrentSet<T>.Count` (used internally per key) delegates to `ConcurrentDictionary.Count`, which acquires all internal segment locks. The value is effectively O(1) but **may be stale** by the time it is read in concurrent scenarios. Use `IsEmpty` when testing for emptiness.
 
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
