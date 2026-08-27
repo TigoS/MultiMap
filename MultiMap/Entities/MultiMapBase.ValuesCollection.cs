@@ -3,8 +3,8 @@ using System.Collections;
 namespace MultiMap.Entities
 {
     public abstract partial class MultiMapBase<TKey, TValue, TCollection>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
         where TCollection : ICollection<TValue>
     {
         /// <summary>

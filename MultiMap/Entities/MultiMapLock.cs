@@ -14,8 +14,8 @@ namespace MultiMap.Entities
     /// It is suitable for scenarios where multiple threads need to add, remove, or query key-value associations without external synchronization.
     /// Dispose the instance when no longer needed to release resources.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
     /// <remarks>
     /// Initializes a new instance of the <see cref="MultiMapLock{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
     /// </remarks>
@@ -24,8 +24,8 @@ namespace MultiMap.Entities
     /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
     [DebuggerDisplay("Keys={KeyCount}, Values={Count}")]
     public sealed class MultiMapLock<TKey, TValue>(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer) : IMultiMap<TKey, TValue>, IDisposable
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
                 ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)

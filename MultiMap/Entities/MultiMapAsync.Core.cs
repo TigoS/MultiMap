@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 namespace MultiMap.Entities
 {
     public sealed partial class MultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         // ── Guards ────────────────────────────────────────────
 

@@ -1,8 +1,8 @@
 namespace MultiMap.Entities
 {
     public sealed partial class MultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class.

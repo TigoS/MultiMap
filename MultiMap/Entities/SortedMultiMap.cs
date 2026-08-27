@@ -45,11 +45,11 @@ namespace MultiMap.Entities
     /// with consistent semantics.
     /// </para>
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement both <see cref="IEquatable{TKey}"/> (required by the base class and all multi-map interfaces) and <see cref="IComparable{TKey}"/> (required by this class for sorted key ordering). Note: only the comparer is used at runtime; <see cref="IEquatable{TKey}"/> is a library-wide constraint on all multi-map types.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement both <see cref="IEquatable{TValue}"/> and <see cref="IComparable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IComparable{TKey}"/> (required by this class for sorted key ordering).</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IComparable{TValue}"/>.</typeparam>
     public sealed class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
-        where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
-        where TValue : notnull, IEquatable<TValue>, IComparable<TValue>
+        where TKey : notnull, IComparable<TKey>
+        where TValue : notnull, IComparable<TValue>
     {
         private readonly IComparer<TValue>? _valueComparer;
 

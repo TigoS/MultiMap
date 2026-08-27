@@ -9,9 +9,9 @@ namespace MultiMap.Entities
     /// Implements <see cref="ICollection{T}"/> using the keys of the underlying dictionary; values are always <c>0</c> (ignored).
     /// Provides thread-safe <see cref="TryAdd"/>, <see cref="TryRemove"/>, and <see cref="IsEmpty"/> operations.
     /// </summary>
-    /// <typeparam name="T">The type of elements in the set. Must be non-nullable and implement <see cref="IEquatable{T}"/>.</typeparam>
+    /// <typeparam name="T">The type of elements in the set.</typeparam>
     public sealed class ConcurrentSet<T> : ICollection<T>
-        where T : notnull, IEquatable<T>
+        where T : notnull
     {
         private readonly ConcurrentDictionary<T, byte> _inner;
 

@@ -8,8 +8,8 @@ namespace MultiMap.Entities
     /// <summary>
     /// Provides a shared implementation of dictionary-backed multi-map operations for concrete multi-map types such as <see cref="MultiMapSet{TKey, TValue}"/>, <see cref="MultiMapList{TKey, TValue}"/>, and <see cref="SortedMultiMap{TKey, TValue}"/>.
     /// </summary>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
     /// <typeparam name="TCollection">The collection type used to store values under each key.</typeparam>
     /// <remarks>
     /// Initializes a new instance of the MultiMapBase class using the specified dictionary as the underlying storage.
@@ -18,8 +18,8 @@ namespace MultiMap.Entities
     /// <param name="dictionary">The dictionary to use as the underlying storage for the multimap. Must not be null.</param>
     [DebuggerDisplay("Keys={KeyCount}, Values={Count}")]
     public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionary<TKey, TCollection> dictionary) : IMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
         where TCollection : ICollection<TValue>
     {
         /// <summary>

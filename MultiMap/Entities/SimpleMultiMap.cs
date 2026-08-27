@@ -15,13 +15,13 @@ namespace MultiMap.Entities
     /// For production use, prefer <see cref="MultiMapSet{TKey, TValue}"/> or another full <see cref="Interfaces.IMultiMap{TKey, TValue}"/> implementation.
     /// Duplicate values per key are not allowed.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the map.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
     [DebuggerDisplay("Keys={_dictionary.Count}, Values={Count}")]
     [Obsolete("SimpleMultiMap<TKey, TValue> is deprecated. Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.")]
     public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;

@@ -13,11 +13,11 @@ namespace MultiMap.Entities
     /// Values associated with a key are unordered and duplicates are not allowed.
     /// The class is not thread-safe; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
     public sealed class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly IEqualityComparer<TValue>? _valueComparer;
 
