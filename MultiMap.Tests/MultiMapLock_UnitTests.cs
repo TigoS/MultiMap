@@ -2746,7 +2746,7 @@ public class MultiMapLock_ExtraStressTests
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SortedMultiMap – constructor overloads + GetHashCode / Equals
+// MultiMapLock – atomic set operation tests (IsSubsetOf, IsSupersetOf, Overlaps, SetEquals)
 // ──────────────────────────────────────────────────────────────────────────────
 
 public class MultiMapLock_AtomicSetOperationTests
@@ -2990,13 +2990,6 @@ public class MultiMapLock_StressTests
         }
     }
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// MultiMapAsync – uncovered paths
-// line 1001: Equals(object?) → SynchronizationContext guard (InvalidOperationException)
-// line 1089: Equals(IReadOnlyMultiMapAsync?) general path when other is not
-//            a concrete MultiMapAsync<> instance (uses GetCountAsync etc.)
-// ──────────────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MultiMapLock — CancellationToken overloads
@@ -3362,7 +3355,7 @@ public class MultiMapLock_CancellationTokenTests
 // Guard.NotNull — 3-parameter overload (with custom message) — null path
 // ─────────────────────────────────────────────────────────────────────────────
 
-[TestFixture]   
+[TestFixture]
 public class Guard_ThreeParamNotNullTests
 {
     [Test]

@@ -3873,6 +3873,10 @@ internal sealed class EmptyAsyncEnumerator<T> : IAsyncEnumerator<T>
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapAsync – Equals(IReadOnlyMultiMapAsync) branch coverage tests
+// ──────────────────────────────────────────────────────────────────────────────
+
 public class MultiMapAsync_EqualsBranchTests
 {
     // line 1089: Equals(IReadOnlyMultiMapAsync?) general (non-concrete) path.
