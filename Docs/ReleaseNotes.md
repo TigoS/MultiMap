@@ -54,12 +54,14 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 - `MultiMapAsync<TKey, TValue>.Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` — fixed deadlock risk on the general (foreign-implementation) comparison path. The three `.GetAwaiter().GetResult()` calls that queried the foreign `IReadOnlyMultiMapAsync` instance are now wrapped in a single `Task.Run` lambda, ensuring all async continuations execute on a context-free thread-pool thread and cannot deadlock regardless of the caller's `SynchronizationContext` (UI thread, ASP.NET classic, custom context, etc.). The previously overly broad `SynchronizationContext.Current != null` guard — which also blocked the deadlock-safe fast path (both sides `MultiMapAsync`) — has been removed. `ConfigureAwait(false)` is applied to every `await` inside the lambda as an additional safeguard.
 - `SortedMultiMap<TKey, TValue>` — fixed a potential `GetHashCode`/`Equals` contract violation when a custom `IComparer<TValue>` that does not also implement `IEqualityComparer<TValue>` was supplied. `GetHashCode` was silently falling back to `EqualityComparer<TValue>.Default` while `Equals` (via `SortedSet<TValue>.SetEquals`) continued using the custom comparer, making two equal instances produce different hash codes. Both `SortedMultiMap(IComparer<TValue>?)` and `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)` now throw `ArgumentException` at construction time when a non-null value comparer does not implement `IEqualityComparer<TValue>`.
-- `MultiMapAsync<TKey, TValue>` — added writer-preference logic to the custom `SemaphoreSlim`-based readers-writer protocol. Previously, new readers could enter the shared `_writeLock` group while a writer was already waiting, causing indefinite writer starvation under sustained read load. A new `_pendingWriters` counter (maintained atomically via `Interlocked`) is incremented by every writer before it waits on `_writeLock` and decremented once the lock is acquired. All three read-entry paths (`TryEnterReadLockSync`, `EnterReadLockSync`, `EnterReadLockAsync`) check this counter and yield — retrying after the writer finishes — when it is non-zero. A new stress test (`WriterPreference_UnderSustainedReads_WriterCompletesWithinTimeout`) verifies that a single writer completes within a 5-second timeout while 8 concurrent reader tasks run at full speed.
 - `MultiMapBase<TKey, TValue, TCollection>`
   - `IncrementCount()` — non-atomic increment (used by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`).
   - `DecrementCount(int by = 1)` — non-atomic decrement.
   - `ResetCount()` — sets the counter to zero (used by `Clear()`).
-  - `ref int CountRef` — exposes a `ref int` for `ConcurrentMultiMap`, which must use `Interlocked`/`Volatile` APIs directly.
+  - `InterlockedIncrementCount()` — atomically increments the counter.
+  - `InterlockedAddCount(int by)` — atomically adds the specified value to the counter.
+  - `InterlockedExchangeCount(int value)` — atomically sets the counter to the specified value.
+  - `VolatileReadCount()` — reads the counter value with volatile semantics.
   All derived classes (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`) were updated accordingly.
 
 **Code Quality**
