@@ -6,7 +6,7 @@ namespace MultiMap.Interfaces
     /// <remarks>This interface provides read-only access to a multi-value mapping, where each key can be associated with multiple values. It does not allow modification of the collection. Implementations must ensure that both keys and values are non-null. Enumeration yields key-value pairs for all associations in the collection.</remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
     /// <typeparam name="TValue">The type of values in the multi-map.</typeparam>
-    public interface IReadOnlySimpleMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>
+    public interface IReadOnlySimpleMultiMap<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IReadOnlyCollection<KeyValuePair<TKey, TValue>>, IEquatable<IReadOnlySimpleMultiMap<TKey, TValue>>
         where TKey : notnull
         where TValue : notnull
     {

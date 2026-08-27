@@ -10,7 +10,7 @@ namespace MultiMap.Interfaces
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the collection.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
-    public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>, IEquatable<IReadOnlySimpleMultiMap<TKey, TValue>>
+    public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
