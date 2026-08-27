@@ -17,12 +17,7 @@ namespace MultiMap.Helpers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static void NotNull<T>([NotNull] T? value, string paramName)
         {
-#if NET6_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(value, paramName);
-#else
-            if (value is null)
-                throw new ArgumentNullException(paramName);
-#endif
         }
 
         /// <summary>
