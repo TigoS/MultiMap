@@ -281,6 +281,8 @@ Extends `MultiMapBase<TKey, TValue, ConcurrentSet<TValue>>`. Uses `ConcurrentDic
 
 Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow concurrent reads with exclusive writes. Good for read-heavy workloads with occasional writes.
 
+> **Cancellable write operations:** `ReaderWriterLockSlim.EnterWriteLock()` blocks indefinitely with no cancellation path. Every write method (`Add`, `AddRange`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) has a `CancellationToken` overload that polls with `TryEnterWriteLock(20 ms)` in a loop and calls `cancellationToken.ThrowIfCancellationRequested()` between attempts. Cancellation latency is at most ~20 ms; if the token fires after the lock is acquired, the mutation completes normally (the token is only checked **while waiting**).
+
 **Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
 
 ### `MultiMapAsync<TKey, TValue>` — Async-Safe
