@@ -1,6 +1,4 @@
-#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
-#endif
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
@@ -78,22 +76,20 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override IEnumerable<TValue> ToReadOnly(List<TValue> collection) => collection.AsReadOnly();
 
-#if NET6_0_OR_GREATER
-        /// <inheritdoc/>
-        public override bool Add(TKey key, TValue value)
-        {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+/// <inheritdoc/>
+public override bool Add(TKey key, TValue value)
+{
+    Guard.NotNull(key, nameof(key));
+    Guard.NotNull(value, nameof(value));
 
-            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
-            list ??= new List<TValue>();
+    ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
+    list ??= new List<TValue>();
 
-            list.Add(value);
-            IncrementCount();
+    list.Add(value);
+    IncrementCount();
 
-            return true;
-        }
-#endif
+    return true;
+}
 
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
@@ -101,14 +97,8 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(values, nameof(values));
 
-#if NET6_0_OR_GREATER
-            ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
-            list ??= new List<TValue>();
-#else
-            bool exists = _dictionary.TryGetValue(key, out var list);
-            if (!exists)
-                list = new List<TValue>();
-#endif
+ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
+list ??= new List<TValue>();
 
             // Prevent null values in the enumerable silently enter the list,
             // violating the TValue : notnull constraint at runtime.
@@ -122,42 +112,35 @@ namespace MultiMap.Entities
                 added++;
             }
 
-#if NET6_0_OR_GREATER
-            if (!exists && added == 0)
-                    ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
-#else
-            if (!exists && added > 0)
-                _dictionary[key] = list!;
-#endif
+if (!exists && added == 0)
+        ((Dictionary<TKey, List<TValue>>)_dictionary).Remove(key);
 
             return added;
         }
 
-#if NET6_0_OR_GREATER
-        /// <inheritdoc/>
-        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            Guard.NotNull(items, nameof(items));
+/// <inheritdoc/>
+public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+{
+    Guard.NotNull(items, nameof(items));
 
-            int added = 0;
-            var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
+    int added = 0;
+    var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
 
-            foreach (var item in items)
-            {
-                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+    foreach (var item in items)
+    {
+        Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+        Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-                ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
-                list ??= new List<TValue>();
+        ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
+        list ??= new List<TValue>();
 
-                list.Add(item.Value);
-                IncrementCount();
-                added++;
-            }
+        list.Add(item.Value);
+        IncrementCount();
+        added++;
+    }
 
-            return added;
-        }
-#endif
+    return added;
+}
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapList<TKey, TValue>);

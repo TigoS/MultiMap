@@ -239,11 +239,7 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
             if (_dictionary.Remove(key, out var collection))
-#else
-            if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
-#endif
             {
                 DecrementCount(collection.Count);
                 return true;

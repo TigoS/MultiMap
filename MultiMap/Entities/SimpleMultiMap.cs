@@ -1,9 +1,7 @@
+using System.Collections;
+using System.Runtime.InteropServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
-using System.Collections;
-#if NET6_0_OR_GREATER
-using System.Runtime.InteropServices;
-#endif
 
 namespace MultiMap.Entities
 {
@@ -121,16 +119,8 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(value, nameof(value));
 
-#if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
+ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+hashset ??= new HashSet<TValue>(_valueComparer);
 
             bool added = hashset.Add(value);
             if (added) _count++;
@@ -143,11 +133,7 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var hashset))
-#if NET10_0_OR_GREATER
-                return hashset.AsReadOnly();
-#else
-                return hashset.ToArray();
-#endif
+                return Polyfills.AsReadOnlyOrSnapshot(hashset);
 
             throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
@@ -158,11 +144,7 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
 
             if (_dictionary.TryGetValue(key, out var hashset))
-#if NET10_0_OR_GREATER
-                return hashset.AsReadOnly();
-#else
-                return hashset.ToArray();
-#endif
+                return Polyfills.AsReadOnlyOrSnapshot(hashset);
 
             return Array.Empty<TValue>();
         }
@@ -180,12 +162,7 @@ namespace MultiMap.Entities
             }
             else
             {
-                values =
-#if NET10_0_OR_GREATER
-                hashset.AsReadOnly();
-#else
-                hashset.ToArray();
-#endif
+                values = Polyfills.AsReadOnlyOrSnapshot(hashset);
             }
 
             return result;
@@ -219,11 +196,7 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
-            if (_dictionary.Remove(key, out var collection))
-#else
-            if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
-#endif
+if (_dictionary.Remove(key, out var collection))
             {
                 _count -= collection.Count;
                 return true;

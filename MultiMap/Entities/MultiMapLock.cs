@@ -1,9 +1,7 @@
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 using System.Collections;
-#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
-#endif
 
 namespace MultiMap.Entities
 {
@@ -74,12 +72,7 @@ namespace MultiMap.Entities
 
         private void ThrowIfDisposed()
         {
-#if NET6_0_OR_GREATER
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, GetType()?.FullName ?? string.Empty);
-#else
-            if (Volatile.Read(ref _disposed) != 0)
-                throw new ObjectDisposedException(GetType().FullName);
-#endif
         }
 
         /// <inheritdoc/>
@@ -93,18 +86,10 @@ namespace MultiMap.Entities
             _lock.EnterWriteLock();
             try
             {
-#if NET6_0_OR_GREATER
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                if (!_dictionary.TryGetValue(key, out var hashset))
-                {
-                    hashset = new HashSet<TValue>(_valueComparer);
-                    _dictionary[key] = hashset;
-                }
-#endif
+ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+hashset ??= new HashSet<TValue>(_valueComparer);
 
-                if (hashset.Add(value))
+if (hashset.Add(value))
                 {
                     _count++;
                     return true;
@@ -172,18 +157,10 @@ namespace MultiMap.Entities
                     Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
                     Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-#if NET6_0_OR_GREATER
-                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
-                    hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                    if (!_dictionary.TryGetValue(item.Key, out var hashset))
-                    {
-                        hashset = new HashSet<TValue>(_valueComparer);
-                        _dictionary[item.Key] = hashset;
-                    }
-#endif
+ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+hashset ??= new HashSet<TValue>(_valueComparer);
 
-                    if (hashset.Add(item.Value))
+if (hashset.Add(item.Value))
                     {
                         _count++;
                         added++;
@@ -561,21 +538,13 @@ namespace MultiMap.Entities
             {
                 foreach (var (key, values) in snapshot)
                 {
-#if NET6_0_OR_GREATER
-                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                    hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                    if (!_dictionary.TryGetValue(key, out var hashset))
-                    {
-                        hashset = new HashSet<TValue>(_valueComparer);
-                        _dictionary[key] = hashset;
-                    }
-#endif
+ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+hashset ??= new HashSet<TValue>(_valueComparer);
 
-                    foreach (var value in values)
-                    {
-                        if (hashset.Add(value))
-                            _count++;
+foreach (var value in values)
+{
+    if (hashset.Add(value))
+        _count++;
                     }
                 }
             }
@@ -713,21 +682,13 @@ namespace MultiMap.Entities
             {
                 foreach (var (key, values) in snapshot)
                 {
-#if NET6_0_OR_GREATER
-                    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
-                    hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-                    if (!_dictionary.TryGetValue(key, out var hashset))
-                    {
-                        hashset = new HashSet<TValue>(_valueComparer);
-                        _dictionary[key] = hashset;
-                    }
-#endif
+ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+hashset ??= new HashSet<TValue>(_valueComparer);
 
-                    foreach (var value in values)
-                    {
-                        if (!hashset.Remove(value))
-                        {
+foreach (var value in values)
+{
+    if (!hashset.Remove(value))
+    {
                             hashset.Add(value);
                             _count++;
                         }

@@ -1,6 +1,4 @@
-#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
-#endif
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
@@ -112,92 +110,86 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
-#if NET10_0_OR_GREATER
-        /// <inheritdoc/>
-        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => collection.AsReadOnly();
-#else
-        // default base-class ToReadOnly (ToArray snapshot) will be used, which is fine since we don't have a more efficient option in .NET Standard 2.0 or .NET Core 3.1
-#endif
+/// <inheritdoc/>
+protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => Polyfills.AsReadOnlyOrSnapshot(collection);
 
-#if NET6_0_OR_GREATER
-        /// <inheritdoc/>
-        public override bool Add(TKey key, TValue value)
+/// <inheritdoc/>
+public override bool Add(TKey key, TValue value)
+{
+    Guard.NotNull(key, nameof(key));
+    Guard.NotNull(value, nameof(value));
+
+    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
+    hashset ??= new HashSet<TValue>(_valueComparer);
+
+    if (hashset.Add(value))
+    {
+        IncrementCount();
+        return true;
+    }
+
+    return false;
+}
+
+/// <inheritdoc/>
+public override int AddRange(TKey key, IEnumerable<TValue> values)
+{
+    Guard.NotNull(key, nameof(key));
+    Guard.NotNull(values, nameof(values));
+
+    // Materialise first so that:
+    // 1. An empty sequence returns 0 without touching the dictionary.
+    // 2. All null-element checks happen before the dictionary slot is created,
+    //    keeping the dictionary pristine when the sequence is invalid.
+    var materialised = values as ICollection<TValue> ?? values.ToArray();
+    if (materialised.Count == 0)
+        return 0;
+
+    foreach (var value in materialised)
+        Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
+
+    var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+    ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
+    hashset ??= new HashSet<TValue>(_valueComparer);
+
+    int added = 0;
+    foreach (var value in materialised)
+    {
+        if (hashset.Add(value))
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
-
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-
-            if (hashset.Add(value))
-            {
-                IncrementCount();
-                return true;
-            }
-
-            return false;
+            IncrementCount();
+            added++;
         }
+    }
 
-        /// <inheritdoc/>
-        public override int AddRange(TKey key, IEnumerable<TValue> values)
+    return added;
+}
+
+/// <inheritdoc/>
+public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+{
+    Guard.NotNull(items, nameof(items));
+
+    int added = 0;
+    var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+
+    foreach (var item in items)
+    {
+        Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+        Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+        ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
+        hashset ??= new HashSet<TValue>(_valueComparer);
+
+        if (hashset.Add(item.Value))
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
-
-            // Materialise first so that:
-            // 1. An empty sequence returns 0 without touching the dictionary.
-            // 2. All null-element checks happen before the dictionary slot is created,
-            //    keeping the dictionary pristine when the sequence is invalid.
-            var materialised = values as ICollection<TValue> ?? values.ToArray();
-            if (materialised.Count == 0)
-                return 0;
-
-            foreach (var value in materialised)
-                Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
-
-            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-
-            int added = 0;
-            foreach (var value in materialised)
-            {
-                if (hashset.Add(value))
-                {
-                    IncrementCount();
-                    added++;
-                }
-            }
-
-            return added;
+            IncrementCount();
+            added++;
         }
+    }
 
-        /// <inheritdoc/>
-        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            Guard.NotNull(items, nameof(items));
-
-            int added = 0;
-            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
-
-            foreach (var item in items)
-            {
-                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
-
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-
-                if (hashset.Add(item.Value))
-                {
-                    IncrementCount();
-                    added++;
-                }
-            }
-
-            return added;
-        }
-#endif
+    return added;
+}
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
