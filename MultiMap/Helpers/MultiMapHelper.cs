@@ -18,7 +18,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        public static IMultiMap<TKey, TValue> Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -40,7 +40,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        public static IMultiMap<TKey, TValue> Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -104,7 +104,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        public static IMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -136,7 +136,7 @@ namespace MultiMap.Helpers
         /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        public static IMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
+        public static IMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -573,7 +573,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/> without rolling back already-applied changes.</param>
-        public static async Task UnionAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task UnionAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -613,7 +613,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call across both read and write phases; throws <see cref="OperationCanceledException"/> without rolling back already-applied removals.</param>
-        public static async Task IntersectAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task IntersectAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -676,7 +676,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/> without rolling back already-applied removals.</param>
-        public static async Task ExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task ExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {
@@ -730,7 +730,7 @@ namespace MultiMap.Helpers
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call across all three phases; throws <see cref="OperationCanceledException"/> without rolling back already-applied changes.</param>
-        public static async Task SymmetricExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        public static async Task SymmetricExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
             where TKey : notnull, IEquatable<TKey>
             where TValue : notnull, IEquatable<TValue>
         {

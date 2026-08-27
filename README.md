@@ -382,8 +382,8 @@ For all 3 interface families, the `MultiMapHelper` provides:
 | Family | Methods | Current signatures |
 |---|---|---|
 | `ISimpleMultiMap<TKey, TValue>` | `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` | `this ISimpleMultiMap<TKey,TValue> target, ISimpleMultiMap<TKey,TValue> other` → returns `ISimpleMultiMap<TKey,TValue>` |
-| `IMultiMap<TKey, TValue>` | `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` | `this IMultiMap<TKey,TValue> target, IMultiMap<TKey,TValue> other` → returns `IMultiMap<TKey,TValue>` |
-| `IMultiMapAsync<TKey, TValue>` | `UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, `SymmetricExceptWithAsync` | `this IMultiMapAsync<TKey,TValue> target, IMultiMapAsync<TKey,TValue> other, CancellationToken cancellationToken = default` → returns `Task` |
+| `IMultiMap<TKey, TValue>` | `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith` | `this IMultiMap<TKey,TValue> target, IReadOnlyMultiMap<TKey,TValue> other` → returns `IMultiMap<TKey,TValue>` |
+| `IMultiMapAsync<TKey, TValue>` | `UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, `SymmetricExceptWithAsync` | `this IMultiMapAsync<TKey,TValue> target, IReadOnlyMultiMapAsync<TKey,TValue> other, CancellationToken cancellationToken = default` → returns `Task` |
 
 These signatures mutate and return the sync target map for fluent usage, while async extensions complete via `Task` and support `CancellationToken`.
 
