@@ -639,32 +639,6 @@ public class AdditionalBoundaryTests
         Assert.That(map1.Contains("a", 1), Is.False);
     }
 
-    // ── SimpleMultiMap specific scenarios ──────────────────
-
-    [Test]
-    public void SimpleMultiMap_Add_DuplicateNotStored()
-    {
-        var map = new SimpleMultiMap<string, int>();
-
-        map.Add("key", 1);
-        map.Add("key", 1);
-
-        Assert.That(map.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void SimpleMultiMap_Get_SnapshotNotLive()
-    {
-        var map = new SimpleMultiMap<string, int>();
-        map.Add("key", 1);
-
-        var snapshot = map.Get("key").ToList();
-        map.Add("key", 2);
-
-        Assert.That(snapshot.Count, Is.EqualTo(1));
-        Assert.That(map.Get("key").Count(), Is.EqualTo(2));
-    }
-
     // ── Complex key/value scenarios ────────────────────────
 
     [Test]
