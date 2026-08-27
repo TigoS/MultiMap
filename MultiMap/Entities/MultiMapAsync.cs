@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
@@ -76,1163 +76,670 @@ namespace MultiMap.Entities
         private int _count;
         private int _disposed;
 
-        /// <inheritdoc/>
-        public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
+        // ── Guards ────────────────────────────────────────────
+
+        private void ThrowIfDisposed()
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
-
-            ThrowIfDisposed();
-
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<bool>(AddCore(key, value));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return AddSlowAsync(waitTask, key, value);
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, GetType()?.FullName ?? string.Empty);
         }
 
-        /// <inheritdoc/>
-        public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
+        private static bool IsCompletedSuccessfully(Task task)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
-
-            ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<int>(AddRangeCore(key, values));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return AddRangeSlowAsync(waitTask, key, values);
+            return task.IsCompletedSuccessfully;
         }
 
-        /// <inheritdoc/>
-        public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(items, nameof(items));
-
-            ThrowIfDisposed();
-
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<int>(AddRangeCore(items));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return AddRangeSlowAsync(waitTask, items);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<IEnumerable<TValue>>(GetCore(key));
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetSlowAsync(key, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<IEnumerable<TValue>>(GetOrDefaultCore(key));
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetOrDefaultSlowAsync(key, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<(bool found, IEnumerable<TValue> values)>(TryGetCore(key));
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return TryGetSlowAsync(key, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
-
-            ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<bool>(RemoveCore(key, value));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return RemoveSlowAsync(waitTask, key, value);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(items, nameof(items));
-
-            ThrowIfDisposed();
-
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<int>(RemoveRangeCore(items));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return RemoveRangeSlowAsync(waitTask, items);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(predicate, nameof(predicate));
-
-            ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<int>(RemoveWhereCore(key, predicate));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return RemoveWhereSlowAsync(waitTask, key, predicate);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-
-            ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    return new ValueTask<bool>(RemoveKeyCore(key));
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return RemoveKeySlowAsync(waitTask, key);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<bool>(_dictionary.ContainsKey(key));
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return ContainsKeySlowAsync(key, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
-
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<bool>(
-                        _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value));
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return ContainsSlowAsync(key, value, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<int> GetCountAsync(CancellationToken cancellationToken = default)
-        {
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<int>(_count);
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetCountSlowAsync(cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<IEnumerable<TKey>> GetKeysAsync(CancellationToken cancellationToken = default)
-        {
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<IEnumerable<TKey>>([.. _dictionary.Keys]);
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetKeysSlowAsync(cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<int> GetKeyCountAsync(CancellationToken cancellationToken = default)
-        {
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<int>(_dictionary.Count);
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetKeyCountSlowAsync(cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<IEnumerable<TValue>> GetValuesAsync(CancellationToken cancellationToken = default)
-        {
-            ThrowIfDisposed();
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<IEnumerable<TValue>>(GetValuesCore());
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetValuesSlowAsync(cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(key, nameof(key));
-
-            ThrowIfDisposed();
-
-            cancellationToken.ThrowIfCancellationRequested();
-            if (TryEnterReadLockSync())
-            {
-                try
-                {
-                    return new ValueTask<int>(_dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0);
-                }
-                finally
-                {
-                    ExitReadLock();
-                }
-            }
-            return GetValuesCountSlowAsync(key, cancellationToken);
-        }
-
-        /// <inheritdoc/>
-        public Task ClearAsync(CancellationToken cancellationToken = default)
-        {
-            ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
-            {
-                try
-                {
-                    _dictionary.Clear();
-                    _count = 0;
-                    return Task.CompletedTask;
-                }
-                finally
-                {
-                    _writeLock.Release();
-                }
-            }
-            return ClearSlowAsync(waitTask);
-        }
+        // ── Async reader-writer lock helpers ──────────────────
+        //
+        // Design: _readerLock guards the _activeReaders counter (held only for
+        // the duration of an increment/decrement).  The first reader also acquires
+        // _writeLock so that writers are blocked while any reader is active; the
+        // last reader releases _writeLock.  Writers acquire _writeLock directly.
 
         /// <summary>
-        /// Atomically adds all key-value pairs from <paramref name="other"/> into this multi-map.
+        /// Tries to enter a read lock without blocking.
+        /// Returns <see langword="true"/> and increments the reader count when successful.
         /// </summary>
-        /// <remarks>
-        /// The data from <paramref name="other"/> is snapshotted via its async interface before the
-        /// semaphore is acquired, so <paramref name="other"/> may be the same instance or another
-        /// locked collection without risk of deadlock. The entire mutation phase executes under a
-        /// single semaphore hold, guaranteeing that no concurrent caller can observe a partial union.
-        /// </remarks>
-        /// <param name="other">The multi-map whose pairs are added to this instance.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public async Task UnionAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        private bool TryEnterReadLockSync()
         {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            var snapshot = new List<(TKey Key, TValue[] Values)>();
-            foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
+            if (!_readerLock.Wait(0))
             {
-                snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
-            }
-
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                UnionCore(snapshot);
-            }
-            finally
-            {
-                _writeLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// Atomically removes all key-value pairs from this multi-map that do not exist in <paramref name="other"/>.
-        /// </summary>
-        /// <remarks>
-        /// The membership of <paramref name="other"/> is snapshotted into a dictionary of hash sets
-        /// via its async interface before the semaphore is acquired, avoiding deadlock when
-        /// <paramref name="other"/> is a locked collection. The entire read-and-remove phase executes
-        /// under a single semaphore hold, so concurrent operations cannot insert values that bypass
-        /// the intersect filter.
-        /// </remarks>
-        /// <param name="other">The multi-map that defines the pairs to keep.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public async Task IntersectAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            var otherIndex = new Dictionary<TKey, HashSet<TValue>>();
-            foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
-            {
-                otherIndex[key] = new HashSet<TValue>([.. await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)]);
-            }
-
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                IntersectCore(otherIndex);
-            }
-            finally
-            {
-                _writeLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// Atomically removes all key-value pairs from this multi-map that exist in <paramref name="other"/>.
-        /// </summary>
-        /// <remarks>
-        /// The data from <paramref name="other"/> is snapshotted via its async interface before the
-        /// semaphore is acquired, so <paramref name="other"/> may be the same instance or another
-        /// locked collection without risk of deadlock. The entire mutation phase executes under a
-        /// single semaphore hold, guaranteeing that no concurrent caller can observe a partial removal.
-        /// </remarks>
-        /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public async Task ExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            var snapshot = new List<(TKey Key, TValue[] Values)>();
-            foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
-            {
-                snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
-            }
-
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                ExceptWithCore(snapshot);
-            }
-            finally
-            {
-                _writeLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// Atomically modifies this multi-map to contain only pairs present in either this instance
-        /// or <paramref name="other"/>, but not both.
-        /// </summary>
-        /// <remarks>
-        /// The data from <paramref name="other"/> is snapshotted via its async interface before the
-        /// semaphore is acquired, so <paramref name="other"/> may be the same instance or another
-        /// locked collection without risk of deadlock. Classification and all mutations execute under
-        /// a single semaphore hold, guaranteeing full atomicity.
-        /// </remarks>
-        /// <param name="other">The multi-map to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public async Task SymmetricExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            var snapshot = new List<(TKey Key, TValue[] Values)>();
-            foreach (var key in await other.GetKeysAsync(cancellationToken).ConfigureAwait(false))
-            {
-                snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
-            }
-
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                SymmetricExceptWithCore(snapshot);
-            }
-            finally
-            {
-                _writeLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// Atomically determines whether this multi-map is a subset of <paramref name="other"/>.
-        /// </summary>
-        /// <remarks>
-        /// The data from both multimaps is snapshotted via async interfaces before comparison.
-        /// The entire read phase executes under a single semaphore hold on this instance, guaranteeing
-        /// that no concurrent caller can observe partial data. When <paramref name="other"/> is also
-        /// a <see cref="MultiMapAsync{TKey,TValue}"/>, both semaphores are acquired in a stable order
-        /// to prevent deadlock.
-        /// </remarks>
-        /// <param name="other">The multi-map to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns><see langword="true"/> if every key-value pair in this instance exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public async Task<bool> IsSubsetOfAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
-            if (other is MultiMapAsync<TKey, TValue> concreteOther)
-            {
-                concreteOther.ThrowIfDisposed();
-
-                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
-                var second = ReferenceEquals(first, this) ? concreteOther : this;
-
-                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-                await first.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    await second.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
-                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
-                    }
-                    finally
-                    {
-                        second.ExitReadLock();
-                    }
-                }
-                finally
-                {
-                    first.ExitReadLock();
-                }
-
-                foreach (var kvp in thisSnapshot)
-                {
-                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    {
-                        return false;
-                    }
-
-                    foreach (var value in kvp.Value)
-                    {
-                        if (!otherSet.Contains(value))
-                        {
-                            return false;
-                        }
-                    }
-                }
-
-                return true;
-            }
-
-            // General path: snapshot this instance, then compare asynchronously via the interface API.
-            Dictionary<TKey, HashSet<TValue>> snapshot;
-
-            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
-            }
-            finally
-            {
-                ExitReadLock();
-            }
-
-            foreach (var kvp in snapshot)
-            {
-                var otherValues = await other.GetOrDefaultAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
-                var otherSet = otherValues is HashSet<TValue> hs
-                    ? hs
-                    : new HashSet<TValue>(otherValues, _valueComparer);
-
-                foreach (var value in kvp.Value)
-                {
-                    if (!otherSet.Contains(value))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Atomically determines whether this multi-map is a superset of <paramref name="other"/>.
-        /// </summary>
-        /// <remarks>
-        /// The data from both multimaps is snapshotted via async interfaces before comparison.
-        /// This method delegates to <see cref="IsSubsetOfAsync"/> with reversed arguments.
-        /// </remarks>
-        /// <param name="other">The multi-map to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in this instance; otherwise, <see langword="false"/>.</returns>
-        public async Task<bool> IsSupersetOfAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            if (other is MultiMapAsync<TKey, TValue> concreteOther)
-            {
-                return await concreteOther.IsSubsetOfAsync(this, cancellationToken).ConfigureAwait(false);
-            }
-
-            return await other.IsSubsetOfAsync(this, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Atomically determines whether this multi-map and <paramref name="other"/> share at least one key-value pair.
-        /// </summary>
-        /// <remarks>
-        /// The data from both multimaps is snapshotted via async interfaces before comparison.
-        /// The entire read phase executes under a single semaphore hold on this instance, guaranteeing
-        /// that no concurrent caller can observe partial data. When <paramref name="other"/> is also
-        /// a <see cref="MultiMapAsync{TKey,TValue}"/>, both semaphores are acquired in a stable order
-        /// to prevent deadlock.
-        /// </remarks>
-        /// <param name="other">The multi-map to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public async Task<bool> OverlapsAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-        {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
-            if (other is MultiMapAsync<TKey, TValue> concreteOther)
-            {
-                concreteOther.ThrowIfDisposed();
-
-                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
-                var second = ReferenceEquals(first, this) ? concreteOther : this;
-
-                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-                await first.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    await second.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
-                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
-                    }
-                    finally
-                    {
-                        second.ExitReadLock();
-                    }
-                }
-                finally
-                {
-                    first.ExitReadLock();
-                }
-
-                foreach (var kvp in thisSnapshot)
-                {
-                    if (otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    {
-                        foreach (var value in kvp.Value)
-                        {
-                            if (otherSet.Contains(value))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-
                 return false;
             }
 
-            // General path: snapshot this instance, then compare asynchronously via the interface API.
-            Dictionary<TKey, HashSet<TValue>> snapshot;
-
-            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
+                if (_activeReaders == 0)
+                {
+                    if (!_writeLock.Wait(0))
+                    {
+                        // Writer holds the lock – do not enter read lock.
+                        return false;
+                    }
+                }
+
+                _activeReaders++;
+                return true;
             }
             finally
             {
-                ExitReadLock();
+                _readerLock.Release();
             }
+        }
 
-            foreach (var kvp in snapshot)
+        /// <summary>Enters a read lock synchronously (blocking).</summary>
+        private void EnterReadLockSync()
+        {
+            _readerLock.Wait();
+            try
             {
-                var otherValues = await other.GetOrDefaultAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
-                var otherSet = otherValues is HashSet<TValue> hs
-                    ? hs
-                    : new HashSet<TValue>(otherValues, _valueComparer);
-
-                foreach (var value in kvp.Value)
+                if (_activeReaders == 0)
                 {
-                    if (otherSet.Contains(value))
-                    {
-                        return true;
-                    }
+                    _writeLock.Wait();
                 }
+
+                _activeReaders++;
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
+        }
+
+        /// <summary>Enters a read lock asynchronously.</summary>
+        private async Task EnterReadLockAsync(CancellationToken cancellationToken)
+        {
+            await _readerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                if (_activeReaders == 0)
+                {
+                    await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+                }
+
+                _activeReaders++;
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
+        }
+
+        /// <summary>Exits a previously entered read lock.</summary>
+        private void ExitReadLock()
+        {
+            _readerLock.Wait();
+            try
+            {
+                if (--_activeReaders == 0)
+                {
+                    _writeLock.Release();
+                }
+            }
+            finally
+            {
+                _readerLock.Release();
+            }
+        }
+
+        // ── Add ───────────────────────────────────────────────
+
+        private bool AddCore(TKey key, TValue value)
+        {
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out _);
+            hashset ??= new HashSet<TValue>(_valueComparer);
+
+            if (hashset.Add(value))
+            {
+                _count++;
+                return true;
             }
 
             return false;
         }
 
+        private async ValueTask<bool> AddSlowAsync(Task waitTask, TKey key, TValue value)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return AddCore(key, value);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── AddRange ──────────────────────────────────────────
+
+        private int AddRangeCore(TKey key, IEnumerable<TValue> values)
+        {
+            bool exists = _dictionary.TryGetValue(key, out var hashset);
+            if (!exists)
+            {
+                hashset = new HashSet<TValue>(_valueComparer);
+            }
+
+            int added = 0;
+            foreach (var value in values)
+            {
+                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+
+                if (hashset!.Add(value))
+                {
+                    _count++;
+                    added++;
+                }
+            }
+
+            if (!exists && added > 0)
+            {
+                _dictionary[key] = hashset!;
+            }
+
+            return added;
+        }
+
+        private async ValueTask<int> AddRangeSlowAsync(Task waitTask, TKey key, IEnumerable<TValue> values)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return AddRangeCore(key, values);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        private int AddRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            int added = 0;
+            foreach (var item in items)
+            {
+                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
+
+                if (hashset.Add(item.Value))
+                {
+                    _count++;
+                    added++;
+                }
+            }
+
+            return added;
+        }
+
+        private async ValueTask<int> AddRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return AddRangeCore(items);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── Get ───────────────────────────────────────────────
+
+        private TValue[] GetCore(TKey key)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                return [.. hashset];
+            }
+
+            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetSlowAsync(TKey key, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return GetCore(key);
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── GetOrDefault ──────────────────────────────────────
+
+        private TValue[] GetOrDefaultCore(TKey key)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                return [.. hashset];
+            }
+
+            return [];
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetOrDefaultSlowAsync(TKey key, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return GetOrDefaultCore(key);
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── TryGet ────────────────────────────────────────────
+
+        private (bool found, IEnumerable<TValue> values) TryGetCore(TKey key)
+        {
+            (bool found, IEnumerable<TValue> values) result;
+            result.found = _dictionary.TryGetValue(key, out var hashset);
+            result.values = result.found ? hashset?.ToArray() ?? [] : [];
+
+            return result;
+        }
+
+        private async ValueTask<(bool found, IEnumerable<TValue> values)> TryGetSlowAsync(TKey key, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return TryGetCore(key);
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── Remove ────────────────────────────────────────────
+
+        private bool RemoveCore(TKey key, TValue value)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                bool removed = hashset.Remove(value);
+
+                if (removed)
+                {
+                    _count--;
+                    if (hashset.Count == 0)
+                    {
+                        _dictionary.Remove(key);
+                    }
+                }
+
+                return removed;
+            }
+
+            return false;
+        }
+
+        private async ValueTask<bool> RemoveSlowAsync(Task waitTask, TKey key, TValue value)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return RemoveCore(key, value);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── RemoveRange ───────────────────────────────────────
+
+        private int RemoveRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            int removedCount = 0;
+            foreach (var item in items)
+            {
+                if (RemoveCore(item.Key, item.Value))
+                {
+                    removedCount++;
+                }
+            }
+
+            return removedCount;
+        }
+
+        private async ValueTask<int> RemoveRangeSlowAsync(Task waitTask, IEnumerable<KeyValuePair<TKey, TValue>> items)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return RemoveRangeCore(items);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── RemoveWhere ───────────────────────────────────────
+
+        private int RemoveWhereCore(TKey key, Predicate<TValue> predicate)
+        {
+            if (!_dictionary.TryGetValue(key, out var hashset))
+            {
+                return 0;
+            }
+
+            int removedCount = hashset.RemoveWhere(predicate);
+            _count -= removedCount;
+
+            if (hashset.Count == 0)
+            {
+                _dictionary.Remove(key);
+            }
+
+            return removedCount;
+        }
+
+        private async ValueTask<int> RemoveWhereSlowAsync(Task waitTask, TKey key, Predicate<TValue> predicate)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return RemoveWhereCore(key, predicate);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── RemoveKey ─────────────────────────────────────────
+
+        private bool RemoveKeyCore(TKey key)
+        {
+            if (_dictionary.TryGetValue(key, out var hashset))
+            {
+                _count -= hashset.Count;
+                return _dictionary.Remove(key);
+            }
+
+            return false;
+        }
+
+        private async ValueTask<bool> RemoveKeySlowAsync(Task waitTask, TKey key)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return RemoveKeyCore(key);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── ContainsKey ───────────────────────────────────────
+
+        private async ValueTask<bool> ContainsKeySlowAsync(TKey key, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return _dictionary.ContainsKey(key);
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── Contains ──────────────────────────────────────────
+
+        private async ValueTask<bool> ContainsSlowAsync(TKey key, TValue value, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── GetCount ──────────────────────────────────────────
+
+        private async ValueTask<int> GetCountSlowAsync(CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return _count;
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── GetKeys ───────────────────────────────────────────
+
+        private async ValueTask<IEnumerable<TKey>> GetKeysSlowAsync(CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return [.. _dictionary.Keys];
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── GetKeyCount ───────────────────────────────────────
+
+        private async ValueTask<int> GetKeyCountSlowAsync(CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return _dictionary.Count;
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── GetValues ─────────────────────────────────────────
+
+        private TValue[] GetValuesCore()
+        {
+            var result = new TValue[_count];
+            var index = 0;
+            foreach (var hashset in _dictionary.Values)
+            {
+                foreach (var value in hashset)
+                {
+                    result[index++] = value;
+                }
+            }
+            return result;
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetValuesSlowAsync(CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return GetValuesCore();
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── GetValuesCount ────────────────────────────────────
+
+        private async ValueTask<int> GetValuesCountSlowAsync(TKey key, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                return _dictionary.TryGetValue(key, out var hashset) ? hashset.Count : 0;
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
+        // ── Clear ─────────────────────────────────────────────
+
+        private async Task ClearSlowAsync(Task waitTask)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                _dictionary.Clear();
+                _count = 0;
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── Set operations ────────────────────────────────────
+
+        private void UnionCore(List<(TKey Key, TValue[] Values)> snapshot)
+        {
+            foreach (var (key, values) in snapshot)
+            {
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+                hashset ??= new HashSet<TValue>(_valueComparer);
+
+                foreach (var value in values)
+                {
+                    if (hashset.Add(value))
+                    {
+                        _count++;
+                    }
+                }
+            }
+        }
+
+        private void IntersectCore(Dictionary<TKey, HashSet<TValue>> otherIndex)
+        {
+            var keysToRemove = new List<TKey>();
+
+            foreach (var kvp in _dictionary)
+            {
+                if (!otherIndex.TryGetValue(kvp.Key, out var otherValues))
+                {
+                    _count -= kvp.Value.Count;
+                    keysToRemove.Add(kvp.Key);
+                    continue;
+                }
+
+                int removed = kvp.Value.RemoveWhere(v => !otherValues.Contains(v));
+                _count -= removed;
+
+                if (kvp.Value.Count == 0)
+                {
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (var key in keysToRemove)
+            {
+                _dictionary.Remove(key);
+            }
+        }
+
+        private void ExceptWithCore(List<(TKey Key, TValue[] Values)> snapshot)
+        {
+            foreach (var (key, values) in snapshot)
+            {
+                if (!_dictionary.TryGetValue(key, out var hashset))
+                {
+                    continue;
+                }
+
+                foreach (var value in values)
+                {
+                    if (hashset.Remove(value))
+                    {
+                        _count--;
+                    }
+                }
+
+                if (hashset.Count == 0)
+                {
+                    _dictionary.Remove(key);
+                }
+            }
+        }
+
+        private void SymmetricExceptWithCore(List<(TKey Key, TValue[] Values)> snapshot)
+        {
+            foreach (var (key, values) in snapshot)
+            {
+                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
+                hashset ??= new HashSet<TValue>(_valueComparer);
+
+                foreach (var value in values)
+                {
+                    if (!hashset.Remove(value))
+                    {
+                        hashset.Add(value);
+                        _count++;
+                    }
+                    else
+                    {
+                        _count--;
+                    }
+                }
+
+                if (hashset.Count == 0)
+                {
+                    _dictionary.Remove(key);
+                }
+            }
+        }
+
+        // ── Dispose ───────────────────────────────────────────
+
         /// <summary>
-        /// Atomically determines whether this multi-map and <paramref name="other"/> contain the same key-value pairs.
+        /// Releases resources used by the current instance.
         /// </summary>
-        /// <remarks>
-        /// The data from both multimaps is snapshotted via async interfaces before comparison.
-        /// The entire read phase executes under a single semaphore hold on this instance, guaranteeing
-        /// that no concurrent caller can observe partial data. When <paramref name="other"/> is also
-        /// a <see cref="MultiMapAsync{TKey,TValue}"/>, both semaphores are acquired in a stable order
-        /// to prevent deadlock.
-        /// </remarks>
-        /// <param name="other">The multi-map to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public async Task<bool> SetEqualsAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+        /// <remarks>This method is called by the public Dispose and DisposeAsync pattern implementations to perform actual cleanup of managed or unmanaged resources.</remarks>
+        private void DisposeCore()
         {
-            Guard.NotNull(other, nameof(other));
-
-            ThrowIfDisposed();
-
-            // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
-            if (other is MultiMapAsync<TKey, TValue> concreteOther)
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
             {
-                concreteOther.ThrowIfDisposed();
-
-                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
-                var second = ReferenceEquals(first, this) ? concreteOther : this;
-
-                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-                await first.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    await second.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
-                            _dictionary.Count != concreteOther._dictionary.Count)
-                        {
-                            return false;
-                        }
-
-                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
-                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
-                    }
-                    finally
-                    {
-                        second.ExitReadLock();
-                    }
-                }
-                finally
-                {
-                    first.ExitReadLock();
-                }
-
-                foreach (var kvp in thisSnapshot)
-                {
-                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    {
-                        return false;
-                    }
-
-                    if (!kvp.Value.SetEquals(otherSet))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
+                return;
             }
 
-            // General path: snapshot this instance, then compare asynchronously via the interface API.
-            Dictionary<TKey, HashSet<TValue>> snapshot;
-            int thisCount;
-
-            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
-                thisCount = _count;
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
+                _dictionary.Clear();
+                _count = 0;
             }
             finally
             {
-                ExitReadLock();
-            }
-
-            int otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);
-            int otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
-
-            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
-            {
-                return false;
-            }
-
-            foreach (var kvp in snapshot)
-            {
-                var (found, otherValues) = await other.TryGetAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
-                if (!found)
-                {
-                    return false;
-                }
-
-                var otherSet = otherValues is HashSet<TValue> hs
-                    ? hs
-                    : new HashSet<TValue>(otherValues, _valueComparer);
-
-                if (!kvp.Value.SetEquals(otherSet))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <summary>
-        /// Returns an asynchronous enumerator that iterates over a snapshot of all key-value pairs in the multi-map.
-        /// Changes made to the collection during enumeration are not reflected.
-        /// </summary>
-        /// <param name="cancellationToken">A token to cancel the asynchronous enumeration.</param>
-        /// <returns>
-        /// An <see cref="IAsyncEnumerator{T}"/> of <see cref="KeyValuePair{TKey, TValue}"/> representing all entries in the multi-map.
-        /// </returns>
-        public async IAsyncEnumerator<KeyValuePair<TKey, TValue>> GetAsyncEnumerator(
-            CancellationToken cancellationToken = default)
-        {
-            ThrowIfDisposed();
-            List<KeyValuePair<TKey, TValue>> snapshot;
-
-            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                snapshot = new List<KeyValuePair<TKey, TValue>>(_count);
-                foreach (var kvp in _dictionary)
-                {
-                    foreach (var value in kvp.Value)
-                    {
-                        snapshot.Add(new KeyValuePair<TKey, TValue>(kvp.Key, value));
-                    }
-                }
-            }
-            finally
-            {
-                ExitReadLock();
-            }
-
-            foreach (var pair in snapshot)
-            {
-                yield return pair;
-            }
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            DisposeCore();
-        }
-
-        /// <inheritdoc/>
-        public ValueTask DisposeAsync()
-        {
-            DisposeCore();
-
-            return default;
-        }
-
-        /// <inheritdoc/>
-        public override bool Equals(object? obj)
-        {
-            return obj is IReadOnlyMultiMapAsync<TKey, TValue> other && Equals(other);
-        }
-
-        /// <inheritdoc/>
-        public bool Equals(IReadOnlyMultiMapAsync<TKey, TValue>? other)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            ThrowIfDisposed();
-
-            // Fast path: both sides are MultiMapAsync — acquire both semaphores in a
-            // consistent order to avoid deadlock, then compare under lock.
-            if (other is MultiMapAsync<TKey, TValue> concreteOther)
-            {
-                concreteOther.ThrowIfDisposed();
-
-                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
-                var second = ReferenceEquals(first, this) ? concreteOther : this;
-
-                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-                first.EnterReadLockSync();
-                try
-                {
-                    second.EnterReadLockSync();
-                    try
-                    {
-                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
-                            _dictionary.Count != concreteOther._dictionary.Count)
-                        {
-                            return false;
-                        }
-
-                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, _valueComparer));
-                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value, concreteOther._valueComparer));
-                    }
-                    finally
-                    {
-                        second.ExitReadLock();
-                    }
-                }
-                finally
-                {
-                    first.ExitReadLock();
-                }
-
-                foreach (var kvp in thisSnapshot)
-                {
-                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    {
-                        return false;
-                    }
-
-                    if (!kvp.Value.SetEquals(otherSet))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            // General path: snapshot this instance under its semaphore, then query
-            // the other side via the interface API. All foreign async calls are run
-            // inside Task.Run so they execute on a thread-pool thread that has no
-            // SynchronizationContext — eliminating any deadlock risk regardless of the
-            // calling context (UI thread, ASP.NET classic, custom context, etc.).
-            Dictionary<TKey, HashSet<TValue>> snapshot;
-            int thisCount;
-
-            EnterReadLockSync();
-            try
-            {
-                thisCount = _count;
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-            }
-            finally
-            {
-                ExitReadLock();
-            }
-
-            return Task.Run(async () =>
-            {
-                int otherCount = await other.GetCountAsync(CancellationToken.None).ConfigureAwait(false);
-                int otherKeyCount = await other.GetKeyCountAsync(CancellationToken.None).ConfigureAwait(false);
-
-                if (thisCount != otherCount || snapshot.Count != otherKeyCount)
-                {
-                    return false;
-                }
-
-                foreach (var kvp in snapshot)
-                {
-                    var (found, otherValues) = await other.TryGetAsync(kvp.Key, CancellationToken.None).ConfigureAwait(false);
-                    if (!found)
-                    {
-                        return false;
-                    }
-
-                    var otherSet = otherValues is HashSet<TValue> hs
-                        ? hs
-                        : new HashSet<TValue>(otherValues, _valueComparer);
-
-                    if (!kvp.Value.SetEquals(otherSet))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }).GetAwaiter().GetResult();
-        }
-
-        /// <inheritdoc/>
-        public async ValueTask<bool> EqualsAsync(object? obj) => await EqualsAsync(obj as IReadOnlyMultiMapAsync<TKey, TValue>).ConfigureAwait(false);
-
-        /// <inheritdoc/>
-        public async ValueTask<bool> EqualsAsync(IReadOnlyMultiMapAsync<TKey, TValue>? other, CancellationToken cancellationToken = default)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            ThrowIfDisposed();
-
-            // Fast path: both sides are MultiMapAsync — acquire both semaphores atomically.
-            if (other is MultiMapAsync<TKey, TValue> concreteOther)
-            {
-                concreteOther.ThrowIfDisposed();
-
-                var first = RuntimeHelpers.GetHashCode(this) <= RuntimeHelpers.GetHashCode(concreteOther) ? this : concreteOther;
-                var second = ReferenceEquals(first, this) ? concreteOther : this;
-
-                Dictionary<TKey, HashSet<TValue>> thisSnapshot;
-                Dictionary<TKey, HashSet<TValue>> otherSnapshot;
-
-                await first.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                try
-                {
-                    await second.EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        if (Volatile.Read(ref _count) != Volatile.Read(ref concreteOther._count) ||
-                            _dictionary.Count != concreteOther._dictionary.Count)
-                        {
-                            return false;
-                        }
-
-                        thisSnapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                        otherSnapshot = concreteOther._dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-                    }
-                    finally
-                    {
-                        second.ExitReadLock();
-                    }
-                }
-                finally
-                {
-                    first.ExitReadLock();
-                }
-
-                foreach (var kvp in thisSnapshot)
-                {
-                    if (!otherSnapshot.TryGetValue(kvp.Key, out var otherSet))
-                    {
-                        return false;
-                    }
-
-                    if (!kvp.Value.SetEquals(otherSet))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            }
-
-            // General path: snapshot this instance, then compare asynchronously via the interface API.
-            Dictionary<TKey, HashSet<TValue>> snapshot;
-            int thisCount;
-
-            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                thisCount = _count;
-                snapshot = _dictionary.ToDictionary(kvp => kvp.Key, kvp => new HashSet<TValue>(kvp.Value));
-            }
-            finally
-            {
-                ExitReadLock();
-            }
-
-            int otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);
-            int otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
-
-            if (thisCount != otherCount || snapshot.Count != otherKeyCount)
-            {
-                return false;
-            }
-
-            foreach (var kvp in snapshot)
-            {
-                var (found, otherValues) = await other.TryGetAsync(kvp.Key, cancellationToken).ConfigureAwait(false);
-                if (!found)
-                {
-                    return false;
-                }
-
-                var otherSet = otherValues is HashSet<TValue> hs
-                    ? hs
-                    : new HashSet<TValue>(otherValues, _valueComparer);
-
-                if (!kvp.Value.SetEquals(otherSet))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
-        {
-            ThrowIfDisposed();
-            EnterReadLockSync();
-            try
-            {
-                return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
-            }
-            finally
-            {
-                ExitReadLock();
+                _writeLock.Dispose();
+                _readerLock.Dispose();
             }
         }
     }
