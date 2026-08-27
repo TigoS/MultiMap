@@ -263,7 +263,7 @@ Extends `MultiMapBase<TKey, TValue, HashSet<TValue>>`. Uses `Dictionary<TKey, Ha
 
 Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<TKey, SortedSet<TValue>>`. Keys and values are maintained in sorted order. Ideal for ordered enumeration and range queries.
 
-**Type constraints:** `TKey` must implement both `IEquatable<TKey>` (required by all multimap interfaces and `MultiMapBase`) and `IComparable<TKey>` (required by `SortedMultiMap` for sorted key ordering). The actual sorted operations rely on `IComparer<TKey>` — either the default comparer or a custom one supplied via a constructor overload. `TValue` similarly requires both `IEquatable<TValue>` (library-wide) and `IComparable<TValue>` (for `SortedSet<TValue>` ordering).
+**Type constraints:** `TKey` must implement `IComparable<TKey>` (required by `SortedMultiMap` for sorted key ordering). The actual sorted operations rely on `IComparer<TKey>` — either the default comparer or a custom one supplied via a constructor overload. `TValue` similarly requires `IComparable<TValue>` (for `SortedSet<TValue>` ordering). Unlike all other multimap types, `SortedMultiMap` does not accept a custom equality comparer because `SortedSet<T>` derives equality from the comparer.
 
 **Constructors:** `()`, `(IComparer<TKey>? keyComparer)`, `(IComparer<TValue>? valueComparer)`, `(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)`
 
