@@ -124,6 +124,8 @@ MultiMap/
 │   │   ├── MultiMapAsync.Core.cs             # SemaphoreSlim-based async (private helpers, partial)
 │   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap implementation
 │   └── Helpers/
+│       ├── Guard.cs                          # Internal argument-validation helpers; [NotNull] applied unconditionally across all TFMs
+│       ├── NullableAttributes.cs             # netstandard2.0 polyfill for System.Diagnostics.CodeAnalysis.NotNullAttribute
 │       └── MultiMapHelper.cs                 # Set-like extension methods
 ├── MultiMap.Tests/                           # Unit tests (NUnit 4, multi-targeted: net10.0, net9.0, and net8.0)
 ├── MultiMap.Demo/                            # Console demo application
