@@ -55,6 +55,10 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
   - `ref int CountRef` — exposes a `ref int` for `ConcurrentMultiMap`, which must use `Interlocked`/`Volatile` APIs directly.
   All derived classes (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`) were updated accordingly.
 
+**Code Quality**
+
+- `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward; for `netstandard2.0` a new `Helpers/NullableAttributes.cs` polyfill declares an `internal` copy in `System.Diagnostics.CodeAnalysis` (compiled in only for that TFM via `#if NETSTANDARD2_0`). `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`, `netstandard2.0`).
+
 **Documentation**
 
 - `README.md` — added `### Demo Console Output` section under `## Usage` (resolving the pre-existing broken TOC anchor `#demo-console-output`). Documents how to run `MultiMap.Demo` with `dotnet run --project MultiMap.Demo` and explains the new `--wait` flag: passing `-- --wait` keeps the console window open (blocks on `Console.ReadLine()`) until Enter is pressed, which is useful when launching from an IDE or a terminal that closes immediately on exit.
