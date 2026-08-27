@@ -27,14 +27,6 @@ namespace MultiMap.Entities
         /// </summary>
         protected readonly IDictionary<TKey, TCollection> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-        /// <summary>
-        /// Gets a reference to the underlying value count field.
-        /// Intended for subclasses that need atomic <see cref="System.Threading.Interlocked"/> or
-        /// <see cref="System.Threading.Volatile"/> operations (e.g. <see cref="ConcurrentMultiMap{TKey, TValue}"/>).
-        /// All other subclasses should use <see cref="IncrementCount"/>, <see cref="DecrementCount"/>, and <see cref="ResetCount"/> instead.
-        /// </summary>
-        protected ref int CountRef => ref _count;
-
         /// <summary>Increments the value count by one.</summary>
         protected void IncrementCount() => _count++;
 
@@ -43,6 +35,18 @@ namespace MultiMap.Entities
 
         /// <summary>Resets the value count to zero.</summary>
         protected void ResetCount() => _count = 0;
+
+        /// <summary>Atomically increments the value count by one and returns the new value.</summary>
+        protected int InterlockedIncrementCount() => Interlocked.Increment(ref _count);
+
+        /// <summary>Atomically adds <paramref name="by"/> to the value count and returns the new value.</summary>
+        protected int InterlockedAddCount(int by) => Interlocked.Add(ref _count, by);
+
+        /// <summary>Atomically sets the value count to <paramref name="value"/> and returns the original value.</summary>
+        protected int InterlockedExchangeCount(int value) => Interlocked.Exchange(ref _count, value);
+
+        /// <summary>Reads the value count with acquire semantics.</summary>
+        protected int VolatileReadCount() => Volatile.Read(ref _count);
 
         private int _count;
 

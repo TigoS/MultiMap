@@ -182,7 +182,7 @@ namespace MultiMap.Entities
 
             if (valueSet.TryAdd(value))
             {
-                Interlocked.Increment(ref CountRef);
+                InterlockedIncrementCount();
                 return true;
             }
 
@@ -209,7 +209,7 @@ namespace MultiMap.Entities
             }
 
             if (added > 0)
-                Interlocked.Add(ref CountRef, added);
+                InterlockedAddCount(added);
 
             return added;
         }
@@ -249,7 +249,7 @@ namespace MultiMap.Entities
 
                 if (groupAdded > 0)
                 {
-                    Interlocked.Add(ref CountRef, groupAdded);
+                    InterlockedAddCount(groupAdded);
                     added += groupAdded;
                 }
             }
@@ -269,9 +269,9 @@ namespace MultiMap.Entities
             if (!valueSet.TryRemove(value, out _))
                 return false;
 
-            Interlocked.Decrement(ref CountRef);
+            InterlockedAddCount(-1);
 
-            // Prune the outer key only when the inner set is confirmed empty.
+            // Prune the outer key
             // Use the conditional-remove pattern: remove the entry, then re-add it
             // if another thread concurrently inserted a value — this makes the prune
             // atomic with respect to concurrent Adds on the same key.
@@ -298,7 +298,7 @@ namespace MultiMap.Entities
 
             if (removedCount > 0)
             {
-                Interlocked.Add(ref CountRef, -removedCount);
+                InterlockedAddCount(-removedCount);
                 TryPruneEmptySet(key, valueSet);
             }
 
@@ -319,7 +319,7 @@ namespace MultiMap.Entities
             // this is an accepted trade-off for O(1) Count.
             int c = removedSet.Count;
             if (c > 0)
-                Interlocked.Add(ref CountRef, -c);
+                InterlockedAddCount(-c);
 
             return true;
         }
@@ -328,11 +328,11 @@ namespace MultiMap.Entities
         public override void Clear()
         {
             _concurrentDictionary.Clear();
-            Interlocked.Exchange(ref CountRef, 0);
+            InterlockedExchangeCount(0);
         }
 
         /// <inheritdoc/>
-        public override int Count => Volatile.Read(ref CountRef);
+        public override int Count => VolatileReadCount();
 
         /// <inheritdoc/>
         public override IEnumerable<TKey> Keys
