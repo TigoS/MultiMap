@@ -15,11 +15,7 @@ namespace MultiMap.Helpers
         /// <param name="value">The argument to validate.</param>
         /// <param name="paramName">The name of the parameter being validated.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void NotNull<T>(
-#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER
-    [NotNull]
-#endif
-    T? value, string paramName)
+        internal static void NotNull<T>([NotNull] T? value, string paramName)
         {
 #if NET6_0_OR_GREATER
             ArgumentNullException.ThrowIfNull(value, paramName);
