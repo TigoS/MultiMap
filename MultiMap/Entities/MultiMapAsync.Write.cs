@@ -16,7 +16,7 @@ namespace MultiMap.Entities
             ThrowIfDisposed();
 
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -38,7 +38,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -60,7 +60,7 @@ namespace MultiMap.Entities
             ThrowIfDisposed();
 
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -82,7 +82,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -104,7 +104,7 @@ namespace MultiMap.Entities
             ThrowIfDisposed();
 
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -126,7 +126,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -147,7 +147,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
@@ -166,7 +166,7 @@ namespace MultiMap.Entities
         {
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
-            if (IsCompletedSuccessfully(waitTask))
+            if (waitTask.IsCompletedSuccessfully)
             {
                 try
                 {
