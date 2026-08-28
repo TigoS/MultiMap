@@ -80,12 +80,7 @@ namespace MultiMap.Entities
 
         private void ThrowIfDisposed()
         {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, GetType()?.FullName ?? string.Empty);
-        }
-
-        private static bool IsCompletedSuccessfully(Task task)
-        {
-            return task.IsCompletedSuccessfully;
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, GetType().FullName!);
         }
 
         // ── Async reader-writer lock helpers ──────────────────
