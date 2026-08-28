@@ -1,23 +1,24 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.6%25%20line%20%7C%2096.2%25%20branch%20%7C%2097.2%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6678%2F6678%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
+Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [3.0.0](#300)
   - [2.1.1](#211)
   - [2.1.0](#210)
   - [2.0.1](#201)
@@ -36,6 +37,76 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 3.0.0
+
+**Deprecations**
+
+- `SimpleMultiMap<TKey, TValue>` — marked `[Obsolete]`. The class remains functional but will be removed in a future major version. Migrate to `MultiMapSet<TKey, TValue>`, which provides the same set-based, no-duplicate semantics under the full `IMultiMap` contract (including `AddRange`, `RemoveRange`, `RemoveWhere`, `KeyCount`, and all `IMultiMap` extension methods). The `ISimpleMultiMap` and `IReadOnlySimpleMultiMap` interfaces are not affected.
+
+**Breaking Changes**
+
+- Dropped **.NET Standard 2.0** support.
+- Removed the `Microsoft.Bcl.AsyncInterfaces` and `Microsoft.Bcl.HashCode` package dependencies (they were netstandard2.0-only).
+- All multimap interfaces (`IReadOnlySimpleMultiMap`, `ISimpleMultiMap`, `IReadOnlyMultiMap`, `IMultiMap`, `IReadOnlyMultiMapAsync`, `IMultiMapAsync`) and all entity classes (`MultiMapBase`, `MultiMapList`, `MultiMapSet`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`, `SimpleMultiMap`, `ConcurrentSet`) no longer require `TKey : IEquatable<TKey>` or `TValue : IEquatable<TValue>`. The constraints are relaxed to `TKey : notnull` and `TValue : notnull`. `SortedMultiMap` retains its `IComparable<TKey>` and `IComparable<TValue>` constraints (needed by `SortedDictionary`/`SortedSet`). All equality is performed via `EqualityComparer<T>.Default` or an injected `IEqualityComparer<T>`, so no behavioral change occurs for existing callers — types that do not implement `IEquatable<T>` will now simply fall back to `object.Equals`. This is a breaking change only for code that explicitly constrains generic parameters to `IEquatable<T>` based on the library's former constraint.
+
+**Bug Fixes**
+
+- `MultiMapAsync<TKey, TValue>.Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` — fixed deadlock risk on the general (foreign-implementation) comparison path. The three `.GetAwaiter().GetResult()` calls that queried the foreign `IReadOnlyMultiMapAsync` instance are now wrapped in a single `Task.Run` lambda, ensuring all async continuations execute on a context-free thread-pool thread and cannot deadlock regardless of the caller's `SynchronizationContext` (UI thread, ASP.NET classic, custom context, etc.). The previously overly broad `SynchronizationContext.Current != null` guard — which also blocked the deadlock-safe fast path (both sides `MultiMapAsync`) — has been removed. `ConfigureAwait(false)` is applied to every `await` inside the lambda as an additional safeguard.
+- `SortedMultiMap<TKey, TValue>` — fixed a potential `GetHashCode`/`Equals` contract violation when a custom `IComparer<TValue>` that does not also implement `IEqualityComparer<TValue>` was supplied. `GetHashCode` was silently falling back to `EqualityComparer<TValue>.Default` while `Equals` (via `SortedSet<TValue>.SetEquals`) continued using the custom comparer, making two equal instances produce different hash codes. Both `SortedMultiMap(IComparer<TValue>?)` and `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)` now throw `ArgumentException` at construction time when a non-null value comparer does not implement `IEqualityComparer<TValue>`.
+- `MultiMapBase<TKey, TValue, TCollection>`
+  - `IncrementCount()` — non-atomic increment (used by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`).
+  - `DecrementCount(int by = 1)` — non-atomic decrement.
+  - `ResetCount()` — sets the counter to zero (used by `Clear()`).
+  - `InterlockedIncrementCount()` — atomically increments the counter.
+  - `InterlockedAddCount(int by)` — atomically adds the specified value to the counter.
+  - `InterlockedExchangeCount(int value)` — atomically sets the counter to the specified value.
+  - `VolatileReadCount()` — reads the counter value with volatile semantics.
+  All derived classes (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`) were updated accordingly.
+
+**Code Quality**
+
+- Consolidated all conditional-compilation polyfills into a single `Helpers/Polyfills.cs`. Previously `#if NET6_0_OR_GREATER`, `#if NETSTANDARD2_0`, and `#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER` guards were scattered across 6+ files (`Guard.cs`, `MultiMapBase.cs`, `MultiMapList.cs`, `MultiMapSet.cs`, `SimpleMultiMap.cs`, `MultiMapLock.cs`, `MultiMapAsync.Core.cs`).
+- Since all remaining targets (net8/9/10) are ≥ .NET 6, every `#if NET6_0_OR_GREATER` and `#if NETSTANDARD2_1_OR_GREATER` branch is now unconditional — the dead fallback paths have been deleted.
+- The sole remaining version-gated feature (`HashSet<T>.AsReadOnly()`, available from .NET 10) is wrapped in `Polyfills.AsReadOnlyOrSnapshot<T>()`, keeping `#if NET10_0_OR_GREATER` in exactly one place.
+- `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward. `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`).
+- `MultiMapBase<TKey, TValue, TCollection>` — removed the `protected ref int CountRef` property and replaced it with four dedicated protected helpers: `InterlockedIncrementCount()`, `InterlockedAddCount(int by)`, `InterlockedExchangeCount(int value)`, and `VolatileReadCount()`. Exposing a `ref` field to subclasses couples them to the base class's field layout and allows any subclass to call arbitrary `Interlocked`/`Volatile` operations on the same backing field. The new helpers encapsulate the `ref` entirely inside `MultiMapBase`, preserving the same atomic semantics while making the intent explicit at each call site. `ConcurrentMultiMap` was updated to use these helpers throughout.
+
+**API Changes**
+
+- `MultiMapHelper` — narrowed the `other` source parameter from `IMultiMap<TKey, TValue>` to `IReadOnlyMultiMap<TKey, TValue>` on `Union`, `Intersect`, `ExceptWith`, and `SymmetricExceptWith`, and from `IMultiMapAsync<TKey, TValue>` to `IReadOnlyMultiMapAsync<TKey, TValue>` on `UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, and `SymmetricExceptWithAsync`. These methods only read from `other`, so accepting a read-only interface follows the least-privilege principle, better documents intent at the API level, and allows callers to pass read-only snapshots directly without casting.
+
+**API Additions**
+
+- `MultiMapLock<TKey, TValue>` — added `CancellationToken` overloads for every write method: `Add`, `AddRange(TKey, IEnumerable<TValue>)`, `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, and `SymmetricExceptWith` (12 new overloads). `ReaderWriterLockSlim.EnterWriteLock()` blocks indefinitely and has no cancellation path; the new overloads use a private `EnterWriteLockCancellable` helper that polls with `TryEnterWriteLock(20 ms)` and calls `cancellationToken.ThrowIfCancellationRequested()` between attempts. Cancellation latency is at most ~20 ms. The existing no-`CancellationToken` overloads are unchanged. Also removed a duplicate `[DebuggerDisplay]` attribute that had been left on the class declaration.
+
+**Documentation**
+
+- `README.md` — added `### Demo Console Output` section under `## Usage` (resolving the pre-existing broken TOC anchor `#demo-console-output`). Documents how to run `MultiMap.Demo` with `dotnet run --project MultiMap.Demo` and explains the new `--wait` flag: passing `-- --wait` keeps the console window open (blocks on `Console.ReadLine()`) until Enter is pressed, which is useful when launching from an IDE or a terminal that closes immediately on exit.
+- `SortedMultiMap<TKey, TValue>` XML docs — updated class-level `<remarks>`, both value-comparer constructor `<remarks>`, and the `GetHashCode()` doc comment to reflect that the comparer limitation is now **enforced** (throws `ArgumentException`) rather than merely documented as a warning.
+- Added `[DebuggerDisplay("Keys={KeyCount}, Values={Count}")]` to all public collection classes (`MultiMapBase`, `MultiMapLock`, `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, `ConcurrentMultiMap`, `SimpleMultiMap`), and `[DebuggerDisplay("Keys={_dictionary.Count}, Values={_count}")]` to `MultiMapAsync` (which exposes counts only via async methods). VS now shows `Keys=n, Values=m` in the debugger instead of the generic `{Count=n}` tooltip.
+- `ConcurrentSet<T>.Count` — added `<remarks>` documenting that the property delegates to `ConcurrentDictionary.Count`, which acquires all internal segment locks and is effectively O(1) but **not atomic**: the returned value may be stale by the time it is observed in concurrent scenarios. Callers should prefer `IsEmpty` when testing for emptiness and avoid building control-flow logic around the count.
+- `MultiMapHelper` async extension methods (`UnionAsync`, `IntersectAsync`, `ExceptWithAsync`, `SymmetricExceptWithAsync`, `IsSubsetOfAsync`, `IsSupersetOfAsync`, `OverlapsAsync`, `SetEqualsAsync`) — expanded `<remarks>` and `<param name="cancellationToken">` XML docs across all 8 overloads. Each doc now explains: (1) the token is forwarded to **every** individual `IMultiMapAsync` call the method makes, so cancellation is observed at each await boundary; (2) for mutating overloads, already-applied changes are **not rolled back** on `OperationCanceledException`; (3) read-only overloads require no rollback; (4) `OverlapsAsync` returns early on the first shared pair found, limiting async calls before cancellation is checked; (5) `ExceptWithAsync` has a direct `ClearAsync` fast-path when both arguments are the same instance.
+
+**Tests**
+
+- Added `MultiMapLock_CancellationTokenTests` in `MultiMapLock_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` write overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`). Each has a happy-path test and a contention-cancel test (write lock held by a background thread, token cancelled after 80 ms) exercising the polling loop in `EnterWriteLockCancellable`.
+- Added `Guard_ThreeParamNotNullTests` — 2 tests covering the 3-parameter `Guard.NotNull<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
+- Added targeted tests to `AdditionalBoundaryTests.cs` for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
+- Added `NonEquatableConstraintTests` in `AdditionalBoundaryTests.cs` — five tests (`MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) that instantiate each implementation with a `NoEquatableKey` / `NoEquatableValue` class pair that overrides `Equals`/`GetHashCode` without implementing `IEquatable<T>`. These tests verify the constraint relaxation is genuine and cover all main multimap variants.
+- - `SortedMultiMap_UnitTests.cs`
+  - Updated `Constructor_WithValueComparer_UsesReverseValueOrder` and `Constructor_WithKeyAndValueComparer_BothApplied` to use `ReverseIntComparer` (implements both `IComparer<int>` and `IEqualityComparer<int>`) instead of bare `Comparer<int>.Create(...)`, which now correctly throws at construction.
+  - Added `Constructor_WithValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TValue>?)`.
+  - Added `Constructor_WithKeyAndValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException` — verifies the new guard on `SortedMultiMap(IComparer<TKey>?, IComparer<TValue>?)`.
+  - Added `Constructor_WithNullValueComparer_DoesNotThrow` — confirms `null` is still accepted (uses default comparer).
+  - Added `GetHashCode_WithDualInterfaceValueComparer_EqualsContract` — end-to-end proof that `a.Equals(b) → a.GetHashCode() == b.GetHashCode()` when a dual-interface comparer is supplied.
+  - Added `ReverseIntComparer` helper class (implements both `IComparer<int>` and `IEqualityComparer<int>`) shared by the updated and new tests.
+- `MultiMapAsync_UnitTests.cs`
+  - Replaced `Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException` with `Equals_WithSynchronizationContextAndDifferentInstance_DoesNotThrowAndReturnsCorrectResult` — asserts that `Equals` returns `true` (both maps empty) without throwing under a `SynchronizationContext`.
+  - Replaced `Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException` with `Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue` — asserts that `Equals` returns `true` (both maps with identical content) without throwing under a `SynchronizationContext`.
+  - 
+- **Total: 6,924 tests** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`). All pass.
+- **Coverage: 98.4% line, 96.1% branch, 98% method** (net10.0 Coverlet run, 2026-08-28).
 
 ### 2.1.1
 
@@ -178,7 +249,7 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
 
 **Changed**
 
-- `SortedMultiMap<TKey, TValue>` type constraints documented explicitly: `IEquatable<TKey>` is a library-wide requirement propagated from `MultiMapBase`; `IComparable<TKey>` is the additional constraint enabling sorted key ordering.
+- `SortedMultiMap<TKey, TValue>` type constraints documented explicitly: `IComparable<TKey>` is the additional constraint enabling sorted key ordering (note: `IEquatable<TKey>` was a library-wide constraint at the time, removed in 3.0.0).
 - `ComputeUnorderedHash` now accepts optional `IEqualityComparer<TKey>?` and `IEqualityComparer<TValue>?` parameters, routing `GetHashCode` through the caller-supplied comparer. All concrete implementations forward their stored comparers to this helper.
 - `Intersect` and `SymmetricExceptWith` (sync and async) build a per-key `HashSet<TValue>` lookup to avoid O(n²) inner-loop value scans; no allocation occurs when the source already implements `ISet<TValue>`.
 - Benchmark suite rerun on .NET 10.0.8 / SDK 10.0.300; README benchmark tables updated to latest measured values.

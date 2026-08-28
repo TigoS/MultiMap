@@ -9,23 +9,21 @@ namespace MultiMap.Entities
     /// Implements <see cref="ICollection{T}"/> using the keys of the underlying dictionary; values are always <c>0</c> (ignored).
     /// Provides thread-safe <see cref="TryAdd"/>, <see cref="TryRemove"/>, and <see cref="IsEmpty"/> operations.
     /// </summary>
-    /// <typeparam name="T">The type of elements in the set. Must be non-nullable and implement <see cref="IEquatable{T}"/>.</typeparam>
-    public sealed class ConcurrentSet<T> : ICollection<T>
-        where T : notnull, IEquatable<T>
+    /// <typeparam name="T">The type of elements in the set.</typeparam>
+    /// <remarks>
+    /// Initializes a new instance of <see cref="ConcurrentSet{T}"/> with an optional value comparer.
+    /// </remarks>
+    public sealed class ConcurrentSet<T>(IEqualityComparer<T>? comparer = null) : ICollection<T>
+        where T : notnull
     {
-        private readonly ConcurrentDictionary<T, byte> _inner;
-
-        /// <summary>
-        /// Initializes a new instance of <see cref="ConcurrentSet{T}"/> with an optional value comparer.
-        /// </summary>
-        public ConcurrentSet(IEqualityComparer<T>? comparer = null)
-        {
-            _inner = new ConcurrentDictionary<T, byte>(comparer);
-        }
+        private readonly ConcurrentDictionary<T, byte> _inner = new(comparer);
 
         /// <summary>
         /// Gets the number of elements in the set.
         /// </summary>
+        /// <remarks>
+        /// Delegates to <see cref="ConcurrentDictionary{TKey, TValue}.Count"/>, which acquires all internal locks to produce a consistent snapshot count. The operation is effectively O(1) in practice (bounded by the number of internal segments) but is <b>not atomic with respect to concurrent mutations</b>: by the time the value is returned, other threads may have added or removed elements, so the count can be stale in concurrent scenarios. Prefer <see cref="IsEmpty"/> when you only need to test for emptiness.
+        /// </remarks>
         public int Count => _inner.Count;
 
         /// <summary>
@@ -46,7 +44,7 @@ namespace MultiMap.Entities
         /// <summary>
         /// Attempts to remove an element from the set.
         /// </summary>
-        public bool TryRemove(T item, out byte _) => _inner.TryRemove(item, out _);
+        public bool TryRemove(T item, out byte value) => _inner.TryRemove(item, out value);
 
         /// <summary>
         /// Adds an element to the set (always succeeds for set semantics; returns silently if already present).
@@ -73,13 +71,17 @@ namespace MultiMap.Entities
             Guard.NotNull(array, nameof(array));
 
             if (arrayIndex < 0 || arrayIndex > array.Length)
+            {
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
 
             int index = arrayIndex;
             foreach (var item in _inner.Keys)
             {
                 if (index >= array.Length)
+                {
                     throw new ArgumentException("Destination array was not long enough.");
+                }
                 array[index++] = item;
             }
         }

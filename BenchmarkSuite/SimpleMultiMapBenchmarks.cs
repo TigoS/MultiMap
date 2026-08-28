@@ -6,6 +6,7 @@ using MultiMap.Interfaces;
 namespace BenchmarkSuite;
 
 [CPUUsageDiagnoser]
+[Obsolete("This benchmark class is marked as obsolete as the SimpleMultiMap becomes obsolete. Please use the updated benchmark classes for performance testing.")]
 public class SimpleMultiMapBenchmarks
 {
     private SimpleMultiMap<string, int> _map = null!;

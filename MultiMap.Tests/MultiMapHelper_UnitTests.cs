@@ -2126,776 +2126,6 @@ public class MultiMapHelperWithMultiMapLockTests
 }
 
 [TestFixture]
-public class SimpleMultiMapHelperTests
-{
-    private ISimpleMultiMap<string, int> _target;
-    private ISimpleMultiMap<string, int> _other;
-
-    [SetUp]
-    public void SetUp()
-    {
-        _target = new SimpleMultiMap<string, int>();
-        _other = new SimpleMultiMap<string, int>();
-    }
-
-    // ── Union ──────────────────────────────────────────────
-
-    [Test]
-    public void Union_AddsAllPairsFromOther()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 2);
-        _other.Add("b", 3);
-
-        _target = _target.Union(_other);
-
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-    }
-
-    [Test]
-    public void Union_WithEmptyOther_DoesNotChangeTarget()
-    {
-        _target.Add("a", 1);
-
-        _target.Union(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void Union_WithEmptyTarget_CopiesAllFromOther()
-    {
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target.Union(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(2));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
-    }
-
-    [Test]
-    public void Union_OverlappingPairs_NoDuplicatesInSet()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-
-        _target.Union(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void Union_BothEmpty_RemainsEmpty()
-    {
-        _target.Union(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void Union_DoesNotModifyOther()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target.Union(_other);
-
-        Assert.That(_other.Count, Is.EqualTo(1));
-        Assert.That(_other.GetOrDefault("a"), Is.Empty);
-    }
-
-    [Test]
-    public void Union_MultipleKeys_MergesCorrectly()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("b", 3);
-        _other.Add("c", 4);
-
-        _target.Union(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(4));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2, 3 }));
-        Assert.That(_target.GetOrDefault("c"), Is.EquivalentTo(new[] { 4 }));
-    }
-
-    // ── Intersect ──────────────────────────────────────────
-
-    [Test]
-    public void Intersect_KeepsOnlyCommonPairs()
-    {
-        _target.Add("a", 1);
-        _target.Add("a", 2);
-        _target.Add("b", 3);
-        _other.Add("a", 1);
-        _other.Add("b", 3);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(_target.Count, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void Intersect_NoOverlap_ClearsTarget()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void Intersect_WithEmptyOther_ClearsTarget()
-    {
-        _target.Add("a", 1);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void Intersect_WithEmptyTarget_RemainsEmpty()
-    {
-        _other.Add("a", 1);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void Intersect_IdenticalMaps_KeepsAll()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void Intersect_DoesNotModifyOther()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_other.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void Intersect_SameKeySomeValuesMatch_KeepsOnlyMatchingValues()
-    {
-        _target.Add("a", 1);
-        _target.Add("a", 2);
-        _target.Add("a", 3);
-        _other.Add("a", 2);
-
-        _target = _target.Intersect(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(1));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
-    }
-
-    // ── ExceptWith ─────────────────────────────────────────
-
-    [Test]
-    public void ExceptWith_RemovesMatchingPairs()
-    {
-        _target.Add("a", 1);
-        _target.Add("a", 2);
-        _target.Add("b", 3);
-        _other.Add("a", 1);
-        _other.Add("b", 3);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 2 }));
-        Assert.That(_target.GetOrDefault("b"), Is.Empty);
-        Assert.That(_target.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void ExceptWith_NoOverlap_KeepsAll()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(1));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-    }
-
-    [Test]
-    public void ExceptWith_WithEmptyOther_KeepsAll()
-    {
-        _target.Add("a", 1);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(1));
-    }
-
-    [Test]
-    public void ExceptWith_IdenticalMaps_ClearsTarget()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void ExceptWith_WithEmptyTarget_RemainsEmpty()
-    {
-        _other.Add("a", 1);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void ExceptWith_OtherHasExtraPairs_OnlyRemovesMatching()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void ExceptWith_DoesNotModifyOther()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-
-        _target.ExceptWith(_other);
-
-        Assert.That(_other.Count, Is.EqualTo(1));
-        Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-    }
-
-    // ── SymmetricExceptWith ────────────────────────────────
-
-    [Test]
-    public void SymmetricExceptWith_KeepsOnlyUniqueToEach()
-    {
-        _target.Add("a", 1);
-        _target.Add("a", 2);
-        _other.Add("a", 2);
-        _other.Add("b", 3);
-
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 3 }));
-        Assert.That(_target.Count, Is.EqualTo(2));
-    }
-
-    [Test]
-    public void SymmetricExceptWith_NoOverlap_UnionsBoth()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(2));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
-    }
-
-    [Test]
-    public void SymmetricExceptWith_IdenticalMaps_ClearsTarget()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void SymmetricExceptWith_WithEmptyOther_KeepsAll()
-    {
-        _target.Add("a", 1);
-
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(1));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-    }
-
-    [Test]
-    public void SymmetricExceptWith_WithEmptyTarget_CopiesOther()
-    {
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_target.Count, Is.EqualTo(2));
-        Assert.That(_target.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_target.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
-    }
-
-    [Test]
-    public void SymmetricExceptWith_BothEmpty_RemainsEmpty()
-    {
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_target, Is.Empty);
-    }
-
-    [Test]
-    public void SymmetricExceptWith_DoesNotModifyOther()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        _target = _target.SymmetricExceptWith(_other);
-
-        Assert.That(_other.Count, Is.EqualTo(2));
-        Assert.That(_other.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
-        Assert.That(_other.GetOrDefault("b"), Is.EquivalentTo(new[] { 2 }));
-    }
-
-    // ── IsSubsetOf ─────────────────────────────────────────
-
-    [Test]
-    public void IsSubsetOf_EmptyIsSubsetOfEmpty_ReturnsTrue()
-    {
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSubsetOf_EmptyIsSubsetOfNonEmpty_ReturnsTrue()
-    {
-        _other.Add("a", 1);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSubsetOf_NonEmptyIsNotSubsetOfEmpty_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void IsSubsetOf_IdenticalSets_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSubsetOf_ProperSubset_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSubsetOf_DisjointSets_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void IsSubsetOf_PartialOverlap_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("c", 3);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void IsSubsetOf_MultipleValuesPerKey_ChecksAllValues()
-    {
-        _target.Add("a", 1);
-        _target.Add("a", 2);
-        _other.Add("a", 1);
-        _other.Add("a", 2);
-        _other.Add("a", 3);
-
-        var result = _target.IsSubsetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    // ── IsSupersetOf ───────────────────────────────────────
-
-    [Test]
-    public void IsSupersetOf_EmptyIsSupersetOfEmpty_ReturnsTrue()
-    {
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSupersetOf_NonEmptyIsSupersetOfEmpty_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSupersetOf_EmptyIsNotSupersetOfNonEmpty_ReturnsFalse()
-    {
-        _other.Add("a", 1);
-
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void IsSupersetOf_IdenticalSets_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSupersetOf_ProperSuperset_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void IsSupersetOf_DisjointSets_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void IsSupersetOf_PartialOverlap_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _target.Add("c", 3);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.IsSupersetOf(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    // ── Overlaps ───────────────────────────────────────────
-
-    [Test]
-    public void Overlaps_EmptySets_ReturnsFalse()
-    {
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void Overlaps_EmptyAndNonEmpty_ReturnsFalse()
-    {
-        _other.Add("a", 1);
-
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void Overlaps_DisjointSets_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void Overlaps_SingleCommonPair_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void Overlaps_MultipleCommonPairs_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void Overlaps_PartialOverlap_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("c", 3);
-
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void Overlaps_SameKeyDifferentValues_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 2);
-
-        var result = _target.Overlaps(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    // ── SetEquals ──────────────────────────────────────────
-
-    [Test]
-    public void SetEquals_EmptySets_ReturnsTrue()
-    {
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void SetEquals_EmptyAndNonEmpty_ReturnsFalse()
-    {
-        _other.Add("a", 1);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void SetEquals_NonEmptyAndEmpty_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void SetEquals_IdenticalSets_ReturnsTrue()
-    {
-        _target.Add("a", 1);
-        _target.Add("b", 2);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void SetEquals_DifferentCounts_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 1);
-        _other.Add("b", 2);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void SetEquals_DifferentKeys_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("b", 1);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void SetEquals_SameKeysDifferentValues_ReturnsFalse()
-    {
-        _target.Add("a", 1);
-        _other.Add("a", 2);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void SetEquals_MultipleValuesPerKey_ChecksAllValues()
-    {
-        _target.Add("a", 1);
-        _target.Add("a", 2);
-        _target.Add("b", 3);
-        _other.Add("a", 1);
-        _other.Add("a", 2);
-        _other.Add("b", 3);
-
-        var result = _target.SetEquals(_other);
-
-        Assert.That(result, Is.True);
-    }
-
-    // ── Null-guard branch coverage ─────────────────────────
-
-    [Test]
-    public void Union_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).Union(_other));
-
-    [Test]
-    public void Union_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.Union(null!));
-
-    [Test]
-    public void Intersect_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).Intersect(_other));
-
-    [Test]
-    public void Intersect_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.Intersect(null!));
-
-    [Test]
-    public void ExceptWith_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).ExceptWith(_other));
-
-    [Test]
-    public void ExceptWith_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.ExceptWith(null!));
-
-    [Test]
-    public void SymmetricExceptWith_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).SymmetricExceptWith(_other));
-
-    [Test]
-    public void SymmetricExceptWith_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.SymmetricExceptWith(null!));
-
-    [Test]
-    public void IsSubsetOf_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).IsSubsetOf(_other));
-
-    [Test]
-    public void IsSubsetOf_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.IsSubsetOf(null!));
-
-    [Test]
-    public void IsSupersetOf_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).IsSupersetOf(_other));
-
-    [Test]
-    public void IsSupersetOf_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.IsSupersetOf(null!));
-
-    [Test]
-    public void Overlaps_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).Overlaps(_other));
-
-    [Test]
-    public void Overlaps_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.Overlaps(null!));
-
-    [Test]
-    public void SetEquals_NullTarget_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => ((ISimpleMultiMap<string, int>)null!).SetEquals(_other));
-
-    [Test]
-    public void SetEquals_NullOther_ThrowsArgumentNullException()
-        => Assert.Throws<ArgumentNullException>(() => _target.SetEquals(null!));
-}
-
-[TestFixture]
 public class MultiMapHelperAsyncTests
 {
     private MultiMapAsync<string, int> _target;
@@ -5358,3 +4588,588 @@ public class MultiMapHelper_IMultiMapOverloadsTests
 // ConcurrentMultiMap – AddRange(KVP) duplicate / zombie-key branches (lines
 // 174-177, 227-229) and Equals(object) with non-multimap type (line 482/506)
 // ──────────────────────────────────────────────────────────────────────────────
+
+/// <summary>
+/// Tests for MultiMapHelper extension async methods.
+/// These are different from the instance methods on MultiMapAsync.
+/// </summary>
+[TestFixture]
+public class MultiMapHelperExtensionAsyncTests
+{
+    private MultiMapAsync<string, int> _target;
+    private MultiMapAsync<string, int> _other;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _target = new MultiMapAsync<string, int>();
+        _other = new MultiMapAsync<string, int>();
+    }
+
+    [TearDown]
+    public async Task TearDown()
+    {
+        await _target.DisposeAsync();
+        await _other.DisposeAsync();
+    }
+
+    #region UnionAsync Extension Method Tests
+
+    [Test]
+    public async Task UnionAsync_Extension_AddsAllPairsFromOther()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 2);
+        await _other.AddAsync("b", 3);
+
+        await MultiMapHelper.UnionAsync(_target, _other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(3));
+    }
+
+    [Test]
+    public async Task UnionAsync_Extension_WithEmptyOther_DoesNotChangeTarget()
+    {
+        await _target.AddAsync("a", 1);
+
+        await MultiMapHelper.UnionAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task UnionAsync_Extension_WithEmptyTarget_CopiesAllFromOther()
+    {
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.UnionAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+    }
+
+    [Test]
+    public async Task UnionAsync_Extension_OverlappingPairs_NoDuplicates()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+
+        await MultiMapHelper.UnionAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task UnionAsync_Extension_BothEmpty_RemainsEmpty()
+    {
+        await MultiMapHelper.UnionAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task UnionAsync_Extension_MultipleKeys_MergesCorrectly()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("b", 3);
+        await _other.AddAsync("c", 4);
+
+        await MultiMapHelper.UnionAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(4));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.ContainsAsync("c", 4), Is.True);
+    }
+
+    [Test]
+    public async Task UnionAsync_Extension_WithCancellationToken_CanBeCancelled()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        for (int i = 0; i < 100; i++)
+        {
+            await _other.AddAsync($"key{i}", i);
+        }
+
+        var ex = Assert.CatchAsync<OperationCanceledException>(async () =>
+        {
+            await MultiMapHelper.UnionAsync(_target, _other, cts.Token);
+        });
+
+        Assert.That(ex, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region IntersectAsync Extension Method Tests
+
+    [Test]
+    public async Task IntersectAsync_Extension_KeepsOnlyCommonPairs()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("b", 3);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 3);
+
+        await MultiMapHelper.IntersectAsync(_target, _other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.False);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task IntersectAsync_Extension_NoOverlap_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.IntersectAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task IntersectAsync_Extension_WithEmptyOther_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+
+        await MultiMapHelper.IntersectAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task IntersectAsync_Extension_WithEmptyTarget_RemainsEmpty()
+    {
+        await _other.AddAsync("a", 1);
+
+        await MultiMapHelper.IntersectAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task IntersectAsync_Extension_PartialOverlap_KeepsCommonOnly()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("b", 3);
+        await _target.AddAsync("c", 4);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("c", 4);
+
+        await MultiMapHelper.IntersectAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("c", 4), Is.True);
+    }
+
+    [Test]
+    public async Task IntersectAsync_Extension_WithCancellationToken_CanBeCancelled()
+    {
+        using var cts = new CancellationTokenSource();
+
+        for (int i = 0; i < 100; i++)
+        {
+            await _target.AddAsync($"key{i}", i);
+            await _other.AddAsync($"key{i}", i);
+        }
+
+        cts.Cancel();
+
+        var ex = Assert.CatchAsync<OperationCanceledException>(async () =>
+        {
+            await MultiMapHelper.IntersectAsync(_target, _other, cts.Token);
+        });
+
+        Assert.That(ex, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region ExceptWithAsync Extension Method Tests
+
+    [Test]
+    public async Task ExceptWithAsync_Extension_RemovesCommonPairs()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("a", 2);
+        await _target.AddAsync("b", 3);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 3);
+
+        await MultiMapHelper.ExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.False);
+        Assert.That(await _target.ContainsAsync("a", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 3), Is.False);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_Extension_NoOverlap_NoChange()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.ExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_Extension_WithEmptyOther_NoChange()
+    {
+        await _target.AddAsync("a", 1);
+
+        await MultiMapHelper.ExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_Extension_WithEmptyTarget_RemainsEmpty()
+    {
+        await _other.AddAsync("a", 1);
+
+        await MultiMapHelper.ExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_Extension_AllPairsInOther_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.ExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task ExceptWithAsync_Extension_WithCancellationToken_CanBeCancelled()
+    {
+        using var cts = new CancellationTokenSource();
+
+        for (int i = 0; i < 100; i++)
+        {
+            await _target.AddAsync($"key{i}", i);
+            await _other.AddAsync($"key{i}", i);
+        }
+
+        cts.Cancel();
+
+        var ex = Assert.CatchAsync<OperationCanceledException>(async () =>
+        {
+            await MultiMapHelper.ExceptWithAsync(_target, _other, cts.Token);
+        });
+
+        Assert.That(ex, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region SymmetricExceptWithAsync Extension Method Tests
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_Extension_KeepsNonOverlappingPairs()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("c", 3);
+
+        await MultiMapHelper.SymmetricExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.ContainsAsync("a", 1), Is.False);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+        Assert.That(await _target.ContainsAsync("c", 3), Is.True);
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_Extension_NoOverlap_MergesAll()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.SymmetricExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_Extension_WithEmptyOther_NoChange()
+    {
+        await _target.AddAsync("a", 1);
+
+        await MultiMapHelper.SymmetricExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(1));
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_Extension_WithEmptyTarget_CopiesFromOther()
+    {
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.SymmetricExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.EqualTo(2));
+        Assert.That(await _target.ContainsAsync("a", 1), Is.True);
+        Assert.That(await _target.ContainsAsync("b", 2), Is.True);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_Extension_IdenticalMaps_ClearsTarget()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        await MultiMapHelper.SymmetricExceptWithAsync(_target, _other);
+
+        Assert.That(await _target.GetCountAsync(), Is.Zero);
+    }
+
+    [Test]
+    public async Task SymmetricExceptWithAsync_Extension_WithCancellationToken_CanBeCancelled()
+    {
+        using var cts = new CancellationTokenSource();
+
+        for (int i = 0; i < 100; i++)
+        {
+            await _target.AddAsync($"key{i}", i);
+            await _other.AddAsync($"key{i}", i + 50);
+        }
+
+        cts.Cancel();
+
+        var ex = Assert.CatchAsync<OperationCanceledException>(async () =>
+        {
+            await MultiMapHelper.SymmetricExceptWithAsync(_target, _other, cts.Token);
+        });
+
+        Assert.That(ex, Is.Not.Null);
+    }
+
+    #endregion
+
+    #region IsSubsetOfAsync Extension Method Tests
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_EmptyIsSubsetOfEmpty_ReturnsTrue()
+    {
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_EmptyIsSubsetOfNonEmpty_ReturnsTrue()
+    {
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_NonEmptyIsNotSubsetOfEmpty_ReturnsFalse()
+    {
+        await _target.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_IdenticalSets_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSubsetOfAsync_Extension_ProperSubset_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.IsSubsetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    #endregion
+
+    #region IsSupersetOfAsync Extension Method Tests
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_EmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_NonEmptyIsSupersetOfEmpty_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_EmptyIsNotSupersetOfNonEmpty_ReturnsFalse()
+    {
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task IsSupersetOfAsync_Extension_ProperSuperset_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.IsSupersetOfAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    #endregion
+
+    #region OverlapsAsync Extension Method Tests
+
+    [Test]
+    public async Task OverlapsAsync_Extension_EmptySets_ReturnsFalse()
+    {
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_Extension_DisjointSets_ReturnsFalse()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_Extension_SingleCommonPair_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task OverlapsAsync_Extension_PartialOverlap_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("c", 3);
+
+        var result = await MultiMapHelper.OverlapsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    #endregion
+
+    #region SetEqualsAsync Extension Method Tests
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_EmptySets_ReturnsTrue()
+    {
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_EmptyAndNonEmpty_ReturnsFalse()
+    {
+        await _other.AddAsync("a", 1);
+
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_IdenticalSets_ReturnsTrue()
+    {
+        await _target.AddAsync("a", 1);
+        await _target.AddAsync("b", 2);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public async Task SetEqualsAsync_Extension_DifferentCounts_ReturnsFalse()
+    {
+        await _target.AddAsync("a", 1);
+        await _other.AddAsync("a", 1);
+        await _other.AddAsync("b", 2);
+
+        var result = await MultiMapHelper.SetEqualsAsync(_target, _other);
+
+        Assert.That(result, Is.False);
+    }
+
+    #endregion
+}

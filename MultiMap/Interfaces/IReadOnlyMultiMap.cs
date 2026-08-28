@@ -8,11 +8,11 @@ namespace MultiMap.Interfaces
     /// The <see cref="IReadOnlySimpleMultiMap{TKey, TValue}.Get"/> method throws <see cref="KeyNotFoundException"/> if the key is not present;
     /// use <see cref="IReadOnlySimpleMultiMap{TKey, TValue}.GetOrDefault"/> for safe retrieval that returns an empty collection.
     /// Thread safety and ordering of keys or values depend on the specific implementation.</remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must not be null and must implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multi-map. Must not be null and must implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multi-map.</typeparam>
     public interface IReadOnlyMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         /// <summary>
         /// Gets the number of keys contained in the collection.

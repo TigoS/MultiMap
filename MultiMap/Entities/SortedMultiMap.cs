@@ -13,41 +13,43 @@ namespace MultiMap.Entities
     /// Thread safety is not guaranteed; external synchronization is required for concurrent access.
     /// </para>
     /// <para>
-    /// <strong>Important: Comparer Limitation</strong>
+    /// <strong>Comparer Requirement</strong>
     /// </para>
     /// <para>
     /// This type accepts <see cref="IComparer{T}"/> (for sorting order) but not <see cref="IEqualityComparer{T}"/> (for equality semantics).
-    /// When computing <see cref="GetHashCode"/>, the implementation attempts to cast the value comparer to <see cref="IEqualityComparer{TValue}"/>.
-    /// If the cast fails (i.e., a custom <see cref="IComparer{TValue}"/> does not also implement <see cref="IEqualityComparer{TValue}"/>),
-    /// the code silently falls back to <see cref="EqualityComparer{TValue}.Default"/>.
+    /// When computing <see cref="GetHashCode"/>, the implementation casts the value comparer to <see cref="IEqualityComparer{TValue}"/>.
+    /// To prevent a silent <see cref="GetHashCode"/>/<see cref="object.Equals(object)"/> contract violation, constructors that accept a
+    /// <c>valueComparer</c> enforce that the supplied comparer also implements <see cref="IEqualityComparer{TValue}"/>;
+    /// an <see cref="ArgumentException"/> is thrown at construction time if it does not.
     /// </para>
     /// <para>
-    /// This can lead to inconsistent behavior:
+    /// This avoids the following class of bug:
     /// </para>
     /// <list type="bullet">
     /// <item>
     /// <description>
-    /// Two <see cref="SortedMultiMap{TKey, TValue}"/> instances with the same content may have different hash codes
-    /// if one uses a custom <see cref="IComparer{TValue}"/> and the other does not, even though they compare equal via <see cref="Equals(IReadOnlyMultiMap{TKey, TValue})"/>.
-    /// This violates the contract: if <c>a.Equals(b)</c>, then <c>a.GetHashCode() == b.GetHashCode()</c>.
+    /// Two <see cref="SortedMultiMap{TKey, TValue}"/> instances with the same content could have different hash codes
+    /// if one used a custom <see cref="IComparer{TValue}"/> that defined equality differently from the default comparer,
+    /// even though they compared equal via <see cref="Equals(IReadOnlyMultiMap{TKey, TValue})"/>.
+    /// This would violate the contract: if <c>a.Equals(b)</c>, then <c>a.GetHashCode() == b.GetHashCode()</c>.
     /// </description>
     /// </item>
     /// <item>
     /// <description>
-    /// Placing such instances in hash-based collections (e.g., <see cref="HashSet{T}"/>, <see cref="Dictionary{TKey, TValue}"/>) can cause lookup failures or duplicates.
+    /// Placing such instances in hash-based collections (e.g., <see cref="HashSet{T}"/>, <see cref="Dictionary{TKey, TValue}"/>) could cause lookup failures or duplicates.
     /// </description>
     /// </item>
     /// </list>
     /// <para>
     /// <strong>Best Practice:</strong> If you use a custom value comparer, ensure it implements both <see cref="IComparer{TValue}"/> and <see cref="IEqualityComparer{TValue}"/>
-    /// with consistent semantics, or avoid relying on <see cref="GetHashCode"/> and <see cref="Equals(IReadOnlyMultiMap{TKey, TValue})"/> for hashing.
+    /// with consistent semantics.
     /// </para>
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement both <see cref="IEquatable{TKey}"/> (required by the base class and all multi-map interfaces) and <see cref="IComparable{TKey}"/> (required by this class for sorted key ordering). Note: only the comparer is used at runtime; <see cref="IEquatable{TKey}"/> is a library-wide constraint on all multi-map types.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement both <see cref="IEquatable{TValue}"/> and <see cref="IComparable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IComparable{TKey}"/> (required by this class for sorted key ordering).</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IComparable{TValue}"/>.</typeparam>
     public sealed class SortedMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, SortedSet<TValue>>
-        where TKey : notnull, IEquatable<TKey>, IComparable<TKey>
-        where TValue : notnull, IEquatable<TValue>, IComparable<TValue>
+        where TKey : notnull, IComparable<TKey>
+        where TValue : notnull, IComparable<TValue>
     {
         private readonly IComparer<TValue>? _valueComparer;
 
@@ -80,15 +82,25 @@ namespace MultiMap.Entities
         /// The key comparer will be <see langword="null"/>, and keys will be compared using their default ordering.
         /// </para>
         /// <para>
-        /// <strong>Important:</strong> If <paramref name="valueComparer"/> does not implement <see cref="IEqualityComparer{TValue}"/>,
-        /// <see cref="GetHashCode"/> will fall back to <see cref="EqualityComparer{TValue}.Default"/>, potentially creating
-        /// hash code inconsistencies. See the class remarks for details.
+        /// <strong>Important:</strong> <paramref name="valueComparer"/> must implement <see cref="IEqualityComparer{TValue}"/> in addition to <see cref="IComparer{TValue}"/>, or be <see langword="null"/>.
+        /// If a comparer that only implements <see cref="IComparer{TValue}"/> is supplied, an <see cref="ArgumentException"/> is thrown to prevent a silent <see cref="GetHashCode"/>/<see cref="Equals(IReadOnlyMultiMap{TKey, TValue})"/> contract violation.
+        /// See the class remarks for details.
         /// </para>
         /// </remarks>
         /// <param name="valueComparer">The comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        /// <exception cref="ArgumentException"><paramref name="valueComparer"/> does not implement <see cref="IEqualityComparer{TValue}"/>.</exception>
         public SortedMultiMap(IComparer<TValue>? valueComparer)
             : base(new SortedDictionary<TKey, SortedSet<TValue>>())
         {
+            if (valueComparer is not null and not IEqualityComparer<TValue>)
+            {
+                throw new ArgumentException(
+                    $"The value comparer must implement both {nameof(IComparer<>)} and " +
+                    $"{nameof(IEqualityComparer<>)} to ensure consistent Equals/GetHashCode semantics. " +
+                    $"See the {nameof(SortedMultiMap<,>)} class remarks for details.",
+                    nameof(valueComparer));
+            }
+
             _valueComparer = valueComparer;
         }
 
@@ -97,21 +109,33 @@ namespace MultiMap.Entities
         /// </summary>
         /// <remarks>
         /// <para>
-        /// <strong>Important:</strong> If <paramref name="valueComparer"/> does not implement <see cref="IEqualityComparer{TValue}"/>,
-        /// <see cref="GetHashCode"/> will fall back to <see cref="EqualityComparer{TValue}.Default"/>, potentially creating
-        /// hash code inconsistencies. See the class remarks for details and recommended best practices.
+        /// <strong>Important:</strong> <paramref name="valueComparer"/> must implement <see cref="IEqualityComparer{TValue}"/>
+        /// in addition to <see cref="IComparer{TValue}"/>, or be <see langword="null"/>.
+        /// If a comparer that only implements <see cref="IComparer{TValue}"/> is supplied, an <see cref="ArgumentException"/> is thrown
+        /// to prevent a silent <see cref="GetHashCode"/>/<see cref="Equals(IReadOnlyMultiMap{TKey, TValue})"/> contract violation.
+        /// See the class remarks for details and recommended best practices.
         /// </para>
         /// </remarks>
         /// <param name="keyComparer">The comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
         /// <param name="valueComparer">The comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+        /// <exception cref="ArgumentException"><paramref name="valueComparer"/> does not implement <see cref="IEqualityComparer{TValue}"/>.</exception>
         public SortedMultiMap(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)
             : base(new SortedDictionary<TKey, SortedSet<TValue>>(keyComparer))
         {
+            if (valueComparer is not null and not IEqualityComparer<TValue>)
+            {
+                throw new ArgumentException(
+                    $"The value comparer must implement both {nameof(IComparer<>)} and " +
+                    $"{nameof(IEqualityComparer<>)} to ensure consistent Equals/GetHashCode semantics. " +
+                    $"See the {nameof(SortedMultiMap<,>)} class remarks for details.",
+                    nameof(valueComparer));
+            }
+
             _valueComparer = valueComparer;
         }
 
         /// <inheritdoc/>
-        protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? new SortedSet<TValue>() : new SortedSet<TValue>(_valueComparer);
+        protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? [] : new SortedSet<TValue>(_valueComparer);
 
         /// <inheritdoc/>
         protected override bool AddToCollection(SortedSet<TValue> collection, TValue value) => collection.Add(value);
@@ -126,29 +150,35 @@ namespace MultiMap.Entities
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var key in Keys)
             {
                 if (!other.TryGet(key, out var otherValues))
+                {
                     return false;
+                }
 
                 var otherValuesSet = new SortedSet<TValue>(otherValues, _valueComparer);
 
-                if (!_dictionary.TryGetValue(key, out var targetValuesSet))
+                if (!_dictionary.TryGetValue(key, out var targetValuesSet) ||
+                    targetValuesSet.Count != otherValuesSet.Count ||
+                    !targetValuesSet.SetEquals(otherValuesSet))
+                {
                     return false;
-
-                if (targetValuesSet.Count != otherValuesSet.Count)
-                    return false;
-
-                if (!targetValuesSet.SetEquals(otherValuesSet))
-                    return false;
+                }
             }
 
             return true;

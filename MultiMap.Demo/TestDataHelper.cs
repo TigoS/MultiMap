@@ -14,7 +14,7 @@ namespace MultiMap.Demo
         /// <returns>A pre-populated <see cref="ISimpleMultiMap{TKey, TValue}"/> instance.</returns>
         public static ISimpleMultiMap<string, int> CreateSampleMultiMap1()
         {
-            var multiMap = new SimpleMultiMap<string, int>
+            var multiMap = new MultiMapSet<string, int>
             {
                 { "A", 1 },
                 { "A", 2 },
@@ -30,7 +30,7 @@ namespace MultiMap.Demo
         /// <returns>A pre-populated <see cref="ISimpleMultiMap{TKey, TValue}"/> instance.</returns>
         public static ISimpleMultiMap<string, int> CreateSampleMultiMap2()
         {
-            var multiMap = new SimpleMultiMap<string, int>
+            var multiMap = new MultiMapSet<string, int>
             {
                 { "A", 1 },
                 { "A", 3 },

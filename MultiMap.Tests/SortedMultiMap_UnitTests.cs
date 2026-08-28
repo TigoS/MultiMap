@@ -1324,7 +1324,7 @@ public class SortedMultiMapTests
     [Test]
     public void Constructor_WithValueComparer_UsesReverseValueOrder()
     {
-        var map = new SortedMultiMap<string, int>(Comparer<int>.Create((a, b) => b.CompareTo(a)));
+        var map = new SortedMultiMap<string, int>(new ReverseIntComparer());
         map.Add("a", 1);
         map.Add("a", 3);
         map.Add("a", 2);
@@ -1337,7 +1337,7 @@ public class SortedMultiMapTests
     {
         var map = new SortedMultiMap<string, int>(
             Comparer<string>.Create((a, b) => string.Compare(b, a, StringComparison.Ordinal)),
-            Comparer<int>.Create((a, b) => b.CompareTo(a)));
+            new ReverseIntComparer());
         map.Add("a", 1);
         map.Add("b", 2);
 
@@ -1455,8 +1455,49 @@ public class SortedMultiMap_ConstructorAndHashTests
         var map = new SortedMultiMap<string, int>();
         Assert.That(map.GetHashCode(), Is.EqualTo(map.GetHashCode()));
     }
+
+    [Test]
+    public void Constructor_WithValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException()
+    {
+        var comparerOnly = Comparer<int>.Create((a, b) => b.CompareTo(a));
+        Assert.Throws<ArgumentException>(() => new SortedMultiMap<string, int>(comparerOnly));
+    }
+
+    [Test]
+    public void Constructor_WithKeyAndValueComparerThatOnlyImplementsIComparer_ThrowsArgumentException()
+    {
+        var comparerOnly = Comparer<int>.Create((a, b) => b.CompareTo(a));
+        Assert.Throws<ArgumentException>(() =>
+            new SortedMultiMap<string, int>(Comparer<string>.Default, comparerOnly));
+    }
+
+    [Test]
+    public void Constructor_WithNullValueComparer_DoesNotThrow()
+        => Assert.DoesNotThrow(() => new SortedMultiMap<string, int>((IComparer<int>?)null));
+
+    [Test]
+    public void GetHashCode_WithDualInterfaceValueComparer_EqualsContract()
+    {
+        var comparer = new ReverseIntComparer();
+        var a = new SortedMultiMap<string, int>(comparer);
+        var b = new SortedMultiMap<string, int>(comparer);
+        a.Add("k", 1); a.Add("k", 2);
+        b.Add("k", 2); b.Add("k", 1);
+
+        Assert.That(a.Equals((object)b), Is.True);
+        Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Additional MultiMapBase contract tests through concrete subtypes
 // ──────────────────────────────────────────────────────────────────────────────
+
+// Implements both IComparer<int> and IEqualityComparer<int> with reverse ordering.
+// Used by SortedMultiMap constructor tests that require a dual-interface value comparer.
+internal sealed class ReverseIntComparer : IComparer<int>, IEqualityComparer<int>
+{
+    public int Compare(int x, int y) => y.CompareTo(x);
+    public bool Equals(int x, int y) => x == y;
+    public int GetHashCode(int obj) => obj.GetHashCode();
+}

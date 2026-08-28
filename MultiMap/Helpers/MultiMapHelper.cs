@@ -14,13 +14,13 @@ namespace MultiMap.Helpers
         /// <remarks>
         /// This method is not atomic. When used with concurrent implementations such as <see cref="Entities.ConcurrentMultiMap{TKey, TValue}"/> or <see cref="Entities.MultiMapLock{TKey, TValue}"/>, concurrent modifications to <paramref name="target"/> or <paramref name="other"/> between individual operations may cause the result to reflect a mix of states rather than a point-in-time union. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        public static IMultiMap<TKey, TValue> Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static IMultiMap<TKey, TValue> Union<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -36,13 +36,13 @@ namespace MultiMap.Helpers
         /// <remarks>
         /// This method is not atomic. It reads a snapshot of <paramref name="target"/> keys and values, then applies removals in a separate phase. When used with concurrent implementations, key-value pairs added to <paramref name="target"/> between the read and write phases will survive the intersect even if absent from <paramref name="other"/>. Pairs scheduled for <see cref="ISimpleMultiMap{TKey, TValue}.RemoveKey"/> removal will also remove any values added concurrently under the same key. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        public static IMultiMap<TKey, TValue> Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static IMultiMap<TKey, TValue> Intersect<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -66,7 +66,7 @@ namespace MultiMap.Helpers
                 {
                     // Always materialise into a fresh HashSet to avoid aliasing a live
                     // mutable set that could be modified concurrently on the source.
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = new HashSet<TValue>([.. other.GetOrDefault(kvp.Key)]);
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -74,7 +74,7 @@ namespace MultiMap.Helpers
                 {
                     if (!removeByKey.TryGetValue(kvp.Key, out var toRemove))
                     {
-                        toRemove = new HashSet<TValue>();
+                        toRemove = [];
                         removeByKey[kvp.Key] = toRemove;
                     }
                     toRemove.Add(kvp.Value);
@@ -100,13 +100,13 @@ namespace MultiMap.Helpers
         /// <remarks>
         /// This method is not atomic. Each removal is individually atomic, but values added to <paramref name="target"/> between iterations that also exist in <paramref name="other"/> may not be removed. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        public static IMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static IMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -132,13 +132,13 @@ namespace MultiMap.Helpers
         /// <remarks>
         /// This method is not atomic. It classifies pairs via <see cref="ICollection{TValue}.Contains"/> in a read phase, then applies additions and removals in separate write phases. When used with concurrent implementations, pairs added to <paramref name="target"/> between classification and mutation may be misclassified, leaving values that should have been removed or failing to add values that should have been included. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        public static IMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static IMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -153,7 +153,7 @@ namespace MultiMap.Helpers
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
-                    targetSet = new HashSet<TValue>(target.GetOrDefault(kvp.Key));
+                    targetSet = [.. target.GetOrDefault(kvp.Key)];
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -181,14 +181,14 @@ namespace MultiMap.Helpers
         /// then queries <paramref name="other"/> for membership. Concurrent modifications to either multimap
         /// may cause the result to reflect a mix of states. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="target"/> exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public static bool IsSubsetOf<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static bool IsSubsetOf<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -199,12 +199,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -218,14 +220,14 @@ namespace MultiMap.Helpers
         /// then queries <paramref name="target"/> for membership. Concurrent modifications to either multimap
         /// may cause the result to reflect a mix of states. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in <paramref name="target"/>; otherwise, <see langword="false"/>.</returns>
         public static bool IsSupersetOf<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -241,14 +243,14 @@ namespace MultiMap.Helpers
         /// then queries <paramref name="other"/> for membership. Concurrent modifications to either multimap
         /// may cause the result to reflect a mix of states. No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public static bool Overlaps<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static bool Overlaps<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -259,12 +261,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (otherSet.Contains(kvp.Value))
+                {
                     return true;
+                }
             }
 
             return false;
@@ -278,20 +282,22 @@ namespace MultiMap.Helpers
         /// Concurrent modifications to either multimap may cause the result to reflect a mix of states.
         /// No structural corruption or count drift will occur.
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public static bool SetEquals<TKey, TValue>(this IMultiMap<TKey, TValue> target, IMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static bool SetEquals<TKey, TValue>(this IMultiMap<TKey, TValue> target, IReadOnlyMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
 
             if (target.Count != other.Count || target.KeyCount != other.KeyCount)
+            {
                 return false;
+            }
 
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
@@ -299,12 +305,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -315,13 +323,13 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        public static ISimpleMultiMap<TKey, TValue> Union<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static ISimpleMultiMap<TKey, TValue> Union<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -337,13 +345,13 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Removes all key-value pairs from <paramref name="target"/> that do not exist in <paramref name="other"/>.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        public static ISimpleMultiMap<TKey, TValue> Intersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static ISimpleMultiMap<TKey, TValue> Intersect<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -355,7 +363,7 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
@@ -376,13 +384,13 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Removes all key-value pairs from <paramref name="target"/> that exist in <paramref name="other"/>.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        public static ISimpleMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static ISimpleMultiMap<TKey, TValue> ExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -405,13 +413,13 @@ namespace MultiMap.Helpers
         /// Modifies <paramref name="target"/> to contain only pairs present in either
         /// <paramref name="target"/> or <paramref name="other"/>, but not both.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        public static ISimpleMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static ISimpleMultiMap<TKey, TValue> SymmetricExceptWith<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -426,7 +434,7 @@ namespace MultiMap.Helpers
             {
                 if (!targetLookup.TryGetValue(kvp.Key, out var targetSet))
                 {
-                    targetSet = new HashSet<TValue>(target.GetOrDefault(kvp.Key));
+                    targetSet = [.. target.GetOrDefault(kvp.Key)];
                     targetLookup[kvp.Key] = targetSet;
                 }
 
@@ -440,8 +448,15 @@ namespace MultiMap.Helpers
                 }
             }
 
-            foreach (var kvp in toRemove) target.Remove(kvp.Key, kvp.Value);
-            foreach (var kvp in toAdd) target.Add(kvp.Key, kvp.Value);
+            foreach (var kvp in toRemove)
+            {
+                target.Remove(kvp.Key, kvp.Value);
+            }
+
+            foreach (var kvp in toAdd)
+            {
+                target.Add(kvp.Key, kvp.Value);
+            }
 
             return target;
         }
@@ -449,14 +464,14 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Determines whether <paramref name="target"/> is a subset of <paramref name="other"/>.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="target"/> exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public static bool IsSubsetOf<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static bool IsSubsetOf<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -468,12 +483,14 @@ namespace MultiMap.Helpers
             {
                 if (!otherLookup.TryGetValue(kvp.Key, out var otherSet))
                 {
-                    otherSet = new HashSet<TValue>(other.GetOrDefault(kvp.Key));
+                    otherSet = [.. other.GetOrDefault(kvp.Key)];
                     otherLookup[kvp.Key] = otherSet;
                 }
 
                 if (!otherSet.Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -482,14 +499,14 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Determines whether <paramref name="target"/> is a superset of <paramref name="other"/>.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in <paramref name="target"/>; otherwise, <see langword="false"/>.</returns>
         public static bool IsSupersetOf<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -500,22 +517,24 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Determines whether <paramref name="target"/> and <paramref name="other"/> share at least one key-value pair.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public static bool Overlaps<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static bool Overlaps<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
 
             foreach (var kvp in target)
             {
-                if (new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
+                if (other.Contains(kvp.Key, kvp.Value))
+                {
                     return true;
+                }
             }
 
             return false;
@@ -524,25 +543,29 @@ namespace MultiMap.Helpers
         /// <summary>
         /// Determines whether <paramref name="target"/> and <paramref name="other"/> contain the same key-value pairs.
         /// </summary>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public static bool SetEquals<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, ISimpleMultiMap<TKey, TValue> other)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static bool SetEquals<TKey, TValue>(this ISimpleMultiMap<TKey, TValue> target, IReadOnlySimpleMultiMap<TKey, TValue> other)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
 
             if (target.Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var kvp in target)
             {
                 if (!new HashSet<TValue>(other.GetOrDefault(kvp.Key)).Contains(kvp.Value))
+                {
                     return false;
+                }
             }
 
             return true;
@@ -554,18 +577,28 @@ namespace MultiMap.Helpers
         /// Asynchronously adds all key-value pairs from <paramref name="other"/> into <paramref name="target"/>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. Each awaited operation releases the underlying lock, allowing
         /// concurrent callers to interleave between steps. The result may reflect a mix of states
         /// rather than a point-in-time union. No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call
+        /// (<c>GetKeysAsync</c>, <c>GetOrDefaultAsync</c>, <c>AddRangeAsync</c>), so cancellation
+        /// is observed at each await boundary. If the token is cancelled mid-operation,
+        /// <see cref="OperationCanceledException"/> is thrown and already-added pairs are
+        /// <b>not</b> rolled back.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to add pairs into.</param>
         /// <param name="other">The multimap whose pairs are added to <paramref name="target"/>.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public static async Task UnionAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/> without rolling back already-applied changes.</param>
+        public static async Task UnionAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -583,20 +616,29 @@ namespace MultiMap.Helpers
         /// Asynchronously removes all key-value pairs from <paramref name="target"/> that do not exist in <paramref name="other"/>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. It snapshots keys and values in a read phase, then removes
         /// non-matching pairs in a write phase. Between awaited operations, concurrent callers may
         /// add pairs that survive the intersect or remove pairs redundantly. Pairs scheduled for
         /// key-level removal will also remove any values added concurrently under the same key.
         /// No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call across both the
+        /// read and write phases, so cancellation is observed at each await boundary. If the token
+        /// is cancelled during the write phase, <see cref="OperationCanceledException"/> is thrown
+        /// and already-removed pairs are <b>not</b> restored.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap that defines the pairs to keep.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public static async Task IntersectAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call across both read and write phases; throws <see cref="OperationCanceledException"/> without rolling back already-applied removals.</param>
+        public static async Task IntersectAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -636,18 +678,30 @@ namespace MultiMap.Helpers
         /// Asynchronously removes all key-value pairs from <paramref name="target"/> that exist in <paramref name="other"/>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. Each removal is individually atomic, but values added to
         /// <paramref name="target"/> between awaited iterations that also exist in <paramref name="other"/>
         /// may not be removed. No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call
+        /// (<c>GetKeysAsync</c>, <c>GetOrDefaultAsync</c>, <c>RemoveRangeAsync</c>), so
+        /// cancellation is observed at each await boundary. If the token is cancelled
+        /// mid-operation, <see cref="OperationCanceledException"/> is thrown and
+        /// already-removed pairs are <b>not</b> restored. When
+        /// <paramref name="target"/> and <paramref name="other"/> are the same instance,
+        /// <c>ClearAsync</c> is called directly and the token is checked on that single call.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to remove pairs from.</param>
         /// <param name="other">The multimap whose pairs are removed from <paramref name="target"/>.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public static async Task ExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/> without rolling back already-applied removals.</param>
+        public static async Task ExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -678,20 +732,30 @@ namespace MultiMap.Helpers
         /// <paramref name="target"/> or <paramref name="other"/>, but not both.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. It classifies pairs in a read phase, then applies additions
         /// and removals in separate write phases. Between awaited operations, concurrent callers may
         /// cause pairs to be misclassified, leaving values that should have been removed or failing
         /// to add values that should have been included. No structural corruption or count drift
         /// will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call across the read,
+        /// remove, and add phases, so cancellation is observed at each await boundary. If the
+        /// token is cancelled during the write phase, <see cref="OperationCanceledException"/> is
+        /// thrown; removals already applied in <c>RemoveRangeAsync</c> are <b>not</b> reversed,
+        /// and the subsequent <c>AddRangeAsync</c> call may not have started.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to modify.</param>
         /// <param name="other">The multimap to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
-        public static async Task SymmetricExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call across all three phases; throws <see cref="OperationCanceledException"/> without rolling back already-applied changes.</param>
+        public static async Task SymmetricExceptWithAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -725,19 +789,28 @@ namespace MultiMap.Helpers
         /// Asynchronously determines whether <paramref name="target"/> is a subset of <paramref name="other"/>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. Each awaited operation releases the underlying lock, allowing
         /// concurrent callers to interleave between steps. The result may reflect a mix of states.
         /// No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call
+        /// (<c>GetKeysAsync</c>, <c>GetOrDefaultAsync</c>), so cancellation is observed at each
+        /// await boundary. If the token is cancelled mid-check, <see cref="OperationCanceledException"/>
+        /// is thrown. Because this is a read-only operation, no mutations need to be rolled back.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="target"/> exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
-        public static async Task<bool> IsSubsetOfAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static async Task<bool> IsSubsetOfAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -753,7 +826,9 @@ namespace MultiMap.Helpers
                 foreach (var value in targetValues)
                 {
                     if (!otherSet.Contains(value))
+                    {
                         return false;
+                    }
                 }
             }
 
@@ -764,19 +839,28 @@ namespace MultiMap.Helpers
         /// Asynchronously determines whether <paramref name="target"/> is a superset of <paramref name="other"/>.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. Each awaited operation releases the underlying lock, allowing
         /// concurrent callers to interleave between steps. The result may reflect a mix of states.
         /// No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> Delegates to <see cref="IsSubsetOfAsync{TKey, TValue}"/> with the
+        /// arguments swapped; the <paramref name="cancellationToken"/> is forwarded to that call and
+        /// to every <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> operation it performs.
+        /// Throws <see cref="OperationCanceledException"/> if the token is cancelled.
+        /// Because this is a read-only operation, no mutations need to be rolled back.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation. Forwarded to the underlying <see cref="IsSubsetOfAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in <paramref name="target"/>; otherwise, <see langword="false"/>.</returns>
         public static async Task<bool> IsSupersetOfAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -788,19 +872,29 @@ namespace MultiMap.Helpers
         /// Asynchronously determines whether <paramref name="target"/> and <paramref name="other"/> share at least one key-value pair.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. Each awaited operation releases the underlying lock, allowing
         /// concurrent callers to interleave between steps. The result may reflect a mix of states.
         /// No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call
+        /// (<c>GetKeysAsync</c>, <c>GetOrDefaultAsync</c>), so cancellation is observed at each
+        /// await boundary. The method also returns early as soon as a shared pair is found, which
+        /// limits the number of async calls made. Throws <see cref="OperationCanceledException"/>
+        /// if the token is cancelled; no mutations need to be rolled back.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
-        public static async Task<bool> OverlapsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static async Task<bool> OverlapsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -816,7 +910,9 @@ namespace MultiMap.Helpers
                 foreach (var value in targetValues)
                 {
                     if (otherSet.Contains(value))
+                    {
                         return true;
+                    }
                 }
             }
 
@@ -827,19 +923,30 @@ namespace MultiMap.Helpers
         /// Asynchronously determines whether <paramref name="target"/> and <paramref name="other"/> contain the same key-value pairs.
         /// </summary>
         /// <remarks>
+        /// <para>
         /// This method is not atomic. Each awaited operation releases the underlying lock, allowing
         /// concurrent callers to interleave between steps. The result may reflect a mix of states.
         /// No structural corruption or count drift will occur.
+        /// </para>
+        /// <para>
+        /// <b>Cancellation:</b> The <paramref name="cancellationToken"/> is forwarded to every
+        /// individual <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call
+        /// (<c>GetCountAsync</c>, <c>GetKeyCountAsync</c>, <c>GetKeysAsync</c>,
+        /// <c>GetOrDefaultAsync</c>), so cancellation is observed at each await boundary. The
+        /// count fast-path check at the start of the method reduces async calls when the counts
+        /// differ. Throws <see cref="OperationCanceledException"/> if the token is cancelled;
+        /// no mutations need to be rolled back.
+        /// </para>
         /// </remarks>
-        /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-        /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+        /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+        /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
         /// <param name="target">The multimap to check.</param>
         /// <param name="other">The multimap to compare against.</param>
-        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <param name="cancellationToken">A token to cancel the operation. Checked at every awaited <see cref="Interfaces.IMultiMapAsync{TKey, TValue}"/> call; throws <see cref="OperationCanceledException"/>. No rollback needed (read-only).</param>
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
-        public static async Task<bool> SetEqualsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
-            where TKey : notnull, IEquatable<TKey>
-            where TValue : notnull, IEquatable<TValue>
+        public static async Task<bool> SetEqualsAsync<TKey, TValue>(this IMultiMapAsync<TKey, TValue> target, IReadOnlyMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
+            where TKey : notnull
+            where TValue : notnull
         {
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
@@ -850,7 +957,9 @@ namespace MultiMap.Helpers
             var otherKeyCount = await other.GetKeyCountAsync(cancellationToken).ConfigureAwait(false);
 
             if (targetCount != otherCount || targetKeyCount != otherKeyCount)
+            {
                 return false;
+            }
 
             var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
@@ -863,7 +972,9 @@ namespace MultiMap.Helpers
                 foreach (var value in targetValues)
                 {
                     if (!otherSet.Contains(value))
+                    {
                         return false;
+                    }
                 }
             }
 

@@ -1,23 +1,25 @@
 using System.Collections;
-using MultiMap.Interfaces;
+using System.Diagnostics;
 using MultiMap.Helpers;
+using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
     /// <summary>
     /// Provides a shared implementation of dictionary-backed multi-map operations for concrete multi-map types such as <see cref="MultiMapSet{TKey, TValue}"/>, <see cref="MultiMapList{TKey, TValue}"/>, and <see cref="SortedMultiMap{TKey, TValue}"/>.
     /// </summary>
-    /// <typeparam name="TKey">The type of keys in the multi-map. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
     /// <typeparam name="TCollection">The collection type used to store values under each key.</typeparam>
     /// <remarks>
     /// Initializes a new instance of the MultiMapBase class using the specified dictionary as the underlying storage.
     /// </remarks>
     /// <remarks>The provided dictionary is used directly and is not copied. Changes to the dictionary after construction will affect the multimap, and vice versa. Callers are responsible for ensuring the dictionary is in a valid state and not modified concurrently.</remarks>
     /// <param name="dictionary">The dictionary to use as the underlying storage for the multimap. Must not be null.</param>
+    [DebuggerDisplay("Keys={KeyCount}, Values={Count}")]
     public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionary<TKey, TCollection> dictionary) : IMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
         where TCollection : ICollection<TValue>
     {
         /// <summary>
@@ -25,10 +27,28 @@ namespace MultiMap.Entities
         /// </summary>
         protected readonly IDictionary<TKey, TCollection> _dictionary = dictionary ?? throw new ArgumentNullException(nameof(dictionary));
 
-        /// <summary>
-        /// Represents the current count or number of items maintained by the containing type.
-        /// </summary>
-        protected int _count;
+        /// <summary>Increments the value count by one.</summary>
+        protected void IncrementCount() => _count++;
+
+        /// <summary>Decrements the value count by <paramref name="by"/>.</summary>
+        protected void DecrementCount(int by = 1) => _count -= by;
+
+        /// <summary>Resets the value count to zero.</summary>
+        protected void ResetCount() => _count = 0;
+
+        /// <summary>Atomically increments the value count by one and returns the new value.</summary>
+        protected int InterlockedIncrementCount() => Interlocked.Increment(ref _count);
+
+        /// <summary>Atomically adds <paramref name="by"/> to the value count and returns the new value.</summary>
+        protected int InterlockedAddCount(int by) => Interlocked.Add(ref _count, by);
+
+        /// <summary>Atomically sets the value count to <paramref name="value"/> and returns the original value.</summary>
+        protected int InterlockedExchangeCount(int value) => Interlocked.Exchange(ref _count, value);
+
+        /// <summary>Reads the value count with acquire semantics.</summary>
+        protected int VolatileReadCount() => Volatile.Read(ref _count);
+
+        private int _count;
 
         /// <summary>
         /// Creates a new empty value collection for a key.
@@ -73,7 +93,7 @@ namespace MultiMap.Entities
 
             if (AddToCollection(collection, value))
             {
-                _count++;
+                IncrementCount();
                 return true;
             }
 
@@ -89,26 +109,32 @@ namespace MultiMap.Entities
             // Materialise the sequence upfront: we need Count to short-circuit on an empty
             // input without allocating a new inner collection, and we want to enumerate only
             // once even if the caller passes a non-replayable IEnumerable<T>.
-            var materialised = values as ICollection<TValue> ?? values.ToArray();
+            var materialised = values as ICollection<TValue> ?? [.. values];
             if (materialised.Count == 0)
+            {
                 return 0;
+            }
 
             bool exists = _dictionary.TryGetValue(key, out var collection);
             if (!exists)
+            {
                 collection = CreateCollection();
+            }
 
             int added = 0;
             foreach (var value in materialised)
             {
                 if (AddToCollection(collection!, value))
                 {
-                    _count++;
+                    IncrementCount();
                     added++;
                 }
             }
 
             if (!exists && added > 0)
+            {
                 _dictionary[key] = collection!;
+            }
 
             return added;
         }
@@ -122,7 +148,9 @@ namespace MultiMap.Entities
             foreach (var item in items)
             {
                 if (Add(item.Key, item.Value))
+                {
                     added++;
+                }
             }
 
             return added;
@@ -133,10 +161,9 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (TryGetCollection(key, out var collection))
-                return ToReadOnly(collection);
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+            return TryGetCollection(key, out var collection)
+                ? ToReadOnly(collection)
+                : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
 
         /// <inheritdoc/>
@@ -144,10 +171,7 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (TryGetCollection(key, out var collection))
-                return ToReadOnly(collection);
-
-            return [];
+            return TryGetCollection(key, out var collection) ? ToReadOnly(collection) : [];
         }
 
         /// <inheritdoc/>
@@ -174,9 +198,11 @@ namespace MultiMap.Entities
 
                 if (removed)
                 {
-                    _count--;
+                    DecrementCount();
                     if (collection.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
 
                 return removed;
@@ -209,13 +235,17 @@ namespace MultiMap.Entities
             Guard.NotNull(predicate, nameof(predicate));
 
             if (!_dictionary.TryGetValue(key, out var collection))
+            {
                 return 0;
+            }
 
             int removedCount = RemoveWhereFromCollection(collection, predicate);
-            _count -= removedCount;
+            DecrementCount(removedCount);
 
             if (collection.Count == 0)
+            {
                 _dictionary.Remove(key);
+            }
 
             return removedCount;
         }
@@ -225,13 +255,9 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
             if (_dictionary.Remove(key, out var collection))
-#else
-            if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
-#endif
             {
-                _count -= collection.Count;
+                DecrementCount(collection.Count);
                 return true;
             }
 
@@ -282,7 +308,7 @@ namespace MultiMap.Entities
         public virtual void Clear()
         {
             _dictionary.Clear();
-            _count = 0;
+            ResetCount();
         }
 
         /// <inheritdoc/>

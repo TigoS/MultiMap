@@ -1,23 +1,24 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0%20%7C%20Standard%202.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.6%25%20line%20%7C%2096.2%25%20branch%20%7C%2097.2%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6678%2F6678%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
+Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Table of Contents
 
 - [Migration Guide](#migration-guide)
+  - [Upgrading to Version 3.0.0+](#upgrading-to-version-300)
   - [Upgrading to Version 2.1.0+](#upgrading-to-version-210)
   - [Upgrading to Version 2.0.1+](#upgrading-to-version-201)
   - [Upgrading to Version 1.0.12+](#upgrading-to-version-1012)
@@ -26,6 +27,16 @@ Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
   - [Upgrading to Version 1.0.7+](#upgrading-to-version-107)
   
 ## Migration Guide
+
+### Upgrading to Version 3.0.0+
+
+Version 3.0.0 introduces a new `IMultiMap<TKey, TValue>` interface that unifies the previous `ISimpleMultiMap<TKey, TValue>` and `IMultiMap<TKey, TValue>` interfaces. This change is **source-breaking** for any code that directly implements or references the old interfaces.
+
+If you implement `ISimpleMultiMap<TKey, TValue>` or `IMultiMap<TKey, TValue>` directly, you will need to update your code to implement the new `IMultiMap<TKey, TValue>` interface instead. The new interface combines the functionality of both previous interfaces and provides a more consistent API surface.
+
+SimpleMultiMap<TKey, Tvalue> becomes obsolete and will be removed in a future version. If you are using SimpleMultiMap<TKey, TValue>, consider migrating to one of the other multimap implementations or implementing your own multimap using the new IMultiMap<TKey, TValue> interface.
+
+All other APIs introduced in v2.1.0 and earlier remain **fully backward-compatible**.
 
 ### Upgrading to Version 2.1.0+
 

@@ -1,6 +1,4 @@
-#if NET6_0_OR_GREATER
 using System.Runtime.InteropServices;
-#endif
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
@@ -15,11 +13,11 @@ namespace MultiMap.Entities
     /// Values associated with a key are unordered and duplicates are not allowed.
     /// The class is not thread-safe; external synchronization is required for concurrent access.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap. Must be non-null and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multimap. Must be non-null and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+    /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
     public sealed class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly IEqualityComparer<TValue>? _valueComparer;
 
@@ -112,14 +110,9 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
 
-#if NET10_0_OR_GREATER
         /// <inheritdoc/>
-        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => collection.AsReadOnly();
-#else
-        // default base-class ToReadOnly (ToArray snapshot) will be used, which is fine since we don't have a more efficient option in .NET Standard 2.0 or .NET Core 3.1
-#endif
+        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => Polyfills.AsReadOnlyOrSnapshot(collection);
 
-#if NET6_0_OR_GREATER
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
@@ -131,7 +124,7 @@ namespace MultiMap.Entities
 
             if (hashset.Add(value))
             {
-                _count++;
+                IncrementCount();
                 return true;
             }
 
@@ -148,12 +141,16 @@ namespace MultiMap.Entities
             // 1. An empty sequence returns 0 without touching the dictionary.
             // 2. All null-element checks happen before the dictionary slot is created,
             //    keeping the dictionary pristine when the sequence is invalid.
-            var materialised = values as ICollection<TValue> ?? values.ToArray();
+            var materialised = values as ICollection<TValue> ?? [.. values];
             if (materialised.Count == 0)
+            {
                 return 0;
+            }
 
             foreach (var value in materialised)
+            {
                 Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
+            }
 
             var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
@@ -164,7 +161,7 @@ namespace MultiMap.Entities
             {
                 if (hashset.Add(value))
                 {
-                    _count++;
+                    IncrementCount();
                     added++;
                 }
             }
@@ -190,14 +187,13 @@ namespace MultiMap.Entities
 
                 if (hashset.Add(item.Value))
                 {
-                    _count++;
+                    IncrementCount();
                     added++;
                 }
             }
 
             return added;
         }
-#endif
 
         /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
@@ -206,29 +202,35 @@ namespace MultiMap.Entities
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (KeyCount != other.KeyCount || Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var key in Keys)
             {
                 if (!other.TryGet(key, out var otherValues))
+                {
                     return false;
+                }
 
                 var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
 
-                if (!_dictionary.TryGetValue(key, out var targetValuesSet))
+                if (!_dictionary.TryGetValue(key, out var targetValuesSet) ||
+                    targetValuesSet.Count != otherValuesSet.Count ||
+                    !targetValuesSet.SetEquals(otherValuesSet))
+                {
                     return false;
-
-                if (targetValuesSet.Count != otherValuesSet.Count)
-                    return false;
-
-                if (!targetValuesSet.SetEquals(otherValuesSet))
-                    return false;
+                }
             }
 
             return true;

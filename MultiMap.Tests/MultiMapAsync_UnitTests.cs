@@ -2769,57 +2769,26 @@ public class MultiMapAsyncTests
         await other.DisposeAsync();
     }
 
-    // ── Equals(object?) SynchronizationContext guard ──────────
+    // ── Equals(object?) SynchronizationContext — no longer throws ──────────
 
     [Test]
-    public void Equals_WithSynchronizationContextButDifferentType_ReturnsFalse()
+    public void Equals_WithSynchronizationContextAndDifferentInstance_DoesNotThrowAndReturnsCorrectResult()
     {
-        // Type check must short-circuit before the SynchronizationContext guard.
-        var prev = SynchronizationContext.Current;
-        SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-        try
-        {
-            Assert.That(_map.Equals("not a map"), Is.False);
-        }
-        finally
-        {
-            SynchronizationContext.SetSynchronizationContext(prev);
-        }
-    }
-
-    [Test]
-    public void Equals_WithSynchronizationContextAndSelfReference_ReturnsTrue()
-    {
-        // ReferenceEquals short-circuits before the SynchronizationContext guard.
-        var prev = SynchronizationContext.Current;
-        SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
-        try
-        {
-            Assert.That(_map.Equals(_map), Is.True);
-        }
-        finally
-        {
-            SynchronizationContext.SetSynchronizationContext(prev);
-        }
-    }
-
-    [Test]
-    public void Equals_WithSynchronizationContextAndDifferentInstance_ThrowsInvalidOperationException()
-    {
-        // Run on a dedicated thread so SynchronizationContext.Current is fully under our control.
-        // Cast to object explicitly to hit the Equals(object?) override where the guard lives.
-        InvalidOperationException? caught = null;
+        // The SynchronizationContext guard was removed: Equals now uses Task.Run on the
+        // general path so it is safe to call from any context without deadlocking.
+        // Both instances are empty MultiMapAsync — fast path applies (SemaphoreSlim.Wait)
+        // and the result must be true.
+        bool? result = null;
         var thread = new Thread(() =>
         {
             SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
             using var other = new MultiMapAsync<string, int>();
-            try { _map.Equals((object)other); }
-            catch (InvalidOperationException ex) { caught = ex; }
+            result = _map.Equals((object)other);
         });
         thread.Start();
         thread.Join();
 
-        Assert.That(caught, Is.Not.Null, "Expected InvalidOperationException when SynchronizationContext is present.");
+        Assert.That(result, Is.True);
     }
 
     // ── EqualsAsync(IReadOnlyMultiMapAsync<TKey,TValue>) ─────
@@ -3484,8 +3453,8 @@ public class MultiMapAsyncTests
 /// used to exercise the generic-interface path in <c>MultiMapAsync.EqualsAsync</c>.
 /// </summary>
 internal sealed class FakeReadOnlyMultiMapAsync<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-    where TKey : notnull, IEquatable<TKey>
-    where TValue : notnull, IEquatable<TValue>
+    where TKey : notnull
+    where TValue : notnull
 {
     private readonly Dictionary<TKey, List<TValue>> _data = new();
 
@@ -3780,11 +3749,14 @@ public class MultiMapAsync_GenericInterfaceEqualsTests
         Assert.That(_map.Equals((object)"not a map"), Is.False);
     }
 
-    // ── Equals(object?) — SynchronizationContext throw branch ──
+    // ── Equals(object?) — safe under SynchronizationContext ──
 
     [Test]
-    public async Task Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException()
+    public async Task Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue()
     {
+        // The SynchronizationContext guard was removed: Equals now delegates to Task.Run
+        // on the general path so it is safe to call from any context.
+        // Both maps have identical content — result must be true.
         await _map.AddAsync("a", 1);
 
         var other = new MultiMapAsync<string, int>();
@@ -3794,7 +3766,7 @@ public class MultiMapAsync_GenericInterfaceEqualsTests
         SynchronizationContext.SetSynchronizationContext(new SynchronizationContext());
         try
         {
-            Assert.Throws<InvalidOperationException>(() => _map.Equals((object)other));
+            Assert.That(_map.Equals((object)other), Is.True);
         }
         finally
         {
@@ -3834,8 +3806,8 @@ public class MultiMapAsync_GenericInterfaceEqualsTests
 /// <c>otherValues is HashSet&lt;TValue&gt; hs</c> true-branch in Equals(IReadOnlyMultiMapAsync).
 /// </summary>
 internal sealed class FakeReadOnlyMultiMapAsyncWithHashSet<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-    where TKey : notnull, IEquatable<TKey>
-    where TValue : notnull, IEquatable<TValue>
+    where TKey : notnull
+    where TValue : notnull
 {
     private readonly Dictionary<TKey, HashSet<TValue>> _data = new();
 
@@ -3901,14 +3873,18 @@ internal sealed class EmptyAsyncEnumerator<T> : IAsyncEnumerator<T>
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// MultiMapAsync – Equals(IReadOnlyMultiMapAsync) branch coverage tests
+// ──────────────────────────────────────────────────────────────────────────────
+
 public class MultiMapAsync_EqualsBranchTests
 {
     // line 1089: Equals(IReadOnlyMultiMapAsync?) general (non-concrete) path.
     // We need an IReadOnlyMultiMapAsync<> that is NOT a MultiMapAsync instance.
     // We create a minimal stub adapter.
     private sealed class ReadOnlyAsyncAdapter<TKey, TValue> : IReadOnlyMultiMapAsync<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly MultiMapAsync<TKey, TValue> _inner;
         public ReadOnlyAsyncAdapter(MultiMapAsync<TKey, TValue> inner) => _inner = inner;

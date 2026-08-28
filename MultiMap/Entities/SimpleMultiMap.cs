@@ -1,9 +1,8 @@
+using System.Collections;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
-using System.Collections;
-#if NET6_0_OR_GREATER
-using System.Runtime.InteropServices;
-#endif
 
 namespace MultiMap.Entities
 {
@@ -16,11 +15,13 @@ namespace MultiMap.Entities
     /// For production use, prefer <see cref="MultiMapSet{TKey, TValue}"/> or another full <see cref="Interfaces.IMultiMap{TKey, TValue}"/> implementation.
     /// Duplicate values per key are not allowed.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the map. Must be non-nullable and implement <see cref="IEquatable{TKey}"/>.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key. Must be non-nullable and implement <see cref="IEquatable{TValue}"/>.</typeparam>
+    /// <typeparam name="TKey">The type of keys in the map.</typeparam>
+    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
+    [DebuggerDisplay("Keys={_dictionary.Count}, Values={Count}")]
+    [Obsolete("SimpleMultiMap<TKey, TValue> is deprecated. Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.")]
     public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
-        where TKey : notnull, IEquatable<TKey>
-        where TValue : notnull, IEquatable<TValue>
+        where TKey : notnull
+        where TValue : notnull
     {
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
         private readonly IEqualityComparer<TValue>? _valueComparer;
@@ -31,7 +32,7 @@ namespace MultiMap.Entities
         /// </summary>
         public SimpleMultiMap()
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
+            _dictionary = [];
         }
 
         /// <summary>
@@ -96,7 +97,7 @@ namespace MultiMap.Entities
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public SimpleMultiMap(IEqualityComparer<TValue>? valueComparer)
         {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>();
+            _dictionary = [];
             _valueComparer = valueComparer;
         }
 
@@ -121,19 +122,15 @@ namespace MultiMap.Entities
             Guard.NotNull(key, nameof(key));
             Guard.NotNull(value, nameof(value));
 
-#if NET6_0_OR_GREATER
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool exists);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
             hashset ??= new HashSet<TValue>(_valueComparer);
-#else
-            if (!_dictionary.TryGetValue(key, out var hashset))
-            {
-                hashset = new HashSet<TValue>(_valueComparer);
-                _dictionary[key] = hashset;
-            }
-#endif
 
             bool added = hashset.Add(value);
-            if (added) _count++;
+            if (added)
+            {
+                _count++;
+            }
+
             return added;
         }
 
@@ -142,14 +139,9 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (_dictionary.TryGetValue(key, out var hashset))
-#if NET10_0_OR_GREATER
-                return hashset.AsReadOnly();
-#else
-                return hashset.ToArray();
-#endif
-
-            throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+            return _dictionary.TryGetValue(key, out var hashset)
+                ? Polyfills.AsReadOnlyOrSnapshot(hashset)
+                : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
         }
 
         /// <inheritdoc />
@@ -157,14 +149,7 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-            if (_dictionary.TryGetValue(key, out var hashset))
-#if NET10_0_OR_GREATER
-                return hashset.AsReadOnly();
-#else
-                return hashset.ToArray();
-#endif
-
-            return Array.Empty<TValue>();
+            return _dictionary.TryGetValue(key, out var hashset) ? Polyfills.AsReadOnlyOrSnapshot(hashset) : [];
         }
 
         /// <inheritdoc/>
@@ -176,16 +161,11 @@ namespace MultiMap.Entities
 
             if (!result || hashset is null)
             {
-                values = Array.Empty<TValue>();
+                values = [];
             }
             else
             {
-                values =
-#if NET10_0_OR_GREATER
-                hashset.AsReadOnly();
-#else
-                hashset.ToArray();
-#endif
+                values = Polyfills.AsReadOnlyOrSnapshot(hashset);
             }
 
             return result;
@@ -205,7 +185,9 @@ namespace MultiMap.Entities
                 {
                     _count--;
                     if (hashset.Count == 0)
+                    {
                         _dictionary.Remove(key);
+                    }
                 }
 
                 return removed;
@@ -219,11 +201,7 @@ namespace MultiMap.Entities
         {
             Guard.NotNull(key, nameof(key));
 
-#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER
             if (_dictionary.Remove(key, out var collection))
-#else
-            if (_dictionary.TryGetValue(key, out var collection) && _dictionary.Remove(key))
-#endif
             {
                 _count -= collection.Count;
                 return true;
@@ -278,18 +256,26 @@ namespace MultiMap.Entities
         public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
         {
             if (other is null)
+            {
                 return false;
+            }
 
             if (ReferenceEquals(this, other))
+            {
                 return true;
+            }
 
             if (Count != other.Count)
+            {
                 return false;
+            }
 
             foreach (var kvp in _dictionary)
             {
                 if (!kvp.Value.SetEquals(other.GetOrDefault(kvp.Key)))
+                {
                     return false;
+                }
             }
 
             return true;
