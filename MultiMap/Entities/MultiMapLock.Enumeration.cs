@@ -61,8 +61,6 @@ namespace MultiMap.Entities
             _lock.EnterReadLock();
             try
             {
-                ThrowIfDisposed();
-
                 if (_dictionary.Count != other.KeyCount || _count != other.Count)
                 {
                     return false;
@@ -99,6 +97,7 @@ namespace MultiMap.Entities
         {
             ThrowIfDisposed();
             _lock.EnterReadLock();
+
             try
             {
                 return MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
