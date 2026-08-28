@@ -8,7 +8,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.3%25%20branch%20%7C%2098.2%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
 [![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
@@ -106,9 +106,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - Replaced `Equals_Object_WithSynchronizationContext_ThrowsInvalidOperationException` with `Equals_Object_WithSynchronizationContext_DoesNotThrowAndReturnsTrue` — asserts that `Equals` returns `true` (both maps with identical content) without throwing under a `SynchronizationContext`.
   - 
 - **Total: 6,924 tests** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`). All pass.
-- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
-- **Total test count: 6,924** (2,308 per framework on `net10.0`, `net9.0`, `net8.0`).
-- **Coverage: 98.4% line, 99.3% branch, 98% method** (merged Coverlet Cobertura report).
+- **Coverage: 98.4% line, 96.1% branch, 98% method** (net10.0 Coverlet run, 2026-08-28).
 
 ### 2.1.1
 

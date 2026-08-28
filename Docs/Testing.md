@@ -8,7 +8,7 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.3%25%20branch%20%7C%2098.2%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
 [![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
@@ -59,24 +59,24 @@ dotnet test --collect:"XPlat Code Coverage"
 | Metric | Value |
 |---|---|
 | **Line coverage** | **98.4%** (3,333 / 3,387) |
-| **Branch coverage** | **96.3%** (1,053 / 1,094) |
-| **Method coverage** | **98.2%** (321 / 327) |
+| **Branch coverage** | **96.1%** (1,012 / 1,052) |
+| **Method coverage** | **98%** (309 / 315) |
 
 #### Per-Class Breakdown
 
 | Class | Methods | Line Coverage | Branch Coverage | Status |
 |---|---|---|---|---|
-| `ConcurrentMultiMap<TKey, TValue>` | 27 / 29 | 93.5% (258/276) | 95.4% | ✅ Near-full |
+| `ConcurrentMultiMap<TKey, TValue>` | 27 / 29 | 93.5% (258/276) | 91.2% | ✅ Near-full |
 | `ConcurrentSet<T>` | 13 / 13 | **100%** (27/27) | **100%** | ✅ Full |
 | `MultiMapAsync<TKey, TValue>` | 93 / 93 | 99.8% (1105/1107) | 96.7% | ✅ Full |
-| `MultiMapBase<TKey, TValue, TCollection>` | 42 / 42 | **100%** (200/200) | 99.5% | ✅ Full |
+| `MultiMapBase<TKey, TValue, TCollection>` | 42 / 42 | **100%** (200/200) | 98.5% | ✅ Full |
 | `MultiMapList<TKey, TValue>` | 12 / 14 | 95.0% (95/100) | **100%** | ✅ Near-full |
-| `MultiMapLock<TKey, TValue>` | 55 / 55 | 97.7% (893/914) | 92.6% | ✅ Full |
+| `MultiMapLock<TKey, TValue>` | 55 / 55 | 97.7% (893/914) | 95.3% | ✅ Full |
 | `MultiMapSet<TKey, TValue>` | 16 / 18 | 98.2% (111/113) | 95.0% | ✅ Near-full |
 | `SimpleMultiMap<TKey, TValue>` ⚠️ | 23 / 23 | **100%** (139/139) | **100%** | ✅ Full |
 | `SortedMultiMap<TKey, TValue>` | 10 / 10 | **100%** (60/60) | 90.0% | ✅ Full |
 | `Guard` | 3 / 3 | 90.0% (9/10) | **100%** | ✅ Near-full |
-| `MultiMapHelper` | 26 / 26 | 98.9% (433/438) | 97.0% | ✅ Full |
+| `MultiMapHelper` | 26 / 26 | 98.9% (433/438) | 98.8% | ✅ Full |
 | `Polyfills` | 1 / 1 | **100%** (3/3) | **100%** | ✅ Full |
 
 > **Notes:**
@@ -124,7 +124,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | | |
 |---|---|
-| **Total** | **2,226 tests × 3 TFMs = 6,678 executions** |
+| **Total** | **2,308 tests × 3 TFMs = 6,924 executions** |
 
 ### Test Categories
 
@@ -197,67 +197,12 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.6% |
 | **Helper subtotal** | **408** | **18.3%** |
-| **Total** | **2,226 × 3 TFMs** | **6,678 executions** |
+| **Total** | **2,308 × 3 TFMs** | **6,924 executions** |
 
-> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,226 unique tests** run on **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across three runtime targets.
+> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,308 unique tests** run on **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across three runtime targets.
 
-### Code Coverage (Coverlet)
-
-Code coverage is collected with **Coverlet** (`coverlet.collector`) during `dotnet test` and reported via **ReportGenerator**.
-
-```shell
-dotnet test --collect:"XPlat Code Coverage"
-```
-
-#### Summary
-
-| Metric | Value |
-|---|---|
-| **Method coverage** | **97.2%** (285 / 293) |
-| **Line coverage** | **98.6%** (2,848 / 2,887) |
-| **Branch coverage** | **96.2%** (924 / 960) |
-
-#### Per-Class Breakdown
-
-| Class | Methods (covered/total) | Line Coverage | Branch Coverage | Status |
-|---|---|---|---|---|
-| `ConcurrentMultiMap<T1, T2>` | 27 / 29 | 93.8% (228/243) | 92.1% (94/102) | ✅ Near-full |
-| `ConcurrentSet<T>` | 13 / 13 | **100%** (27/27) | **100%** (8/8) | ✅ Full |
-| `MultiMapAsync<T1, T2>` | 81 / 81 | 99.8% (1045/1047) | 96.2% (304/316) | ✅ Full |
-| `MultiMapBase<T1, T2, T3>` | 34 / 35 | 99.4% (181/182) | 98.4% (65/66) | ✅ Full |
-| `MultiMapList<T1, T2>` | 12 / 14 | 94.6% (88/93) | **100%** (34/34) | ✅ Near-full |
-| `MultiMapLock<T1, T2>` | 41 / 42 | 99.4% (577/580) | 96.8% (182/188) | ✅ Full |
-| `MultiMapSet<T1, T2>` | 16 / 18 | 96.2% (103/107) | 95.0% (38/40) | ✅ Near-full |
-| `SimpleMultiMap<T1, T2>` | 23 / 23 | **100%** (138/138) | **100%** (36/36) | ✅ Full |
-| `SortedMultiMap<T1, T2>` | 10 / 10 | 95.3% (41/43) | 86.3% (19/22) | ✅ Near-full |
-| `Guard` | 2 / 2 | **100%** (7/7) | **100%** (2/2) | ✅ Full |
-| `MultiMapHelper` | 26 / 26 | 98.3% (413/420) | 97.2% (142/146) | ✅ Full |
-
-> **Notes:**
-> - Coverage is computed from the latest combined Coverlet reports for **net10.0**, **net9.0**, and **net8.0** using ReportGenerator (run: 2026-06-21).
-> - **Latest Coverlet run (v2.1.1)**: Executed **6,678 total tests** (2,226 per framework) with **zero failures**.
-> - **Overall assembly coverage**: **97.2% method coverage**, **98.6% line coverage**, **96.2% branch coverage** across all MultiMap implementations and helpers.
-> - **Environment note:** all tests were executed on a machine with a local .NET runtime, as well as with `DOTNET_ROLL_FORWARD=Major` on a machine without a local .NET runtime.
-> - **Per-class highlights**:
->   - **ConcurrentSet\<T\>, SimpleMultiMap, Guard**: **100% line coverage** ✅
->   - **`ConcurrentSet<T>`**: raised from 39.1% line / 0% branch to **100% / 100%** via 15 new targeted tests
->   - **MultiMapAsync**: 99.8% line coverage with 96.2% branch coverage (up from 92.6% line / 87.1% branch)
->   - **MultiMapLock**: 99.4% line coverage with 96.8% branch coverage
->   - **MultiMapHelper**: 98.3% line coverage with 97.2% branch coverage
-> - **Coverage improvements** from v2.2.0 gap-coverage additions:
->   - +101 tests in `GapCoverage_UnitTests.cs` targeting exact uncovered branches identified via Coverlet HTML reports
->   - `ConcurrentSet<T>` brought to 100% line + branch coverage
->   - `MultiMapAsync` general-interface slow paths (IsSubsetOf, IsSuperset, Overlaps, SetEquals via non-concrete adapter) fully covered
->   - All `Equals(IReadOnlyMultiMap<>)` false-path branches covered for every implementation
->   - `MultiMapLock.SetEquals` all false-path branches covered
->   - Disposed-state (`ObjectDisposedException`) branches for `MultiMapAsync` covered
-
-#### Keep this page in sync
-
-Use the automation script to generate an updated summary from the latest local test artifacts:
-
-```shell
-pwsh ./scripts/Update-TestingSummary.ps1
-```
-
-The script writes `Docs/GeneratedTestingSummary.md` with fresh test and coverage totals (from `coverage_latest.cobertura.xml` and the latest `.trx` file).
+> **Historical context:**
+> - `ConcurrentSet<T>` was raised from 39.1% line / 0% branch to **100% / 100%** via targeted tests.
+> - `MultiMapAsync` general-interface slow paths (IsSubsetOf, IsSupersetOf, Overlaps, SetEquals via non-concrete adapter) are fully covered.
+> - All `Equals(IReadOnlyMultiMap<>)` false-path branches are covered for every implementation.
+> - Disposed-state (`ObjectDisposedException`) branches for `MultiMapAsync` are covered.
