@@ -44,7 +44,7 @@ namespace MultiMap.Entities
         /// <summary>
         /// Attempts to remove an element from the set.
         /// </summary>
-        public bool TryRemove(T item, out byte _) => _inner.TryRemove(item, out _);
+        public bool TryRemove(T item, out byte value) => _inner.TryRemove(item, out value);
 
         /// <summary>
         /// Adds an element to the set (always succeeds for set semantics; returns silently if already present).
