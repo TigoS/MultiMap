@@ -23,8 +23,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
@@ -62,8 +62,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             return other.IsSubsetOf(target);
         }
@@ -85,8 +85,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
@@ -124,8 +124,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             if (target.Count != other.Count || target.KeyCount != other.KeyCount)
             {
@@ -165,8 +165,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             // Use default ctor because ISimpleMultiMap doesn't define KeyCount
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
@@ -200,8 +200,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             return other.IsSubsetOf(target);
         }
@@ -218,8 +218,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             foreach (var kvp in target)
             {
@@ -244,8 +244,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             if (target.Count != other.Count)
             {
@@ -292,8 +292,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
@@ -342,8 +342,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             return await other.IsSubsetOfAsync(target, cancellationToken).ConfigureAwait(false);
         }
@@ -375,8 +375,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var targetKeys = await target.GetKeysAsync(cancellationToken).ConfigureAwait(false);
             foreach (var key in targetKeys)
@@ -425,8 +425,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var targetCount = await target.GetCountAsync(cancellationToken).ConfigureAwait(false);
             var otherCount = await other.GetCountAsync(cancellationToken).ConfigureAwait(false);

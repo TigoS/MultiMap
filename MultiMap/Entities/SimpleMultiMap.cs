@@ -120,8 +120,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Add(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
             hashset ??= new HashSet<TValue>(_valueComparer);
@@ -138,7 +138,7 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerable<TValue> Get(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             return _dictionary.TryGetValue(key, out var hashset)
                 ? Polyfills.AsReadOnlyOrSnapshot(hashset)
@@ -148,7 +148,7 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             return _dictionary.TryGetValue(key, out var hashset) ? Polyfills.AsReadOnlyOrSnapshot(hashset) : [];
         }
@@ -156,7 +156,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             bool result = _dictionary.TryGetValue(key, out var hashset);
 
@@ -175,8 +175,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Remove(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             if (_dictionary.TryGetValue(key, out var hashset))
             {
@@ -200,7 +200,7 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool RemoveKey(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             if (_dictionary.Remove(key, out var collection))
             {
@@ -236,7 +236,7 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool ContainsKey(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             return _dictionary.ContainsKey(key);
         }
@@ -244,8 +244,8 @@ namespace MultiMap.Entities
         /// <inheritdoc />
         public bool Contains(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
         }

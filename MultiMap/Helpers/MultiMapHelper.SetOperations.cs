@@ -20,8 +20,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             target.AddRange(other);
 
@@ -47,8 +47,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             // Pre-sized to the number of keys in target: worst case every key is absent from other.
             var keysToRemove = new HashSet<TKey>(target.KeyCount);
@@ -113,8 +113,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             if (ReferenceEquals(target, other))
             {
@@ -145,8 +145,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var otherCount = other.Count;
             var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
@@ -191,8 +191,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             foreach (var kvp in other)
             {
@@ -213,8 +213,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var toRemove = new List<KeyValuePair<TKey, TValue>>(target.Count);
             var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
@@ -252,8 +252,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             if (ReferenceEquals(target, other))
             {
@@ -281,8 +281,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var otherCount = other.Count;
             var toRemove = new List<KeyValuePair<TKey, TValue>>(otherCount);
@@ -350,8 +350,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var keys = await other.GetKeysAsync(cancellationToken).ConfigureAwait(false);
 
@@ -390,8 +390,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var keysToRemove = new List<TKey>();
             var valuesToRemove = new List<KeyValuePair<TKey, TValue>>();
@@ -453,8 +453,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             if (ReferenceEquals(target, other))
             {
@@ -507,8 +507,8 @@ namespace MultiMap.Helpers
             where TKey : notnull
             where TValue : notnull
         {
-            Guard.NotNull(target, nameof(target));
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(target, nameof(target));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             var toRemove = new List<KeyValuePair<TKey, TValue>>();
             var toAdd = new List<KeyValuePair<TKey, TValue>>();

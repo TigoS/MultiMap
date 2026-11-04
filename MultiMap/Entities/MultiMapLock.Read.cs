@@ -1,5 +1,3 @@
-using MultiMap.Helpers;
-
 namespace MultiMap.Entities
 {
     public sealed partial class MultiMapLock<TKey, TValue>
@@ -9,7 +7,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> Get(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 
@@ -27,7 +25,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public IEnumerable<TValue> GetOrDefault(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 
@@ -45,7 +43,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 
@@ -67,7 +65,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool ContainsKey(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 
@@ -85,8 +83,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Contains(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
 
@@ -185,7 +183,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int GetValuesCount(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 

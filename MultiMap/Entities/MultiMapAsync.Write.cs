@@ -10,8 +10,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
 
@@ -33,8 +33,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -55,7 +55,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             ThrowIfDisposed();
 
@@ -77,8 +77,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -99,7 +99,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             ThrowIfDisposed();
 
@@ -121,8 +121,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(predicate, nameof(predicate));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -143,7 +143,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> RemoveKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
             Task waitTask = _writeLock.WaitAsync(cancellationToken);
@@ -195,7 +195,7 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task UnionAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -230,7 +230,7 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task IntersectAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -264,7 +264,7 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task ExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -299,7 +299,7 @@ namespace MultiMap.Entities
         /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
         public async Task SymmetricExceptWithAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 

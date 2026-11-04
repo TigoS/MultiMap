@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Concurrent;
-using MultiMap.Helpers;
 
 namespace MultiMap.Entities
 {
@@ -73,7 +72,7 @@ namespace MultiMap.Entities
         /// </remarks>
         public void CopyTo(T[] array, int arrayIndex)
         {
-            Guard.NotNull(array, nameof(array));
+            ArgumentNullException.ThrowIfNull(array, nameof(array));
 
             if (arrayIndex < 0 || arrayIndex > array.Length)
             {

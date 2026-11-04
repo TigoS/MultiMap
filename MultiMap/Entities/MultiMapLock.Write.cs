@@ -1,6 +1,5 @@
 using System.Runtime.InteropServices;
 using MultiMap.Helpers;
-using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
 {
@@ -11,8 +10,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Add(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
 
@@ -39,8 +38,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             ThrowIfDisposed();
 
@@ -56,7 +55,7 @@ namespace MultiMap.Entities
                 int added = 0;
                 foreach (var value in values)
                 {
-                    Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+                    Guard.NotNullMessage(value, nameof(values), "Sequence contains a null value.");
 
                     if (hashset!.Add(value))
                     {
@@ -81,7 +80,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             ThrowIfDisposed();
 
@@ -91,8 +90,8 @@ namespace MultiMap.Entities
                 int added = 0;
                 foreach (var item in items)
                 {
-                    Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                    Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+                    Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                    Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
                     hashset ??= new HashSet<TValue>(_valueComparer);
@@ -125,8 +124,8 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if the pair was added; <see langword="false"/> if it already existed.</returns>
         public bool Add(TKey key, TValue value, CancellationToken cancellationToken)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
 
@@ -164,8 +163,8 @@ namespace MultiMap.Entities
         /// <returns>The number of values actually added (duplicates are ignored).</returns>
         public int AddRange(TKey key, IEnumerable<TValue> values, CancellationToken cancellationToken)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             ThrowIfDisposed();
 
@@ -181,7 +180,7 @@ namespace MultiMap.Entities
                 int added = 0;
                 foreach (var value in values)
                 {
-                    Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+                    Guard.NotNullMessage(value, nameof(values), "Sequence contains a null value.");
 
                     if (hashset!.Add(value))
                     {
@@ -216,7 +215,7 @@ namespace MultiMap.Entities
         /// <returns>The number of pairs actually added (duplicates are ignored).</returns>
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             ThrowIfDisposed();
 
@@ -226,8 +225,8 @@ namespace MultiMap.Entities
                 int added = 0;
                 foreach (var item in items)
                 {
-                    Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                    Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+                    Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                    Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                     ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
                     hashset ??= new HashSet<TValue>(_valueComparer);
@@ -250,8 +249,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool Remove(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
 
@@ -295,8 +294,8 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if the pair was found and removed; otherwise, <see langword="false"/>.</returns>
         public bool Remove(TKey key, TValue value, CancellationToken cancellationToken)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
 
@@ -330,7 +329,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             ThrowIfDisposed();
 
@@ -373,7 +372,7 @@ namespace MultiMap.Entities
         /// <returns>The number of pairs actually removed.</returns>
         public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             ThrowIfDisposed();
 
@@ -407,8 +406,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(predicate, nameof(predicate));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
 
@@ -450,8 +449,8 @@ namespace MultiMap.Entities
         /// <returns>The number of values removed.</returns>
         public int RemoveWhere(TKey key, Predicate<TValue> predicate, CancellationToken cancellationToken)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(predicate, nameof(predicate));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
 
@@ -482,7 +481,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public bool RemoveKey(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 
@@ -516,7 +515,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if the key existed and was removed; otherwise, <see langword="false"/>.</returns>
         public bool RemoveKey(TKey key, CancellationToken cancellationToken)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 

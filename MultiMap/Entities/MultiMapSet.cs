@@ -130,8 +130,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
             hashset ??= new HashSet<TValue>(_valueComparer);
@@ -148,8 +148,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             // Materialise first so that:
             // 1. An empty sequence returns 0 without touching the dictionary.
@@ -163,7 +163,7 @@ namespace MultiMap.Entities
 
             foreach (var value in materialised)
             {
-                Guard.NotNull(value, nameof(value), "Sequence contains a null value.");
+                Guard.NotNullMessage(value, nameof(value), "Sequence contains a null value.");
             }
 
             var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
@@ -186,15 +186,15 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             int added = 0;
             var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
 
             foreach (var item in items)
             {
-                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
                 hashset ??= new HashSet<TValue>(_valueComparer);

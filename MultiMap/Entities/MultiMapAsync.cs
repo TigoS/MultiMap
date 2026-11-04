@@ -218,7 +218,7 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
-                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+                Guard.NotNullMessage(value, nameof(values), "Sequence contains a null value.");
 
                 if (hashset!.Add(value))
                 {
@@ -253,8 +253,8 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var item in items)
             {
-                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                 ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, item.Key, out bool exists);
                 hashset ??= new HashSet<TValue>(_valueComparer);
