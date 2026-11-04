@@ -35,6 +35,11 @@ namespace MultiMap.Helpers
         /// </summary>
         /// <remarks>
         /// This method is not atomic. It reads a snapshot of <paramref name="target"/> keys and values, then applies removals in a separate phase. When used with concurrent implementations, key-value pairs added to <paramref name="target"/> between the read and write phases will survive the intersect even if absent from <paramref name="other"/>. Pairs scheduled for <see cref="ISimpleMultiMap{TKey, TValue}.RemoveKey"/> removal will also remove any values added concurrently under the same key. No structural corruption or count drift will occur.
+        /// <para>
+        /// The intermediate collections used during classification are pre-sized using <see cref="IReadOnlyMultiMap{TKey, TValue}.KeyCount"/>
+        /// to minimise rehashing: <c>keysToRemove</c> is pre-sized to <c>target.KeyCount</c>; <c>otherLookup</c> and
+        /// <c>removeByKey</c> are pre-sized to <c>other.KeyCount</c>.
+        /// </para>
         /// </remarks>
         /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
         /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
@@ -47,12 +52,14 @@ namespace MultiMap.Helpers
             Guard.NotNull(target, nameof(target));
             Guard.NotNull(other, nameof(other));
 
-            var keysToRemove = new HashSet<TKey>();
-            // Cache of other's value sets per key (materialised to avoid aliasing a live set).
-            var otherLookup = new Dictionary<TKey, HashSet<TValue>>();
+            // Pre-sized to the number of keys in target: worst case every key is absent from other.
+            var keysToRemove = new HashSet<TKey>(target.KeyCount);
+            // Pre-sized to other.KeyCount: at most one entry per key in other will be cached.
+            var otherLookup = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
             // Values to remove grouped by key so we call RemoveWhere once per key
             // (one dictionary lookup) instead of once per value via RemoveRange.
-            var removeByKey = new Dictionary<TKey, HashSet<TValue>>();
+            // Pre-sized to other.KeyCount: at most one entry per key in other can have values to remove.
+            var removeByKey = new Dictionary<TKey, HashSet<TValue>>(other.KeyCount);
 
             foreach (var kvp in target)
             {
