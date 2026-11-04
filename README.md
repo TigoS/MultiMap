@@ -116,11 +116,13 @@ MultiMap/
 │   │   ├── MultiMapLock.cs                   # ReaderWriterLockSlim-based
 │   │   ├── MultiMapAsync.cs                  # SemaphoreSlim-based async (public API)
 │   │   ├── MultiMapAsync.Core.cs             # SemaphoreSlim-based async (private helpers, partial)
-│   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap implementation
+│   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap impl [Obsolete — will be removed in v4.0.0; migrate to MultiMapSet]
 │   └── Helpers/
 │       ├── Guard.cs                          # Internal argument-validation helpers; [NotNull] applied unconditionally across all TFMs
 │       ├── Polyfills.cs                      # Single home for all version-gated conditionals (HashSet<T>.AsReadOnly on .NET 10+)
-│       └── MultiMapHelper.cs                 # Set-like extension methods
+│       ├── MultiMapHelper.cs                 # Partial — class doc + internal hash utilities (Scramble, ComputeUnorderedHash)
+│       ├── MultiMapHelper.SetOperations.cs   # Partial — Union, Intersect, ExceptWith, SymmetricExceptWith (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
+│       └── MultiMapHelper.QueryExtensions.cs # Partial — IsSubsetOf, IsSupersetOf, Overlaps, SetEquals (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
 ├── MultiMap.Tests/                           # Unit tests (NUnit 4, multi-targeted: net10.0, net9.0, and net8.0)
 ├── MultiMap.Demo/                            # Console demo application
 │   ├── Program.cs                            # Demo entry point
@@ -374,7 +376,7 @@ Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplifi
 
 ## Extension Methods
 
-For all 3 interface families, the `MultiMapHelper` provides:
+For all 3 interface families, `MultiMapHelper` (split across three partial-class files) provides:
 
 1. **Set-like operations as extension methods:**
 
