@@ -1369,7 +1369,7 @@ public class MultiMapAsync_ConcurrentHelperStressTests
 
         var exceptor = Task.Run(() => target.ExceptWithAsync(other));
 
-        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, exceptor));
+        _ = Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, exceptor));
     }
 
     [Test]
@@ -1403,7 +1403,7 @@ public class MultiMapAsync_ConcurrentHelperStressTests
             }
         });
 
-        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, checker));
+        await Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, checker));
     }
 
     [Test]
@@ -1786,6 +1786,52 @@ public class ConcurrentSetPublicSurfaceTests
 
         Assert.That(result, Is.Empty);
     }
+
+    // ── GetEnumerator() (generic) — direct enumeration path ──────────────────
+
+    [Test]
+    public void GetEnumerator_Generic_IteratesAllElements()
+    {
+        // Verifies the direct-enumeration path (not via .Keys snapshot) yields
+        // all elements correctly.
+        ConcurrentSet<int> set = (ConcurrentSet<int>)GetSet(new[] { 1, 2, 3 });
+        var result = new List<int>();
+
+        foreach (var item in set)
+            result.Add(item);
+
+        Assert.That(result, Is.EquivalentTo(new[] { 1, 2, 3 }));
+    }
+
+    [Test]
+    public void GetEnumerator_Generic_EmptySet_YieldsNothing()
+    {
+        ConcurrentSet<int> set = (ConcurrentSet<int>)EmptySet();
+        var result = new List<int>();
+
+        foreach (var item in set)
+            result.Add(item);
+
+        Assert.That(result, Is.Empty);
+    }
+
+    // ── CopyTo — snapshot taken once ─────────────────────────────────────────
+
+    [Test]
+    public void CopyTo_UsesSnapshotOnce_DoesNotLoseElementsDuringCopy()
+    {
+        // Verifies that CopyTo produces a complete copy of the elements present
+        // at the start of the call, regardless of concurrent mutations.
+        // (The snapshot is taken once before the loop.)
+        ConcurrentSet<int> set = (ConcurrentSet<int>)GetSet(Enumerable.Range(1, 20));
+        var dest = new int[20];
+
+        set.CopyTo(dest, 0);
+
+        // Every element in dest must have come from the original set.
+        Assert.That(dest.ToHashSet(), Is.SubsetOf(Enumerable.Range(1, 20)));
+        Assert.That(dest.Distinct().Count(), Is.EqualTo(dest.Length));
+    }
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -2093,7 +2139,7 @@ public class MultiMapAsync_GeneralInterfacePathTests
         await map.AddAsync("a", 1);
         map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.AddAsync("a", 2));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.AddAsync("a", 2));
     }
 
     [Test]
@@ -2103,7 +2149,7 @@ public class MultiMapAsync_GeneralInterfacePathTests
         var map = new MultiMapAsync<string, int>();
         map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.IsSubsetOfAsync(other));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.IsSubsetOfAsync(other));
     }
 
     // ── ContainsAsync false branch (key not found) ─────────────────────────────

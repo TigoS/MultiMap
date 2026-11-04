@@ -23,7 +23,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in this instance exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> IsSubsetOfAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -120,7 +120,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in this instance; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> IsSupersetOfAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -147,7 +147,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> OverlapsAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -245,7 +245,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
         public async Task<bool> SetEqualsAsync(IMultiMapAsync<TKey, TValue> other, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 

@@ -60,6 +60,23 @@ namespace MultiMap.Entities
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapList{TKey, TValue}"/> class using a
+        /// <see cref="MultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is an additive convenience overload. All existing individual constructors remain available.
+        /// <see cref="MultiMapOptions{TKey,TValue}.ValueComparer"/> is not used because <see cref="MultiMapList{TKey,TValue}"/>
+        /// allows duplicate values and does not perform equality comparisons on values.
+        /// </remarks>
+        /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        public MultiMapList(MultiMapOptions<TKey, TValue> options)
+            : this(Guard.NotNullReturn(options, nameof(options)).Capacity,
+                   options.KeyComparer)
+        {
+        }
+
         /// <inheritdoc/>
         protected override List<TValue> CreateCollection() => [];
 
@@ -79,8 +96,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out _);
             list ??= [];
@@ -94,8 +111,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, List<TValue>>)_dictionary, key, out bool exists);
             list ??= [];
@@ -105,7 +122,7 @@ namespace MultiMap.Entities
             int added = 0;
             foreach (var value in values)
             {
-                Guard.NotNull(value, nameof(values), "Sequence contains a null value.");
+                Guard.NotNullMessage(value, nameof(values), "Sequence contains a null value.");
 
                 list!.Add(value);
                 IncrementCount();
@@ -123,15 +140,15 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             int added = 0;
             var dict = (Dictionary<TKey, List<TValue>>)_dictionary;
 
             foreach (var item in items)
             {
-                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                 ref var list = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out _);
                 list ??= [];

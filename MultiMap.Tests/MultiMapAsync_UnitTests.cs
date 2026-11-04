@@ -85,34 +85,34 @@ public class MultiMapAsyncTests
         => Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync(null!, new[] { 1 }));
 
     [Test]
-    public void AddRangeAsync_Key_NullValues_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync("key", (IEnumerable<int>)null!));
+    public async Task AddRangeAsync_Key_NullValues_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync("key", (IEnumerable<int>)null!));
 
     [Test]
-    public void AddRangeAsync_Key_NullElementInValues_ThrowsArgumentNullException()
+    public async Task AddRangeAsync_Key_NullElementInValues_ThrowsArgumentNullException()
     {
         var map = new MultiMapAsync<string, string>();
-        Assert.ThrowsAsync<ArgumentNullException>(async () => await map.AddRangeAsync("key", new string?[] { "a", null }!));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await map.AddRangeAsync("key", new string?[] { "a", null }!));
         map.Dispose();
     }
 
     [Test]
-    public void AddRangeAsync_Items_NullItems_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync((IEnumerable<KeyValuePair<string, int>>)null!));
+    public async Task AddRangeAsync_Items_NullItems_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync((IEnumerable<KeyValuePair<string, int>>)null!));
 
     [Test]
-    public void AddRangeAsync_Items_NullKey_ThrowsArgumentNullException()
+    public async Task AddRangeAsync_Items_NullKey_ThrowsArgumentNullException()
     {
         var items = new[] { new KeyValuePair<string, int>(null!, 1) };
-        Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync(items));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await _map.AddRangeAsync(items));
     }
 
     [Test]
-    public void AddRangeAsync_Items_NullValue_ThrowsArgumentNullException()
+    public async Task AddRangeAsync_Items_NullValue_ThrowsArgumentNullException()
     {
         var map = new MultiMapAsync<string, string>();
         var items = new[] { new KeyValuePair<string, string>("k", null!) };
-        Assert.ThrowsAsync<ArgumentNullException>(async () => await map.AddRangeAsync(items));
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await map.AddRangeAsync(items));
         map.Dispose();
     }
 
@@ -225,15 +225,15 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void GetAsync_NonExistentKey_ThrowsKeyNotFoundException()
+    public async Task GetAsync_NonExistentKey_ThrowsKeyNotFoundException()
     {
-        Assert.ThrowsAsync<KeyNotFoundException>(async () => await _map.GetAsync("missing"));
+        await Assert.ThrowsAsync<KeyNotFoundException>(async () => await _map.GetAsync("missing"));
     }
 
     [Test]
     public async Task GetAsync_NonExistentKey_ExceptionContainsKeyName()
     {
-        var ex = Assert.ThrowsAsync<KeyNotFoundException>(async () => await _map.GetAsync("missing"));
+        var ex = await Assert.ThrowsAsync<KeyNotFoundException>(async () => await _map.GetAsync("missing"));
 
         Assert.That(ex!.Message, Does.Contain("missing"));
     }
@@ -563,7 +563,7 @@ public class MultiMapAsyncTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
         {
             await foreach (var _ in _map.WithCancellation(cts.Token))
             {
@@ -657,7 +657,7 @@ public class MultiMapAsyncTests
                 await _map.ContainsAsync("a", i);
         }).ToArray();
 
-        Assert.DoesNotThrowAsync(() => Task.WhenAll(tasks));
+        await Assert.DoesNotThrowAsync(() => Task.WhenAll(tasks));
     }
 
     [Test]
@@ -770,7 +770,7 @@ public class MultiMapAsyncTests
         var map = new MultiMapAsync<string, int>();
         await map.AddAsync("a", 1);
 
-        Assert.DoesNotThrowAsync(async () => await map.DisposeAsync());
+        await Assert.DoesNotThrowAsync(async () => await map.DisposeAsync());
     }
 
     [Test]
@@ -1915,7 +1915,7 @@ public class MultiMapAsyncTests
         var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
             await _map.RemoveWhereAsync("key1", v => true, cts.Token));
     }
 
@@ -2392,99 +2392,99 @@ public class MultiMapAsyncTests
     // ── Dispose Guard Tests ──────────────────────────────────
 
     [Test]
-    public void AddAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task AddAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.AddAsync("a", 1));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.AddAsync("a", 1));
     }
 
     [Test]
-    public void AddRangeAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task AddRangeAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.AddRangeAsync("a", new[] { 1, 2 }));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.AddRangeAsync("a", new[] { 1, 2 }));
     }
 
     [Test]
-    public void GetAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task GetAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetAsync("a"));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetAsync("a"));
     }
 
     [Test]
-    public void GetOrDefaultAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task GetOrDefaultAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetOrDefaultAsync("a"));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetOrDefaultAsync("a"));
     }
 
     [Test]
-    public void TryGetAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task TryGetAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.TryGetAsync("a"));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.TryGetAsync("a"));
     }
 
     [Test]
-    public void RemoveAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task RemoveAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.RemoveAsync("a", 1));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.RemoveAsync("a", 1));
     }
 
     [Test]
-    public void RemoveKeyAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task RemoveKeyAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.RemoveKeyAsync("a"));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.RemoveKeyAsync("a"));
     }
 
     [Test]
-    public void ContainsKeyAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task ContainsKeyAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ContainsKeyAsync("a"));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ContainsKeyAsync("a"));
     }
 
     [Test]
-    public void ContainsAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task ContainsAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ContainsAsync("a", 1));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ContainsAsync("a", 1));
     }
 
     [Test]
-    public void GetCountAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task GetCountAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetCountAsync());
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetCountAsync());
     }
 
     [Test]
-    public void GetKeysAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task GetKeysAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetKeysAsync());
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.GetKeysAsync());
     }
 
     [Test]
-    public void ClearAsync_AfterDispose_ThrowsObjectDisposedException()
+    public async Task ClearAsync_AfterDispose_ThrowsObjectDisposedException()
     {
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ClearAsync());
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.ClearAsync());
     }
 
     [Test]
@@ -2685,12 +2685,12 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void EqualsAsync_DisposedThis_ThrowsObjectDisposedException()
+    public async Task EqualsAsync_DisposedThis_ThrowsObjectDisposedException()
     {
         var other = new MultiMapAsync<string, int>();
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
 
         other.Dispose();
     }
@@ -2701,7 +2701,7 @@ public class MultiMapAsyncTests
         var other = new MultiMapAsync<string, int>();
         other.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await _map.EqualsAsync(other));
     }
 
     // ── EqualsAsync(object?) overload ─────────────────────────
@@ -2862,7 +2862,7 @@ public class MultiMapAsyncTests
         var other = new MultiMapAsync<string, int>();
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
             await _map.EqualsAsync((IReadOnlyMultiMapAsync<string, int>)other));
 
         other.Dispose();
@@ -2965,9 +2965,9 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void IsSubsetOfAsync_NullOther_ThrowsArgumentNullException()
+    public async Task IsSubsetOfAsync_NullOther_ThrowsArgumentNullException()
     {
-        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _map.IsSubsetOfAsync(null!));
     }
 
@@ -2977,7 +2977,7 @@ public class MultiMapAsyncTests
         var other = new MultiMapAsync<string, int>();
         _map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
             await _map.IsSubsetOfAsync(other));
 
         await other.DisposeAsync();
@@ -3079,9 +3079,9 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void IsSupersetOfAsync_NullOther_ThrowsArgumentNullException()
+    public async Task IsSupersetOfAsync_NullOther_ThrowsArgumentNullException()
     {
-        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _map.IsSupersetOfAsync(null!));
     }
 
@@ -3176,9 +3176,9 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void OverlapsAsync_NullOther_ThrowsArgumentNullException()
+    public async Task OverlapsAsync_NullOther_ThrowsArgumentNullException()
     {
-        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _map.OverlapsAsync(null!));
     }
 
@@ -3292,9 +3292,9 @@ public class MultiMapAsyncTests
     }
 
     [Test]
-    public void SetEqualsAsync_NullOther_ThrowsArgumentNullException()
+    public async Task SetEqualsAsync_NullOther_ThrowsArgumentNullException()
     {
-        Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _map.SetEqualsAsync(null!));
     }
 
@@ -4132,7 +4132,7 @@ public class MultiMapAsync_StressTests
             await map.DisposeAsync();
         });
 
-        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(operations.Append(disposer)));
+        await Assert.DoesNotThrowAsync(async () => await Task.WhenAll(operations.Append(disposer)));
     }
 
     [Test]
@@ -4171,7 +4171,7 @@ public class MultiMapAsync_StressTests
             }
         }).ToArray();
 
-        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(tasks));
+        await Assert.DoesNotThrowAsync(async () => await Task.WhenAll(tasks));
         Assert.That(await map.GetCountAsync(), Is.Zero);
         Assert.That(await map.GetKeyCountAsync(), Is.Zero);
     }

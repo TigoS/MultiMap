@@ -6,10 +6,10 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.11.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098.3%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-7107%2F7107%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -18,6 +18,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [3.0.1](#301)
   - [3.0.0](#300)
   - [2.1.1](#211)
   - [2.1.0](#210)
@@ -37,6 +38,67 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 3.0.1
+
+**Package Updates**
+
+- `NUnit` updated from **4.6.1** to **5.0.0**. In NUnit 5, `Assert.ThrowsAsync<T>` returns `Task<T?>` instead of `T?` directly — all call sites must be `await`ed. Updated 37 occurrences across `MultiMapAsync_UnitTests.cs`, `MultiMapBoundaryConditions_UnitTests.cs`, and `MultiMapHelper_UnitTests.cs`: converted `void` test methods to `async Task` and added `await` to every `Assert.ThrowsAsync` call.
+- `NUnit3TestAdapter` updated from **4.6.0** to **6.3.1**.
+- `Microsoft.NET.Test.Sdk` updated from **18.6.0** to **18.11.0**.
+- `coverlet.collector` updated from **6.0.4** to **10.1.0**.
+
+**Performance Improvements**
+
+- `MultiMapHelper.Intersect` — the three intermediate collections (`keysToRemove`, `otherLookup`, `removeByKey`) are now pre-sized at construction time using `target.KeyCount` and `other.KeyCount` respectively. This avoids incremental rehashing for multimaps with many keys, reducing allocation pressure and improving throughput on large inputs. No behavioral change.
+- `MultiMapBase<TKey, TValue, TCollection>.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — replaced the per-item delegation to `Add()` (one `TryGetValue` + potential `CreateCollection` per item) with a batching cursor approach. The method now performs at most one `TryGetValue` and one `CreateCollection` per **unique key**, regardless of how many values that key carries in the input sequence. For sorted or key-grouped inputs the improvement is proportional to the number of repeated keys; for interleaved inputs correctness is maintained with the same per-key-switch cost. `MultiMapSet`, `MultiMapList`, `MultiMapLock`, `ConcurrentMultiMap`, and `MultiMapAsync` are unaffected — they already had optimised overrides using `CollectionsMarshal.GetValueRefOrAddDefault` or explicit grouping.
+- `ConcurrentSet<T>.CopyTo` — `ConcurrentDictionary<TKey, TValue>.Keys` is a property that materialises a new snapshot `ICollection<T>` each time it is accessed. The previous implementation accessed `_inner.Keys` inside the loop body, triggering one allocation per loop iteration entry. The snapshot is now taken **once** before the loop (`ICollection<T> snapshot = _inner.Keys`) and the loop iterates over the local variable, reducing snapshot allocations from O(N) to O(1).
+- `ConcurrentSet<T>.GetEnumerator()` — reverted to `_inner.Keys.GetEnumerator()`. An earlier iteration used a LINQ `Select(kv => kv.Key)` projection to avoid the `ICollection<T>` snapshot allocation produced by accessing `_inner.Keys`. In practice the LINQ path allocates a `SelectIterator` object and a cached delegate wrapper on every call, which trades one allocation type for another without a measurable net gain. `_inner.Keys.GetEnumerator()` is simpler, allocation-equivalent for typical usage, and consistent with the existing `CopyTo` implementation.
+
+**Unit Test Enhancements**
+
+- `MultiMapHelperTests` — added `Intersect_LargeDisjointMaps_ClearsTargetCompletely` and `Intersect_ManyKeysWithPartialValueOverlap_KeepsOnlyCommonPairs` to exercise the pre-sized collection paths at scale.
+- `MultiMapBaseTests` (exercised by `MultiMapSetBaseTests`, `MultiMapListBaseTests`, `SortedMultiMapBaseTests`) — added 5 new `AddRangeKvp_*` tests covering the batch-per-key implementation: repeated-key single-entry assertion, interleaved-key correctness, duplicate-pair return-value contract, many-pairs-same-new-key registration, and existing-key-followed-by-new-key count update.
+- `ConcurrentSetPublicSurfaceTests` — added 3 new tests: `GetEnumerator_Generic_IteratesAllElements`, `GetEnumerator_Generic_EmptySet_YieldsNothing` (covering the direct-enumeration path in `GetEnumerator`), and `CopyTo_UsesSnapshotOnce_DoesNotLoseElementsDuringCopy` (verifying that `CopyTo` produces a complete, non-duplicated copy from the single pre-loop snapshot).
+- `MultiMapHelper_ConcurrentMultiMap_ConcurrencyTests` — new fixture (7 tests) with truly concurrent stress tests for `ConcurrentMultiMap` set operations. Covers `Union` with concurrent writers racing the helper call, idempotent concurrent `Union` from multiple threads, `Intersect` with a pair added between the read and write phases (validating the documented non-atomic survival invariant), `Intersect` with concurrent removals, `SymmetricExceptWith` with a pair injected during the classification phase, concurrent `SymmetricExceptWith` from multiple threads, and a mixed Union/ExceptWith/Intersect concurrency test asserting no zombie keys and non-negative count.
+- `MultiMapHelper_MultiMapLock_ConcurrencyTests` — new fixture (7 tests) with the same concurrency coverage for `MultiMapLock`: concurrent-writer Union, idempotent concurrent Union, mid-Intersect pair injection (non-atomic edge case), multi-writer Intersect, mid-SymmetricExceptWith pair injection, concurrent SymmetricExceptWith, and mixed concurrent helper ops.
+
+- Added `MultiMapOptions_UnitTests.cs` — 27 tests covering:
+  - `MultiMapOptions<TKey,TValue>`, `ConcurrentMultiMapOptions<TKey,TValue>`, and `SortedMultiMapOptions<TKey,TValue>` default-value invariants.
+  - Options constructor for each of the 6 concrete types: null-options guard (`ArgumentNullException`), instance created with default options, key comparer respected, value comparer / concurrency level / capacity applied.
+  - `SortedMultiMap` options constructor propagates the `IEqualityComparer` validation (`ArgumentException` on bare `IComparer`).
+  - `ConcurrentMultiMap` options constructor selects the correct `ConcurrentDictionary` overload (concurrency level + capacity, capacity-only, key-comparer-only).
+
+- **Total: 7,107 tests** (2,369 per framework o
+- **Coverage: 98.5% line, 96.6% branch, 98.3% method** (net9.0 Coverlet run, 2026-11-04).
+
+**API Additions**
+
+- `MultiMapOptions<TKey, TValue>` — new record (`MultiMap.Entities`) with init-only properties `Capacity` (`int`), `KeyComparer` (`IEqualityComparer<TKey>?`), `ValueComparer` (`IEqualityComparer<TValue>?`). Serves as the base for `ConcurrentMultiMapOptions<TKey,TValue>`. Additive options constructor added to `MultiMapSet`, `MultiMapList`, `MultiMapLock`, and `MultiMapAsync`.
+- `ConcurrentMultiMapOptions<TKey, TValue>` — new record (inherits `MultiMapOptions<TKey, TValue>`) with the additional `ConcurrencyLevel` property. Inherits `Capacity`, `KeyComparer`, and `ValueComparer` from the base. Additive options constructor added to `ConcurrentMultiMap`; when both `ConcurrencyLevel` and `Capacity` are non-zero the three-argument `ConcurrentDictionary` overload is used, when only `Capacity` is non-zero the two-argument overload is used, otherwise the key-comparer overload is used.
+- `SortedMultiMapOptions<TKey, TValue>` — new sealed record with `KeyComparer` (`IComparer<TKey>?`) and `ValueComparer` (`IComparer<TValue>?`). Additive options constructor added to `SortedMultiMap`; the existing `IEqualityComparer<TValue>` validation is applied.
+- `Guard.NotNullReturn<T>` — new internal helper that validates and returns the value in a single call, enabling null-guarding in constructor-chaining expressions (`: this(...)`).
+- `ConcurrentMultiMapBase<TKey, TValue, TCollection>` — new `public abstract` intermediate class between `MultiMapBase` and `ConcurrentMultiMap`. Hosts the four Interlocked/Volatile count helpers (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) that were previously on `MultiMapBase`. `ConcurrentMultiMap` now inherits from `ConcurrentMultiMapBase` instead of `MultiMapBase` directly.
+
+**Refactorings and Optimizations**
+
+- `MultiMapHelper` split into three partial-class files by concern. No public API change — all extension methods, signatures, and XML docs are identical. The split improves navigability:
+  - `MultiMapHelper.cs` — class-level XML doc and internal utilities (`Scramble`, `ComputeUnorderedHash`) used by entity `GetHashCode` implementations.
+  - `MultiMapHelper.SetOperations.cs` — mutating set operations (`Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) for `IMultiMap<TKey,TValue>`, `ISimpleMultiMap<TKey,TValue>`, and `IMultiMapAsync<TKey,TValue>`.
+  - `MultiMapHelper.QueryExtensions.cs` — read-only set algebra queries (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) for all three families.
+
+- `Guard` (internal helper) — two changes:
+  - `Guard.NotNull<T>(value, paramName)` (single-message, no custom text) has been **removed** and replaced at every call site with the BCL `ArgumentNullException.ThrowIfNull(value, paramName)` directly. This eliminates the indirection layer and makes the intent clearer at each use.
+  - `Guard.NotNull<T>(value, paramName, message)` (three-parameter overload with a custom error message) has been **renamed** to `Guard.NotNullMessage<T>()` to distinguish it from the removed two-parameter variant and make usages unambiguous. All call sites updated.
+
+- `SimpleMultiMap<TKey, TValue>` `[Obsolete]` attribute updated: `error: false` is now explicit (preserves warning-only behaviour) and the message names **v4.0.0** as the targeted removal version.
+- `MultiMapBase<TKey, TValue, TCollection>` — changed `private int _count` to `private protected int _count`
+- `MultiMapBase<TKey, TValue, TCollection>.AddRange(TKey, IEnumerable<TValue>)` and `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — moved the implementation rationale comments from inline `//` remarks into proper XML `<remarks>` elements on each overload. The descriptions are now visible in IntelliSense and generated documentation. No behavioral change.
+- `IMultiMap<TKey, TValue>.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — removed the `<remarks>The order in which the elements are added is preserved.</remarks>` note from the interface definition. The remark was inaccurate for set-based implementations (`MultiMapSet`, `MultiMapLock`, `MultiMapAsync`, `ConcurrentMultiMap`) where `HashSet<T>` does not preserve insertion order. No behavioral change.
+- `MultiMapLock<TKey, TValue>` and `MultiMapAsync<TKey, TValue>` — simplified the internal dictionary initialization from a redundant ternary (`capacity > 0 ? new Dictionary(..., capacity, keyComparer) : new Dictionary(..., keyComparer)`) to a single `new(capacity, keyComparer)` call. `Dictionary<TKey, TValue>(0, comparer)` is equivalent to `Dictionary<TKey, TValue>(comparer)`, so the branch was dead code. No behavioral change.
+- `MultiMapLock<TKey, TValue>` — added `CancellationToken` overloads for every write method: `Add`, `AddRange(TKey, IEnumerable<TValue>)`, `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, and `SymmetricExceptWith` (12 new overloads).
+- `MultiMapOptions<TKey, TValue>` — changed from `sealed record` to `record` to permit inheritance by `ConcurrentMultiMapOptions<TKey, TValue>`.
+- `ConcurrentMultiMapOptions<TKey, TValue>` — now inherits from `MultiMapOptions<TKey, TValue>`. The three duplicated properties (`Capacity`, `KeyComparer`, `ValueComparer`) have been removed from `ConcurrentMultiMapOptions`; they are inherited from the base record. `ConcurrencyLevel` remains the only property declared directly on `ConcurrentMultiMapOptions`. All existing usages (positional init, `with` expressions, constructor forwarding) are unaffected because the properties are now inherited rather than declared locally. **Breaking change** only if code referenced `ConcurrentMultiMapOptions<TKey,TValue>` with explicit `sealed`-record semantics (e.g., pattern-matching that expected `sealed`); all practical usage patterns continue to work unchanged.
 
 ### 3.0.0
 
@@ -69,7 +131,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - Consolidated all conditional-compilation polyfills into a single `Helpers/Polyfills.cs`. Previously `#if NET6_0_OR_GREATER`, `#if NETSTANDARD2_0`, and `#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER` guards were scattered across 6+ files (`Guard.cs`, `MultiMapBase.cs`, `MultiMapList.cs`, `MultiMapSet.cs`, `SimpleMultiMap.cs`, `MultiMapLock.cs`, `MultiMapAsync.Core.cs`).
 - Since all remaining targets (net8/9/10) are ≥ .NET 6, every `#if NET6_0_OR_GREATER` and `#if NETSTANDARD2_1_OR_GREATER` branch is now unconditional — the dead fallback paths have been deleted.
 - The sole remaining version-gated feature (`HashSet<T>.AsReadOnly()`, available from .NET 10) is wrapped in `Polyfills.AsReadOnlyOrSnapshot<T>()`, keeping `#if NET10_0_OR_GREATER` in exactly one place.
-- `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward. `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`).
+- `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward. `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`). (Note: in v3.0.1 the two-parameter `Guard.NotNull` overload was removed in favour of inline `ArgumentNullException.ThrowIfNull`, and the three-parameter overload was renamed to `Guard.NotNullMessage`.)
 - `MultiMapBase<TKey, TValue, TCollection>` — removed the `protected ref int CountRef` property and replaced it with four dedicated protected helpers: `InterlockedIncrementCount()`, `InterlockedAddCount(int by)`, `InterlockedExchangeCount(int value)`, and `VolatileReadCount()`. Exposing a `ref` field to subclasses couples them to the base class's field layout and allows any subclass to call arbitrary `Interlocked`/`Volatile` operations on the same backing field. The new helpers encapsulate the `ref` entirely inside `MultiMapBase`, preserving the same atomic semantics while making the intent explicit at each call site. `ConcurrentMultiMap` was updated to use these helpers throughout.
 
 **API Changes**
@@ -91,7 +153,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 **Tests**
 
 - Added `MultiMapLock_CancellationTokenTests` in `MultiMapLock_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` write overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`). Each has a happy-path test and a contention-cancel test (write lock held by a background thread, token cancelled after 80 ms) exercising the polling loop in `EnterWriteLockCancellable`.
-- Added `Guard_ThreeParamNotNullTests` — 2 tests covering the 3-parameter `Guard.NotNull<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
+- Added `Guard_NotNullMessageTests` (previously `Guard_ThreeParamNotNullTests`) — 2 tests covering the `Guard.NotNullMessage<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
 - Added targeted tests to `AdditionalBoundaryTests.cs` for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
 - Added `NonEquatableConstraintTests` in `AdditionalBoundaryTests.cs` — five tests (`MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) that instantiate each implementation with a `NoEquatableKey` / `NoEquatableValue` class pair that overrides `Equals`/`GetHashCode` without implementing `IEquatable<T>`. These tests verify the constraint relaxation is genuine and cover all main multimap variants.
 - - `SortedMultiMap_UnitTests.cs`

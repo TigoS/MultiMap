@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>3.0.0</Version>
+    <Version>3.0.1</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 9, and .NET 8.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
@@ -23,15 +23,15 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')">icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>3.0.0
+    <PackageReleaseNotes>3.0.1
 
-- BREAKING: Dropped .NET Standard 2.0 support (targets: net10.0, net9.0, net8.0)
-- Centralized all conditional compilation into a single Polyfills.cs helper
-- Removed scattered #if NET6_0_OR_GREATER / NETSTANDARD2_0 directives across 6+ files
-- Removed Microsoft.Bcl.AsyncInterfaces and Microsoft.Bcl.HashCode dependencies
-- SimpleMultiMap becomes Obsolete
+- Package Updates
+- Performance Improvements
+- Unit Tests Enhancements
+- API Additions
+- Refactorings and Optimizations
 
-See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
+See the full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 

@@ -40,5 +40,17 @@ namespace MultiMap.Entities
         /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
         /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
         public MultiMapAsync(int capacity, IEqualityComparer<TValue>? valueComparer) : this(capacity, null, valueComparer) { }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapAsync{TKey, TValue}"/> class using a
+        /// <see cref="MultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>This constructor is an additive convenience overload. All existing individual constructors remain available.</remarks>
+        /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        public MultiMapAsync(MultiMapOptions<TKey, TValue> options)
+            : this(Helpers.Guard.NotNullReturn(options, nameof(options)).Capacity,
+                   options.KeyComparer,
+                   options.ValueComparer) { }
     }
 }

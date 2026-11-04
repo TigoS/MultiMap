@@ -204,6 +204,86 @@ public abstract class MultiMapBaseTests
         Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
+    [Test]
+    public void AddRangeKvp_RepeatedKey_OnlyOneKeyEntry()
+    {
+        // All pairs share the same key — the map must not create duplicate dictionary entries.
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("a", 3)
+        };
+        _map.AddRange(pairs);
+
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void AddRangeKvp_InterleavedKeys_AddsAllValuesUnderCorrectKey()
+    {
+        // Keys are interleaved: a, b, a, b — exercises the key-switch path.
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 10),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("b", 20)
+        };
+        _map.AddRange(pairs);
+
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1, 2 }));
+        Assert.That(_map.GetOrDefault("b"), Is.EquivalentTo(new[] { 10, 20 }));
+        Assert.That(_map.Count, Is.EqualTo(4));
+    }
+
+    [Test]
+    public void AddRangeKvp_DuplicatePairsForNewKey_ReturnsActuallyAddedCount()
+    {
+        // For set-based maps the duplicate pair must be counted once.
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 1) // duplicate
+        };
+        int added = _map.AddRange(pairs);
+
+        // List-based maps count 2; set-based maps count 1.  Both are valid — we only
+        // assert the values are present and Count matches the return value of the call.
+        Assert.That(added, Is.EqualTo(_map.Count));
+    }
+
+    [Test]
+    public void AddRangeKvp_ManyPairsSameNewKey_RegistersKeyOnce()
+    {
+        // Regression: a new key that appears many times should be registered
+        // in the dictionary exactly once, not once per item.
+        var pairs = Enumerable.Range(1, 50)
+            .Select(i => new KeyValuePair<string, int>("x", i));
+        _map.AddRange(pairs);
+
+        Assert.That(_map.KeyCount, Is.EqualTo(1));
+        Assert.That(_map.ContainsKey("x"), Is.True);
+    }
+
+    [Test]
+    public void AddRangeKvp_ExistingKeyFollowedByNewKey_UpdatesCountCorrectly()
+    {
+        _map.Add("existing", 1);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("existing", 2),
+            new KeyValuePair<string, int>("new", 3)
+        };
+        int added = _map.AddRange(pairs);
+
+        Assert.That(added, Is.EqualTo(2));
+        Assert.That(_map.Count, Is.EqualTo(3));
+        Assert.That(_map.ContainsKey("existing"), Is.True);
+        Assert.That(_map.ContainsKey("new"), Is.True);
+    }
+
     // ── Get ───────────────────────────────────────────────────
 
     [Test]

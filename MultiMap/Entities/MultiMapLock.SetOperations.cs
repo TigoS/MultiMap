@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
 namespace MultiMap.Entities
@@ -20,7 +19,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are added to this instance.</param>
         public void Union(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -70,7 +69,7 @@ namespace MultiMap.Entities
         /// </param>
         public void Union(IMultiMap<TKey, TValue> other, CancellationToken cancellationToken)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -116,7 +115,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map that defines the pairs to keep.</param>
         public void Intersect(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -176,7 +175,7 @@ namespace MultiMap.Entities
         /// </param>
         public void Intersect(IMultiMap<TKey, TValue> other, CancellationToken cancellationToken)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -232,7 +231,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map whose pairs are removed from this instance.</param>
         public void ExceptWith(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -288,7 +287,7 @@ namespace MultiMap.Entities
         /// </param>
         public void ExceptWith(IMultiMap<TKey, TValue> other, CancellationToken cancellationToken)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -341,7 +340,7 @@ namespace MultiMap.Entities
         /// <param name="other">The multi-map to compare against.</param>
         public void SymmetricExceptWith(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -400,7 +399,7 @@ namespace MultiMap.Entities
         /// </param>
         public void SymmetricExceptWith(IMultiMap<TKey, TValue> other, CancellationToken cancellationToken)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -456,7 +455,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in this instance exists in <paramref name="other"/>; otherwise, <see langword="false"/>.</returns>
         public bool IsSubsetOf(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -512,7 +511,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if every key-value pair in <paramref name="other"/> exists in this instance; otherwise, <see langword="false"/>.</returns>
         public bool IsSupersetOf(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -567,7 +566,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if at least one key-value pair exists in both multimaps; otherwise, <see langword="false"/>.</returns>
         public bool Overlaps(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 
@@ -620,7 +619,7 @@ namespace MultiMap.Entities
         /// <returns><see langword="true"/> if both multimaps contain exactly the same key-value pairs; otherwise, <see langword="false"/>.</returns>
         public bool SetEquals(IMultiMap<TKey, TValue> other)
         {
-            Guard.NotNull(other, nameof(other));
+            ArgumentNullException.ThrowIfNull(other, nameof(other));
 
             ThrowIfDisposed();
 

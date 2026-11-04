@@ -6,10 +6,10 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.11.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098.3%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-7107%2F7107%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -54,9 +54,9 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Value-based equality** (`Equals`/`GetHashCode`) across all 7 implementations
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
-- **Comprehensive NUnit 4 test suite**: 
+- **Comprehensive NUnit 5 test suite**:
   - **6,924 total tests** (2,308 per framework) running on **net10.0**, **net9.0**, and **net8.0**
-  - **98.4% line coverage**, **96.1% branch coverage**, **98% method coverage** (latest combined Coverlet metrics)
+  - **98.5% line coverage**, **96.6% branch coverage**, **98.3% method coverage** (latest combined Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
@@ -108,6 +108,8 @@ MultiMap/
 │   │   ├── MultiMapBase.cs                   # Abstract dictionary-backed base for MultiMapList/Set/Sorted/Concurrent
 │   │   ├── MultiMapBase.ValuesCollection.cs  # Nested ValuesCollection enumerator (partial)
 │   │   ├── MultiMapBase.ValuesEnumerator.cs  # Nested ValuesEnumerator struct (partial)
+│   │   ├── MultiMapOptions.cs                # Options records: MultiMapOptions (base), ConcurrentMultiMapOptions (extends MultiMapOptions), SortedMultiMapOptions
+│   │   ├── ConcurrentMultiMapBase.cs         # Intermediate abstract base with Interlocked/Volatile count helpers for ConcurrentMultiMap
 │   │   ├── MultiMapList.cs                   # List-based (allows duplicates)
 │   │   ├── MultiMapSet.cs                    # HashSet-based (unique values)
 │   │   ├── SortedMultiMap.cs                 # SortedDictionary + SortedSet
@@ -116,12 +118,14 @@ MultiMap/
 │   │   ├── MultiMapLock.cs                   # ReaderWriterLockSlim-based
 │   │   ├── MultiMapAsync.cs                  # SemaphoreSlim-based async (public API)
 │   │   ├── MultiMapAsync.Core.cs             # SemaphoreSlim-based async (private helpers, partial)
-│   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap implementation
+│   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap impl [Obsolete — will be removed in v4.0.0; migrate to MultiMapSet]
 │   └── Helpers/
-│       ├── Guard.cs                          # Internal argument-validation helpers; [NotNull] applied unconditionally across all TFMs
+│       ├── Guard.cs                          # Internal argument-validation helpers: `NotNullMessage` (custom-message null check), `NotNullReturn` (null-check + return for ctor chaining); simple null checks use inline `ArgumentNullException.ThrowIfNull`
 │       ├── Polyfills.cs                      # Single home for all version-gated conditionals (HashSet<T>.AsReadOnly on .NET 10+)
-│       └── MultiMapHelper.cs                 # Set-like extension methods
-├── MultiMap.Tests/                           # Unit tests (NUnit 4, multi-targeted: net10.0, net9.0, and net8.0)
+│       ├── MultiMapHelper.cs                 # Partial — class doc + internal hash utilities (Scramble, ComputeUnorderedHash)
+│       ├── MultiMapHelper.SetOperations.cs   # Partial — Union, Intersect, ExceptWith, SymmetricExceptWith (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
+│       └── MultiMapHelper.QueryExtensions.cs # Partial — IsSubsetOf, IsSupersetOf, Overlaps, SetEquals (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
+├── MultiMap.Tests/                           # Unit tests (NUnit 5, multi-targeted: net10.0, net9.0, and net8.0)
 ├── MultiMap.Demo/                            # Console demo application
 │   ├── Program.cs                            # Demo entry point
 │   └── TestDataHelper.cs                     # Sample data factory for demos
@@ -244,13 +248,13 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 
 Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. `MultiMapList` and `MultiMapSet` also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup per operation.
 
-**Encapsulation:** The underlying `_dictionary` field is `protected`. The value counter `_count` is `private`; subclasses mutate it exclusively through protected helpers: `IncrementCount()`, `DecrementCount(int by = 1)`, `ResetCount()` (non-atomic), and `InterlockedIncrementCount()`, `InterlockedAddCount(int by)`, `InterlockedExchangeCount(int value)`, `VolatileReadCount()` (atomic, used by `ConcurrentMultiMap`). This prevents any subclass from silently corrupting the `Count == total mapped values` invariant.
+**Encapsulation:** The underlying `_dictionary` field is `protected`. The value counter `_count` is `private protected`; non-concurrent subclasses mutate it via `IncrementCount()`, `DecrementCount(int by = 1)`, and `ResetCount()`. Atomic variants (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) live in the intermediate `ConcurrentMultiMapBase` class to keep concurrent concerns out of the shared base.
 
 ### `MultiMapList<TKey, TValue>` — List-Based
 
 Extends `MultiMapBase<TKey, TValue, List<TValue>>`. Uses `Dictionary<TKey, List<TValue>>` internally. **Allows duplicate values** per key. Fastest for add operations due to `List<T>.Add` being O(1) amortized. Uses `CollectionsMarshal` for a single dictionary lookup per `Add`/`AddRange` operation. Returns a zero-copy `ReadOnlyCollection<TValue>` from `Get`.
 
-**Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`
+**Constructors:** `()`, `(int capacity)`, `(IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(MultiMapOptions<TKey, TValue> options)`
 
 ### `MultiMapSet<TKey, TValue>` — HashSet-Based
 
@@ -264,17 +268,17 @@ Extends `MultiMapBase<TKey, TValue, SortedSet<TValue>>`. Uses `SortedDictionary<
 
 **Type constraints:** `TKey` must implement `IComparable<TKey>` (required by `SortedMultiMap` for sorted key ordering). The actual sorted operations rely on `IComparer<TKey>` — either the default comparer or a custom one supplied via a constructor overload. `TValue` similarly requires `IComparable<TValue>` (for `SortedSet<TValue>` ordering). Unlike all other multimap types, `SortedMultiMap` does not accept a custom equality comparer because `SortedSet<T>` derives equality from the comparer.
 
-**Constructors:** `()`, `(IComparer<TKey>? keyComparer)`, `(IComparer<TValue>? valueComparer)`, `(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)`
+**Constructors:** `()`, `(IComparer<TKey>? keyComparer)`, `(IComparer<TValue>? valueComparer)`, `(IComparer<TKey>? keyComparer, IComparer<TValue>? valueComparer)`, `(SortedMultiMapOptions<TKey, TValue> options)`
 
 ### `ConcurrentMultiMap<TKey, TValue>` — Fully Lock-Free Concurrent
 
-Extends `MultiMapBase<TKey, TValue, ConcurrentSet<TValue>>`. Uses `ConcurrentDictionary<TKey, ConcurrentSet<TValue>>` for fully lock-free concurrent access — no explicit locks are held for per-key operations. `Count` and `KeyCount` are **O(1)**, backed by `_count` and `_keyCount` fields maintained via `Interlocked` in every mutating path. `Keys` and `Values` are **lazy iterators** that yield directly from the live dictionary (call `.ToList()` / `.ToArray()` when a stable snapshot is needed). Suitable for high-concurrency scenarios.
+Extends `ConcurrentMultiMapBase<TKey, TValue, ConcurrentSet<TValue>>` (which in turn extends `MultiMapBase`). Uses `ConcurrentDictionary<TKey, ConcurrentSet<TValue>>` for fully lock-free concurrent access — no explicit locks are held for per-key operations. `Count` and `KeyCount` are **O(1)**, backed by `_count` and `_keyCount` fields maintained via `Interlocked` in every mutating path. `Keys` and `Values` are **lazy iterators** that yield directly from the live dictionary (call `.ToList()` / `.ToArray()` when a stable snapshot is needed). Suitable for high-concurrency scenarios.
 
 > **Note:** `ConcurrentMultiMap` does **not** implement `IDisposable`. Unlike `MultiMapLock` (which disposes a `ReaderWriterLockSlim`) and `MultiMapAsync` (which disposes two `SemaphoreSlim` instances), `ConcurrentMultiMap` owns no disposable resources — the underlying `ConcurrentDictionary` requires no explicit cleanup.
 
 > **Note:** `ConcurrentSet<T>.Count` (used internally per key) delegates to `ConcurrentDictionary.Count`, which acquires all internal segment locks. The value is effectively O(1) but **may be stale** by the time it is read in concurrent scenarios. Use `IsEmpty` when testing for emptiness.
 
-**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(ConcurrentMultiMapOptions<TKey, TValue> options)` — `ConcurrentMultiMapOptions` inherits `Capacity`, `KeyComparer`, `ValueComparer` from `MultiMapOptions<TKey,TValue>` and adds `ConcurrencyLevel`.
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
@@ -282,11 +286,11 @@ Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow c
 
 > **Cancellable write operations:** `ReaderWriterLockSlim.EnterWriteLock()` blocks indefinitely with no cancellation path. Every write method (`Add`, `AddRange`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) has a `CancellationToken` overload that polls with `TryEnterWriteLock(20 ms)` in a loop and calls `cancellationToken.ThrowIfCancellationRequested()` between attempts. Cancellation latency is at most ~20 ms; if the token fires after the lock is acquired, the mutation completes normally (the token is only checked **while waiting**).
 
-**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(MultiMapOptions<TKey, TValue> options)`
 
 ### `MultiMapAsync<TKey, TValue>` — Async-Safe
 
-Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `SemaphoreSlim` for async-compatible mutual exclusion. Designed for `async`/`await` patterns and I/O-bound scenarios. `Equals(IReadOnlyMultiMapAsync<TKey, TValue>?)` uses a deadlock-safe dual-semaphore acquisition when comparing two `MultiMapAsync` instances; `Equals(object?)` throws `InvalidOperationException` under a `SynchronizationContext` — use `EqualsAsync` in `async` contexts instead.
+Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`.
 
 > **Locking protocol:** Two `SemaphoreSlim(1,1)` instances implement a custom readers-writer protocol with **writer preference**. `_writeLock` is held exclusively by every mutating operation **and** by the *first* reader for as long as any reader is active. `_readerLock` guards the `_activeReaders` counter and is held only for the brief increment/decrement critical section. Key invariants: (1) a writer blocks until `_activeReaders` reaches 0 and `_writeLock` is released by the last reader; (2) the first reader blocks if a writer currently holds `_writeLock`; (3) every operation has a non-blocking fast path (`Wait(0)`) that avoids a heap-allocated continuation when there is no contention.
 
@@ -294,7 +298,7 @@ Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`. Uses `Semaph
 
 > **Note:** The primary constructor is `MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`; all other constructor overloads delegate to it.
 
-**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int capacity)`, `(int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(MultiMapOptions<TKey, TValue> options)`
 
 ### `SimpleMultiMap<TKey, TValue>` — Lightweight ⚠️ Deprecated
 
@@ -374,7 +378,7 @@ Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplifi
 
 ## Extension Methods
 
-For all 3 interface families, the `MultiMapHelper` provides:
+For all 3 interface families, `MultiMapHelper` (split across three partial-class files) provides:
 
 1. **Set-like operations as extension methods:**
 

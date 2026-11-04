@@ -18,7 +18,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
-    public sealed class ConcurrentMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, ConcurrentSet<TValue>>
+    public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TKey, TValue, ConcurrentSet<TValue>>
         where TKey : notnull
         where TValue : notnull
     {
@@ -104,6 +104,44 @@ namespace MultiMap.Entities
         }
 
         /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class using a
+        /// <see cref="ConcurrentMultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is an additive convenience overload. All existing individual constructors remain available.
+        /// When both <see cref="ConcurrentMultiMapOptions{TKey,TValue}.ConcurrencyLevel"/> and
+        /// <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> are non-zero, the underlying
+        /// <see cref="ConcurrentDictionary{TKey,TValue}"/> is created with the three-argument overload that
+        /// accepts <c>concurrencyLevel</c>, <c>capacity</c>, and <c>keyComparer</c>.
+        /// When only <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> is non-zero, the two-argument
+        /// <c>concurrencyLevel</c>+<c>capacity</c> overload is used.
+        /// Otherwise the key-comparer-only overload is used.
+        /// </remarks>
+        /// <param name="options">
+        /// The options object. Must not be <see langword="null"/>.
+        /// </param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        public ConcurrentMultiMap(ConcurrentMultiMapOptions<TKey, TValue> options)
+            : base(BuildDictionary(options))
+        {
+            _concurrentDictionary = InitializeDictionary();
+            _valueComparer = options.ValueComparer;
+        }
+
+        private static ConcurrentDictionary<TKey, ConcurrentSet<TValue>> BuildDictionary(
+            ConcurrentMultiMapOptions<TKey, TValue> options)
+        {
+            ArgumentNullException.ThrowIfNull(options, nameof(options));
+            if (options.ConcurrencyLevel > 0 && options.Capacity > 0)
+                return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
+                    options.ConcurrencyLevel, options.Capacity, options.KeyComparer);
+            if (options.Capacity > 0)
+                return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
+                    Environment.ProcessorCount, options.Capacity, options.KeyComparer);
+            return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(options.KeyComparer);
+        }
+
+        /// <summary>
         /// Initializes the underlying dictionary as a <see cref="ConcurrentDictionary{TKey, TValue}"/> for efficient access.
         /// </summary>
         /// <returns>The initialized concurrent dictionary.</returns>
@@ -179,8 +217,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             var valueSet = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
 
@@ -196,8 +234,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(TKey key, IEnumerable<TValue> values)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(values, nameof(values));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             var items = values as ICollection<TValue> ?? [.. values];
             if (items.Count == 0)
@@ -227,14 +265,14 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
-            Guard.NotNull(items, nameof(items));
+            ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             // Group by key so we call GetOrAdd at most once per unique key instead of once per item.
             var grouped = new Dictionary<TKey, List<TValue>>();
             foreach (var item in items)
             {
-                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                 if (!grouped.TryGetValue(item.Key, out var list))
                 {
@@ -272,8 +310,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Remove(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             if (!_dictionary.TryGetValue(key, out var valueSet))
             {
@@ -299,8 +337,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int RemoveWhere(TKey key, Predicate<TValue> predicate)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(predicate, nameof(predicate));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
             if (!_dictionary.TryGetValue(key, out var valueSet))
             {
@@ -328,7 +366,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool RemoveKey(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             if (!_concurrentDictionary.TryRemove(key, out var removedSet))
             {
@@ -393,8 +431,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override bool Contains(TKey key, TValue value)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             return _dictionary.TryGetValue(key, out var collection) && collection.Contains(value);
         }
@@ -402,7 +440,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public override int GetValuesCount(TKey key)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             if (!TryGetCollection(key, out var collection))
             {

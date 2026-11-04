@@ -1,5 +1,3 @@
-using MultiMap.Helpers;
-
 namespace MultiMap.Entities
 {
     public sealed partial class MultiMapAsync<TKey, TValue>
@@ -9,7 +7,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -30,7 +28,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<IEnumerable<TValue>> GetOrDefaultAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -51,7 +49,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<(bool found, IEnumerable<TValue> values)> TryGetAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -72,7 +70,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> ContainsKeyAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -93,8 +91,8 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<bool> ContainsAsync(TKey key, TValue value, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
-            Guard.NotNull(value, nameof(value));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
             cancellationToken.ThrowIfCancellationRequested();
@@ -192,7 +190,7 @@ namespace MultiMap.Entities
         /// <inheritdoc/>
         public ValueTask<int> GetValuesCountAsync(TKey key, CancellationToken cancellationToken = default)
         {
-            Guard.NotNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
 

@@ -32,7 +32,6 @@ namespace MultiMap.Interfaces
         /// <summary>
         /// Adds the elements of the specified collection to the current collection.
         /// </summary>
-        /// <remarks>The order in which the elements are added is preserved.</remarks>
         /// <param name="items">The collection of key/value pairs to add.</param>
         /// <returns>
         /// The number of key/value pairs that were actually added.

@@ -134,6 +134,20 @@ namespace MultiMap.Entities
             _valueComparer = valueComparer;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SortedMultiMap{TKey, TValue}"/> class using a
+        /// <see cref="SortedMultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>This constructor is an additive convenience overload. All existing individual constructors remain available.</remarks>
+        /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentException"><see cref="SortedMultiMapOptions{TKey,TValue}.ValueComparer"/> does not implement <see cref="IEqualityComparer{TValue}"/>.</exception>
+        public SortedMultiMap(SortedMultiMapOptions<TKey, TValue> options)
+            : this(Guard.NotNullReturn(options, nameof(options)).KeyComparer,
+                   options.ValueComparer)
+        {
+        }
+
         /// <inheritdoc/>
         protected override SortedSet<TValue> CreateCollection() => _valueComparer is null ? [] : new SortedSet<TValue>(_valueComparer);
 
