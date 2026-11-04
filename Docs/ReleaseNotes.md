@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.4%25%20line%20%7C%2096.1%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-6924%2F6924%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-7026%2F7026%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -53,6 +53,8 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - `MultiMapHelperTests` — added `Intersect_LargeDisjointMaps_ClearsTargetCompletely` and `Intersect_ManyKeysWithPartialValueOverlap_KeepsOnlyCommonPairs` to exercise the pre-sized collection paths at scale.
 - `MultiMapBaseTests` (exercised by `MultiMapSetBaseTests`, `MultiMapListBaseTests`, `SortedMultiMapBaseTests`) — added 5 new `AddRangeKvp_*` tests covering the batch-per-key implementation: repeated-key single-entry assertion, interleaved-key correctness, duplicate-pair return-value contract, many-pairs-same-new-key registration, and existing-key-followed-by-new-key count update.
 - `ConcurrentSetPublicSurfaceTests` — added 3 new tests: `GetEnumerator_Generic_IteratesAllElements`, `GetEnumerator_Generic_EmptySet_YieldsNothing` (covering the direct-enumeration path in `GetEnumerator`), and `CopyTo_UsesSnapshotOnce_DoesNotLoseElementsDuringCopy` (verifying that `CopyTo` produces a complete, non-duplicated copy from the single pre-loop snapshot).
+- `MultiMapHelper_ConcurrentMultiMap_ConcurrencyTests` — new fixture (7 tests) with truly concurrent stress tests for `ConcurrentMultiMap` set operations. Covers `Union` with concurrent writers racing the helper call, idempotent concurrent `Union` from multiple threads, `Intersect` with a pair added between the read and write phases (validating the documented non-atomic survival invariant), `Intersect` with concurrent removals, `SymmetricExceptWith` with a pair injected during the classification phase, concurrent `SymmetricExceptWith` from multiple threads, and a mixed Union/ExceptWith/Intersect concurrency test asserting no zombie keys and non-negative count.
+- `MultiMapHelper_MultiMapLock_ConcurrencyTests` — new fixture (7 tests) with the same concurrency coverage for `MultiMapLock`: concurrent-writer Union, idempotent concurrent Union, mid-Intersect pair injection (non-atomic edge case), multi-writer Intersect, mid-SymmetricExceptWith pair injection, concurrent SymmetricExceptWith, and mixed concurrent helper ops.
 
 ### 3.0.0
 
