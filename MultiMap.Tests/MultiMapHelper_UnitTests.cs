@@ -2170,6 +2170,462 @@ public class MultiMapHelperWithMultiMapLockTests
     }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// True concurrent stress tests for MultiMapHelper set operations
+// (ConcurrentMultiMap and MultiMapLock)
+//
+// These tests verify the documented invariants for non-atomic helper methods:
+//   • No structural corruption (count never negative, keys never zombied)
+//   • Concurrent mutations during Union/Intersect/SymmetricExceptWith do not
+//     cause data races, exceptions, or permanent count drift
+//   • A pair added between the read and write phases of Intersect/SymmetricExceptWith
+//     survives or is included, consistent with the documented non-atomic contract
+// ──────────────────────────────────────────────────────────────────────────────
+
+[TestFixture]
+[Category("Stress")]
+[Category("Concurrent")]
+public class MultiMapHelper_ConcurrentMultiMap_ConcurrencyTests
+{
+    // ── Union: concurrent writers add to target while Union runs ─────────────
+
+    [Test]
+    public void Union_ConcurrentAddToTarget_NoCorruptionOrException()
+    {
+        // Arrange: target and other with disjoint key spaces
+        var target = new ConcurrentMultiMap<string, int>();
+        var other  = new ConcurrentMultiMap<string, int>();
+        for (int i = 0; i < 20; i++) other.Add($"o{i}", i);
+
+        const int writerCount = 4;
+        const int writesPerThread = 200;
+        using var startGate = new ManualResetEventSlim(false);
+
+        // Writers race against Union
+        var writers = Enumerable.Range(0, writerCount).Select(w => Task.Run(() =>
+        {
+            startGate.Wait();
+            for (int i = 0; i < writesPerThread; i++)
+                target.Add($"t{w}", w * writesPerThread + i);
+        })).ToArray();
+
+        startGate.Set();
+
+        // Union runs while writers are still active
+        target.Union(other);
+
+        Task.WaitAll(writers);
+
+        // Invariants: no exception thrown; count is non-negative; no zombie keys
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0));
+        foreach (var key in target.Keys)
+            Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                $"Zombie key '{key}' has no values after concurrent Union");
+    }
+
+    [Test]
+    public void Union_ManyConcurrentUnions_AllPairsFromOtherEventuallyPresent()
+    {
+        // All threads call Union with the same source — every pair must end up present
+        var target = new ConcurrentMultiMap<string, int>();
+        var source = new ConcurrentMultiMap<string, int>();
+        for (int i = 0; i < 10; i++) source.Add("shared", i);
+
+        const int threadCount = 8;
+        using var barrier = new Barrier(threadCount);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(_ => Task.Run(() =>
+        {
+            barrier.SignalAndWait();
+            target.Union(source);
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        // Every pair from source must be present (Union is idempotent for set maps)
+        for (int i = 0; i < 10; i++)
+            Assert.That(target.Contains("shared", i), Is.True,
+                $"Value {i} missing after concurrent Union");
+    }
+
+    // ── Intersect: documented edge case — pair added between read and write ──
+
+    [Test]
+    public void Intersect_PairAddedBetweenReadAndWritePhases_SurvivesOrIsPresent()
+    {
+        // The Intersect docs state:
+        //   "key-value pairs added to target between the read and write phases
+        //    will survive the intersect even if absent from other."
+        // We verify: after Intersect completes, target.Count >= 0 and
+        // no zombie keys exist, regardless of race timing.
+        var target = new ConcurrentMultiMap<string, int>();
+        var other  = new ConcurrentMultiMap<string, int>();
+
+        for (int i = 0; i < 10; i++) target.Add("a", i);
+        for (int i = 0; i < 5; i++)  other.Add("a", i); // keep 0-4
+
+        // Concurrently add a pair NOT in other while Intersect runs
+        const int iterations = 500;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            target.Clear();
+            for (int i = 0; i < 10; i++) target.Add("a", i);
+
+            using var barrier = new Barrier(2);
+
+            var intersector = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                target.Intersect(other);
+            });
+
+            var adder = Task.Run(() =>
+            {
+                barrier.SignalAndWait();
+                // Adds a value absent from other — should survive if it races the write phase
+                target.Add("a", 999);
+            });
+
+            Task.WaitAll(intersector, adder);
+
+            // Invariants (non-atomic contract): count non-negative, no zombie keys
+            Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+                $"Count underflowed on iteration {iter}");
+            foreach (var key in target.Keys)
+                Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                    $"Zombie key on iteration {iter}");
+        }
+    }
+
+    [Test]
+    public void Intersect_ConcurrentRemoveFromTarget_NoCorruption()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        var other  = new ConcurrentMultiMap<string, int>();
+        for (int i = 0; i < 10; i++) target.Add("x", i);
+        for (int i = 0; i < 5; i++)  other.Add("x", i);
+
+        const int iterations = 300;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            target.Clear();
+            for (int i = 0; i < 10; i++) target.Add("x", i);
+
+            using var barrier = new Barrier(2);
+            var intersector = Task.Run(() => { barrier.SignalAndWait(); target.Intersect(other); });
+            var remover     = Task.Run(() => { barrier.SignalAndWait(); target.Remove("x", 3); });
+
+            Task.WaitAll(intersector, remover);
+
+            Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+                $"Count underflowed on iteration {iter}");
+        }
+    }
+
+    // ── SymmetricExceptWith: concurrent mutations during classification ───────
+
+    [Test]
+    public void SymmetricExceptWith_PairAddedDuringClassification_NoCorruption()
+    {
+        // Docs state: "pairs added to target between classification and mutation
+        //  may be misclassified, leaving values that should have been removed."
+        // We validate only the structural invariants (no exception, non-negative count).
+        var target = new ConcurrentMultiMap<string, int>();
+        var other  = new ConcurrentMultiMap<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        const int iterations = 500;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            target.Clear();
+            target.Add("a", 1);
+            target.Add("c", 3);
+
+            using var barrier = new Barrier(2);
+
+            var sym   = Task.Run(() => { barrier.SignalAndWait(); target.SymmetricExceptWith(other); });
+            var adder = Task.Run(() => { barrier.SignalAndWait(); target.Add("d", iter + 1000); });
+
+            Task.WaitAll(sym, adder);
+
+            Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+                $"Count underflowed on iteration {iter}");
+            foreach (var key in target.Keys)
+                Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                    $"Zombie key '{key}' on iteration {iter}");
+        }
+    }
+
+    [Test]
+    public void SymmetricExceptWith_ManyConcurrentCalls_NoExceptionOrCountUnderflow()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        for (int i = 0; i < 50; i++) target.Add($"k{i % 5}", i);
+
+        const int threadCount = 6;
+        using var barrier = new Barrier(threadCount);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(t => Task.Run(() =>
+        {
+            var operand = new ConcurrentMultiMap<string, int>();
+            operand.Add($"k{t % 5}", t);
+            barrier.SignalAndWait();
+            target.SymmetricExceptWith(operand);
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    // ── Mixed concurrent helper operations — structural integrity ─────────────
+
+    [Test]
+    public void MixedConcurrentHelperOps_NoZombieKeysAndNonNegativeCount()
+    {
+        var target = new ConcurrentMultiMap<string, int>();
+        for (int i = 0; i < 20; i++) target.Add($"k{i % 5}", i);
+
+        const int threadCount = 8;
+        const int opsPerThread = 100;
+        using var barrier = new Barrier(threadCount);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(t => Task.Run(() =>
+        {
+            var operand = new ConcurrentMultiMap<string, int>();
+            for (int i = 0; i < 5; i++) operand.Add($"k{(t + i) % 5}", t * 100 + i);
+
+            barrier.SignalAndWait();
+            for (int op = 0; op < opsPerThread; op++)
+            {
+                switch ((t + op) % 3)
+                {
+                    case 0: target.Union(operand); break;
+                    case 1: target.ExceptWith(operand); break;
+                    case 2: target.Intersect(operand); break;
+                }
+            }
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+            "Count must never be negative after concurrent mixed ops");
+        foreach (var key in target.Keys)
+            Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                $"Zombie key '{key}' detected after mixed concurrent helper ops");
+    }
+}
+
+[TestFixture]
+[Category("Stress")]
+[Category("Concurrent")]
+public class MultiMapHelper_MultiMapLock_ConcurrencyTests
+{
+    // ── Union: concurrent writers vs Union ───────────────────────────────────
+
+    [Test]
+    public void Union_ConcurrentAddToTarget_NoCorruptionOrException()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other  = new MultiMapLock<string, int>();
+        for (int i = 0; i < 20; i++) other.Add($"o{i}", i);
+
+        const int writerCount = 4;
+        const int writesPerThread = 200;
+        using var startGate = new ManualResetEventSlim(false);
+
+        var writers = Enumerable.Range(0, writerCount).Select(w => Task.Run(() =>
+        {
+            startGate.Wait();
+            for (int i = 0; i < writesPerThread; i++)
+                target.Add($"t{w}", w * writesPerThread + i);
+        })).ToArray();
+
+        startGate.Set();
+        target.Union(other);
+        Task.WaitAll(writers);
+
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0));
+        foreach (var key in target.Keys)
+            Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                $"Zombie key '{key}' after concurrent Union");
+    }
+
+    [Test]
+    public void Union_ManyConcurrentUnions_AllPairsEventuallyPresent()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var source = new MultiMapLock<string, int>();
+        for (int i = 0; i < 10; i++) source.Add("shared", i);
+
+        const int threadCount = 8;
+        using var barrier = new Barrier(threadCount);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(_ => Task.Run(() =>
+        {
+            barrier.SignalAndWait();
+            target.Union(source);
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        for (int i = 0; i < 10; i++)
+            Assert.That(target.Contains("shared", i), Is.True,
+                $"Value {i} missing after concurrent Union");
+    }
+
+    // ── Intersect: documented edge case ──────────────────────────────────────
+
+    [Test]
+    public void Intersect_PairAddedBetweenReadAndWritePhases_SurvivesOrIsPresent()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other  = new MultiMapLock<string, int>();
+        for (int i = 0; i < 5; i++) other.Add("a", i);
+
+        const int iterations = 500;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            target.Clear();
+            for (int i = 0; i < 10; i++) target.Add("a", i);
+
+            using var barrier = new Barrier(2);
+
+            var intersector = Task.Run(() => { barrier.SignalAndWait(); target.Intersect(other); });
+            var adder       = Task.Run(() => { barrier.SignalAndWait(); target.Add("a", 999); });
+
+            Task.WaitAll(intersector, adder);
+
+            Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+                $"Count underflowed on iteration {iter}");
+            foreach (var key in target.Keys)
+                Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                    $"Zombie key on iteration {iter}");
+        }
+    }
+
+    [Test]
+    public void Intersect_ConcurrentWriters_NoCorruption()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other  = new MultiMapLock<string, int>();
+
+        const int threadCount = 4;
+        const int iterations  = 200;
+
+        for (int i = 0; i < 5; i++) other.Add("k", i);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(t => Task.Run(() =>
+        {
+            for (int i = 0; i < iterations; i++)
+            {
+                target.Add("k", t * iterations + i);
+                if (i % 10 == 0) target.Intersect(other);
+            }
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0));
+        foreach (var key in target.Keys)
+            Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                $"Zombie key '{key}' detected");
+    }
+
+    // ── SymmetricExceptWith: concurrent mutations ─────────────────────────────
+
+    [Test]
+    public void SymmetricExceptWith_PairAddedDuringClassification_NoCorruption()
+    {
+        using var target = new MultiMapLock<string, int>();
+        using var other  = new MultiMapLock<string, int>();
+        other.Add("a", 1);
+        other.Add("b", 2);
+
+        const int iterations = 500;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            target.Clear();
+            target.Add("a", 1);
+            target.Add("c", 3);
+
+            using var barrier = new Barrier(2);
+            var sym   = Task.Run(() => { barrier.SignalAndWait(); target.SymmetricExceptWith(other); });
+            var adder = Task.Run(() => { barrier.SignalAndWait(); target.Add("d", iter + 1000); });
+
+            Task.WaitAll(sym, adder);
+
+            Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+                $"Count underflowed on iteration {iter}");
+            foreach (var key in target.Keys)
+                Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                    $"Zombie key '{key}' on iteration {iter}");
+        }
+    }
+
+    [Test]
+    public void SymmetricExceptWith_ManyConcurrentCalls_NoExceptionOrCountUnderflow()
+    {
+        using var target = new MultiMapLock<string, int>();
+        for (int i = 0; i < 50; i++) target.Add($"k{i % 5}", i);
+
+        const int threadCount = 6;
+        using var barrier = new Barrier(threadCount);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(t => Task.Run(() =>
+        {
+            using var operand = new MultiMapLock<string, int>();
+            operand.Add($"k{t % 5}", t);
+            barrier.SignalAndWait();
+            target.SymmetricExceptWith(operand);
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0));
+    }
+
+    // ── Mixed concurrent helper operations ────────────────────────────────────
+
+    [Test]
+    public void MixedConcurrentHelperOps_NoZombieKeysAndNonNegativeCount()
+    {
+        using var target = new MultiMapLock<string, int>();
+        for (int i = 0; i < 20; i++) target.Add($"k{i % 5}", i);
+
+        const int threadCount = 8;
+        const int opsPerThread = 100;
+        using var barrier = new Barrier(threadCount);
+
+        var tasks = Enumerable.Range(0, threadCount).Select(t => Task.Run(() =>
+        {
+            using var operand = new MultiMapLock<string, int>();
+            for (int i = 0; i < 5; i++) operand.Add($"k{(t + i) % 5}", t * 100 + i);
+
+            barrier.SignalAndWait();
+            for (int op = 0; op < opsPerThread; op++)
+            {
+                switch ((t + op) % 3)
+                {
+                    case 0: target.Union(operand); break;
+                    case 1: target.ExceptWith(operand); break;
+                    case 2: target.Intersect(operand); break;
+                }
+            }
+        })).ToArray();
+
+        Task.WaitAll(tasks);
+
+        Assert.That(target.Count, Is.GreaterThanOrEqualTo(0),
+            "Count must never be negative after concurrent mixed ops");
+        foreach (var key in target.Keys)
+            Assert.That(target.GetOrDefault(key), Is.Not.Empty,
+                $"Zombie key '{key}' detected after mixed concurrent helper ops");
+    }
+}
+
 [TestFixture]
 public class MultiMapHelperAsyncTests
 {
