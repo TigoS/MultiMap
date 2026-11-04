@@ -6,10 +6,10 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-7026%2F7026%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.11.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098.3%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-7107%2F7107%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -23,7 +23,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Testing
 
-The library includes **7,026 unit-test executions** written with **NUnit 4**, running on **net10.0**, **net9.0**, and **net8.0** (**2,342 per framework**)
+The library includes **7,107 unit-test executions** written with **NUnit 5**, running on **net10.0**, **net9.0**, and **net8.0** (**2,369 per framework**)
 
 ```shell
 dotnet test
@@ -58,9 +58,9 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **98.4%** (3,333 / 3,387) |
-| **Branch coverage** | **96.1%** (1,012 / 1,052) |
-| **Method coverage** | **98%** (309 / 315) |
+| **Line coverage** | **98.5%** (3,405 / 3,457) |
+| **Branch coverage** | **96.6%** (488 / 490) |
+| **Method coverage** | **98.3%** (338 / 344) |
 
 #### Per-Class Breakdown
 
@@ -80,7 +80,7 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Polyfills` | 1 / 1 | **100%** (3/3) | **100%** | ✅ Full |
 
 > **Notes:**
-> - Coverage from fresh Coverlet run for **net10.0** (2026-08-28). All **2,308 tests** (6,924 total across 3 TFMs) passed with **zero failures**.
+> - Coverage from fresh Coverlet run for **net9.0** (2026-11-04). All **2,369 tests** (7,107 total across 3 TFMs) passed with **zero failures**.
 > - `SimpleMultiMap<TKey, TValue>` ⚠️ is deprecated (`[Obsolete]` since v3.0.0). Tests are retained for regression coverage.
 > - `MultiMapList` and `MultiMapSet` have 2 uncovered methods each — protected abstract `CreateCollection()` factory overloads not reachable via the public API.
 > - `Guard` has 1 uncovered line — a dead-code branch in the three-argument overload not reachable in practice.
