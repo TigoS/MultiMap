@@ -18,6 +18,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [3.0.1](#301)
   - [3.0.0](#300)
   - [2.1.1](#211)
   - [2.1.0](#210)
@@ -37,6 +38,18 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 3.0.1
+
+**Performance Improvements**
+
+- `MultiMapHelper.Intersect` — the three intermediate collections (`keysToRemove`, `otherLookup`, `removeByKey`) are now pre-sized at construction time using `target.KeyCount` and `other.KeyCount` respectively. This avoids incremental rehashing for multimaps with many keys, reducing allocation pressure and improving throughput on large inputs. No behavioral change.
+- `MultiMapBase<TKey, TValue, TCollection>.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — replaced the per-item delegation to `Add()` (one `TryGetValue` + potential `CreateCollection` per item) with a batching cursor approach. The method now performs at most one `TryGetValue` and one `CreateCollection` per **unique key**, regardless of how many values that key carries in the input sequence. For sorted or key-grouped inputs the improvement is proportional to the number of repeated keys; for interleaved inputs correctness is maintained with the same per-key-switch cost. `MultiMapSet`, `MultiMapList`, `MultiMapLock`, `ConcurrentMultiMap`, and `MultiMapAsync` are unaffected — they already had optimised overrides using `CollectionsMarshal.GetValueRefOrAddDefault` or explicit grouping.
+
+**Tests**
+
+- `MultiMapHelperTests` — added `Intersect_LargeDisjointMaps_ClearsTargetCompletely` and `Intersect_ManyKeysWithPartialValueOverlap_KeepsOnlyCommonPairs` to exercise the pre-sized collection paths at scale.
+- `MultiMapBaseTests` (exercised by `MultiMapSetBaseTests`, `MultiMapListBaseTests`, `SortedMultiMapBaseTests`) — added 5 new `AddRangeKvp_*` tests covering the batch-per-key implementation: repeated-key single-entry assertion, interleaved-key correctness, duplicate-pair return-value contract, many-pairs-same-new-key registration, and existing-key-followed-by-new-key count update.
 
 ### 3.0.0
 
