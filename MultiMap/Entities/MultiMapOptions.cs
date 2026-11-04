@@ -11,7 +11,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
     /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
-    public sealed record MultiMapOptions<TKey, TValue>
+    public record MultiMapOptions<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
@@ -43,7 +43,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
     /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
-    public sealed record ConcurrentMultiMapOptions<TKey, TValue>
+    public sealed record ConcurrentMultiMapOptions<TKey, TValue> : MultiMapOptions<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
     {
@@ -52,23 +52,6 @@ namespace MultiMap.Entities
         /// Zero (the default) lets <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey,TValue}"/> choose automatically.
         /// </summary>
         public int ConcurrencyLevel { get; init; }
-
-        /// <summary>
-        /// Gets or initializes the initial number of key slots. Zero means no pre-allocation.
-        /// </summary>
-        public int Capacity { get; init; }
-
-        /// <summary>
-        /// Gets or initializes the equality comparer used to compare keys, or <see langword="null"/>
-        /// to use <see cref="EqualityComparer{T}.Default"/>.
-        /// </summary>
-        public IEqualityComparer<TKey>? KeyComparer { get; init; }
-
-        /// <summary>
-        /// Gets or initializes the equality comparer used to compare values, or <see langword="null"/>
-        /// to use <see cref="EqualityComparer{T}.Default"/>.
-        /// </summary>
-        public IEqualityComparer<TValue>? ValueComparer { get; init; }
     }
 
     /// <summary>
