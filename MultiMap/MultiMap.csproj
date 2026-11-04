@@ -31,7 +31,7 @@
 - API Additions
 - Refactorings and Optimizations
 
-See full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
+See the full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
