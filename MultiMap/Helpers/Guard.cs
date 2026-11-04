@@ -9,19 +9,7 @@ namespace MultiMap.Helpers
     internal static class Guard
     {
         /// <summary>
-        /// Validates that a reference type argument is not null.
-        /// </summary>
-        /// <typeparam name="T">The reference type to validate.</typeparam>
-        /// <param name="value">The argument to validate.</param>
-        /// <param name="paramName">The name of the parameter being validated.</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void NotNull<T>([NotNull] T? value, string paramName)
-        {
-            ArgumentNullException.ThrowIfNull(value, paramName);
-        }
-
-        /// <summary>
-        /// Validates that a value is not null.
+        /// Validates that a value is not null. If the value is null, throws an <see cref="ArgumentNullException"/> with a custom message.
         /// </summary>
         /// <typeparam name="T">The type of the value to validate.</typeparam>
         /// <param name="value">The value to validate.</param>
@@ -29,7 +17,7 @@ namespace MultiMap.Helpers
         /// <param name="message">The error message to use if the value is null.</param>
         /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void NotNull<T>([NotNull] T? value, string paramName, string message)
+        internal static void NotNullMessage<T>([NotNull] T? value, string paramName, string message)
         {
             if (value is null)
             {
