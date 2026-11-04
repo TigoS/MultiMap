@@ -101,6 +101,20 @@ namespace MultiMap.Entities
             _valueComparer = valueComparer;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class using a
+        /// <see cref="MultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>This constructor is an additive convenience overload. All existing individual constructors remain available.</remarks>
+        /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        public MultiMapSet(MultiMapOptions<TKey, TValue> options)
+            : this(Guard.NotNullReturn(options, nameof(options)).Capacity,
+                   options.KeyComparer,
+                   options.ValueComparer)
+        {
+        }
+
         /// <inheritdoc/>
         protected override HashSet<TValue> CreateCollection() => new(_valueComparer);
 

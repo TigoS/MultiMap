@@ -60,6 +60,23 @@ namespace MultiMap.Entities
         {
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MultiMapList{TKey, TValue}"/> class using a
+        /// <see cref="MultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is an additive convenience overload. All existing individual constructors remain available.
+        /// <see cref="MultiMapOptions{TKey,TValue}.ValueComparer"/> is not used because <see cref="MultiMapList{TKey,TValue}"/>
+        /// allows duplicate values and does not perform equality comparisons on values.
+        /// </remarks>
+        /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        public MultiMapList(MultiMapOptions<TKey, TValue> options)
+            : this(Guard.NotNullReturn(options, nameof(options)).Capacity,
+                   options.KeyComparer)
+        {
+        }
+
         /// <inheritdoc/>
         protected override List<TValue> CreateCollection() => [];
 
