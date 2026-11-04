@@ -120,7 +120,7 @@ MultiMap/
 │   │   ├── MultiMapAsync.Core.cs             # SemaphoreSlim-based async (private helpers, partial)
 │   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap impl [Obsolete — will be removed in v4.0.0; migrate to MultiMapSet]
 │   └── Helpers/
-│       ├── Guard.cs                          # Internal argument-validation helpers; [NotNull] applied unconditionally across all TFMs
+│       ├── Guard.cs                          # Internal argument-validation helpers: `NotNullMessage` (custom-message null check), `NotNullReturn` (null-check + return for ctor chaining); simple null checks use inline `ArgumentNullException.ThrowIfNull`
 │       ├── Polyfills.cs                      # Single home for all version-gated conditionals (HashSet<T>.AsReadOnly on .NET 10+)
 │       ├── MultiMapHelper.cs                 # Partial — class doc + internal hash utilities (Scramble, ComputeUnorderedHash)
 │       ├── MultiMapHelper.SetOperations.cs   # Partial — Union, Intersect, ExceptWith, SymmetricExceptWith (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
