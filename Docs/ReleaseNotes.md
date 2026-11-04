@@ -56,6 +56,14 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - `MultiMapHelper_ConcurrentMultiMap_ConcurrencyTests` — new fixture (7 tests) with truly concurrent stress tests for `ConcurrentMultiMap` set operations. Covers `Union` with concurrent writers racing the helper call, idempotent concurrent `Union` from multiple threads, `Intersect` with a pair added between the read and write phases (validating the documented non-atomic survival invariant), `Intersect` with concurrent removals, `SymmetricExceptWith` with a pair injected during the classification phase, concurrent `SymmetricExceptWith` from multiple threads, and a mixed Union/ExceptWith/Intersect concurrency test asserting no zombie keys and non-negative count.
 - `MultiMapHelper_MultiMapLock_ConcurrencyTests` — new fixture (7 tests) with the same concurrency coverage for `MultiMapLock`: concurrent-writer Union, idempotent concurrent Union, mid-Intersect pair injection (non-atomic edge case), multi-writer Intersect, mid-SymmetricExceptWith pair injection, concurrent SymmetricExceptWith, and mixed concurrent helper ops.
 
+**Refactoring**
+
+- `MultiMapHelper` split into three partial-class files by concern. No public API change — all extension methods, signatures, and XML docs are identical. The split improves navigability:
+  - `MultiMapHelper.cs` — class-level XML doc and internal utilities (`Scramble`, `ComputeUnorderedHash`) used by entity `GetHashCode` implementations.
+  - `MultiMapHelper.SetOperations.cs` — mutating set operations (`Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) for `IMultiMap<TKey,TValue>`, `ISimpleMultiMap<TKey,TValue>`, and `IMultiMapAsync<TKey,TValue>`.
+  - `MultiMapHelper.QueryExtensions.cs` — read-only set algebra queries (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) for all three families.
+- `SimpleMultiMap<TKey, TValue>` `[Obsolete]` attribute updated: `error: false` is now explicit (preserves warning-only behaviour) and the message names **v4.0.0** as the targeted removal version.
+
 ### 3.0.0
 
 **Deprecations**
