@@ -110,10 +110,10 @@ namespace MultiMap.Entities
         /// <remarks>
         /// This constructor is an additive convenience overload. All existing individual constructors remain available.
         /// When both <see cref="ConcurrentMultiMapOptions{TKey,TValue}.ConcurrencyLevel"/> and
-        /// <see cref="ConcurrentMultiMapOptions{TKey,TValue}.Capacity"/> are non-zero, the underlying
+        /// <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> are non-zero, the underlying
         /// <see cref="ConcurrentDictionary{TKey,TValue}"/> is created with the three-argument overload that
         /// accepts <c>concurrencyLevel</c>, <c>capacity</c>, and <c>keyComparer</c>.
-        /// When only <see cref="ConcurrentMultiMapOptions{TKey,TValue}.Capacity"/> is non-zero, the two-argument
+        /// When only <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> is non-zero, the two-argument
         /// <c>concurrencyLevel</c>+<c>capacity</c> overload is used.
         /// Otherwise the key-comparer-only overload is used.
         /// </remarks>

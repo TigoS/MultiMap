@@ -99,7 +99,6 @@ namespace MultiMap.Entities
         /// <summary>
         /// Returns an enumerator that iterates over the keys (elements) of the set.
         /// </summary>
-        /// <remarks>
         public IEnumerator<T> GetEnumerator() => _inner.Keys.GetEnumerator();
 
         /// <summary>
