@@ -195,6 +195,51 @@ public class MultiMapHelperTests
         Assert.That(_target.Contains("a", 2), Is.True);
     }
 
+    [Test]
+    public void Intersect_LargeDisjointMaps_ClearsTargetCompletely()
+    {
+        // Exercises the keysToRemove pre-sizing path: target.KeyCount keys,
+        // none present in other, so every key ends up in keysToRemove.
+        for (int i = 0; i < 100; i++)
+        {
+            _target.Add($"target-key-{i}", i);
+        }
+        for (int i = 0; i < 100; i++)
+        {
+            _other.Add($"other-key-{i}", i);
+        }
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.Zero);
+        Assert.That(_target.KeyCount, Is.Zero);
+    }
+
+    [Test]
+    public void Intersect_ManyKeysWithPartialValueOverlap_KeepsOnlyCommonPairs()
+    {
+        // Exercises otherLookup and removeByKey pre-sizing: other.KeyCount distinct keys,
+        // each with some values to keep and some to remove.
+        for (int i = 0; i < 50; i++)
+        {
+            _target.Add($"key-{i}", i);
+            _target.Add($"key-{i}", i + 1000); // extra value not in other
+        }
+        for (int i = 0; i < 50; i++)
+        {
+            _other.Add($"key-{i}", i); // only the base value
+        }
+
+        _target.Intersect(_other);
+
+        Assert.That(_target.Count, Is.EqualTo(50));
+        for (int i = 0; i < 50; i++)
+        {
+            Assert.That(_target.Contains($"key-{i}", i), Is.True);
+            Assert.That(_target.Contains($"key-{i}", i + 1000), Is.False);
+        }
+    }
+
     // ── ExceptWith ─────────────────────────────────────────
 
     [Test]
