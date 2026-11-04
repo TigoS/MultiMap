@@ -3352,16 +3352,16 @@ public class MultiMapLock_CancellationTokenTests
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Guard.NotNull — 3-parameter overload (with custom message) — null path
+// Guard.NotNullMessage — 3-parameter overload (with custom message) — null path
 // ─────────────────────────────────────────────────────────────────────────────
 
 [TestFixture]
-public class Guard_ThreeParamNotNullTests
+public class Guard_NotNullMessageTests
 {
     [Test]
-    public void NotNull_ThreeParam_NullValue_ThrowsWithCustomMessage()
+    public void NotNullMessage_NullValue_ThrowsWithCustomMessage()
     {
-        // AddRange(key, values) calls Guard.NotNull per element with a custom message.
+        // AddRange(key, values) calls Guard.NotNullMessage with a custom error message.
         var map = new MultiMapSet<string, string>();
 
         var ex = Assert.Throws<ArgumentNullException>(
@@ -3371,7 +3371,7 @@ public class Guard_ThreeParamNotNullTests
     }
 
     [Test]
-    public void NotNull_ThreeParam_NonNullValue_DoesNotThrow()
+    public void NotNullMessage_NonNullValue_DoesNotThrow()
     {
         var map = new MultiMapSet<string, string>();
 
