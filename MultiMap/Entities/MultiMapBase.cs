@@ -95,14 +95,14 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        /// <remarks>Materialises the sequence upfront: Count is short-circuited on an empty
+        /// input without allocating a new inner collection, and need to enumerate only
+        /// once even if the caller passes a non-replayable IEnumerable{T}.</remarks>
         public virtual int AddRange(TKey key, IEnumerable<TValue> values)
         {
             ArgumentNullException.ThrowIfNull(key, nameof(key));
             ArgumentNullException.ThrowIfNull(values, nameof(values));
 
-            // Materialise the sequence upfront: we need Count to short-circuit on an empty
-            // input without allocating a new inner collection, and we want to enumerate only
-            // once even if the caller passes a non-replayable IEnumerable<T>.
             var materialised = values as ICollection<TValue> ?? [.. values];
             if (materialised.Count == 0)
             {
@@ -134,18 +134,21 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        /// <remarks>
+        /// <para>The order in which the elements are added is preserved.</para>
+        /// <para>Processes items grouped by key so each unique key pays at most one TryGetValue
+        /// and one CreateCollection call, regardless of how many values it carries.
+        /// It does not materialise a separate grouping structure: instead it maintains a
+        /// small "current key" cursor and flushes into the dictionary when the key changes.
+        /// This is O(N) in time and O(1) extra space for sequences already sorted by key,
+        /// and still correct (though not minimal in lookups) for interleaved keys.</para>
+        /// </remarks>
         public virtual int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             int added = 0;
 
-            // Process items grouped by key so each unique key pays at most one TryGetValue
-            // and one CreateCollection call, regardless of how many values it carries.
-            // We do not materialise a separate grouping structure: instead we maintain a
-            // small "current key" cursor and flush into the dictionary when the key changes.
-            // This is O(N) in time and O(1) extra space for sequences already sorted by key,
-            // and still correct (though not minimal in lookups) for interleaved keys.
             TKey? currentKey = default;
             TCollection? currentCollection = default;
             bool currentExists = false;
