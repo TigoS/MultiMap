@@ -18,7 +18,8 @@ namespace MultiMap.Entities
     /// <typeparam name="TKey">The type of keys in the map.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
     [DebuggerDisplay("Keys={_dictionary.Count}, Values={Count}")]
-    [Obsolete("SimpleMultiMap<TKey, TValue> is deprecated. Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.")]
+    [Obsolete("SimpleMultiMap<TKey, TValue> is deprecated and will be removed in v4.0.0. " +
+              "Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.", error: false)]
     public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
         where TKey : notnull
         where TValue : notnull
