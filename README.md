@@ -108,7 +108,7 @@ MultiMap/
 │   │   ├── MultiMapBase.cs                   # Abstract dictionary-backed base for MultiMapList/Set/Sorted/Concurrent
 │   │   ├── MultiMapBase.ValuesCollection.cs  # Nested ValuesCollection enumerator (partial)
 │   │   ├── MultiMapBase.ValuesEnumerator.cs  # Nested ValuesEnumerator struct (partial)
-│   │   ├── MultiMapOptions.cs                # Options records: MultiMapOptions, ConcurrentMultiMapOptions, SortedMultiMapOptions
+│   │   ├── MultiMapOptions.cs                # Options records: MultiMapOptions (base), ConcurrentMultiMapOptions (extends MultiMapOptions), SortedMultiMapOptions
 │   │   ├── ConcurrentMultiMapBase.cs         # Intermediate abstract base with Interlocked/Volatile count helpers for ConcurrentMultiMap
 │   │   ├── MultiMapList.cs                   # List-based (allows duplicates)
 │   │   ├── MultiMapSet.cs                    # HashSet-based (unique values)
@@ -278,7 +278,7 @@ Extends `ConcurrentMultiMapBase<TKey, TValue, ConcurrentSet<TValue>>` (which in 
 
 > **Note:** `ConcurrentSet<T>.Count` (used internally per key) delegates to `ConcurrentDictionary.Count`, which acquires all internal segment locks. The value is effectively O(1) but **may be stale** by the time it is read in concurrent scenarios. Use `IsEmpty` when testing for emptiness.
 
-**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(ConcurrentMultiMapOptions<TKey, TValue> options)`
+**Constructors:** `()`, `(IEqualityComparer<TKey>? keyComparer)`, `(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TValue>? valueComparer)`, `(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`, `(ConcurrentMultiMapOptions<TKey, TValue> options)` — `ConcurrentMultiMapOptions` inherits `Capacity`, `KeyComparer`, `ValueComparer` from `MultiMapOptions<TKey,TValue>` and adds `ConcurrencyLevel`.
 
 ### `MultiMapLock<TKey, TValue>` — Reader-Writer Locked
 
