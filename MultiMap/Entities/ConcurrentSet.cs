@@ -12,7 +12,7 @@ namespace MultiMap.Entities
     /// <remarks>
     /// Initializes a new instance of <see cref="ConcurrentSet{T}"/> with an optional value comparer.
     /// </remarks>
-    public sealed class ConcurrentSet<T>(IEqualityComparer<T>? comparer = null) : ICollection<T>
+    public sealed class ConcurrentSet<T>(IEqualityComparer<T>? comparer = null) : ICollection<T>, IReadOnlyCollection<T>
         where T : notnull
     {
         private readonly ConcurrentDictionary<T, byte> _inner = new(comparer);
@@ -66,9 +66,7 @@ namespace MultiMap.Entities
         /// This method follows <see cref="ICollection{T}.CopyTo"/> semantics and throws if the destination array is not large enough.
         /// </summary>
         /// <remarks>
-        /// <see cref="ConcurrentDictionary{TKey,TValue}.Keys"/> materialises a point-in-time snapshot each time the property is
-        /// accessed. The snapshot is taken once here and reused for the entire copy, so the loop body never
-        /// triggers a second allocation.
+        /// <see cref="ConcurrentDictionary{TKey,TValue}.Keys"/> materialises a point-in-time snapshot each time the property is accessed. The snapshot is taken once here and reused for the entire copy, so the loop body never triggers a second allocation.
         /// </remarks>
         public void CopyTo(T[] array, int arrayIndex)
         {
@@ -102,10 +100,7 @@ namespace MultiMap.Entities
         /// Returns an enumerator that iterates over the keys (elements) of the set.
         /// </summary>
         /// <remarks>
-        /// Enumerates <see cref="ConcurrentDictionary{TKey,TValue}"/> directly (not via <c>.Keys</c>) to avoid
-        /// materialising an extra snapshot <see cref="ICollection{T}"/> on every call.
-        /// </remarks>
-        public IEnumerator<T> GetEnumerator() => _inner.Select(kv => kv.Key).GetEnumerator();
+        public IEnumerator<T> GetEnumerator() => _inner.Keys.GetEnumerator();
 
         /// <summary>
         /// Returns an enumerator that iterates over the keys (elements) of the set.
