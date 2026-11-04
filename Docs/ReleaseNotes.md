@@ -6,10 +6,10 @@
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
-[![NUnit](https://img.shields.io/badge/tests-NUnit%204.6.1-green)](https://nunit.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.6.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-7026%2F7026%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.11.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098.3%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-7107%2F7107%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -41,6 +41,13 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ### 3.0.1
 
+**Package Updates**
+
+- `NUnit` updated from **4.6.1** to **5.0.0**. In NUnit 5, `Assert.ThrowsAsync<T>` returns `Task<T?>` instead of `T?` directly — all call sites must be `await`ed. Updated 37 occurrences across `MultiMapAsync_UnitTests.cs`, `MultiMapBoundaryConditions_UnitTests.cs`, and `MultiMapHelper_UnitTests.cs`: converted `void` test methods to `async Task` and added `await` to every `Assert.ThrowsAsync` call.
+- `NUnit3TestAdapter` updated from **4.6.0** to **6.3.1**.
+- `Microsoft.NET.Test.Sdk` updated from **18.6.0** to **18.11.0**.
+- `coverlet.collector` updated from **6.0.4** to **10.1.0**.
+
 **Performance Improvements**
 
 - `MultiMapHelper.Intersect` — the three intermediate collections (`keysToRemove`, `otherLookup`, `removeByKey`) are now pre-sized at construction time using `target.KeyCount` and `other.KeyCount` respectively. This avoids incremental rehashing for multimaps with many keys, reducing allocation pressure and improving throughput on large inputs. No behavioral change.
@@ -56,6 +63,14 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - `MultiMapHelper_ConcurrentMultiMap_ConcurrencyTests` — new fixture (7 tests) with truly concurrent stress tests for `ConcurrentMultiMap` set operations. Covers `Union` with concurrent writers racing the helper call, idempotent concurrent `Union` from multiple threads, `Intersect` with a pair added between the read and write phases (validating the documented non-atomic survival invariant), `Intersect` with concurrent removals, `SymmetricExceptWith` with a pair injected during the classification phase, concurrent `SymmetricExceptWith` from multiple threads, and a mixed Union/ExceptWith/Intersect concurrency test asserting no zombie keys and non-negative count.
 - `MultiMapHelper_MultiMapLock_ConcurrencyTests` — new fixture (7 tests) with the same concurrency coverage for `MultiMapLock`: concurrent-writer Union, idempotent concurrent Union, mid-Intersect pair injection (non-atomic edge case), multi-writer Intersect, mid-SymmetricExceptWith pair injection, concurrent SymmetricExceptWith, and mixed concurrent helper ops.
 
+- Added `MultiMapOptions_UnitTests.cs` — 27 tests covering:
+  - `MultiMapOptions<TKey,TValue>`, `ConcurrentMultiMapOptions<TKey,TValue>`, and `SortedMultiMapOptions<TKey,TValue>` default-value invariants.
+  - Options constructor for each of the 6 concrete types: null-options guard (`ArgumentNullException`), instance created with default options, key comparer respected, value comparer / concurrency level / capacity applied.
+  - `SortedMultiMap` options constructor propagates the `IEqualityComparer` validation (`ArgumentException` on bare `IComparer`).
+  - `ConcurrentMultiMap` options constructor selects the correct `ConcurrentDictionary` overload (concurrency level + capacity, capacity-only, key-comparer-only).
+- **Total: 7,107 tests** (2,369 per framework o
+- **Coverage: 98.5% line, 96.6% branch, 98.3% method** (net9.0 Coverlet run, 2026-11-04).
+
 **Refactoring**
 
 - `MultiMapHelper` split into three partial-class files by concern. No public API change — all extension methods, signatures, and XML docs are identical. The split improves navigability:
@@ -63,6 +78,20 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - `MultiMapHelper.SetOperations.cs` — mutating set operations (`Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) for `IMultiMap<TKey,TValue>`, `ISimpleMultiMap<TKey,TValue>`, and `IMultiMapAsync<TKey,TValue>`.
   - `MultiMapHelper.QueryExtensions.cs` — read-only set algebra queries (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) for all three families.
 - `SimpleMultiMap<TKey, TValue>` `[Obsolete]` attribute updated: `error: false` is now explicit (preserves warning-only behaviour) and the message names **v4.0.0** as the targeted removal version.
+
+**API Additions**
+
+- `MultiMapOptions<TKey, TValue>` — new sealed record (`MultiMap.Entities`) with init-only properties `Capacity` (`int`), `KeyComparer` (`IEqualityComparer<TKey>?`), `ValueComparer` (`IEqualityComparer<TValue>?`). Additive options constructor added to `MultiMapSet`, `MultiMapList`, `MultiMapLock`, and `MultiMapAsync`.
+- `ConcurrentMultiMapOptions<TKey, TValue>` — new sealed record with `ConcurrencyLevel`, `Capacity`, `KeyComparer`, and `ValueComparer`. Additive options constructor added to `ConcurrentMultiMap`; when both `ConcurrencyLevel` and `Capacity` are non-zero the three-argument `ConcurrentDictionary` overload is used, when only `Capacity` is non-zero the two-argument overload is used, otherwise the key-comparer overload is used.
+- `SortedMultiMapOptions<TKey, TValue>` — new sealed record with `KeyComparer` (`IComparer<TKey>?`) and `ValueComparer` (`IComparer<TValue>?`). Additive options constructor added to `SortedMultiMap`; the existing `IEqualityComparer<TValue>` validation is applied.
+- `Guard.NotNullReturn<T>` — new internal helper that validates and returns the value in a single call, enabling null-guarding in constructor-chaining expressions (`: this(...)`).
+- `ConcurrentMultiMapBase<TKey, TValue, TCollection>` — new `public abstract` intermediate class between `MultiMapBase` and `ConcurrentMultiMap`. Hosts the four Interlocked/Volatile count helpers (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) that were previously on `MultiMapBase`. `ConcurrentMultiMap` now inherits from `ConcurrentMultiMapBase` instead of `MultiMapBase` directly.
+
+**Refactoring**
+
+- `MultiMapBase<TKey, TValue, TCollection>` — changed `private int _count` to `private protected int _count` so that `ConcurrentMultiMapBase` can use `ref _count` with `Interlocked`/`Volatile`. The four atomic helpers (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) have been **removed** from `MultiMapBase` and moved to `ConcurrentMultiMapBase`. Non-concurrent subclasses (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`) continue to use the non-atomic helpers (`IncrementCount`, `DecrementCount`, `ResetCount`) on `MultiMapBase`.
+
+- `MultiMapLock<TKey, TValue>` — added `CancellationToken` overloads for every write method: `Add`, `AddRange(TKey, IEnumerable<TValue>)`, `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, and `SymmetricExceptWith` (12 new overloads).
 
 ### 3.0.0
 
