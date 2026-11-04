@@ -24,9 +24,7 @@ namespace MultiMap.Entities
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
-                ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
-                : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = new(capacity, keyComparer);
         private readonly ReaderWriterLockSlim _lock = new();
         private readonly IEqualityComparer<TValue>? _valueComparer = valueComparer;
         private int _count;

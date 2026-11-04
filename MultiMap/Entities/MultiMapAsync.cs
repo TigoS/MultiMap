@@ -61,9 +61,7 @@ namespace MultiMap.Entities
         where TKey : notnull
         where TValue : notnull
     {
-        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = capacity > 0
-                ? new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer)
-                : new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = new(capacity, keyComparer);
 
         /// <summary>Exclusive write lock – held by the single active writer.</summary>
         private readonly SemaphoreSlim _writeLock = new(1, 1);
