@@ -55,7 +55,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - `ConcurrentSet<T>.CopyTo` — `ConcurrentDictionary<TKey, TValue>.Keys` is a property that materialises a new snapshot `ICollection<T>` each time it is accessed. The previous implementation accessed `_inner.Keys` inside the loop body, triggering one allocation per loop iteration entry. The snapshot is now taken **once** before the loop (`ICollection<T> snapshot = _inner.Keys`) and the loop iterates over the local variable, reducing snapshot allocations from O(N) to O(1).
 - `ConcurrentSet<T>.GetEnumerator()` — reverted to `_inner.Keys.GetEnumerator()`. An earlier iteration used a LINQ `Select(kv => kv.Key)` projection to avoid the `ICollection<T>` snapshot allocation produced by accessing `_inner.Keys`. In practice the LINQ path allocates a `SelectIterator` object and a cached delegate wrapper on every call, which trades one allocation type for another without a measurable net gain. `_inner.Keys.GetEnumerator()` is simpler, allocation-equivalent for typical usage, and consistent with the existing `CopyTo` implementation.
 
-**Tests**
+**Unit Test Enhancements**
 
 - `MultiMapHelperTests` — added `Intersect_LargeDisjointMaps_ClearsTargetCompletely` and `Intersect_ManyKeysWithPartialValueOverlap_KeepsOnlyCommonPairs` to exercise the pre-sized collection paths at scale.
 - `MultiMapBaseTests` (exercised by `MultiMapSetBaseTests`, `MultiMapListBaseTests`, `SortedMultiMapBaseTests`) — added 5 new `AddRangeKvp_*` tests covering the batch-per-key implementation: repeated-key single-entry assertion, interleaved-key correctness, duplicate-pair return-value contract, many-pairs-same-new-key registration, and existing-key-followed-by-new-key count update.
@@ -68,16 +68,9 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - Options constructor for each of the 6 concrete types: null-options guard (`ArgumentNullException`), instance created with default options, key comparer respected, value comparer / concurrency level / capacity applied.
   - `SortedMultiMap` options constructor propagates the `IEqualityComparer` validation (`ArgumentException` on bare `IComparer`).
   - `ConcurrentMultiMap` options constructor selects the correct `ConcurrentDictionary` overload (concurrency level + capacity, capacity-only, key-comparer-only).
+
 - **Total: 7,107 tests** (2,369 per framework o
 - **Coverage: 98.5% line, 96.6% branch, 98.3% method** (net9.0 Coverlet run, 2026-11-04).
-
-**Refactoring**
-
-- `MultiMapHelper` split into three partial-class files by concern. No public API change — all extension methods, signatures, and XML docs are identical. The split improves navigability:
-  - `MultiMapHelper.cs` — class-level XML doc and internal utilities (`Scramble`, `ComputeUnorderedHash`) used by entity `GetHashCode` implementations.
-  - `MultiMapHelper.SetOperations.cs` — mutating set operations (`Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) for `IMultiMap<TKey,TValue>`, `ISimpleMultiMap<TKey,TValue>`, and `IMultiMapAsync<TKey,TValue>`.
-  - `MultiMapHelper.QueryExtensions.cs` — read-only set algebra queries (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) for all three families.
-- `SimpleMultiMap<TKey, TValue>` `[Obsolete]` attribute updated: `error: false` is now explicit (preserves warning-only behaviour) and the message names **v4.0.0** as the targeted removal version.
 
 **API Additions**
 
@@ -87,12 +80,18 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - `Guard.NotNullReturn<T>` — new internal helper that validates and returns the value in a single call, enabling null-guarding in constructor-chaining expressions (`: this(...)`).
 - `ConcurrentMultiMapBase<TKey, TValue, TCollection>` — new `public abstract` intermediate class between `MultiMapBase` and `ConcurrentMultiMap`. Hosts the four Interlocked/Volatile count helpers (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) that were previously on `MultiMapBase`. `ConcurrentMultiMap` now inherits from `ConcurrentMultiMapBase` instead of `MultiMapBase` directly.
 
-**Refactoring**
+**Refactorings and Optimizations**
+
+- `MultiMapHelper` split into three partial-class files by concern. No public API change — all extension methods, signatures, and XML docs are identical. The split improves navigability:
+  - `MultiMapHelper.cs` — class-level XML doc and internal utilities (`Scramble`, `ComputeUnorderedHash`) used by entity `GetHashCode` implementations.
+  - `MultiMapHelper.SetOperations.cs` — mutating set operations (`Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`) for `IMultiMap<TKey,TValue>`, `ISimpleMultiMap<TKey,TValue>`, and `IMultiMapAsync<TKey,TValue>`.
+  - `MultiMapHelper.QueryExtensions.cs` — read-only set algebra queries (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) for all three families.
 
 - `Guard` (internal helper) — two changes:
   - `Guard.NotNull<T>(value, paramName)` (single-message, no custom text) has been **removed** and replaced at every call site with the BCL `ArgumentNullException.ThrowIfNull(value, paramName)` directly. This eliminates the indirection layer and makes the intent clearer at each use.
   - `Guard.NotNull<T>(value, paramName, message)` (three-parameter overload with a custom error message) has been **renamed** to `Guard.NotNullMessage<T>()` to distinguish it from the removed two-parameter variant and make usages unambiguous. All call sites updated.
 
+- `SimpleMultiMap<TKey, TValue>` `[Obsolete]` attribute updated: `error: false` is now explicit (preserves warning-only behaviour) and the message names **v4.0.0** as the targeted removal version.
 - `MultiMapBase<TKey, TValue, TCollection>` — changed `private int _count` to `private protected int _count`
 - `MultiMapBase<TKey, TValue, TCollection>.AddRange(TKey, IEnumerable<TValue>)` and `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — moved the implementation rationale comments from inline `//` remarks into proper XML `<remarks>` elements on each overload. The descriptions are now visible in IntelliSense and generated documentation. No behavioral change.
 - `IMultiMap<TKey, TValue>.AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` — removed the `<remarks>The order in which the elements are added is preserved.</remarks>` note from the interface definition. The remark was inaccurate for set-based implementations (`MultiMapSet`, `MultiMapLock`, `MultiMapAsync`, `ConcurrentMultiMap`) where `HashSet<T>` does not preserve insertion order. No behavioral change.
