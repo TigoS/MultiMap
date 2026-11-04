@@ -145,12 +145,53 @@ namespace MultiMap.Entities
             Guard.NotNull(items, nameof(items));
 
             int added = 0;
+
+            // Process items grouped by key so each unique key pays at most one TryGetValue
+            // and one CreateCollection call, regardless of how many values it carries.
+            // We do not materialise a separate grouping structure: instead we maintain a
+            // small "current key" cursor and flush into the dictionary when the key changes.
+            // This is O(N) in time and O(1) extra space for sequences already sorted by key,
+            // and still correct (though not minimal in lookups) for interleaved keys.
+            TKey? currentKey = default;
+            TCollection? currentCollection = default;
+            bool currentExists = false;
+            bool hasCurrent = false;
+
             foreach (var item in items)
             {
-                if (Add(item.Key, item.Value))
+                Guard.NotNull(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNull(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+                // Switch to the collection for this key only when it differs from the last one seen.
+                if (!hasCurrent || !EqualityComparer<TKey>.Default.Equals(item.Key, currentKey!))
                 {
+                    // Flush: if the previous collection was newly created, register it only if non-empty.
+                    if (hasCurrent && !currentExists && currentCollection!.Count > 0)
+                    {
+                        _dictionary[currentKey!] = currentCollection;
+                    }
+
+                    currentKey = item.Key;
+                    currentExists = _dictionary.TryGetValue(currentKey, out currentCollection!);
+                    if (!currentExists)
+                    {
+                        currentCollection = CreateCollection();
+                    }
+
+                    hasCurrent = true;
+                }
+
+                if (AddToCollection(currentCollection!, item.Value))
+                {
+                    IncrementCount();
                     added++;
                 }
+            }
+
+            // Final flush for the last key group.
+            if (hasCurrent && !currentExists && currentCollection!.Count > 0)
+            {
+                _dictionary[currentKey!] = currentCollection;
             }
 
             return added;
