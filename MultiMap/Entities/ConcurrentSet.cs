@@ -66,6 +66,11 @@ namespace MultiMap.Entities
         /// Under concurrent modification, the set size can change during enumeration.
         /// This method follows <see cref="ICollection{T}.CopyTo"/> semantics and throws if the destination array is not large enough.
         /// </summary>
+        /// <remarks>
+        /// <see cref="ConcurrentDictionary{TKey,TValue}.Keys"/> materialises a point-in-time snapshot each time the property is
+        /// accessed. The snapshot is taken once here and reused for the entire copy, so the loop body never
+        /// triggers a second allocation.
+        /// </remarks>
         public void CopyTo(T[] array, int arrayIndex)
         {
             Guard.NotNull(array, nameof(array));
@@ -75,8 +80,11 @@ namespace MultiMap.Entities
                 throw new ArgumentOutOfRangeException(nameof(arrayIndex));
             }
 
+            // Materialise the snapshot once; iterating _inner.Keys inside the loop
+            // would produce a new snapshot allocation on every access.
+            ICollection<T> snapshot = _inner.Keys;
             int index = arrayIndex;
-            foreach (var item in _inner.Keys)
+            foreach (var item in snapshot)
             {
                 if (index >= array.Length)
                 {
@@ -94,7 +102,11 @@ namespace MultiMap.Entities
         /// <summary>
         /// Returns an enumerator that iterates over the keys (elements) of the set.
         /// </summary>
-        public IEnumerator<T> GetEnumerator() => _inner.Keys.GetEnumerator();
+        /// <remarks>
+        /// Enumerates <see cref="ConcurrentDictionary{TKey,TValue}"/> directly (not via <c>.Keys</c>) to avoid
+        /// materialising an extra snapshot <see cref="ICollection{T}"/> on every call.
+        /// </remarks>
+        public IEnumerator<T> GetEnumerator() => _inner.Select(kv => kv.Key).GetEnumerator();
 
         /// <summary>
         /// Returns an enumerator that iterates over the keys (elements) of the set.
