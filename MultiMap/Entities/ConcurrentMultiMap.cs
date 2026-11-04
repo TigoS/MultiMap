@@ -18,7 +18,7 @@ namespace MultiMap.Entities
     /// </remarks>
     /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
     /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
-    public sealed class ConcurrentMultiMap<TKey, TValue> : MultiMapBase<TKey, TValue, ConcurrentSet<TValue>>
+    public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TKey, TValue, ConcurrentSet<TValue>>
         where TKey : notnull
         where TValue : notnull
     {
@@ -101,6 +101,44 @@ namespace MultiMap.Entities
         {
             _concurrentDictionary = InitializeDictionary();
             _valueComparer = valueComparer;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class using a
+        /// <see cref="ConcurrentMultiMapOptions{TKey, TValue}"/> configuration object.
+        /// </summary>
+        /// <remarks>
+        /// This constructor is an additive convenience overload. All existing individual constructors remain available.
+        /// When both <see cref="ConcurrentMultiMapOptions{TKey,TValue}.ConcurrencyLevel"/> and
+        /// <see cref="ConcurrentMultiMapOptions{TKey,TValue}.Capacity"/> are non-zero, the underlying
+        /// <see cref="ConcurrentDictionary{TKey,TValue}"/> is created with the three-argument overload that
+        /// accepts <c>concurrencyLevel</c>, <c>capacity</c>, and <c>keyComparer</c>.
+        /// When only <see cref="ConcurrentMultiMapOptions{TKey,TValue}.Capacity"/> is non-zero, the two-argument
+        /// <c>concurrencyLevel</c>+<c>capacity</c> overload is used.
+        /// Otherwise the key-comparer-only overload is used.
+        /// </remarks>
+        /// <param name="options">
+        /// The options object. Must not be <see langword="null"/>.
+        /// </param>
+        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+        public ConcurrentMultiMap(ConcurrentMultiMapOptions<TKey, TValue> options)
+            : base(BuildDictionary(options))
+        {
+            _concurrentDictionary = InitializeDictionary();
+            _valueComparer = options.ValueComparer;
+        }
+
+        private static ConcurrentDictionary<TKey, ConcurrentSet<TValue>> BuildDictionary(
+            ConcurrentMultiMapOptions<TKey, TValue> options)
+        {
+            Helpers.Guard.NotNull(options, nameof(options));
+            if (options.ConcurrencyLevel > 0 && options.Capacity > 0)
+                return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
+                    options.ConcurrencyLevel, options.Capacity, options.KeyComparer);
+            if (options.Capacity > 0)
+                return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
+                    Environment.ProcessorCount, options.Capacity, options.KeyComparer);
+            return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(options.KeyComparer);
         }
 
         /// <summary>

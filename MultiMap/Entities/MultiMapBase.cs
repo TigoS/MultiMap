@@ -36,19 +36,13 @@ namespace MultiMap.Entities
         /// <summary>Resets the value count to zero.</summary>
         protected void ResetCount() => _count = 0;
 
-        /// <summary>Atomically increments the value count by one and returns the new value.</summary>
-        protected int InterlockedIncrementCount() => Interlocked.Increment(ref _count);
-
-        /// <summary>Atomically adds <paramref name="by"/> to the value count and returns the new value.</summary>
-        protected int InterlockedAddCount(int by) => Interlocked.Add(ref _count, by);
-
-        /// <summary>Atomically sets the value count to <paramref name="value"/> and returns the original value.</summary>
-        protected int InterlockedExchangeCount(int value) => Interlocked.Exchange(ref _count, value);
-
-        /// <summary>Reads the value count with acquire semantics.</summary>
-        protected int VolatileReadCount() => Volatile.Read(ref _count);
-
-        private int _count;
+        /// <summary>
+        /// The raw value counter. Accessible to <see cref="ConcurrentMultiMapBase{TKey,TValue,TCollection}"/>
+        /// for atomic operations via <see cref="System.Threading.Interlocked"/> and
+        /// <see cref="System.Threading.Volatile"/>; non-concurrent subclasses use
+        /// <see cref="IncrementCount"/>, <see cref="DecrementCount"/>, and <see cref="ResetCount"/> instead.
+        /// </summary>
+        private protected int _count;
 
         /// <summary>
         /// Creates a new empty value collection for a key.
