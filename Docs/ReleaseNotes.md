@@ -89,7 +89,11 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Refactoring**
 
-- `MultiMapBase<TKey, TValue, TCollection>` — changed `private int _count` to `private protected int _count` so that `ConcurrentMultiMapBase` can use `ref _count` with `Interlocked`/`Volatile`. The four atomic helpers (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) have been **removed** from `MultiMapBase` and moved to `ConcurrentMultiMapBase`. Non-concurrent subclasses (`MultiMapList`, `MultiMapSet`, `SortedMultiMap`) continue to use the non-atomic helpers (`IncrementCount`, `DecrementCount`, `ResetCount`) on `MultiMapBase`.
+- `Guard` (internal helper) — two changes:
+  - `Guard.NotNull<T>(value, paramName)` (single-message, no custom text) has been **removed** and replaced at every call site with the BCL `ArgumentNullException.ThrowIfNull(value, paramName)` directly. This eliminates the indirection layer and makes the intent clearer at each use.
+  - `Guard.NotNull<T>(value, paramName, message)` (three-parameter overload with a custom error message) has been **renamed** to `Guard.NotNullMessage<T>()` to distinguish it from the removed two-parameter variant and make usages unambiguous. All call sites updated.
+
+- `MultiMapBase<TKey, TValue, TCollection>` — changed `private int _count` to `private protected int _count`
 
 - `MultiMapLock<TKey, TValue>` — added `CancellationToken` overloads for every write method: `Add`, `AddRange(TKey, IEnumerable<TValue>)`, `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)`, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, and `SymmetricExceptWith` (12 new overloads).
 
@@ -124,7 +128,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 - Consolidated all conditional-compilation polyfills into a single `Helpers/Polyfills.cs`. Previously `#if NET6_0_OR_GREATER`, `#if NETSTANDARD2_0`, and `#if NETSTANDARD2_1_OR_GREATER || NET5_0_OR_GREATER` guards were scattered across 6+ files (`Guard.cs`, `MultiMapBase.cs`, `MultiMapList.cs`, `MultiMapSet.cs`, `SimpleMultiMap.cs`, `MultiMapLock.cs`, `MultiMapAsync.Core.cs`).
 - Since all remaining targets (net8/9/10) are ≥ .NET 6, every `#if NET6_0_OR_GREATER` and `#if NETSTANDARD2_1_OR_GREATER` branch is now unconditional — the dead fallback paths have been deleted.
 - The sole remaining version-gated feature (`HashSet<T>.AsReadOnly()`, available from .NET 10) is wrapped in `Polyfills.AsReadOnlyOrSnapshot<T>()`, keeping `#if NET10_0_OR_GREATER` in exactly one place.
-- `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward. `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`).
+- `Guard.NotNull<T>` — removed the `#if NETCOREAPP3_0_OR_GREATER || NETSTANDARD2_1_OR_GREATER` preprocessor guard around the `[NotNull]` parameter attribute. `NotNullAttribute` is part of the BCL from .NET Core 3.0 / .NET Standard 2.1 onward. `[NotNull]` is now applied unconditionally across all targeted TFMs (`net10.0`, `net9.0`, `net8.0`). (Note: in v3.0.1 the two-parameter `Guard.NotNull` overload was removed in favour of inline `ArgumentNullException.ThrowIfNull`, and the three-parameter overload was renamed to `Guard.NotNullMessage`.)
 - `MultiMapBase<TKey, TValue, TCollection>` — removed the `protected ref int CountRef` property and replaced it with four dedicated protected helpers: `InterlockedIncrementCount()`, `InterlockedAddCount(int by)`, `InterlockedExchangeCount(int value)`, and `VolatileReadCount()`. Exposing a `ref` field to subclasses couples them to the base class's field layout and allows any subclass to call arbitrary `Interlocked`/`Volatile` operations on the same backing field. The new helpers encapsulate the `ref` entirely inside `MultiMapBase`, preserving the same atomic semantics while making the intent explicit at each call site. `ConcurrentMultiMap` was updated to use these helpers throughout.
 
 **API Changes**
@@ -146,7 +150,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 **Tests**
 
 - Added `MultiMapLock_CancellationTokenTests` in `MultiMapLock_UnitTests.cs` — 29 tests covering all 12 `CancellationToken` write overloads (`Add`, `AddRange` × 2, `Remove`, `RemoveRange`, `RemoveWhere`, `RemoveKey`, `Clear`, `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`). Each has a happy-path test and a contention-cancel test (write lock held by a background thread, token cancelled after 80 ms) exercising the polling loop in `EnterWriteLockCancellable`.
-- Added `Guard_ThreeParamNotNullTests` — 2 tests covering the 3-parameter `Guard.NotNull<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
+- Added `Guard_NotNullMessageTests` (previously `Guard_ThreeParamNotNullTests`) — 2 tests covering the `Guard.NotNullMessage<T>(value, paramName, message)` overload's null and non-null paths via `AddRange` with a sequence containing a `null` element.
 - Added targeted tests to `AdditionalBoundaryTests.cs` for previously uncovered branches in `ConcurrentMultiMap`, `MultiMapHelper`, `MultiMapAsync`, `MultiMapBase.ValuesEnumerator`, `MultiMapList`, `MultiMapSet`, and `SortedMultiMap`.
 - Added `NonEquatableConstraintTests` in `AdditionalBoundaryTests.cs` — five tests (`MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `MultiMapLock`, `MultiMapAsync`) that instantiate each implementation with a `NoEquatableKey` / `NoEquatableValue` class pair that overrides `Equals`/`GetHashCode` without implementing `IEquatable<T>`. These tests verify the constraint relaxation is genuine and cover all main multimap variants.
 - - `SortedMultiMap_UnitTests.cs`
