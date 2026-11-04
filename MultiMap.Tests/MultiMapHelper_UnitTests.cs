@@ -3113,7 +3113,7 @@ public class MultiMapHelperAsyncTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
             await _target.UnionAsync(_other, cts.Token));
     }
 
@@ -3123,7 +3123,7 @@ public class MultiMapHelperAsyncTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
             await _target.IntersectAsync(_other, cts.Token));
     }
 
@@ -3133,7 +3133,7 @@ public class MultiMapHelperAsyncTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
             await _target.ExceptWithAsync(_other, cts.Token));
     }
 
@@ -3143,7 +3143,7 @@ public class MultiMapHelperAsyncTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        Assert.CatchAsync<OperationCanceledException>(async () =>
+        await Assert.CatchAsync<OperationCanceledException>(async () =>
             await _target.SymmetricExceptWithAsync(_other, cts.Token));
     }
 
@@ -3730,36 +3730,36 @@ public class MultiMapHelperAsyncTests
     // ── Null-guard branch coverage ─────────────────────────
 
     [Test]
-    public void UnionAsync_NullTarget_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).UnionAsync(_other));
+    public async Task UnionAsync_NullTarget_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).UnionAsync(_other));
 
     [Test]
-    public void UnionAsync_NullOther_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.UnionAsync(null!));
+    public async Task UnionAsync_NullOther_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => _target.UnionAsync(null!));
 
     [Test]
-    public void IntersectAsync_NullTarget_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).IntersectAsync(_other));
+    public async Task IntersectAsync_NullTarget_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).IntersectAsync(_other));
 
     [Test]
-    public void IntersectAsync_NullOther_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.IntersectAsync(null!));
+    public async Task IntersectAsync_NullOther_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => _target.IntersectAsync(null!));
 
     [Test]
-    public void ExceptWithAsync_NullTarget_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).ExceptWithAsync(_other));
+    public async Task ExceptWithAsync_NullTarget_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).ExceptWithAsync(_other));
 
     [Test]
-    public void ExceptWithAsync_NullOther_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.ExceptWithAsync(null!));
+    public async Task ExceptWithAsync_NullOther_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => _target.ExceptWithAsync(null!));
 
     [Test]
-    public void SymmetricExceptWithAsync_NullTarget_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).SymmetricExceptWithAsync(_other));
+    public async Task SymmetricExceptWithAsync_NullTarget_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => ((IMultiMapAsync<string, int>)null!).SymmetricExceptWithAsync(_other));
 
     [Test]
-    public void SymmetricExceptWithAsync_NullOther_ThrowsArgumentNullException()
-        => Assert.ThrowsAsync<ArgumentNullException>(() => _target.SymmetricExceptWithAsync(null!));
+    public async Task SymmetricExceptWithAsync_NullOther_ThrowsArgumentNullException()
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => _target.SymmetricExceptWithAsync(null!));
 }
 
 [TestFixture]

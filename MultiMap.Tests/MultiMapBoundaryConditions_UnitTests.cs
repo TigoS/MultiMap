@@ -1369,7 +1369,7 @@ public class MultiMapAsync_ConcurrentHelperStressTests
 
         var exceptor = Task.Run(() => target.ExceptWithAsync(other));
 
-        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, exceptor));
+        _ = Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, exceptor));
     }
 
     [Test]
@@ -1403,7 +1403,7 @@ public class MultiMapAsync_ConcurrentHelperStressTests
             }
         });
 
-        Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, checker));
+        await Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, checker));
     }
 
     [Test]
@@ -2139,7 +2139,7 @@ public class MultiMapAsync_GeneralInterfacePathTests
         await map.AddAsync("a", 1);
         map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.AddAsync("a", 2));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.AddAsync("a", 2));
     }
 
     [Test]
@@ -2149,7 +2149,7 @@ public class MultiMapAsync_GeneralInterfacePathTests
         var map = new MultiMapAsync<string, int>();
         map.Dispose();
 
-        Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.IsSubsetOfAsync(other));
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await map.IsSubsetOfAsync(other));
     }
 
     // ── ContainsAsync false branch (key not found) ─────────────────────────────
