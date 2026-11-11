@@ -54,6 +54,41 @@ namespace MultiMap.Interfaces
         public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Asynchronously gets the values associated with the specified key, or adds <paramref name="defaultValue"/> when the key is not present.
+        /// </summary>
+        /// <param name="key">The key to retrieve or initialize.</param>
+        /// <param name="defaultValue">The value to add when <paramref name="key"/> is not present.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <returns>A read-only snapshot of values currently associated with <paramref name="key"/>.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="defaultValue"/> is <see langword="null"/>.
+        /// </exception>
+        public ValueTask<IEnumerable<TValue>> GetOrAddAsync(TKey key, TValue defaultValue, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously gets the values associated with the specified key, or lazily creates and adds a value when the key is not present.
+        /// </summary>
+        /// <param name="key">The key to retrieve or initialize.</param>
+        /// <param name="valueFactory">A lazy value factory invoked only when <paramref name="key"/> is not present.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <returns>A read-only snapshot of values currently associated with <paramref name="key"/>.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="valueFactory"/> is <see langword="null"/>.
+        /// </exception>
+        public ValueTask<IEnumerable<TValue>> GetOrAddAsync(TKey key, Lazy<TValue> valueFactory, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Asynchronously copies all key-value pairs to the specified array, starting at the specified index.
+        /// </summary>
+        /// <param name="array">The destination array.</param>
+        /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
+        /// <param name="cancellationToken">A token to cancel the asynchronous operation.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="array"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="arrayIndex"/> is less than 0 or greater than the array length.</exception>
+        /// <exception cref="ArgumentException">The destination array has insufficient space for all elements.</exception>
+        public ValueTask CopyToAsync(KeyValuePair<TKey, TValue>[] array, int arrayIndex, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Asynchronously removes a specific value from the set associated with the specified key.
         /// If the set becomes empty after removal, the key is also removed.
         /// </summary>
