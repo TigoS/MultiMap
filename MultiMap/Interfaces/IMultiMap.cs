@@ -44,6 +44,38 @@ namespace MultiMap.Interfaces
         public int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items);
 
         /// <summary>
+        /// Gets the values associated with the specified key, or adds <paramref name="defaultValue"/> when the key is not present.
+        /// </summary>
+        /// <param name="key">The key to retrieve or initialize.</param>
+        /// <param name="defaultValue">The value to add when <paramref name="key"/> is not present.</param>
+        /// <returns>A read-only snapshot of values currently associated with <paramref name="key"/>.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="defaultValue"/> is <see langword="null"/>.
+        /// </exception>
+        public IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue);
+
+        /// <summary>
+        /// Gets the values associated with the specified key, or lazily creates and adds a value when the key is not present.
+        /// </summary>
+        /// <param name="key">The key to retrieve or initialize.</param>
+        /// <param name="valueFactory">A lazy value factory used only when <paramref name="key"/> is not present.</param>
+        /// <returns>A read-only snapshot of values currently associated with <paramref name="key"/>.</returns>
+        /// <exception cref="ArgumentNullException">
+        /// Thrown when <paramref name="key"/> or <paramref name="valueFactory"/> is <see langword="null"/>.
+        /// </exception>
+        public IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory);
+
+        /// <summary>
+        /// Copies all key-value pairs to the specified array, starting at the specified index.
+        /// </summary>
+        /// <param name="array">The destination array.</param>
+        /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
+        /// <exception cref="ArgumentNullException"><paramref name="array"/> is <see langword="null"/>.</exception>
+        /// <exception cref="ArgumentOutOfRangeException"><paramref name="arrayIndex"/> is less than 0 or greater than the array length.</exception>
+        /// <exception cref="ArgumentException">The destination array has insufficient space for all elements.</exception>
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex);
+
+        /// <summary>
         /// Removes the specified key/value pairs from the collection.
         /// </summary>
         /// <remarks>If a specified key/value pair does not exist in the collection, it is ignored.
