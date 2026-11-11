@@ -613,6 +613,102 @@ namespace MultiMap.Entities
             }
         }
 
+        // ── GetOrAdd ──────────────────────────────────────────
+
+        private IEnumerable<TValue> GetOrAddCore(TKey key, TValue defaultValue)
+        {
+            if (_dictionary.TryGetValue(key, out var existing))
+            {
+                return [.. existing];
+            }
+
+            var hashset = new HashSet<TValue>(_valueComparer) { defaultValue };
+            _dictionary[key] = hashset;
+            _count++;
+
+            return [.. hashset];
+        }
+
+        private IEnumerable<TValue> GetOrAddCore(TKey key, Lazy<TValue> valueFactory)
+        {
+            if (_dictionary.TryGetValue(key, out var existing))
+            {
+                return [.. existing];
+            }
+
+            var value = valueFactory.Value;
+            ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
+
+            var hashset = new HashSet<TValue>(_valueComparer) { value };
+            _dictionary[key] = hashset;
+            _count++;
+
+            return [.. hashset];
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetOrAddSlowAsync(Task waitTask, TKey key, TValue defaultValue)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return GetOrAddCore(key, defaultValue);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        private async ValueTask<IEnumerable<TValue>> GetOrAddLazySlowAsync(Task waitTask, TKey key, Lazy<TValue> valueFactory)
+        {
+            await waitTask.ConfigureAwait(false);
+            try
+            {
+                return GetOrAddCore(key, valueFactory);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
+        }
+
+        // ── CopyTo ────────────────────────────────────────────
+
+        private void CopyToCore(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
+
+            if (array.Length - arrayIndex < _count)
+            {
+                throw new ArgumentException("The destination array has insufficient space for all elements.", nameof(array));
+            }
+
+            int index = arrayIndex;
+            foreach (var kvp in _dictionary)
+            {
+                foreach (var value in kvp.Value)
+                {
+                    array[index++] = new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                }
+            }
+        }
+
+        private async ValueTask CopyToSlowAsync(KeyValuePair<TKey, TValue>[] array, int arrayIndex, CancellationToken cancellationToken)
+        {
+            await EnterReadLockAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                CopyToCore(array, arrayIndex);
+            }
+            finally
+            {
+                ExitReadLock();
+            }
+        }
+
         // ── Set operations ────────────────────────────────────
 
         private void UnionCore(List<(TKey Key, TValue[] Values)> snapshot)

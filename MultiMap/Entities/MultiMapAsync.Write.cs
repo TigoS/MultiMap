@@ -182,6 +182,75 @@ namespace MultiMap.Entities
             return ClearSlowAsync(waitTask);
         }
 
+        /// <inheritdoc/>
+        public ValueTask<IEnumerable<TValue>> GetOrAddAsync(TKey key, TValue defaultValue, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
+
+            ThrowIfDisposed();
+
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<IEnumerable<TValue>>(GetOrAddCore(key, defaultValue));
+                }
+                finally
+                {
+                    _writeLock.Release();
+                }
+            }
+            return GetOrAddSlowAsync(waitTask, key, defaultValue);
+        }
+
+        /// <inheritdoc/>
+        public ValueTask<IEnumerable<TValue>> GetOrAddAsync(TKey key, Lazy<TValue> valueFactory, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
+
+            ThrowIfDisposed();
+
+            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            if (waitTask.IsCompletedSuccessfully)
+            {
+                try
+                {
+                    return new ValueTask<IEnumerable<TValue>>(GetOrAddCore(key, valueFactory));
+                }
+                finally
+                {
+                    _writeLock.Release();
+                }
+            }
+            return GetOrAddLazySlowAsync(waitTask, key, valueFactory);
+        }
+
+        /// <inheritdoc/>
+        public ValueTask CopyToAsync(KeyValuePair<TKey, TValue>[] array, int arrayIndex, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(array, nameof(array));
+
+            ThrowIfDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (TryEnterReadLockSync())
+            {
+                try
+                {
+                    CopyToCore(array, arrayIndex);
+                    return ValueTask.CompletedTask;
+                }
+                finally
+                {
+                    ExitReadLock();
+                }
+            }
+            return CopyToSlowAsync(array, arrayIndex, cancellationToken);
+        }
+
         /// <summary>
         /// Atomically adds all key-value pairs from <paramref name="other"/> into this multi-map.
         /// </summary>
