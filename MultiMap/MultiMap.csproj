@@ -25,6 +25,7 @@
     <Copyright>© 2026 TigoS</Copyright>
     <PackageReleaseNotes>3.0.2
 
+- NET 11.0.x support added
 - Bug Fixes
 - Tests
 - Documentation
