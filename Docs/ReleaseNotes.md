@@ -100,12 +100,12 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 - Added `MultiMapOptions_UnitTests.cs` — 27 tests covering:
   - `MultiMapOptions<TKey,TValue>`, `ConcurrentMultiMapOptions<TKey,TValue>`, and `SortedMultiMapOptions<TKey,TValue>` default-value invariants.
-  - Options constructor for each of the 6 concrete types: null-options guard (`ArgumentNullException`), instance created with default options, key comparer respected, value comparer / concurrency level / capacity applied.
+  - Options constructor for each of the 6 concrete types: null-options guard (`ArgumentNullException`), instance created with default options, key comparer respected, value comparer/concurrency level/capacity applied.
   - `SortedMultiMap` options constructor propagates the `IEqualityComparer` validation (`ArgumentException` on bare `IComparer`).
   - `ConcurrentMultiMap` options constructor selects the correct `ConcurrentDictionary` overload (concurrency level + capacity, capacity-only, key-comparer-only).
 
-- **Total: 7,122 tests** (2,374 per framework target) across 1,029 test methods in 36 test fixtures. All tests pass on **.NET 10**, **.NET 9**, and **.NET 8**.
-- **Coverage: 99.45% line, 97.22% branch, 100% method** (net10.0 Coverlet run, 2026-11-11).
+- **Total: 7,107 tests** (2,369 per framework o
+- **Coverage: 98.5% line, 96.6% branch, 98.3% method** (net9.0 Coverlet run, 2026-11-04).
 
 **API Additions**
 
