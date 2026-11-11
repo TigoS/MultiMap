@@ -1369,7 +1369,7 @@ public class MultiMapAsync_ConcurrentHelperStressTests
 
         var exceptor = Task.Run(() => target.ExceptWithAsync(other));
 
-        _ = Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, exceptor));
+        await Assert.DoesNotThrowAsync(async () => await Task.WhenAll(mutator, exceptor));
     }
 
     [Test]
