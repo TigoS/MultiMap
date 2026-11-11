@@ -446,141 +446,14 @@ public partial class SortedMultiMap<TKey, TValue>
 
 ---
 
-## 8. Documentation Improvements
+## 8. Documentation Improvements (Completed)
 
-### 8.1 Add Architecture Decision Records (ADRs)
+This section is now implemented in project documentation:
 
-**Location:** `Docs/ADRs/`
-
-**Example: ADR-001-MultiMapAsync-Reader-Writer-Protocol.md**
-
-```markdown
-# ADR-001: Custom Reader-Writer Lock for MultiMapAsync
-
-## Context
-MultiMapAsync needed async-friendly synchronization.
-
-## Decision
-Custom semaphore-based reader-writer protocol instead of ReaderWriterLockSlim.
-
-## Rationale
-- ReaderWriterLockSlim blocks threads (no async/await support)
-- Custom approach: first reader holds write lock, last reader releases
-- Allows concurrent readers, exclusive writers
-
-## Consequences
-- ✅ Native async/await support
-- ✅ No thread-pool starvation
-- ❌ Slightly higher overhead than ReaderWriterLockSlim
-- ❌ Writer starvation possible under high reader load
-
-## Alternatives Considered
-1. Use ReaderWriterLockSlim + Task.Run wrapper (too slow)
-2. Simple AsyncLock (no reader favoritism, equal fairness)
-
-## Status
-Accepted (v2.0.0+)
-```
-
-**Benefit:** Helps contributors understand design rationale.
-
-**Effort:** Low (1-2 hours)
-**Complexity:** Low
-**Benefit:** Medium (onboarding, decision transparency)
-
----
-
-### 8.2 Add "Common Mistakes" Section
-
-**Location:** `Docs/CommonMistakes.md`
-
-```markdown
-# Common Mistakes and How to Avoid Them
-
-## 1. Iterating While Mutating
-
-❌ **Wrong:**
-```csharp
-foreach (var value in map.Get("key"))
-{
-    map.Add("key", newValue);  // Throws InvalidOperationException
-}
-```
-
-✅ **Correct:**
-```csharp
-var values = map.Get("key").ToList();
-foreach (var value in values)
-{
-    map.Add("key", newValue);
-}
-```
-
-## 2. Using SortedMultiMap with Incompatible Comparers
-
-❌ **Wrong:**
-```csharp
-// IComparer<int> that sorts descending, but GetHashCode() is default
-var map = new SortedMultiMap<string, int>(
-    null,
-    Comparer<int>.Create((a, b) => b.CompareTo(a))
-);
-// Throws: ArgumentException
-```
-
-✅ **Correct:**
-```csharp
-public class DescendingIntComparer : IComparer<int>, IEqualityComparer<int>
-{
-    public int Compare(int x, int y) => y.CompareTo(x);
-    public bool Equals(int x, int y) => x == y;
-    public int GetHashCode(int obj) => obj.GetHashCode();
-}
-
-var map = new SortedMultiMap<string, int>(null, new DescendingIntComparer());
-```
-
-## 3. Relying on ConcurrentMultiMap.Count
-
-❌ **Wrong:**
-```csharp
-// Count can be stale; another thread may modify between check and use
-if (map.Count > 0) 
-{
-    ProcessValue(map.Values.First());  // May not exist!
-}
-```
-
-✅ **Correct:**
-```csharp
-if (!map.IsEmpty)
-{
-    // Or use TryGet, which is atomic
-}
-```
-
-## 4. Not Disposing MultiMapLock/MultiMapAsync
-
-❌ **Wrong:**
-```csharp
-var map = new MultiMapAsync<string, int>();
-await map.AddAsync("key", 42);
-// Leaks ReaderWriterLockSlim
-```
-
-✅ **Correct:**
-```csharp
-await using var map = new MultiMapAsync<string, int>();
-await map.AddAsync("key", 42);
-// Auto-disposed
-```
-```
-
-**Benefit:** Reduces support burden, improves user success rate.
-
-**Effort:** Low (1-2 hours)
-**Complexity:** Low
-**Benefit:** High (user satisfaction)
+- Added `Docs/UsagePatterns.md` and moved detailed usage recipes from `README.md`.
+- Added `Docs/CommonMistakes.md` and moved practical pitfalls guidance from `README.md`.
+- Added `Docs/ADRs/README.md` and `Docs/ADRs/ADR-001-MultiMapAsync-Reader-Writer-Protocol.md`.
+- Updated `README.md` to keep concise quick-start content and link to dedicated long-form documentation pages.
 
 ---
 
@@ -668,7 +541,7 @@ MultiMap is a mature, well-designed library. The recommended improvements are pr
 
 ---
 
-**Last Updated:** 2026-01-XX
+**Last Updated:** 2026-11-11
 **Status:** Ready for Implementation
 **Maintainer:** TigoS  
 **Repository:** https://github.com/TigoS/MultiMap
