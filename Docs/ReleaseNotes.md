@@ -7,9 +7,9 @@
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.11.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098.3%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-7107%2F7107%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -18,6 +18,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [3.0.2](#302)
   - [3.0.1](#301)
   - [3.0.0](#300)
   - [2.1.1](#211)
@@ -38,6 +39,36 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 3.0.2
+
+**Bug Fixes**
+
+- `MultiMapBase<TKey, TValue, TCollection>` — `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` now uses the underlying dictionary's key comparer for the cursor grouping check, keeping grouping decisions consistent for custom key comparers.
+
+**Tests**
+
+- `MultiMapBoundaryConditions_UnitTests` — fixed a test that was incorrectly using `Assert.DoesNotThrowAsync` without awaiting the returned task. The test now correctly awaits the assertion to ensure that exceptions are properly caught and reported.
+- Added targeted coverage tests for protected collection hooks and equality branches in:
+  - `MultiMap.Tests/ConcurrentMultiMap_UnitTests.cs`
+  - `MultiMap.Tests/MultiMapList_UnitTest.cs`
+  - `MultiMap.Tests/MultiMapSet_UnitTests.cs`
+- Added **.NET 11 test target support** in `MultiMap.Tests` (`net11.0;net10.0;net9.0;net8.0`) and CI SDK setup (`11.0.x`).
+- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,374/2,374 tests passing**.
+- Full test matrix now executes **9,496 tests** (2,374 × 4 TFMs) with zero failures.
+
+**Documentation**
+
+- Fixed typo in `ConcurrentMultiMap` constructor XML doc: "When only `MultiMapOptions<TKey,TValue>.Capacity` is non-zero, the two-argument overload is used." (previously incorrectly referenced `ConcurrentMultiMapOptions<TKey,TValue>.Capacity`).
+- Fixed typo in `MultiMapLock` constructor XML doc: "When only `MultiMapOptions<TKey,TValue>.Capacity` is non-zero, the two-argument overload is used." (previously incorrectly referenced `ConcurrentMultiMapOptions<TKey,TValue>.Capacity`).
+- Fixed typo in `ConcurrentMultiMap` constructor XML doc: "When both `ConcurrentMultiMapOptions<TKey,TValue>.ConcurrencyLevel` and `MultiMapOptions<TKey,TValue>.Capacity` are non-zero, the underlying `ConcurrentDictionary<TKey,TValue>` is created with the three-argument overload that accepts `concurrencyLevel`, `capacity`, and `keyComparer`." (previously incorrectly referenced `ConcurrentMultiMapOptions<TKey,TValue>.Capacity` twice).
+- Added `Docs/ImplementationGuide.md` (implementation selection guide) and linked it from `README.md`.
+- Updated badges and coverage/test metrics in `README.md`, `Docs/Testing.md`, and `Docs/ReleaseNotes.md` to reflect the latest run.
+
+**Package Updates**
+
+- `Microsoft.NET.Test.Sdk` updated from **18.11.0** to **18.12.0**.
+- `Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers` updated from **18.12.37802.2** to **18.13.37903.2**.
 
 ### 3.0.1
 
@@ -69,7 +100,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - `SortedMultiMap` options constructor propagates the `IEqualityComparer` validation (`ArgumentException` on bare `IComparer`).
   - `ConcurrentMultiMap` options constructor selects the correct `ConcurrentDictionary` overload (concurrency level + capacity, capacity-only, key-comparer-only).
 
-- **Total: 7,107 tests** (2,369 per framework target) across 1,024 test methods in 36 test fixtures. All tests pass on **.NET 10**, **.NET 9**, and **.NET 8**.
+- **Total: 7,107 tests** (2,369 per framework o
 - **Coverage: 98.5% line, 96.6% branch, 98.3% method** (net9.0 Coverlet run, 2026-11-04).
 
 **API Additions**

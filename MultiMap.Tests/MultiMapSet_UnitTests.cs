@@ -1566,4 +1566,23 @@ public class MultiMapSet_CapacityComparerConstructorTests
         int added = map.AddRange("x", new[] { 1, 2, 3 });
         Assert.That(added, Is.EqualTo(3));
     }
+
+    [Test]
+    public void Protected_CreateCollectionAndAddToCollection_UseConfiguredValueComparer()
+    {
+        var map = new MultiMapSet<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+
+        var createCollection = typeof(MultiMapSet<string, string>)
+            .GetMethod("CreateCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var addToCollection = typeof(MultiMapSet<string, string>)
+            .GetMethod("AddToCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        var collection = (HashSet<string>)createCollection.Invoke(map, null)!;
+        var first = (bool)addToCollection.Invoke(map, new object[] { collection, "Hello" })!;
+        var second = (bool)addToCollection.Invoke(map, new object[] { collection, "HELLO" })!;
+
+        Assert.That(first, Is.True);
+        Assert.That(second, Is.False);
+        Assert.That(collection, Is.EquivalentTo(new[] { "Hello" }));
+    }
 }

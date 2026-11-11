@@ -1630,4 +1630,30 @@ public class MultiMapList_CoverageTests
         Assert.That(added, Is.EqualTo(3));
         Assert.That(map.Count, Is.EqualTo(3));
     }
+
+    [Test]
+    public void Protected_CreateCollection_ReturnsEmptyList()
+    {
+        var map = new MultiMapList<string, int>();
+        var createCollection = typeof(MultiMapList<string, int>)
+            .GetMethod("CreateCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        var collection = (List<int>)createCollection.Invoke(map, null)!;
+
+        Assert.That(collection, Is.Empty);
+    }
+
+    [Test]
+    public void Protected_AddToCollection_AppendsValueAndReturnsTrue()
+    {
+        var map = new MultiMapList<string, int>();
+        var addToCollection = typeof(MultiMapList<string, int>)
+            .GetMethod("AddToCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var collection = new List<int>();
+
+        var added = (bool)addToCollection.Invoke(map, new object[] { collection, 42 })!;
+
+        Assert.That(added, Is.True);
+        Assert.That(collection, Is.EqualTo(new[] { 42 }));
+    }
 }

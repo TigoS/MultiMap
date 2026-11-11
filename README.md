@@ -7,9 +7,9 @@
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
-[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.11.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-98.5%25%20line%20%7C%2096.6%25%20branch%20%7C%2098.3%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-7107%2F7107%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
+[![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -28,6 +28,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - [API Behavior Differences](#api-behavior-differences)
   - [When to Use Which Implementation](#when-to-use-which-implementation)
   - [Performance Comparison](#performance-comparison-5000-pairs)
+- [Implementation Selection Guide](#implementation-selection-guide)
 - [Extension Methods](#extension-methods)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -55,8 +56,8 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 5 test suite**:
-  - **6,924 total tests** (2,308 per framework) running on **net10.0**, **net9.0**, and **net8.0**
-  - **98.5% line coverage**, **96.6% branch coverage**, **98.3% method coverage** (latest combined Coverlet metrics)
+  - **9,496 total tests** (2,374 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
+  - **99.45% line coverage**, **97.22% branch coverage**, **100% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
@@ -748,6 +749,10 @@ See [Testing](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md) for
 ## Benchmarks
 
 See [Benchmarks](https://github.com/TigoS/MultiMap/blob/master/Docs/Benchmarks.md) for the full benchmark details.
+
+## Implementation Selection Guide
+
+See [Implementation Selection Guide](https://github.com/TigoS/MultiMap/blob/master/Docs/ImplementationGuide.md) for implementation choice recommendations and trade-offs.
 
 ## Migration Guide
 

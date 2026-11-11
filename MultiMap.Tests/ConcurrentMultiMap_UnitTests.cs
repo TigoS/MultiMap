@@ -2357,6 +2357,44 @@ public class ConcurrentMultiMap_AddRangeAndEqualsBranchTests
         Assert.That(a.GetHashCode(), Is.EqualTo(b.GetHashCode()));
     }
 
+    [Test]
+    public void ProtectedCollectionHooks_UseComparerAndRemoveMatchingValues()
+    {
+        var map = new ConcurrentMultiMap<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+        var createCollection = typeof(ConcurrentMultiMap<string, string>)
+            .GetMethod("CreateCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var addToCollection = typeof(ConcurrentMultiMap<string, string>)
+            .GetMethod("AddToCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var removeWhere = typeof(ConcurrentMultiMap<string, string>)
+            .GetMethod("RemoveWhereFromCollection", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        var collection = createCollection.Invoke(map, null)!;
+        var first = (bool)addToCollection.Invoke(map, new object[] { collection, "Hello" })!;
+        var second = (bool)addToCollection.Invoke(map, new object[] { collection, "HELLO" })!;
+        var removed = (int)removeWhere.Invoke(map, new object[] { collection, new Predicate<string>(v => v.StartsWith("H", StringComparison.Ordinal)) })!;
+
+        Assert.That(first, Is.True);
+        Assert.That(second, Is.False);
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(((IEnumerable<string>)collection), Is.Empty);
+    }
+
+    [Test]
+    public void Equals_IReadOnlyMultiMap_WithDuplicateListValuesAndSameCounts_ReturnsFalse()
+    {
+        var map = new ConcurrentMultiMap<string, int>();
+        map.Add("k", 1);
+        map.Add("k", 2);
+
+        var other = new MultiMapList<string, int>();
+        other.Add("k", 1);
+        other.Add("k", 1);
+
+        Assert.That(other.Count, Is.EqualTo(map.Count));
+        Assert.That(other.GetValuesCount("k"), Is.EqualTo(map.GetValuesCount("k")));
+        Assert.That(map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
     // Concurrent stress: AddRange(KVP) from multiple threads
     [Test]
     [Category("Stress")]
