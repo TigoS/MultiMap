@@ -23,9 +23,9 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')">icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>3.0.2
+    <PackageReleaseNotes>3.1.0
 
-- NET 11.0.x support added
+- CopyTo added to all interfaces
 - Bug Fixes
 - Tests
 - Documentation
