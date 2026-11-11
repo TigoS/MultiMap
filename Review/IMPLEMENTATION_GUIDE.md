@@ -244,98 +244,15 @@ public void AddRange_Batched_Current()
 
 ---
 
-## 4. API Enhancements
+## 4. API Enhancements (Completed)
 
-### 4.1 Add `GetOrAdd` Method
+This section is now implemented in the codebase:
 
-**Pattern:** Similar to Dictionary<TKey, TValue>
-
-```csharp
-/// <summary>
-/// Gets the collection of values for <paramref name="key"/>, 
-/// or adds <paramref name="defaultValue"/> if the key doesn't exist.
-/// </summary>
-public IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue)
-{
-    if (!_dictionary.TryGetValue(key, out var collection))
-    {
-        collection = CreateCollection();
-        AddToCollection(collection, defaultValue);
-        _dictionary.Add(key, collection);
-        IncrementCount();
-    }
-    return collection;
-}
-```
-
-**Use Case:**
-```csharp
-var tags = map.GetOrAdd("post_123", "default_tag");
-```
-
-**Effort:** Low (30 min)
-**Complexity:** Low
-**Benefit:** Medium (convenience, but use-case unclear)
-
----
-
-### 4.2 Add Lazy Factory Overload
-
-```csharp
-/// <summary>
-/// Gets or lazily initializes the value collection for <paramref name="key"/>.
-/// </summary>
-public IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory)
-{
-    if (!_dictionary.TryGetValue(key, out var collection))
-    {
-        collection = CreateCollection();
-        var value = valueFactory.Value;
-        AddToCollection(collection, value);
-        _dictionary.Add(key, collection);
-        IncrementCount();
-    }
-    return collection;
-}
-```
-
-**Benefit:** Defers expensive initialization.
-
-**Effort:** Low (30 min)
-**Complexity:** Low
-**Benefit:** Low (niche use case)
-
----
-
-### 4.3 Add CopyTo Method
-
-**For BCL Compatibility:**
-
-```csharp
-/// <summary>
-/// Copies all key-value pairs to the specified array, starting at the specified index.
-/// </summary>
-public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
-{
-    ArgumentNullException.ThrowIfNull(array, nameof(array));
-    if (arrayIndex < 0 || arrayIndex > array.Length)
-        throw new ArgumentOutOfRangeException(nameof(arrayIndex));
-
-    int index = arrayIndex;
-    foreach (var kvp in this)
-    {
-        if (index >= array.Length)
-            throw new ArgumentException("Array too small", nameof(array));
-        array[index++] = kvp;
-    }
-}
-```
-
-**Benefit:** Standard Collection pattern compliance.
-
-**Effort:** Very Low (15 min)
-**Complexity:** Very Low
-**Benefit:** Low (mostly formal compliance)
+- Added `IMultiMap<TKey, TValue>.GetOrAdd(TKey, TValue)`.
+- Added `IMultiMap<TKey, TValue>.GetOrAdd(TKey, Lazy<TValue>)`.
+- Added `IMultiMap<TKey, TValue>.CopyTo(KeyValuePair<TKey, TValue>[], int)`.
+- Implemented the new APIs in `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>`.
+- Added unit tests in `MultiMapBase_UnitTests`, `MultiMapLock_UnitTests`, and `ConcurrentMultiMap_UnitTests`.
 
 ---
 
