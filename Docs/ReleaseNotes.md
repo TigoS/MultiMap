@@ -65,10 +65,8 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Package Updates**
 
-- `NUnit` updated from **5.0.0** to **5.1.0**.
-- `NUnit3TestAdapter` updated from **6.3.1** to **6.4.0**.
 - `Microsoft.NET.Test.Sdk` updated from **18.11.0** to **18.12.0**.
-- `coverlet.collector` updated from **10.1.0** to **10.2.0**.
+- `Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers` updated from **18.12.37802.2** to **18.13.37903.2**.
 
 ### 3.0.1
 
