@@ -1,7 +1,7 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-11.0%20%7C%2010.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
@@ -9,15 +9,16 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9592%2F9592%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 9**, and **.NET 8**.
+Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [3.1.0](#310)
   - [3.0.2](#302)
   - [3.0.1](#301)
   - [3.0.0](#300)
@@ -39,6 +40,17 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 3.1.0
+
+**Tests**
+- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,398/2,398 tests passing**.
+- Full test matrix now executes **9,592 tests** (2,398 × 4 TFMs) with zero failures.
+
+**API Additions**
+
+- `IMultiMap<TKey, TValue>` now includes `GetOrAdd(TKey, TValue)`, `GetOrAdd(TKey, Lazy<TValue>)`, and `CopyTo(KeyValuePair<TKey, TValue>[], int)`.
+- `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new APIs, including concurrent/lock-safe `CopyTo` snapshots for thread-safe implementations.
 
 ### 3.0.2
 

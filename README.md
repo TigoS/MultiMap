@@ -1,7 +1,7 @@
 # MultiMap
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![.NET](https://img.shields.io/badge/.NET-10.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-11.0%20%7C%2010.0%20%7C%209.0%20%7C%208.0-blue.svg)](https://dotnet.microsoft.com/)
 [![C# 14](https://img.shields.io/badge/C%23-14.0-blue)](https://learn.microsoft.com/en-us/dotnet/csharp/)
 [![BenchmarkDotNet](https://img.shields.io/badge/BenchmarkDotNet-v0.15.8-blue)](https://benchmarkdotnet.org/)
 [![NuGet](https://img.shields.io/nuget/v/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
@@ -9,11 +9,11 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9592%2F9592%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 9**, and **.NET 8**.
+Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Table of Contents
 
@@ -46,7 +46,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 
 - **7 multimap implementations** covering a wide range of use cases
 - **6 interfaces** (3 read-only + 3 mutable): `IReadOnlySimpleMultiMap`, `IReadOnlyMultiMap`, `IReadOnlyMultiMapAsync`, `ISimpleMultiMap`, `IMultiMap`, `IMultiMapAsync` 
-- **Multi-target**: .NET 10, .NET 9, and .NET 8
+- **Multi-target**: .NET 11, .NET 10, .NET 9, and .NET 8
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Set algebra query methods**: `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`
 - **Thread-safe variants**: fully lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
@@ -56,7 +56,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 5 test suite**:
-  - **9,496 total tests** (2,374 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
+  - **9,592 total tests** (2,398 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
   - **99.45% line coverage**, **97.22% branch coverage**, **100% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
@@ -201,6 +201,9 @@ The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TV
 | `Add(key, value)` | `bool` | Adds a key-value pair; returns `false` if already present |
 | `AddRange(key, values)` | `int` | Adds multiple values for a key; returns count added |
 | `AddRange(items)` | `int` | Adds multiple key-value pairs; returns count added |
+| `GetOrAdd(key, defaultValue)` | `IEnumerable<TValue>` | Returns existing values or inserts `defaultValue` when key is missing |
+| `GetOrAdd(key, lazyValueFactory)` | `IEnumerable<TValue>` | Returns existing values or lazily creates/insert a default value when key is missing |
+| `CopyTo(array, arrayIndex)` | `void` | Copies all key-value pairs into a destination array |
 | `Remove(key, value)` | `bool` | Removes a specific key-value pair |
 | `RemoveRange(items)` | `int` | Removes multiple key-value pairs; returns count removed |
 | `RemoveWhere(key, predicate)` | `int` | Removes values matching predicate; returns count removed |
@@ -541,6 +544,24 @@ else
 {
     Console.WriteLine("Key not found");
 }
+```
+
+#### GetOrAdd and CopyTo
+
+```csharp
+using MultiMap.Entities;
+
+var map = new MultiMapSet<string, int>();
+
+// Get existing values or initialize with a default value
+var tags = map.GetOrAdd("post_123", 1);
+
+// Lazy initialization overload (factory evaluated only when key is missing)
+var lazyValues = map.GetOrAdd("post_456", new Lazy<int>(() => 42));
+
+// Copy all key-value pairs to an array
+var buffer = new KeyValuePair<string, int>[map.Count];
+map.CopyTo(buffer, 0);
 ```
 
 ### Concurrent Usage
