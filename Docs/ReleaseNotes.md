@@ -44,11 +44,7 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Bug Fixes**
 
-- `MultiMapBase<TKey, TValue, TCollection>` — fixed a potential race condition in the `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` method when multiple threads were adding values for the same key concurrently. The method now uses a thread-safe approach to ensure that the collection for each key is created only once and that all values are added correctly without losing any entries.
-- `MultiMapList<TKey, TValue>` — fixed a bug in the `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` method where the internal dictionary could throw an exception if multiple threads attempted to add values for the same key simultaneously. The method now uses a thread-safe approach to ensure that the collection for each key is created only once and that all values are added correctly without losing any entries.
-- `MultiMapAsync<TKey, TValue>` — fixed a bug in the `AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>>)` method where the internal dictionary could throw an exception if multiple threads attempted to add values for the same key simultaneously. The method now uses a thread-safe approach to ensure that the collection for each key is created only once and that all values are added correctly without losing any entries.
-- `MultiMapLock<TKey, TValue>` — fixed a bug in the `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` method where the internal dictionary could throw an exception if multiple threads attempted to add values for the same key simultaneously. The method now uses a thread-safe approach to ensure that the collection for each key is created only once and that all values are added correctly without losing any entries.
-- `ConcurrentMultiMap<TKey, TValue>` — fixed a bug in the constructor where the `Capacity` property was incorrectly referenced from `ConcurrentMultiMapOptions<TKey,TValue>` instead of `MultiMapOptions<TKey,TValue>`. The constructor now correctly uses the base class's `Capacity` property to determine which overload of `ConcurrentDictionary` to use.
+- `MultiMapBase<TKey, TValue, TCollection>` — `AddRange(IEnumerable<KeyValuePair<TKey, TValue>>)` now uses the underlying dictionary's key comparer for the cursor grouping check, keeping grouping decisions consistent for custom key comparers.
 
 **Tests**
 
