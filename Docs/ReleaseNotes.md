@@ -9,7 +9,7 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-7122%2F7122%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -53,7 +53,9 @@ Targets **.NET 10**, **.NET 9**, and **.NET 8**.
   - `MultiMap.Tests/ConcurrentMultiMap_UnitTests.cs`
   - `MultiMap.Tests/MultiMapList_UnitTest.cs`
   - `MultiMap.Tests/MultiMapSet_UnitTests.cs`
-- Latest Coverlet run (`net10.0`) now reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,374/2,374 tests passing** (7,122 executions across 3 TFMs).
+- Added **.NET 11 test target support** in `MultiMap.Tests` (`net11.0;net10.0;net9.0;net8.0`) and CI SDK setup (`11.0.x`).
+- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,374/2,374 tests passing**.
+- Full test matrix now executes **9,496 tests** (2,374 × 4 TFMs) with zero failures.
 
 **Documentation**
 
