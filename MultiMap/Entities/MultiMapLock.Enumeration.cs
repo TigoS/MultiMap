@@ -38,6 +38,41 @@ namespace MultiMap.Entities
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         /// <inheritdoc/>
+        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            ArgumentNullException.ThrowIfNull(array, nameof(array));
+
+            ThrowIfDisposed();
+
+            _lock.EnterReadLock();
+            try
+            {
+                if (arrayIndex < 0 || arrayIndex > array.Length)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+                }
+
+                if (array.Length - arrayIndex < _count)
+                {
+                    throw new ArgumentException("The destination array has insufficient space for all elements.", nameof(array));
+                }
+
+                int index = arrayIndex;
+                foreach (var kvp in _dictionary)
+                {
+                    foreach (var value in kvp.Value)
+                    {
+                        array[index++] = new KeyValuePair<TKey, TValue>(kvp.Key, value);
+                    }
+                }
+            }
+            finally
+            {
+                _lock.ExitReadLock();
+            }
+        }
+
+        /// <inheritdoc/>
         public override bool Equals(object? obj) => Equals(obj as MultiMapLock<TKey, TValue>);
 
         /// <inheritdoc/>

@@ -228,6 +228,41 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public virtual IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
+
+            if (TryGetCollection(key, out var collection))
+            {
+                return ToReadOnly(collection);
+            }
+
+            Add(key, defaultValue);
+
+            return TryGetCollection(key, out collection) ? ToReadOnly(collection) : [];
+        }
+
+        /// <inheritdoc/>
+        public virtual IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
+
+            if (TryGetCollection(key, out var collection))
+            {
+                return ToReadOnly(collection);
+            }
+
+            var value = valueFactory.Value;
+            ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
+
+            Add(key, value);
+
+            return TryGetCollection(key, out collection) ? ToReadOnly(collection) : [];
+        }
+
+        /// <inheritdoc/>
         public virtual bool TryGet(TKey key, out IEnumerable<TValue> values)
         {
             ArgumentNullException.ThrowIfNull(key, nameof(key));
@@ -356,6 +391,28 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public IEnumerable<TValue> this[TKey key] => Get(key);
+
+        /// <inheritdoc/>
+        public virtual void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            ArgumentNullException.ThrowIfNull(array, nameof(array));
+
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
+
+            if (array.Length - arrayIndex < Count)
+            {
+                throw new ArgumentException("The destination array has insufficient space for all elements.", nameof(array));
+            }
+
+            int index = arrayIndex;
+            foreach (var item in this)
+            {
+                array[index++] = item;
+            }
+        }
 
         /// <inheritdoc/>
         public virtual void Clear()

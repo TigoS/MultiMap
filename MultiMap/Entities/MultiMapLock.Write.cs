@@ -111,6 +111,65 @@ namespace MultiMap.Entities
             }
         }
 
+        /// <inheritdoc/>
+        public IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
+
+            ThrowIfDisposed();
+
+            _lock.EnterWriteLock();
+            try
+            {
+                if (_dictionary.TryGetValue(key, out var existing))
+                {
+                    return [.. existing];
+                }
+
+                var hashset = new HashSet<TValue>(_valueComparer) { defaultValue };
+                _dictionary[key] = hashset;
+                _count++;
+
+                return [.. hashset];
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
+        /// <inheritdoc/>
+        public IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
+
+            ThrowIfDisposed();
+
+            _lock.EnterWriteLock();
+            try
+            {
+                if (_dictionary.TryGetValue(key, out var existing))
+                {
+                    return [.. existing];
+                }
+
+                var value = valueFactory.Value;
+                ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
+
+                var hashset = new HashSet<TValue>(_valueComparer) { value };
+                _dictionary[key] = hashset;
+                _count++;
+
+                return [.. hashset];
+            }
+            finally
+            {
+                _lock.ExitWriteLock();
+            }
+        }
+
         /// <summary>
         /// Adds the specified key-value pair, waiting for the write lock with cancellation support.
         /// </summary>

@@ -215,6 +215,82 @@ namespace MultiMap.Entities
         }
 
         /// <inheritdoc/>
+        public override IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
+
+            bool created = false;
+            var collection = _concurrentDictionary.GetOrAdd(key, _ =>
+            {
+                created = true;
+                return CreateCollection();
+            });
+
+            if ((created || collection.IsEmpty) && collection.TryAdd(defaultValue))
+            {
+                InterlockedIncrementCount();
+            }
+
+            return ToReadOnly(collection);
+        }
+
+        /// <inheritdoc/>
+        public override IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory)
+        {
+            ArgumentNullException.ThrowIfNull(key, nameof(key));
+            ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
+
+            bool created = false;
+            var collection = _concurrentDictionary.GetOrAdd(key, _ =>
+            {
+                created = true;
+                return CreateCollection();
+            });
+
+            if (created || collection.IsEmpty)
+            {
+                var value = valueFactory.Value;
+                ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
+
+                if (collection.TryAdd(value))
+                {
+                    InterlockedIncrementCount();
+                }
+            }
+
+            return ToReadOnly(collection);
+        }
+
+        /// <inheritdoc/>
+        public override void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        {
+            ArgumentNullException.ThrowIfNull(array, nameof(array));
+
+            if (arrayIndex < 0 || arrayIndex > array.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
+
+            var snapshot = new List<KeyValuePair<TKey, TValue>>();
+            foreach (var item in this)
+            {
+                snapshot.Add(item);
+            }
+
+            if (array.Length - arrayIndex < snapshot.Count)
+            {
+                throw new ArgumentException("The destination array has insufficient space for all elements.", nameof(array));
+            }
+
+            int index = arrayIndex;
+            foreach (var item in snapshot)
+            {
+                array[index++] = item;
+            }
+        }
+
+        /// <inheritdoc/>
         public override bool Add(TKey key, TValue value)
         {
             ArgumentNullException.ThrowIfNull(key, nameof(key));
