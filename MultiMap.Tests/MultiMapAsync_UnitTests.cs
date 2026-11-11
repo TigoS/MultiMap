@@ -326,6 +326,92 @@ public class MultiMapAsyncTests
         Assert.That(values, Is.EquivalentTo(new[] { 1, 2, 3 }));
     }
 
+    // ── GetOrAddAsync / CopyToAsync ────────────────────────────
+
+    [Test]
+    public async Task GetOrAddAsync_MissingKey_AddsDefaultValue()
+    {
+        var values = await _map.GetOrAddAsync("a", 7);
+
+        Assert.That(values, Is.EquivalentTo(new[] { 7 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 7 }));
+    }
+
+    [Test]
+    public async Task GetOrAddAsync_ExistingKey_DoesNotAddDefaultValue()
+    {
+        await _map.AddAsync("a", 1);
+
+        var values = await _map.GetOrAddAsync("a", 7);
+
+        Assert.That(values, Is.EquivalentTo(new[] { 1 }));
+        Assert.That(await _map.GetOrDefaultAsync("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task GetOrAddAsyncLazy_MissingKey_InvokesFactoryAndAddsValue()
+    {
+        int factoryCalls = 0;
+        var lazy = new Lazy<int>(() =>
+        {
+            factoryCalls++;
+            return 11;
+        });
+
+        var values = await _map.GetOrAddAsync("a", lazy);
+
+        Assert.That(factoryCalls, Is.EqualTo(1));
+        Assert.That(values, Is.EquivalentTo(new[] { 11 }));
+    }
+
+    [Test]
+    public async Task GetOrAddAsyncLazy_ExistingKey_DoesNotInvokeFactory()
+    {
+        await _map.AddAsync("a", 1);
+
+        int factoryCalls = 0;
+        var lazy = new Lazy<int>(() =>
+        {
+            factoryCalls++;
+            return 99;
+        });
+
+        var values = await _map.GetOrAddAsync("a", lazy);
+
+        Assert.That(factoryCalls, Is.EqualTo(0));
+        Assert.That(values, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public async Task CopyToAsync_CopiesAllPairsAtSpecifiedIndex()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        int count = await _map.GetCountAsync();
+        var destination = new KeyValuePair<string, int>[count + 2];
+
+        await _map.CopyToAsync(destination, 1);
+
+        var copied = destination.Skip(1).Take(count).ToArray();
+        Assert.That(copied, Is.EquivalentTo(new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 2)
+        }));
+    }
+
+    [Test]
+    public async Task CopyToAsync_DestinationTooSmall_ThrowsArgumentException()
+    {
+        await _map.AddAsync("a", 1);
+        await _map.AddAsync("b", 2);
+
+        var destination = new KeyValuePair<string, int>[1];
+
+        await Assert.ThrowsAsync<ArgumentException>(async () => await _map.CopyToAsync(destination, 0));
+    }
+
     [Test]
     public async Task RemoveAsync_ExistingValue_ReturnsTrue()
     {
