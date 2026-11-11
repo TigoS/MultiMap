@@ -9,7 +9,7 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9592%2F9592%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9616%2F9616%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -56,7 +56,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 5 test suite**:
-  - **9,592 total tests** (2,398 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
+  - **9,616 total tests** (2,404 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
   - **99.45% line coverage**, **97.22% branch coverage**, **100% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
@@ -238,6 +238,9 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 | `AddAsync(key, value)` | `ValueTask<bool>` | Asynchronously adds a key-value pair |
 | `AddRangeAsync(key, values)` | `ValueTask<int>` | Asynchronously adds multiple values; returns count added |
 | `AddRangeAsync(items)` | `ValueTask<int>` | Asynchronously adds multiple key-value pairs; returns count added |
+| `GetOrAddAsync(key, defaultValue)` | `ValueTask<IEnumerable<TValue>>` | Returns existing values or inserts `defaultValue` when key is missing |
+| `GetOrAddAsync(key, lazyValueFactory)` | `ValueTask<IEnumerable<TValue>>` | Returns existing values or lazily creates/inserts a default value when key is missing |
+| `CopyToAsync(array, arrayIndex)` | `ValueTask` | Asynchronously copies all key-value pairs into a destination array |
 | `RemoveAsync(key, value)` | `ValueTask<bool>` | Asynchronously removes a pair |
 | `RemoveRangeAsync(items)` | `ValueTask<int>` | Asynchronously removes multiple pairs; returns count removed |
 | `RemoveWhereAsync(key, predicate)` | `ValueTask<int>` | Asynchronously removes values matching predicate; returns count removed |

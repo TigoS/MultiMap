@@ -4,10 +4,10 @@ Last generated: 2026-11-11 22:13:00 +01:00
 
 | Metric | Value |
 |---|---|
-| Total tests (per TFM) | 2398 |
+| Total tests (per TFM) | 2404 |
 | Matrix TFMs | net11.0, net10.0, net9.0, net8.0 |
-| Total matrix executions | 9592 |
-| Passed tests (matrix) | 9592 |
+| Total matrix executions | 9616 |
+| Passed tests (matrix) | 9616 |
 | Failed tests (matrix) | 0 |
 | Line coverage (net11.0) | 99.45% (2201 / 2213) |
 | Branch coverage (net11.0) | 97.22% (1050 / 1080) |

@@ -9,7 +9,7 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9592%2F9592%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9616%2F9616%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -44,13 +44,14 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 ### 3.1.0
 
 **Tests**
-- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,398/2,398 tests passing**.
-- Full test matrix now executes **9,592 tests** (2,398 × 4 TFMs) with zero failures.
+- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,404/2,404 tests passing**.
+- Full test matrix now executes **9,616 tests** (2,404 × 4 TFMs) with zero failures.
 
 **API Additions**
 
 - `IMultiMap<TKey, TValue>` now includes `GetOrAdd(TKey, TValue)`, `GetOrAdd(TKey, Lazy<TValue>)`, and `CopyTo(KeyValuePair<TKey, TValue>[], int)`.
-- `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new APIs, including concurrent/lock-safe `CopyTo` snapshots for thread-safe implementations.
+- `IMultiMapAsync<TKey, TValue>` now includes `GetOrAddAsync(TKey, TValue, CancellationToken)`, `GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
+- `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new sync APIs; `MultiMapAsync<TKey, TValue>` implements the new async APIs using the existing semaphore-based fast/slow-path pattern.
 
 ### 3.0.2
 

@@ -248,11 +248,11 @@ public void AddRange_Batched_Current()
 
 This section is now implemented in the codebase:
 
-- Added `IMultiMap<TKey, TValue>.GetOrAdd(TKey, TValue)`.
-- Added `IMultiMap<TKey, TValue>.GetOrAdd(TKey, Lazy<TValue>)`.
-- Added `IMultiMap<TKey, TValue>.CopyTo(KeyValuePair<TKey, TValue>[], int)`.
-- Implemented the new APIs in `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>`.
-- Added unit tests in `MultiMapBase_UnitTests`, `MultiMapLock_UnitTests`, and `ConcurrentMultiMap_UnitTests`.
+- Added `IMultiMap<TKey, TValue>.GetOrAdd(TKey, TValue)`, `IMultiMap<TKey, TValue>.GetOrAdd(TKey, Lazy<TValue>)`, and `IMultiMap<TKey, TValue>.CopyTo(KeyValuePair<TKey, TValue>[], int)`.
+- Added `IMultiMapAsync<TKey, TValue>.GetOrAddAsync(TKey, TValue, CancellationToken)`, `IMultiMapAsync<TKey, TValue>.GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `IMultiMapAsync<TKey, TValue>.CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
+- Implemented the sync APIs in `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>`.
+- Implemented the async APIs in `MultiMapAsync<TKey, TValue>` following the existing fast/slow-path semaphore pattern.
+- Added unit tests in `MultiMapBase_UnitTests`, `MultiMapLock_UnitTests`, `ConcurrentMultiMap_UnitTests`, and `MultiMapAsync_UnitTests`.
 
 ---
 
