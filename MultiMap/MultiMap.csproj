@@ -8,7 +8,7 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>MultiMap</PackageId>
-    <Version>3.0.1</Version>
+    <Version>3.0.2</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 10, .NET 9, and .NET 8.</Description>
     <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
@@ -23,13 +23,11 @@
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
     <PackageIcon Condition="Exists('..\icons8-nuget-shadow\icons8-nuget-48.png')">icons8-nuget-48.png</PackageIcon>
     <Copyright>© 2026 TigoS</Copyright>
-    <PackageReleaseNotes>3.0.1
+    <PackageReleaseNotes>3.0.2
 
-- Package Updates
-- Performance Improvements
-- Unit Tests Enhancements
-- API Additions
-- Refactorings and Optimizations
+- Bug Fixes
+- Tests
+- Documentation
 
 See the full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
@@ -46,7 +44,6 @@ See the full Release Notes history: https://github.com/TigoS/MultiMap/blob/maste
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Docs\" />
     <Folder Include="Icons\" />
   </ItemGroup>
 
