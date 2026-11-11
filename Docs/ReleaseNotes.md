@@ -53,6 +53,13 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 - `IMultiMapAsync<TKey, TValue>` now includes `GetOrAddAsync(TKey, TValue, CancellationToken)`, `GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
 - `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new sync APIs; `MultiMapAsync<TKey, TValue>` implements the new async APIs using the existing semaphore-based fast/slow-path pattern.
 
+**Documentation Improvements**
+
+- Added `Docs/UsagePatterns.md` and moved detailed usage recipes from `README.md`.
+- Added `Docs/CommonMistakes.md` and moved practical pitfalls/guidance from `README.md`.
+- Added `Docs/ADRs/README.md` and `Docs/ADRs/ADR-001-MultiMapAsync-Reader-Writer-Protocol.md`.
+- Simplified `README.md` to keep quick-start usage while linking to dedicated long-form documentation pages.
+
 ### 3.0.2
 
 **Bug Fixes**
