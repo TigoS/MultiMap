@@ -13,7 +13,7 @@
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
-Targets **.NET 10**, **.NET 8**, and **.NET Standard 2.0**.
+Targets **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Table of Contents
 

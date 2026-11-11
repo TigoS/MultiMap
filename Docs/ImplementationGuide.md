@@ -13,6 +13,14 @@
 
 This guide helps you quickly pick the right MultiMap type for your scenario.
 
+## Table of Contents
+
+- [Quick Decision Tree](#quick-decision-tree)
+- [Detailed Comparison](#detailed-comparison)
+- [Best Use Cases](#best-use-cases)
+- [Memory Considerations](#memory-considerations-relative)
+- [Initialization with Capacity](#initialization-with-capacity)
+
 ## Quick Decision Tree
 
 | Need | Choice | Why |
