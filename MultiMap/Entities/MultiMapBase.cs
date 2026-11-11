@@ -135,19 +135,34 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         /// <remarks>
-        /// <para>The order in which the elements are added is preserved.</para>
         /// <para>Processes items grouped by key so each unique key pays at most one TryGetValue
         /// and one CreateCollection call, regardless of how many values it carries.
         /// It does not materialise a separate grouping structure: instead it maintains a
         /// small "current key" cursor and flushes into the dictionary when the key changes.
         /// This is O(N) in time and O(1) extra space for sequences already sorted by key,
         /// and still correct (though not minimal in lookups) for interleaved keys.</para>
+        /// <para>Key equality for the cursor is determined using the underlying dictionary's own
+        /// comparer when available (<see cref="System.Collections.Generic.Dictionary{TKey,TValue}.Comparer"/>
+        /// or a dual-interface <see cref="SortedDictionary{TKey,TValue}.Comparer"/>),
+        /// falling back to <see cref="EqualityComparer{T}.Default"/>. This ensures grouping
+        /// decisions are consistent with how the dictionary itself resolves key equality.</para>
         /// </remarks>
         public virtual int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
         {
             ArgumentNullException.ThrowIfNull(items, nameof(items));
 
             int added = 0;
+
+            // Use the dictionary's own key equality comparer so that the "same key as before"
+            // check is consistent with how the dictionary itself resolves equality.
+            // Dictionary<K,V>.Comparer is IEqualityComparer<TKey> directly.
+            // SortedDictionary<K,V>.Comparer is IComparer<TKey>; use it when it also implements
+            // IEqualityComparer<TKey> (the dual-interface pattern required by SortedMultiMap),
+            // otherwise fall back to EqualityComparer<TKey>.Default.
+            IEqualityComparer<TKey> keyComparer =
+                (_dictionary as Dictionary<TKey, TCollection>)?.Comparer
+                ?? ((_dictionary as SortedDictionary<TKey, TCollection>)?.Comparer as IEqualityComparer<TKey>)
+                ?? EqualityComparer<TKey>.Default;
 
             TKey? currentKey = default;
             TCollection? currentCollection = default;
@@ -160,7 +175,7 @@ namespace MultiMap.Entities
                 Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
                 // Switch to the collection for this key only when it differs from the last one seen.
-                if (!hasCurrent || !EqualityComparer<TKey>.Default.Equals(item.Key, currentKey!))
+                if (!hasCurrent || !keyComparer.Equals(item.Key, currentKey!))
                 {
                     // Flush: if the previous collection was newly created, register it only if non-empty.
                     if (hasCurrent && !currentExists && currentCollection!.Count > 0)
