@@ -198,7 +198,7 @@ await map.AddAsync("cache_key", item);
 ```
 ```
 
-**Effort:** Low | **Impact:** Medium (improves user onboarding)  
+**Effort:** Low | **Impact:** Medium (improves user onboarding)
 **Priority:** Medium
 
 #### 4.4.2 Add "Performance Tuning" Section
@@ -208,7 +208,7 @@ Document in `Docs/Benchmarks.md`:
 - When concurrent overhead (202 ns per Add) justifies choice
 - Trade-offs table: throughput vs. uniqueness enforcement
 
-**Effort:** Low | **Impact:** Medium  
+**Effort:** Low | **Impact:** Medium
 **Priority:** Medium
 
 #### 4.4.3 Clarify Async Reader-Writer Semantics
@@ -423,7 +423,7 @@ Once .NET 11 RC appears, test against it to stay ahead:
 <TargetFrameworks>net11.0;net10.0;net9.0;net8.0</TargetFrameworks>
 ```
 
-**Effort:** Very Low (CI job) | **Impact:** High (early adoption)  
+**Effort:** Very Low (CI job) | **Impact:** High (early adoption)
 **Priority:** Low (future consideration)
 
 ---

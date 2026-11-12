@@ -67,7 +67,7 @@
 - **Testing:** Add benchmark regression tests to catch performance drops
 - **Performance:** Implement batching optimization in `RemoveRange` (similar to `AddRange`)
 
-**Est. Effort:** 12 hours  
+**Est. Effort:** 12 hours
 **Est. Impact:** High
 
 ---
@@ -77,7 +77,7 @@
 - **Code Quality:** Extract `MultiMapEqualityHelper` to reduce duplication (~200 lines)
 - **Testing:** Add property-based tests with FsCheck
 
-**Est. Effort:** 16 hours  
+**Est. Effort:** 16 hours
 **Est. Impact:** Medium-High
 
 ---
@@ -88,7 +88,7 @@
 - **Observability:** Add OpenTelemetry Activity support
 - **Build:** Add `Directory.Build.props` for DRY; expand `.editorconfig`
 
-**Est. Effort:** 20 hours  
+**Est. Effort:** 20 hours
 **Est. Impact:** Low-Medium
 
 ---
@@ -99,7 +99,7 @@
 - **Platforms:** Drop .NET 8, require .NET 9+
 - **Observability:** EventSource for production monitoring
 
-**Est. Effort:** 40+ hours  
+**Est. Effort:** 40+ hours
 **Est. Impact:** Medium (future maintenance, minor perf gains)
 
 ---
