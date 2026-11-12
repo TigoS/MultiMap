@@ -256,83 +256,15 @@ This section is now implemented in the codebase:
 
 ---
 
-## 5. Code Refactoring
+## 5. Code Refactoring (Completed)
 
-### 5.1 Extract Common Comparison Logic
+This section is now implemented in the codebase:
 
-**Current:** `Equals` implementations spread across 7 classes.
-
-**Recommendation:** Create `MultiMapEqualityHelper` static class:
-
-```csharp
-internal static class MultiMapEqualityHelper
-{
-    public static bool Equals<TKey, TValue>(
-        IReadOnlyMultiMap<TKey, TValue> left,
-        IReadOnlyMultiMap<TKey, TValue>? right)
-        where TKey : notnull
-        where TValue : notnull
-    {
-        if (right is null) return false;
-        if (ReferenceEquals(left, right)) return true;
-        if (left.KeyCount != right.KeyCount) return false;
-
-        foreach (var key in left.Keys)
-        {
-            if (!right.TryGet(key, out var rightValues))
-                return false;
-
-            // Compare sets...
-        }
-        return true;
-    }
-}
-```
-
-**Benefit:** ~200 lines of duplicated code eliminated, centralized maintenance.
-
-**Effort:** Medium (3-4 hours)
-**Complexity:** Medium
-**Benefit:** High (maintainability)
-
----
-
-### 5.2 Consolidate MultiMapAsync Locking Logic
-
-**Current:** ~100 lines of reader-writer semaphore code.
-
-**Recommendation:** Extract to `AsyncReaderWriterLock` helper:
-
-```csharp
-public class AsyncReaderWriterLock
-{
-    private readonly SemaphoreSlim _writeLock = new(1);
-    private readonly SemaphoreSlim _readerLock = new(1);
-    private int _activeReaders;
-
-    public async Task<IAsyncDisposable> EnterReadLockAsync(CancellationToken ct = default)
-    {
-        // Reader logic
-        return new ReadLockReleaser(this);
-    }
-
-    public async Task EnterWriteLockAsync(CancellationToken ct = default)
-    {
-        await _writeLock.WaitAsync(ct);
-    }
-
-    public void ExitWriteLock()
-    {
-        _writeLock.Release();
-    }
-}
-```
-
-**Benefit:** Reusable, testable, easier to document.
-
-**Effort:** High (4-5 hours)
-**Complexity:** High
-**Benefit:** Medium (maintainability, but significant refactoring)
+- Added `Helpers/MultiMapEqualityHelper.cs` and centralized shared equality precondition/key-loop logic.
+- Refactored duplicated `Equals` implementations in `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, and `SimpleMultiMap` to use the helper.
+- Added `Helpers/AsyncReaderWriterLock.cs` and consolidated `MultiMapAsync` readers-writer semaphore orchestration behind a dedicated helper.
+- Preserved backward compatibility for existing tests/instrumentation by retaining `_writeLock` and `_readerLock` fields in `MultiMapAsync` while delegating protocol flow to the new helper.
+- Added regression coverage for comparer-asymmetry behavior in `MultiMapLock` typed-interface equality.
 
 ---
 
@@ -471,7 +403,7 @@ Consider for next major version:
 
 **Timeline:**
 - v3.1: Add deprecation warnings for v4.0 changes
-- v4.0 (Q3 2026): Release breaking changes
+- v4.0 (Q4 2026): Release breaking changes
 
 ---
 
@@ -491,7 +423,7 @@ Consider for next major version:
 
 ### Short-term (Next Sprint)
 
-- [ ] Extract `MultiMapEqualityHelper` to reduce duplication
+- [x] Extract `MultiMapEqualityHelper` to reduce duplication
 - [ ] Add "Common Mistakes" documentation
 - [ ] Add "Usage Patterns" documentation
 
@@ -501,7 +433,7 @@ Consider for next major version:
 
 ---
 
-### Medium-term (Q2 2026)
+### Medium-term (Q4 2026)
 
 - [ ] Batch `RemoveRange` optimization
 - [ ] Add `GetOrAdd` methods
@@ -514,7 +446,7 @@ Consider for next major version:
 
 ---
 
-### Long-term (v4.0, Q3 2026)
+### Long-term (v4.0, Q4 2026)
 
 - [ ] Source generators for zero-allocation enumerators
 - [ ] OpenTelemetry/Activity support
