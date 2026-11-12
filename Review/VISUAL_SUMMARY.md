@@ -134,7 +134,7 @@ Week 5-6: PERFORMANCE (12 hours)
 └────────────────────────────────-─┘
       Result: Better Performance
 
-Q3 2026: STRATEGIC (40+ hours)
+Q4 2026: STRATEGIC (40+ hours)
 ┌────────────────────────────────-─┐
 │ ❌ Source Generators             │
 │ ❌ OpenTelemetry Support         │
