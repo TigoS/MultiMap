@@ -66,6 +66,11 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 - Added `Docs/ADRs/README.md` and `Docs/ADRs/ADR-001-MultiMapAsync-Reader-Writer-Protocol.md`.
 - Simplified `README.md` to keep quick-start usage while linking to dedicated long-form documentation pages.
 
+**Benchmark Refresh**
+
+- Added benchmark coverage for the new API members: `GetOrAdd` / `GetOrAddAsync` and `CopyTo` / `CopyToAsync` across sync/lock/async implementations.
+- Re-ran benchmark groups with BenchmarkDotNet ShortRun and updated `Docs/Benchmarks.md` with the latest environment baseline (`.NET 10.0.15`, SDK `11.0.100`) and measured `GetOrAdd`/`CopyTo` metrics.
+
 ### 3.0.2
 
 **Bug Fixes**
