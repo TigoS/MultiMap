@@ -15,7 +15,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -24,7 +24,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return AddSlowAsync(waitTask, key, value);
@@ -37,7 +37,7 @@ namespace MultiMap.Entities
             ArgumentNullException.ThrowIfNull(values, nameof(values));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -46,7 +46,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return AddRangeSlowAsync(waitTask, key, values);
@@ -59,7 +59,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -68,7 +68,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return AddRangeSlowAsync(waitTask, items);
@@ -81,7 +81,7 @@ namespace MultiMap.Entities
             ArgumentNullException.ThrowIfNull(value, nameof(value));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -90,7 +90,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveSlowAsync(waitTask, key, value);
@@ -103,7 +103,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -112,7 +112,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveRangeSlowAsync(waitTask, items);
@@ -125,7 +125,7 @@ namespace MultiMap.Entities
             ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -134,7 +134,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveWhereSlowAsync(waitTask, key, predicate);
@@ -146,7 +146,7 @@ namespace MultiMap.Entities
             ArgumentNullException.ThrowIfNull(key, nameof(key));
 
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -155,7 +155,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return RemoveKeySlowAsync(waitTask, key);
@@ -165,7 +165,7 @@ namespace MultiMap.Entities
         public Task ClearAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -176,7 +176,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return ClearSlowAsync(waitTask);
@@ -190,7 +190,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -199,7 +199,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return GetOrAddSlowAsync(waitTask, key, defaultValue);
@@ -213,7 +213,7 @@ namespace MultiMap.Entities
 
             ThrowIfDisposed();
 
-            Task waitTask = _writeLock.WaitAsync(cancellationToken);
+            Task waitTask = WaitWriteLockAsync(cancellationToken);
             if (waitTask.IsCompletedSuccessfully)
             {
                 try
@@ -222,7 +222,7 @@ namespace MultiMap.Entities
                 }
                 finally
                 {
-                    _writeLock.Release();
+                    ExitWriteLock();
                 }
             }
             return GetOrAddLazySlowAsync(waitTask, key, valueFactory);
@@ -274,14 +274,14 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitWriteLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 UnionCore(snapshot);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -309,14 +309,14 @@ namespace MultiMap.Entities
                 otherIndex[key] = new HashSet<TValue>([.. await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)]);
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitWriteLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 IntersectCore(otherIndex);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -343,14 +343,14 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitWriteLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 ExceptWithCore(snapshot);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -378,14 +378,14 @@ namespace MultiMap.Entities
                 snapshot.Add((key, (await other.GetOrDefaultAsync(key, cancellationToken).ConfigureAwait(false)).ToArray()));
             }
 
-            await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await WaitWriteLockAsync(cancellationToken).ConfigureAwait(false);
             try
             {
                 SymmetricExceptWithCore(snapshot);
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
     }

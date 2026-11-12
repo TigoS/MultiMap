@@ -61,18 +61,37 @@ namespace MultiMap.Entities
         where TKey : notnull
         where TValue : notnull
     {
+        /// <summary>
+        /// Dictionary that maps each key to its associated set of unique values.
+        /// </summary>
+        /// <remarks>Each key is associated with a <see cref="HashSet{TValue}"/>, so duplicate values for the same key are not stored.</remarks>
         private readonly Dictionary<TKey, HashSet<TValue>> _dictionary = new(capacity, keyComparer);
 
-        /// <summary>Exclusive write lock – held by the single active writer.</summary>
+        /// <summary>
+        /// Exclusive write lock – kept as a field for slow-path test instrumentation.
+        /// </summary>
         private readonly SemaphoreSlim _writeLock = new(1, 1);
 
-        /// <summary>Guards the <see cref="_activeReaders"/> counter; held only for the duration of an increment/decrement.</summary>
+        /// <summary>
+        /// Reader-count gate semaphore for the async readers-writer protocol.
+        /// </summary>
         private readonly SemaphoreSlim _readerLock = new(1, 1);
 
+        /// <summary>
+        /// Internal lock helper initialized lazily over the instance semaphores.
+        /// </summary>
+        private AsyncReaderWriterLock? _rwLock;
+
+        /// <summary>
+        /// Equality comparer used for <typeparamref name="TValue"/> values.
+        /// </summary>
+        /// <remarks>When <see langword="null"/>, value comparisons use the default equality comparer for <typeparamref name="TValue"/>.</remarks>
         private readonly IEqualityComparer<TValue>? _valueComparer = valueComparer;
-        private int _activeReaders;
+
         private int _count;
         private int _disposed;
+
+        private AsyncReaderWriterLock ReaderWriterLock => _rwLock ??= new AsyncReaderWriterLock(_writeLock, _readerLock);
 
         // ── Guards ────────────────────────────────────────────
 
@@ -82,97 +101,18 @@ namespace MultiMap.Entities
         }
 
         // ── Async reader-writer lock helpers ──────────────────
-        //
-        // Design: _readerLock guards the _activeReaders counter (held only for
-        // the duration of an increment/decrement).  The first reader also acquires
-        // _writeLock so that writers are blocked while any reader is active; the
-        // last reader releases _writeLock.  Writers acquire _writeLock directly.
 
-        /// <summary>
-        /// Tries to enter a read lock without blocking.
-        /// Returns <see langword="true"/> and increments the reader count when successful.
-        /// </summary>
-        private bool TryEnterReadLockSync()
-        {
-            if (!_readerLock.Wait(0))
-            {
-                return false;
-            }
+        private bool TryEnterReadLockSync() => ReaderWriterLock.TryEnterReadLockSync();
 
-            try
-            {
-                if (_activeReaders == 0)
-                {
-                    if (!_writeLock.Wait(0))
-                    {
-                        // Writer holds the lock – do not enter read lock.
-                        return false;
-                    }
-                }
+        private void EnterReadLockSync() => ReaderWriterLock.EnterReadLockSync();
 
-                _activeReaders++;
-                return true;
-            }
-            finally
-            {
-                _readerLock.Release();
-            }
-        }
+        private Task EnterReadLockAsync(CancellationToken cancellationToken) => ReaderWriterLock.EnterReadLockAsync(cancellationToken);
 
-        /// <summary>Enters a read lock synchronously (blocking).</summary>
-        private void EnterReadLockSync()
-        {
-            _readerLock.Wait();
-            try
-            {
-                if (_activeReaders == 0)
-                {
-                    _writeLock.Wait();
-                }
+        private void ExitReadLock() => ReaderWriterLock.ExitReadLock();
 
-                _activeReaders++;
-            }
-            finally
-            {
-                _readerLock.Release();
-            }
-        }
+        private Task WaitWriteLockAsync(CancellationToken cancellationToken) => ReaderWriterLock.WaitWriteLockAsync(cancellationToken);
 
-        /// <summary>Enters a read lock asynchronously.</summary>
-        private async Task EnterReadLockAsync(CancellationToken cancellationToken)
-        {
-            await _readerLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-            try
-            {
-                if (_activeReaders == 0)
-                {
-                    await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-                }
-
-                _activeReaders++;
-            }
-            finally
-            {
-                _readerLock.Release();
-            }
-        }
-
-        /// <summary>Exits a previously entered read lock.</summary>
-        private void ExitReadLock()
-        {
-            _readerLock.Wait();
-            try
-            {
-                if (--_activeReaders == 0)
-                {
-                    _writeLock.Release();
-                }
-            }
-            finally
-            {
-                _readerLock.Release();
-            }
-        }
+        private void ExitWriteLock() => ReaderWriterLock.ExitWriteLock();
 
         // ── Add ───────────────────────────────────────────────
 
@@ -199,7 +139,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -242,7 +182,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -276,7 +216,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -386,7 +326,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -415,7 +355,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -448,7 +388,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -474,7 +414,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -609,7 +549,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -655,7 +595,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -668,7 +608,7 @@ namespace MultiMap.Entities
             }
             finally
             {
-                _writeLock.Release();
+                ExitWriteLock();
             }
         }
 
@@ -827,6 +767,7 @@ namespace MultiMap.Entities
             }
             finally
             {
+                _rwLock?.Dispose();
                 _writeLock.Dispose();
                 _readerLock.Dispose();
             }
