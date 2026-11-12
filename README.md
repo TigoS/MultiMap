@@ -9,7 +9,7 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9616%2F9616%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9620%2F9620%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -61,7 +61,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 5 test suite**:
-  - **9,616 total tests** (2,404 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
+  - **9,620 total tests** (2,405 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
   - **99.45% line coverage**, **97.22% branch coverage**, **100% method coverage** (latest Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
@@ -102,12 +102,18 @@ MultiMap/
 │   │   ├── ConcurrentSet.cs                  # Thread-safe set value collection for ConcurrentMultiMap
 │   │   ├── ConcurrentMultiMap.cs             # Nested ConcurrentDictionary, fully lock-free
 │   │   ├── MultiMapLock.cs                   # ReaderWriterLockSlim-based
-│   │   ├── MultiMapAsync.cs                  # SemaphoreSlim-based async (public API)
-│   │   ├── MultiMapAsync.Core.cs             # SemaphoreSlim-based async (private helpers, partial)
+│   │   ├── MultiMapAsync.cs                  # SemaphoreSlim-based async shared core (partial)
+│   │   ├── MultiMapAsync.Constructors.cs     # Async constructors/options wiring (partial)
+│   │   ├── MultiMapAsync.Read.cs             # Async read API surface (partial)
+│   │   ├── MultiMapAsync.Write.cs            # Async write + set-operation API surface (partial)
+│   │   ├── MultiMapAsync.Enumeration.cs      # Async/sync enumeration + equality members (partial)
+│   │   ├── MultiMapAsync.SetOperations.cs    # Async set-algebra query members (partial)
 │   │   └── SimpleMultiMap.cs                 # Lightweight ISimpleMultiMap impl [Obsolete — will be removed in v4.0.0; migrate to MultiMapSet]
 │   └── Helpers/
 │       ├── Guard.cs                          # Internal argument-validation helpers: `NotNullMessage` (custom-message null check), `NotNullReturn` (null-check + return for ctor chaining); simple null checks use inline `ArgumentNullException.ThrowIfNull`
 │       ├── Polyfills.cs                      # Single home for all version-gated conditionals (HashSet<T>.AsReadOnly on .NET 10+)
+│       ├── AsyncReaderWriterLock.cs          # Internal readers-writer semaphore helper used by MultiMapAsync
+│       ├── MultiMapEqualityHelper.cs         # Internal shared equality comparison helper for multimap implementations
 │       ├── MultiMapHelper.cs                 # Partial — class doc + internal hash utilities (Scramble, ComputeUnorderedHash)
 │       ├── MultiMapHelper.SetOperations.cs   # Partial — Union, Intersect, ExceptWith, SymmetricExceptWith (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
 │       └── MultiMapHelper.QueryExtensions.cs # Partial — IsSubsetOf, IsSupersetOf, Overlaps, SetEquals (IMultiMap / ISimpleMultiMap / IMultiMapAsync)
@@ -286,7 +292,6 @@ Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`.
 
 > **Locking protocol:** Two `SemaphoreSlim(1,1)` instances implement a custom readers-writer protocol with **writer preference**. `_writeLock` is held exclusively by every mutating operation **and** by the *first* reader for as long as any reader is active. `_readerLock` guards the `_activeReaders` counter and is held only for the brief increment/decrement critical section. Key invariants: (1) a writer blocks until `_activeReaders` reaches 0 and `_writeLock` is released by the last reader; (2) the first reader blocks if a writer currently holds `_writeLock`; (3) every operation has a non-blocking fast path (`Wait(0)`) that avoids a heap-allocated continuation when there is no contention.
 
-> **Writer preference:** A `_pendingWriters` counter is incremented (via `Interlocked`) by every writer *before* it calls `_writeLock.WaitAsync` and decremented once the lock is acquired. All three read-entry paths (`TryEnterReadLockSync`, `EnterReadLockSync`, `EnterReadLockAsync`) check this counter and back off — retrying after the current writer finishes — when it is non-zero. This prevents writer starvation under sustained high-frequency concurrent reads.
 
 > **Note:** The primary constructor is `MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`; all other constructor overloads delegate to it.
 
@@ -322,7 +327,7 @@ Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplifi
 | `SortedMultiMap` | `SortedDictionary<TKey, SortedSet<TValue>>` | `SortedSet<TValue>` | O(log n) operations; keys & values sorted |
 | `ConcurrentMultiMap` | `ConcurrentDictionary<TKey, ConcurrentSet<TValue>>` | `ConcurrentSet<TValue>` | Fully lock-free via nested `ConcurrentDictionary`; `Count` and `KeyCount` are O(1) via `Interlocked`-maintained counters |
 | `MultiMapLock` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by `ReaderWriterLockSlim` |
-| `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by a custom readers-writer protocol over two `SemaphoreSlim(1,1)` instances (`_writeLock` + `_readerLock`) |
+| `MultiMapAsync` | `Dictionary<TKey, HashSet<TValue>>` | `HashSet<TValue>` | Protected by an internal `AsyncReaderWriterLock` built on two `SemaphoreSlim(1,1)` instances (`_writeLock` + `_readerLock`) |
 
 ### API Behavior Differences
 

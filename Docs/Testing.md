@@ -9,7 +9,7 @@
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
 [![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9616%2F9616%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Build](https://img.shields.io/badge/tests-9620%2F9620%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -23,7 +23,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Testing
 
-The library includes **9,616 unit-test executions** written with **NUnit 5**, running on **net11.0**, **net10.0**, **net9.0**, and **net8.0** (**2,404 per framework**)
+The library includes **9,620 unit-test executions** written with **NUnit 5**, running on **net11.0**, **net10.0**, **net9.0**, and **net8.0** (**2,405 per framework**)
 
 ```shell
 dotnet test
@@ -80,7 +80,7 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Polyfills` | 1 / 1 | **100%** (1/1) | **100%** | ✅ Full |
 
 > **Notes:**
-> - Coverage from fresh Coverlet run for **net11.0** (2026-11-11). Latest test run reports **2,404/2,404 tests** passing per TFM; full matrix is **9,616 total tests** across 4 TFMs with zero failures.
+> - Coverage from fresh Coverlet run for **net11.0** (2026-11-11). Latest test run reports **2,405/2,405 tests** passing per TFM; full matrix is **9,620 total tests** across 4 TFMs with zero failures.
 > - `SimpleMultiMap<TKey, TValue>` ⚠️ is deprecated (`[Obsolete]` since v3.0.0). Tests are retained for regression coverage.
 > - Method coverage is now **100% (340/340)** after targeted branch/coverage tests for `ConcurrentMultiMap`, `MultiMapList`, and `MultiMapSet`.
 > - A single defensive `ConcurrentMultiMap` invalid-state guard branch remains intentionally unexecuted in normal operation.
@@ -123,7 +123,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | | |
 |---|---|
-| **Total** | **2,404 tests × 4 TFMs = 9,616 executions** |
+| **Total** | **2,405 tests × 4 TFMs = 9,620 executions** |
 
 ### Test Categories
 
@@ -196,9 +196,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.6% |
 | **Helper subtotal** | **408** | **18.3%** |
-| **Total** | **2,404 × 4 TFMs** | **9,616 executions** |
+| **Total** | **2,405 × 4 TFMs** | **9,620 executions** |
 
-> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,404 unique tests** run on **net11.0**, **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across four runtime targets.
+> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,405 unique tests** run on **net11.0**, **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across four runtime targets.
 
 > **Historical context:**
 > - `ConcurrentSet<T>` was raised from 39.1% line / 0% branch to **100% / 100%** via targeted tests.
