@@ -255,33 +255,8 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            if (Count != other.Count)
-            {
-                return false;
-            }
-
-            foreach (var kvp in _dictionary)
-            {
-                if (!kvp.Value.SetEquals(other.GetOrDefault(kvp.Key)))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
+            => MultiMapEqualityHelper.EqualsByKey(this, other, _dictionary.Keys, (key, otherValues)
+                => _dictionary[key].SetEquals(otherValues));
         /// <inheritdoc/>
         public override int GetHashCode()
             => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);

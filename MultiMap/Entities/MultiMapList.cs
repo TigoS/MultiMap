@@ -166,38 +166,8 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            if (KeyCount != other.KeyCount || Count != other.Count)
-            {
-                return false;
-            }
-
-            foreach (var key in Keys)
-            {
-                if (!other.ContainsKey(key) || GetValuesCount(key) != other.GetValuesCount(key))
-                {
-                    return false;
-                }
-
-                if (!this[key].SequenceEqual(other[key]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
+            => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues)
+                => this[key].SequenceEqual(otherValues));
         /// <inheritdoc/>
         public override int GetHashCode()
         {

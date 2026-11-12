@@ -214,42 +214,14 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
-        {
-            if (other is null)
+            => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues) =>
             {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            if (KeyCount != other.KeyCount || Count != other.Count)
-            {
-                return false;
-            }
-
-            foreach (var key in Keys)
-            {
-                if (!other.TryGet(key, out var otherValues))
-                {
-                    return false;
-                }
-
                 var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
 
-                if (!_dictionary.TryGetValue(key, out var targetValuesSet) ||
-                    targetValuesSet.Count != otherValuesSet.Count ||
-                    !targetValuesSet.SetEquals(otherValuesSet))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
+                return _dictionary.TryGetValue(key, out var targetValuesSet) &&
+                       targetValuesSet.Count == otherValuesSet.Count &&
+                       targetValuesSet.SetEquals(otherValuesSet);
+            });
         /// <inheritdoc/>
         public override int GetHashCode()
             => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary,

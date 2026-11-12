@@ -86,26 +86,16 @@ namespace MultiMap.Entities
                 return false;
             }
 
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
             ThrowIfDisposed();
 
             _lock.EnterReadLock();
             try
             {
-                if (_dictionary.Count != other.KeyCount || _count != other.Count)
-                {
-                    return false;
-                }
-
-                foreach (var key in _dictionary.Keys)
+                return MultiMapEqualityHelper.EqualsByKey(this, other, _dictionary.Count, _count, _dictionary.Keys, (key, _) =>
                 {
                     var thisValues = _dictionary[key];
 
-                    if (!other.ContainsKey(key) || thisValues.Count != other.GetValuesCount(key))
+                    if (thisValues.Count != other.GetValuesCount(key))
                     {
                         return false;
                     }
@@ -117,9 +107,9 @@ namespace MultiMap.Entities
                             return false;
                         }
                     }
-                }
 
-                return true;
+                    return true;
+                });
             }
             finally
             {

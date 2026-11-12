@@ -133,11 +133,17 @@ namespace MultiMap.Entities
         {
             ArgumentNullException.ThrowIfNull(options, nameof(options));
             if (options.ConcurrencyLevel > 0 && options.Capacity > 0)
+            {
                 return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
                     options.ConcurrencyLevel, options.Capacity, options.KeyComparer);
+            }
+
             if (options.Capacity > 0)
+            {
                 return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
                     Environment.ProcessorCount, options.Capacity, options.KeyComparer);
+            }
+
             return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(options.KeyComparer);
         }
 
@@ -531,51 +537,29 @@ namespace MultiMap.Entities
 
         /// <inheritdoc/>
         public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
-        {
-            if (other is null)
+            => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues) =>
             {
-                return false;
-            }
-
-            if (ReferenceEquals(this, other))
-            {
-                return true;
-            }
-
-            if (KeyCount != other.KeyCount || Count != other.Count)
-            {
-                return false;
-            }
-
-            foreach (var kvp in _concurrentDictionary)
-            {
-                if (kvp.Value.IsEmpty)
-                {
-                    continue;
-                }
-
-                if (!other.ContainsKey(kvp.Key) || GetValuesCount(kvp.Key) != other.GetValuesCount(kvp.Key))
+                if (!TryGetCollection(key, out var valueSet))
                 {
                     return false;
                 }
 
-                var otherSet = new HashSet<TValue>(other[kvp.Key], _valueComparer);
-                if (kvp.Value.Count != otherSet.Count)
+                var otherSet = new HashSet<TValue>(otherValues, _valueComparer);
+                if (valueSet.Count != otherSet.Count)
                 {
                     return false;
                 }
 
-                foreach (var value in kvp.Value)
+                foreach (var value in valueSet)
                 {
                     if (!otherSet.Contains(value))
                     {
                         return false;
                     }
                 }
-            }
 
-            return true;
-        }
+                return true;
+            });
 
         /// <inheritdoc/>
         public override int GetHashCode()
