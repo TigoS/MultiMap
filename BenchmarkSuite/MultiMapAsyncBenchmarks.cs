@@ -306,6 +306,23 @@ public class MultiMapAsyncBenchmarks
         return map.RemoveWhereAsync(Consts.Key1Prefix, v => v % 2 == 0).GetAwaiter().GetResult();
     }
 
+    [Benchmark]
+    public int MultiMapAsync_GetOrAdd()
+        => _map.GetOrAddAsync(Consts.Key50Prefix, -1).GetAwaiter().GetResult().Count();
+
+    [Benchmark]
+    public int MultiMapAsync_GetOrAdd_Lazy()
+        => _map.GetOrAddAsync(Consts.Key50Prefix, new Lazy<int>(() => -1)).GetAwaiter().GetResult().Count();
+
+    [Benchmark]
+    public int MultiMapAsync_CopyTo()
+    {
+        var count = _map.GetCountAsync().GetAwaiter().GetResult();
+        var buffer = new KeyValuePair<string, int>[count];
+        _map.CopyToAsync(buffer, 0).GetAwaiter().GetResult();
+        return buffer.Length;
+    }
+
     #endregion
 
     #region Microbenchmarks

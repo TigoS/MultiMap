@@ -1627,6 +1627,58 @@ public class MultiMapBenchmarks
 
     #endregion
 
+    #region GetOrAdd and CopyTo Benchmarks
+
+    [Benchmark]
+    public int MultiMapSet_GetOrAdd()
+        => _setMap.GetOrAdd(Consts.Key50Prefix, -1).Count();
+
+    [Benchmark]
+    public int MultiMapList_GetOrAdd()
+        => _listMap.GetOrAdd(Consts.Key50Prefix, -1).Count();
+
+    [Benchmark]
+    public int ConcurrentMultiMap_GetOrAdd()
+        => _concurrentMap.GetOrAdd(Consts.Key50Prefix, -1).Count();
+
+    [Benchmark]
+    public int SortedMultiMap_GetOrAdd()
+        => _sortedMap.GetOrAdd(Consts.Key50Prefix, -1).Count();
+
+    [Benchmark]
+    public int MultiMapSet_CopyTo()
+    {
+        var buffer = new KeyValuePair<string, int>[_setMap.Count];
+        _setMap.CopyTo(buffer, 0);
+        return buffer.Length;
+    }
+
+    [Benchmark]
+    public int MultiMapList_CopyTo()
+    {
+        var buffer = new KeyValuePair<string, int>[_listMap.Count];
+        _listMap.CopyTo(buffer, 0);
+        return buffer.Length;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_CopyTo()
+    {
+        var buffer = new KeyValuePair<string, int>[_concurrentMap.Count];
+        _concurrentMap.CopyTo(buffer, 0);
+        return buffer.Length;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_CopyTo()
+    {
+        var buffer = new KeyValuePair<string, int>[_sortedMap.Count];
+        _sortedMap.CopyTo(buffer, 0);
+        return buffer.Length;
+    }
+
+    #endregion
+
     #region AddRange KeyValuePair Benchmarks
 
     [Benchmark]
