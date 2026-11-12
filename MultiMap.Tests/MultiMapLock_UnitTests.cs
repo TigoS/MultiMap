@@ -2555,6 +2555,19 @@ public class MultiMapLockTests
     }
 
     [Test]
+    public void Equals_TypedInterface_ValueComparerAsymmetry_IsPreserved()
+    {
+        using var left = new MultiMapLock<string, string>(valueComparer: StringComparer.Ordinal);
+        using var right = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+
+        left.Add("k", "A");
+        right.Add("k", "a");
+
+        Assert.That(left.Equals((IReadOnlyMultiMap<string, string>)right), Is.True);
+        Assert.That(right.Equals((IReadOnlyMultiMap<string, string>)left), Is.False);
+    }
+
+    [Test]
     [Category("Stress")]
     public void Equals_TypedInterface_ConcurrentReads_Consistent()
     {
