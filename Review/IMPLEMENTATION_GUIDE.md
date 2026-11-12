@@ -440,8 +440,8 @@ Consider for next major version:
 - [ ] Implement benchmark regression tests
 - [ ] Add property-based testing (FsCheck)
 
-**Effort:** 20 hours  
-**Complexity:** Medium  
+**Effort:** 20 hours
+**Complexity:** Medium
 **Impact:** High
 
 ---
@@ -475,5 +475,5 @@ MultiMap is a mature, well-designed library. The recommended improvements are pr
 
 **Last Updated:** 2026-11-11
 **Status:** Ready for Implementation
-**Maintainer:** TigoS  
+**Maintainer:** TigoS
 **Repository:** https://github.com/TigoS/MultiMap
