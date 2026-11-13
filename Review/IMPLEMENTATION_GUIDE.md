@@ -414,7 +414,7 @@ Consider for next major version:
 ### Immediate (This Sprint)
 
 - [x] Add "Implementation Selection Guide" documentation
-- [ ] Expand `.editorconfig` with analyzer rules
+- [x] Expand `.editorconfig` with analyzer rules
 - [x] Add `CopyTo` method for BCL compatibility
 
 **Effort:** 4 hours

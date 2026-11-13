@@ -18,6 +18,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [Unreleased](#unreleased)
   - [3.1.0](#310)
   - [3.0.2](#302)
   - [3.0.1](#301)
@@ -40,6 +41,20 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### Unreleased
+
+**Code Quality Improvements**
+
+- Expanded `.editorconfig` with additional C# style rules for improved code consistency and developer guidance:
+  - `csharp_style_prefer_simple_using_statement = true:suggestion` — Encourages simple `using` statements for better readability
+  - `csharp_style_inlined_variable_declaration = true:suggestion` — Promotes inline variable declarations
+  - `dotnet_diagnostic.CS1591.severity = warning` — Enforces XML documentation on public members for better API discoverability
+  - `csharp_style_namespace_declarations = file_scoped:warning` — Encourages file-scoped namespaces (C# 10+) for cleaner code organization
+
+**No API Changes**
+
+- These analyzer rules are non-breaking and serve as development-time guidance only. Existing code continues to compile without modification.
 
 ### 3.1.0
 
