@@ -259,13 +259,13 @@ Outcome: Production observability, future-proof architecture, cleaner codebase
 - [x] SOLID principles followed
 
 ### Recommended Enhancements
-- [ ] Add usage patterns documentation
+- [x] Add usage patterns documentation
 - [ ] Add benchmark regression tests
-- [ ] Extract equality helper (reduce duplication)
+- [x] Extract equality helper (reduce duplication)
 - [ ] Implement RemoveRange batching
 - [ ] Add TryGetSpan for zero-allocation scenarios
-- [ ] Add Architecture Decision Records
-- [ ] Expand .editorconfig rules
+- [x] Add Architecture Decision Records
+- [x] Expand .editorconfig rules
 - [ ] Add PoliCheck/CredScan to CI/CD
 
 ### Future Considerations (v4.0)
