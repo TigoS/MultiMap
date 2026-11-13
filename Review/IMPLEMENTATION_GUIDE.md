@@ -413,9 +413,9 @@ Consider for next major version:
 
 ### Immediate (This Sprint)
 
-- [ ] Add "Implementation Selection Guide" documentation
+- [x] Add "Implementation Selection Guide" documentation
 - [ ] Expand `.editorconfig` with analyzer rules
-- [ ] Add `CopyTo` method for BCL compatibility
+- [x] Add `CopyTo` method for BCL compatibility
 
 **Effort:** 4 hours
 **Complexity:** Very Low
@@ -426,8 +426,8 @@ Consider for next major version:
 ### Short-term (Next Sprint)
 
 - [x] Extract `MultiMapEqualityHelper` to reduce duplication
-- [ ] Add "Common Mistakes" documentation
-- [ ] Add "Usage Patterns" documentation
+- [x] Add "Common Mistakes" documentation
+- [x] Add "Usage Patterns" documentation
 
 **Effort:** 8 hours
 **Complexity:** Medium
@@ -438,7 +438,7 @@ Consider for next major version:
 ### Medium-term (Q4 2026)
 
 - [ ] Batch `RemoveRange` optimization
-- [ ] Add `GetOrAdd` methods
+- [x] Add `GetOrAdd` methods
 - [ ] Implement benchmark regression tests
 - [ ] Add property-based testing (FsCheck)
 

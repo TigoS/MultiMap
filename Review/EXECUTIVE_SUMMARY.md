@@ -218,14 +218,14 @@ Effort: 40+ hours | Owner: 2 developers
 3. **Clean async support** — Unlike Dictionary or similar classes
 4. **Reader-writer fairness** — MultiMapLock favors readers (rare, useful)
 5. **Zero external dependencies** — Entirely BCL-based
-6. **Multi-target from day 1** — .NET 8/9/10 support
+6. **Multi-target from day 1** — .NET 8/9/10/11 support
 7. **Benchmarked & documented** — Shows optimization mindset
 
 **Against similar projects (e.g., NuGet:Superlinq, Jil):**
 - Better documentation
 - Higher test coverage
 - More implementation choices
-- Active maintenance (recent v3.0.2 release)
+- Active maintenance (recent v3.1.0 release)
 
 ---
 
