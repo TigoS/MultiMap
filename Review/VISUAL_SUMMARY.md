@@ -195,7 +195,7 @@ Choosing the Right Implementation:
 ```
 High Impact / Low Effort (DO FIRST)
   ❌ Implementation Selection Guide    1-2 hrs   │ Prevents wrong choices
-  ✅ Benchmark Regression Tests        2 hrs     │ Prevents perf drops
+  ❌ Benchmark Regression Tests        2 hrs     │ Prevents perf drops
   ✅ Common Mistakes Documentation     1 hr      │ Reduces support load
   ❌ Add TryGetSpan API                1 hr      │ Zero-allocation paths
 
