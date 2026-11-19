@@ -290,8 +290,7 @@ Implements `IMultiMap` and `IDisposable`. Uses `ReaderWriterLockSlim` to allow c
 
 Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`.
 
-> **Locking protocol:** Two `SemaphoreSlim(1,1)` instances implement a custom readers-writer protocol with **writer preference**. `_writeLock` is held exclusively by every mutating operation **and** by the *first* reader for as long as any reader is active. `_readerLock` guards the `_activeReaders` counter and is held only for the brief increment/decrement critical section. Key invariants: (1) a writer blocks until `_activeReaders` reaches 0 and `_writeLock` is released by the last reader; (2) the first reader blocks if a writer currently holds `_writeLock`; (3) every operation has a non-blocking fast path (`Wait(0)`) that avoids a heap-allocated continuation when there is no contention.
-
+> **Locking protocol:** Two `SemaphoreSlim(1,1)` instances implement a custom readers-writer protocol with **reader preference** (writers can starve under sustained reader pressure; see ADR-001). `_writeLock` is held exclusively by every mutating operation **and** by the *first* reader for as long as any reader is active. `_readerLock` guards the `_activeReaders` counter and is held only for the brief increment/decrement critical section. Key invariants: (1) a writer blocks until `_activeReaders` reaches 0 and `_writeLock` is released by the last reader; (2) the first reader blocks if a writer currently holds `_writeLock`; (3) every operation has a non-blocking fast path (`Wait(0)`) that avoids a heap-allocated continuation when there is no contention.
 
 > **Note:** The primary constructor is `MultiMapAsync(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)`; all other constructor overloads delegate to it.
 
