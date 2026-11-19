@@ -71,7 +71,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 For practical pitfalls and safe usage guidance, see:
 
 - [Common Mistakes](https://github.com/TigoS/MultiMap/blob/master/Docs/CommonMistakes.md)
-- [ADRs](https://github.com/TigoS/MultiMap/blob/master/Docs/ADRs/README.md)
+- [ADRs](https://github.com/TigoS/MultiMap/blob/master/Docs/ADRs/ADR_README.md)
 
 Notable constraints to keep in mind:
 
@@ -474,7 +474,7 @@ See [Common Mistakes](https://github.com/TigoS/MultiMap/blob/master/Docs/CommonM
 
 ## Architecture Decision Records (ADRs)
 
-See [ADRs](https://github.com/TigoS/MultiMap/blob/master/Docs/ADRs/README.md) for design rationale and trade-off records.
+See [ADRs](https://github.com/TigoS/MultiMap/blob/master/Docs/ADRs/ADR_README.md) for design rationale and trade-off records.
 
 ## Testing
 

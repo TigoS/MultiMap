@@ -73,7 +73,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 - Added `Docs/UsagePatterns.md` and moved detailed usage recipes from `README.md`.
 - Added `Docs/CommonMistakes.md` and moved practical pitfalls/guidance from `README.md`.
-- Added `Docs/ADRs/README.md` and `Docs/ADRs/ADR-001-MultiMapAsync-Reader-Writer-Protocol.md`.
+- Added `Docs/ADRs/ADR_README.md` and `Docs/ADRs/ADR-001-MultiMapAsync-Reader-Writer-Protocol.md`.
 - Simplified `README.md` to keep quick-start usage while linking to dedicated long-form documentation pages.
 - Expanded `.editorconfig` with additional C# style rules for improved code consistency and developer guidance:
   - `csharp_style_prefer_simple_using_statement = true:suggestion` — Encourages simple `using` statements for better readability.
