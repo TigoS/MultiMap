@@ -91,7 +91,7 @@ public sealed partial class MultiMapAsync<TKey, TValue>(int capacity, IEqualityC
     private int _count;
     private int _disposed;
 
-    private AsyncReaderWriterLock ReaderWriterLock => _rwLock ??= new AsyncReaderWriterLock(_writeLock, _readerLock);
+    private AsyncReaderWriterLock ReaderWriterLock => LazyInitializer.EnsureInitialized(ref _rwLock, () => new AsyncReaderWriterLock(_writeLock, _readerLock));
 
     // ── Guards ────────────────────────────────────────────
 
