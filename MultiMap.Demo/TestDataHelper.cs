@@ -1,69 +1,68 @@
 using MultiMap.Entities;
 using MultiMap.Interfaces;
 
-namespace MultiMap.Demo
+namespace MultiMap.Demo;
+
+/// <summary>
+/// Provides factory methods for creating sample <see cref="ISimpleMultiMap{TKey, TValue}"/> instances and printing their contents.
+/// </summary>
+public static class TestDataHelper
 {
     /// <summary>
-    /// Provides factory methods for creating sample <see cref="ISimpleMultiMap{TKey, TValue}"/> instances and printing their contents.
+    /// Creates a sample multimap containing keys "A" (values 1, 2) and "B" (value 3).
     /// </summary>
-    public static class TestDataHelper
+    /// <returns>A pre-populated <see cref="ISimpleMultiMap{TKey, TValue}"/> instance.</returns>
+    public static ISimpleMultiMap<string, int> CreateSampleMultiMap1()
     {
-        /// <summary>
-        /// Creates a sample multimap containing keys "A" (values 1, 2) and "B" (value 3).
-        /// </summary>
-        /// <returns>A pre-populated <see cref="ISimpleMultiMap{TKey, TValue}"/> instance.</returns>
-        public static ISimpleMultiMap<string, int> CreateSampleMultiMap1()
+        var multiMap = new MultiMapSet<string, int>
         {
-            var multiMap = new MultiMapSet<string, int>
-            {
-                { "A", 1 },
-                { "A", 2 },
-                { "B", 3 }
-            };
+            { "A", 1 },
+            { "A", 2 },
+            { "B", 3 }
+        };
 
-            return multiMap;
+        return multiMap;
+    }
+
+    /// <summary>
+    /// Creates a sample multimap containing keys "A" (values 1, 3) and "C" (values 4, 3).
+    /// </summary>
+    /// <returns>A pre-populated <see cref="ISimpleMultiMap{TKey, TValue}"/> instance.</returns>
+    public static ISimpleMultiMap<string, int> CreateSampleMultiMap2()
+    {
+        var multiMap = new MultiMapSet<string, int>
+        {
+            { "A", 1 },
+            { "A", 3 },
+            { "C", 4 },
+            { "C", 3 },
+        };
+
+        return multiMap;
+    }
+
+    /// <summary>
+    /// Prints all key-value pairs in the specified multimap to the console.
+    /// </summary>
+    /// <param name="title">A title to display before the multimap contents.</param>
+    /// <param name="multiMap">The multimap to print.</param>
+    public static void PrintMultiMap(string title, ISimpleMultiMap<string, int> multiMap)
+    {
+        Console.WriteLine($"{title}:");
+
+        foreach (var item in multiMap)
+        {
+            Console.WriteLine($"{item.Key}: {item.Value}");
         }
 
-        /// <summary>
-        /// Creates a sample multimap containing keys "A" (values 1, 3) and "C" (values 4, 3).
-        /// </summary>
-        /// <returns>A pre-populated <see cref="ISimpleMultiMap{TKey, TValue}"/> instance.</returns>
-        public static ISimpleMultiMap<string, int> CreateSampleMultiMap2()
-        {
-            var multiMap = new MultiMapSet<string, int>
-            {
-                { "A", 1 },
-                { "A", 3 },
-                { "C", 4 },
-                { "C", 3 },
-            };
+        Console.WriteLine();
+    }
 
-            return multiMap;
-        }
-
-        /// <summary>
-        /// Prints all key-value pairs in the specified multimap to the console.
-        /// </summary>
-        /// <param name="title">A title to display before the multimap contents.</param>
-        /// <param name="multiMap">The multimap to print.</param>
-        public static void PrintMultiMap(string title, ISimpleMultiMap<string, int> multiMap)
-        {
-            Console.WriteLine($"{title}:");
-
-            foreach (var item in multiMap)
-            {
-                Console.WriteLine($"{item.Key}: {item.Value}");
-            }
-
-            Console.WriteLine();
-        }
-
-        /// <summary>
-        /// Prints a line break to the console for visual separation of output sections.
-        /// </summary>
-        public static void PrintLineBreak()
-        {
-            Console.WriteLine("--------------------------------------------------");
-        }
+    /// <summary>
+    /// Prints a line break to the console for visual separation of output sections.
+    /// </summary>
+    public static void PrintLineBreak()
+    {
+        Console.WriteLine("--------------------------------------------------");
     }
 }

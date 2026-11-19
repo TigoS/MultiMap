@@ -4,261 +4,260 @@ using System.Runtime.InteropServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
-namespace MultiMap.Entities
+namespace MultiMap.Entities;
+
+/// <summary>
+/// Represents a collection that associates multiple values with each key, allowing efficient retrieval and management of grouped data.
+/// </summary>
+/// <remarks>
+/// <see cref="SimpleMultiMap{TKey, TValue}"/> is an intentionally limited, standalone set-based multimap intended for initial design and drafting scenarios where only the <see cref="ISimpleMultiMap{TKey, TValue}"/> contract is needed.
+/// It duplicates the constructor overloads already present on <see cref="MultiMapSet{TKey, TValue}"/> because it does not inherit from <see cref="MultiMapBase{TKey, TValue, TCollection}"/>; the duplication is deliberate, not an oversight.
+/// For production use, prefer <see cref="MultiMapSet{TKey, TValue}"/> or another full <see cref="Interfaces.IMultiMap{TKey, TValue}"/> implementation.
+/// Duplicate values per key are not allowed.
+/// </remarks>
+/// <typeparam name="TKey">The type of keys in the map.</typeparam>
+/// <typeparam name="TValue">The type of values associated with each key.</typeparam>
+[DebuggerDisplay("Keys={_dictionary.Count}, Values={Count}")]
+[Obsolete("SimpleMultiMap<TKey, TValue> is deprecated and will be removed in v4.0.0. " +
+          "Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.", error: false)]
+public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
+    where TKey : notnull
+    where TValue : notnull
 {
+    private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
+    private readonly IEqualityComparer<TValue>? _valueComparer;
+    private int _count;
+
     /// <summary>
-    /// Represents a collection that associates multiple values with each key, allowing efficient retrieval and management of grouped data.
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class.
     /// </summary>
-    /// <remarks>
-    /// <see cref="SimpleMultiMap{TKey, TValue}"/> is an intentionally limited, standalone set-based multimap intended for initial design and drafting scenarios where only the <see cref="ISimpleMultiMap{TKey, TValue}"/> contract is needed.
-    /// It duplicates the constructor overloads already present on <see cref="MultiMapSet{TKey, TValue}"/> because it does not inherit from <see cref="MultiMapBase{TKey, TValue, TCollection}"/>; the duplication is deliberate, not an oversight.
-    /// For production use, prefer <see cref="MultiMapSet{TKey, TValue}"/> or another full <see cref="Interfaces.IMultiMap{TKey, TValue}"/> implementation.
-    /// Duplicate values per key are not allowed.
-    /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the map.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
-    [DebuggerDisplay("Keys={_dictionary.Count}, Values={Count}")]
-    [Obsolete("SimpleMultiMap<TKey, TValue> is deprecated and will be removed in v4.0.0. " +
-              "Use MultiMapSet<TKey, TValue> instead, which provides the full IMultiMap contract with a richer API.", error: false)]
-    public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
+    public SimpleMultiMap()
     {
-        private readonly Dictionary<TKey, HashSet<TValue>> _dictionary;
-        private readonly IEqualityComparer<TValue>? _valueComparer;
-        private int _count;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class.
-        /// </summary>
-        public SimpleMultiMap()
-        {
-            _dictionary = [];
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class with the specified equality comparer for keys.
-        /// </summary>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public SimpleMultiMap(IEqualityComparer<TKey>? keyComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
-        /// with the specified initial capacity for keys.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        public SimpleMultiMap(int capacity)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
-        /// with the specified initial capacity for keys and equality comparer for keys.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public SimpleMultiMap(int capacity, IEqualityComparer<TKey>? keyComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
-        /// with the specified initial capacity for keys and equality comparer for values.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public SimpleMultiMap(int capacity, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
-        /// with the specified initial capacity for keys and equality comparers for keys and values.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public SimpleMultiMap(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
-        /// with the specified equality comparer for values.
-        /// </summary>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public SimpleMultiMap(IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = [];
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
-        /// with the specified equality comparers for keys and values.
-        /// </summary>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public SimpleMultiMap(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-        {
-            _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
-            _valueComparer = valueComparer;
-        }
-
-        /// <inheritdoc />
-        public int Count => _count;
-
-        /// <inheritdoc />
-        public bool Add(TKey key, TValue value)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-
-            bool added = hashset.Add(value);
-            if (added)
-            {
-                _count++;
-            }
-
-            return added;
-        }
-
-        /// <inheritdoc />
-        public IEnumerable<TValue> Get(TKey key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            return _dictionary.TryGetValue(key, out var hashset)
-                ? Polyfills.AsReadOnlyOrSnapshot(hashset)
-                : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
-        }
-
-        /// <inheritdoc />
-        public IEnumerable<TValue> GetOrDefault(TKey key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            return _dictionary.TryGetValue(key, out var hashset) ? Polyfills.AsReadOnlyOrSnapshot(hashset) : [];
-        }
-
-        /// <inheritdoc/>
-        public bool TryGet(TKey key, out IEnumerable<TValue> values)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            bool result = _dictionary.TryGetValue(key, out var hashset);
-
-            if (!result || hashset is null)
-            {
-                values = [];
-            }
-            else
-            {
-                values = Polyfills.AsReadOnlyOrSnapshot(hashset);
-            }
-
-            return result;
-        }
-
-        /// <inheritdoc />
-        public bool Remove(TKey key, TValue value)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-
-            if (_dictionary.TryGetValue(key, out var hashset))
-            {
-                bool removed = hashset.Remove(value);
-
-                if (removed)
-                {
-                    _count--;
-                    if (hashset.Count == 0)
-                    {
-                        _dictionary.Remove(key);
-                    }
-                }
-
-                return removed;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc />
-        public bool RemoveKey(TKey key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            if (_dictionary.Remove(key, out var collection))
-            {
-                _count -= collection.Count;
-                return true;
-            }
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public void Clear()
-        {
-            _dictionary.Clear();
-            _count = 0;
-        }
-
-        /// <inheritdoc />
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
-        {
-            foreach (var kvp in _dictionary)
-            {
-                foreach (var value in kvp.Value)
-                {
-                    yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        /// <inheritdoc />
-        public bool ContainsKey(TKey key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            return _dictionary.ContainsKey(key);
-        }
-
-        /// <inheritdoc />
-        public bool Contains(TKey key, TValue value)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-
-            return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
-        }
-
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) => Equals(obj as IReadOnlySimpleMultiMap<TKey, TValue>);
-
-        /// <inheritdoc/>
-        public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
-            => MultiMapEqualityHelper.EqualsByKey(this, other, _dictionary.Keys, (key, otherValues)
-                => _dictionary[key].SetEquals(otherValues));
-        /// <inheritdoc/>
-        public override int GetHashCode()
-            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
+        _dictionary = [];
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class with the specified equality comparer for keys.
+    /// </summary>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    public SimpleMultiMap(IEqualityComparer<TKey>? keyComparer)
+    {
+        _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+    /// with the specified initial capacity for keys.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    public SimpleMultiMap(int capacity)
+    {
+        _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+    /// with the specified initial capacity for keys and equality comparer for keys.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    public SimpleMultiMap(int capacity, IEqualityComparer<TKey>? keyComparer)
+    {
+        _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+    /// with the specified initial capacity for keys and equality comparer for values.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public SimpleMultiMap(int capacity, IEqualityComparer<TValue>? valueComparer)
+    {
+        _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity);
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+    /// with the specified initial capacity for keys and equality comparers for keys and values.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public SimpleMultiMap(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+    {
+        _dictionary = new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer);
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+    /// with the specified equality comparer for values.
+    /// </summary>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public SimpleMultiMap(IEqualityComparer<TValue>? valueComparer)
+    {
+        _dictionary = [];
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="SimpleMultiMap{TKey, TValue}"/> class
+    /// with the specified equality comparers for keys and values.
+    /// </summary>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public SimpleMultiMap(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+    {
+        _dictionary = new Dictionary<TKey, HashSet<TValue>>(keyComparer);
+        _valueComparer = valueComparer;
+    }
+
+    /// <inheritdoc />
+    public int Count => _count;
+
+    /// <inheritdoc />
+    public bool Add(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(_dictionary, key, out bool _);
+        hashset ??= new HashSet<TValue>(_valueComparer);
+
+        bool added = hashset.Add(value);
+        if (added)
+        {
+            _count++;
+        }
+
+        return added;
+    }
+
+    /// <inheritdoc />
+    public IEnumerable<TValue> Get(TKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        return _dictionary.TryGetValue(key, out var hashset)
+            ? Polyfills.AsReadOnlyOrSnapshot(hashset)
+            : throw new KeyNotFoundException($"The key '{key}' was not found in the multimap.");
+    }
+
+    /// <inheritdoc />
+    public IEnumerable<TValue> GetOrDefault(TKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        return _dictionary.TryGetValue(key, out var hashset) ? Polyfills.AsReadOnlyOrSnapshot(hashset) : [];
+    }
+
+    /// <inheritdoc/>
+    public bool TryGet(TKey key, out IEnumerable<TValue> values)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        bool result = _dictionary.TryGetValue(key, out var hashset);
+
+        if (!result || hashset is null)
+        {
+            values = [];
+        }
+        else
+        {
+            values = Polyfills.AsReadOnlyOrSnapshot(hashset);
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    public bool Remove(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        if (_dictionary.TryGetValue(key, out var hashset))
+        {
+            bool removed = hashset.Remove(value);
+
+            if (removed)
+            {
+                _count--;
+                if (hashset.Count == 0)
+                {
+                    _dictionary.Remove(key);
+                }
+            }
+
+            return removed;
+        }
+
+        return false;
+    }
+
+    /// <inheritdoc />
+    public bool RemoveKey(TKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        if (_dictionary.Remove(key, out var collection))
+        {
+            _count -= collection.Count;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <inheritdoc/>
+    public void Clear()
+    {
+        _dictionary.Clear();
+        _count = 0;
+    }
+
+    /// <inheritdoc />
+    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+    {
+        foreach (var kvp in _dictionary)
+        {
+            foreach (var value in kvp.Value)
+            {
+                yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+            }
+        }
+    }
+
+    /// <inheritdoc />
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    /// <inheritdoc />
+    public bool ContainsKey(TKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        return _dictionary.ContainsKey(key);
+    }
+
+    /// <inheritdoc />
+    public bool Contains(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        return _dictionary.TryGetValue(key, out var hashset) && hashset.Contains(value);
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as IReadOnlySimpleMultiMap<TKey, TValue>);
+
+    /// <inheritdoc/>
+    public bool Equals(IReadOnlySimpleMultiMap<TKey, TValue>? other)
+        => MultiMapEqualityHelper.EqualsByKey(this, other, _dictionary.Keys, (key, otherValues)
+            => _dictionary[key].SetEquals(otherValues));
+    /// <inheritdoc/>
+    public override int GetHashCode()
+        => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary, _dictionary.Comparer, _valueComparer);
 }

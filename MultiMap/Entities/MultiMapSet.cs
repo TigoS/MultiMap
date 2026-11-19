@@ -2,229 +2,228 @@ using System.Runtime.InteropServices;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
-namespace MultiMap.Entities
+namespace MultiMap.Entities;
+
+/// <summary>
+/// Represents a collection that maps keys to sets of values, allowing multiple values to be associated with each key.
+/// Provides set semantics for values, ensuring that each value is unique per key.
+/// </summary>
+/// <remarks>
+/// This implementation uses a dictionary of hash sets to store values for each key, providing efficient lookup and uniqueness enforcement.
+/// Values associated with a key are unordered and duplicates are not allowed.
+/// The class is not thread-safe; external synchronization is required for concurrent access.
+/// </remarks>
+/// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
+/// <typeparam name="TValue">The type of values in the multimap.</typeparam>
+public sealed class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
+    where TKey : notnull
+    where TValue : notnull
 {
+    private readonly IEqualityComparer<TValue>? _valueComparer;
+
     /// <summary>
-    /// Represents a collection that maps keys to sets of values, allowing multiple values to be associated with each key.
-    /// Provides set semantics for values, ensuring that each value is unique per key.
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class.
     /// </summary>
-    /// <remarks>
-    /// This implementation uses a dictionary of hash sets to store values for each key, providing efficient lookup and uniqueness enforcement.
-    /// Values associated with a key are unordered and duplicates are not allowed.
-    /// The class is not thread-safe; external synchronization is required for concurrent access.
-    /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multimap.</typeparam>
-    /// <typeparam name="TValue">The type of values in the multimap.</typeparam>
-    public sealed class MultiMapSet<TKey, TValue> : MultiMapBase<TKey, TValue, HashSet<TValue>>
-        where TKey : notnull
-        where TValue : notnull
+    public MultiMapSet()
+        : base(new Dictionary<TKey, HashSet<TValue>>())
     {
-        private readonly IEqualityComparer<TValue>? _valueComparer;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class.
-        /// </summary>
-        public MultiMapSet()
-            : base(new Dictionary<TKey, HashSet<TValue>>())
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparer for keys.
+    /// </summary>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    public MultiMapSet(IEqualityComparer<TKey>? keyComparer)
+        : base(new Dictionary<TKey, HashSet<TValue>>(keyComparer))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparer for values.
+    /// </summary>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public MultiMapSet(IEqualityComparer<TValue>? valueComparer)
+        : base(new Dictionary<TKey, HashSet<TValue>>())
+    {
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparers for keys and values.
+    /// </summary>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public MultiMapSet(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        : base(new Dictionary<TKey, HashSet<TValue>>(keyComparer))
+    {
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    public MultiMapSet(int capacity)
+        : base(new Dictionary<TKey, HashSet<TValue>>(capacity))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    public MultiMapSet(int capacity, IEqualityComparer<TKey>? keyComparer)
+        : base(new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer))
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for values.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public MultiMapSet(int capacity, IEqualityComparer<TValue>? valueComparer)
+        : base(new Dictionary<TKey, HashSet<TValue>>(capacity))
+    {
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
+    /// </summary>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public MultiMapSet(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        : base(new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer))
+    {
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class using a
+    /// <see cref="MultiMapOptions{TKey, TValue}"/> configuration object.
+    /// </summary>
+    /// <remarks>This constructor is an additive convenience overload. All existing individual constructors remain available.</remarks>
+    /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+    public MultiMapSet(MultiMapOptions<TKey, TValue> options)
+        : this(Guard.NotNullReturn(options, nameof(options)).Capacity,
+               options.KeyComparer,
+               options.ValueComparer)
+    {
+    }
+
+    /// <inheritdoc/>
+    protected override HashSet<TValue> CreateCollection() => new(_valueComparer);
+
+    /// <inheritdoc/>
+    protected override bool AddToCollection(HashSet<TValue> collection, TValue value) => collection.Add(value);
+
+    /// <inheritdoc/>
+    protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
+
+    /// <inheritdoc/>
+    protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => Polyfills.AsReadOnlyOrSnapshot(collection);
+
+    /// <inheritdoc/>
+    public override bool Add(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
+        hashset ??= new HashSet<TValue>(_valueComparer);
+
+        if (hashset.Add(value))
         {
+            IncrementCount();
+            return true;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparer for keys.
-        /// </summary>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapSet(IEqualityComparer<TKey>? keyComparer)
-            : base(new Dictionary<TKey, HashSet<TValue>>(keyComparer))
+        return false;
+    }
+
+    /// <inheritdoc/>
+    public override int AddRange(TKey key, IEnumerable<TValue> values)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(values, nameof(values));
+
+        // Materialise first so that:
+        // 1. An empty sequence returns 0 without touching the dictionary.
+        // 2. All null-element checks happen before the dictionary slot is created,
+        //    keeping the dictionary pristine when the sequence is invalid.
+        var materialised = values as ICollection<TValue> ?? [.. values];
+        if (materialised.Count == 0)
         {
+            return 0;
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparer for values.
-        /// </summary>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapSet(IEqualityComparer<TValue>? valueComparer)
-            : base(new Dictionary<TKey, HashSet<TValue>>())
+        foreach (var value in materialised)
         {
-            _valueComparer = valueComparer;
+            Guard.NotNullMessage(value, nameof(value), "Sequence contains a null value.");
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified equality comparers for keys and values.
-        /// </summary>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapSet(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-            : base(new Dictionary<TKey, HashSet<TValue>>(keyComparer))
+        var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+        ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
+        hashset ??= new HashSet<TValue>(_valueComparer);
+
+        int added = 0;
+        foreach (var value in materialised)
         {
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        public MultiMapSet(int capacity)
-            : base(new Dictionary<TKey, HashSet<TValue>>(capacity))
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapSet(int capacity, IEqualityComparer<TKey>? keyComparer)
-            : base(new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer))
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for values.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapSet(int capacity, IEqualityComparer<TValue>? valueComparer)
-            : base(new Dictionary<TKey, HashSet<TValue>>(capacity))
-        {
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class with the specified initial capacity for keys and equality comparer for keys and values.
-        /// </summary>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public MultiMapSet(int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-            : base(new Dictionary<TKey, HashSet<TValue>>(capacity, keyComparer))
-        {
-            _valueComparer = valueComparer;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="MultiMapSet{TKey, TValue}"/> class using a
-        /// <see cref="MultiMapOptions{TKey, TValue}"/> configuration object.
-        /// </summary>
-        /// <remarks>This constructor is an additive convenience overload. All existing individual constructors remain available.</remarks>
-        /// <param name="options">The options object. Must not be <see langword="null"/>.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
-        public MultiMapSet(MultiMapOptions<TKey, TValue> options)
-            : this(Guard.NotNullReturn(options, nameof(options)).Capacity,
-                   options.KeyComparer,
-                   options.ValueComparer)
-        {
-        }
-
-        /// <inheritdoc/>
-        protected override HashSet<TValue> CreateCollection() => new(_valueComparer);
-
-        /// <inheritdoc/>
-        protected override bool AddToCollection(HashSet<TValue> collection, TValue value) => collection.Add(value);
-
-        /// <inheritdoc/>
-        protected override int RemoveWhereFromCollection(HashSet<TValue> collection, Predicate<TValue> predicate) => collection.RemoveWhere(predicate);
-
-        /// <inheritdoc/>
-        protected override IEnumerable<TValue> ToReadOnly(HashSet<TValue> collection) => Polyfills.AsReadOnlyOrSnapshot(collection);
-
-        /// <inheritdoc/>
-        public override bool Add(TKey key, TValue value)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault((Dictionary<TKey, HashSet<TValue>>)_dictionary, key, out _);
-            hashset ??= new HashSet<TValue>(_valueComparer);
-
             if (hashset.Add(value))
             {
                 IncrementCount();
-                return true;
+                added++;
             }
-
-            return false;
         }
 
-        /// <inheritdoc/>
-        public override int AddRange(TKey key, IEnumerable<TValue> values)
+        return added;
+    }
+
+    /// <inheritdoc/>
+    public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+    {
+        ArgumentNullException.ThrowIfNull(items, nameof(items));
+
+        int added = 0;
+        var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
+
+        foreach (var item in items)
         {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(values, nameof(values));
+            Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+            Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
-            // Materialise first so that:
-            // 1. An empty sequence returns 0 without touching the dictionary.
-            // 2. All null-element checks happen before the dictionary slot is created,
-            //    keeping the dictionary pristine when the sequence is invalid.
-            var materialised = values as ICollection<TValue> ?? [.. values];
-            if (materialised.Count == 0)
-            {
-                return 0;
-            }
-
-            foreach (var value in materialised)
-            {
-                Guard.NotNullMessage(value, nameof(value), "Sequence contains a null value.");
-            }
-
-            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
-            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, key, out _);
+            ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
             hashset ??= new HashSet<TValue>(_valueComparer);
 
-            int added = 0;
-            foreach (var value in materialised)
+            if (hashset.Add(item.Value))
             {
-                if (hashset.Add(value))
-                {
-                    IncrementCount();
-                    added++;
-                }
+                IncrementCount();
+                added++;
             }
-
-            return added;
         }
 
-        /// <inheritdoc/>
-        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
-        {
-            ArgumentNullException.ThrowIfNull(items, nameof(items));
-
-            int added = 0;
-            var dict = (Dictionary<TKey, HashSet<TValue>>)_dictionary;
-
-            foreach (var item in items)
-            {
-                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
-
-                ref var hashset = ref CollectionsMarshal.GetValueRefOrAddDefault(dict, item.Key, out bool exists);
-                hashset ??= new HashSet<TValue>(_valueComparer);
-
-                if (hashset.Add(item.Value))
-                {
-                    IncrementCount();
-                    added++;
-                }
-            }
-
-            return added;
-        }
-
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
-
-        /// <inheritdoc/>
-        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
-            => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues) =>
-            {
-                var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
-
-                return _dictionary.TryGetValue(key, out var targetValuesSet) &&
-                       targetValuesSet.Count == otherValuesSet.Count &&
-                       targetValuesSet.SetEquals(otherValuesSet);
-            });
-        /// <inheritdoc/>
-        public override int GetHashCode()
-            => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary,
-                ((Dictionary<TKey, HashSet<TValue>>)_dictionary).Comparer, _valueComparer);
+        return added;
     }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as MultiMapSet<TKey, TValue>);
+
+    /// <inheritdoc/>
+    public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues) =>
+        {
+            var otherValuesSet = new HashSet<TValue>(otherValues, _valueComparer);
+
+            return _dictionary.TryGetValue(key, out var targetValuesSet) &&
+                   targetValuesSet.Count == otherValuesSet.Count &&
+                   targetValuesSet.SetEquals(otherValuesSet);
+        });
+    /// <inheritdoc/>
+    public override int GetHashCode()
+        => MultiMapHelper.ComputeUnorderedHash<TKey, TValue, HashSet<TValue>>(_dictionary,
+            ((Dictionary<TKey, HashSet<TValue>>)_dictionary).Comparer, _valueComparer);
 }

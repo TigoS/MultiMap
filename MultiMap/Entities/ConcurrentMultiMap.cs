@@ -2,613 +2,612 @@ using System.Collections.Concurrent;
 using MultiMap.Helpers;
 using MultiMap.Interfaces;
 
-namespace MultiMap.Entities
+namespace MultiMap.Entities;
+
+/// <summary>
+/// Represents a thread-safe multi-map collection that associates each key with a set of values.
+/// Supports concurrent operations for adding, removing, and querying key-value pairs.
+/// </summary>
+/// <remarks>
+/// ConcurrentMultiMap is designed for scenarios where multiple threads may add or remove key-value pairs simultaneously.
+/// Each key maps to a set of unique values, and all operations are safe for concurrent access.
+/// This class is useful for managing collections where keys can have multiple associated values and thread safety is required.
+/// <para>
+/// Unlike <see cref="MultiMapLock{TKey, TValue}"/> and <see cref="MultiMapAsync{TKey, TValue}"/>, this class does <b>not</b> implement <see cref="IDisposable"/> because it owns no disposable resources — the underlying <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey, TValue}"/> requires no explicit cleanup.
+/// </para>
+/// </remarks>
+/// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
+/// <typeparam name="TValue">The type of values associated with each key.</typeparam>
+public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TKey, TValue, ConcurrentSet<TValue>>
+    where TKey : notnull
+    where TValue : notnull
 {
+    private readonly IEqualityComparer<TValue>? _valueComparer;
+
     /// <summary>
-    /// Represents a thread-safe multi-map collection that associates each key with a set of values.
-    /// Supports concurrent operations for adding, removing, and querying key-value pairs.
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
+    /// </summary>
+    public ConcurrentMultiMap()
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>())
+    {
+        _concurrentDictionary = InitializeDictionary();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparer for keys.
+    /// </summary>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    public ConcurrentMultiMap(IEqualityComparer<TKey>? keyComparer)
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(keyComparer))
+    {
+        _concurrentDictionary = InitializeDictionary();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparers for keys and values.
+    /// </summary>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public ConcurrentMultiMap(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(keyComparer))
+    {
+        _concurrentDictionary = InitializeDictionary();
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level and initial capacity for keys.
+    /// </summary>
+    /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    public ConcurrentMultiMap(int concurrencyLevel, int capacity)
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity))
+    {
+        _concurrentDictionary = InitializeDictionary();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level, initial capacity, and equality comparer for keys.
+    /// </summary>
+    /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity, keyComparer))
+    {
+        _concurrentDictionary = InitializeDictionary();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level, initial capacity, and equality comparers for keys and values.
+    /// </summary>
+    /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
+    /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
+    /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity, keyComparer))
+    {
+        _concurrentDictionary = InitializeDictionary();
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparer for values.
+    /// </summary>
+    /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
+    public ConcurrentMultiMap(IEqualityComparer<TValue>? valueComparer)
+        : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>())
+    {
+        _concurrentDictionary = InitializeDictionary();
+        _valueComparer = valueComparer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class using a
+    /// <see cref="ConcurrentMultiMapOptions{TKey, TValue}"/> configuration object.
     /// </summary>
     /// <remarks>
-    /// ConcurrentMultiMap is designed for scenarios where multiple threads may add or remove key-value pairs simultaneously.
-    /// Each key maps to a set of unique values, and all operations are safe for concurrent access.
-    /// This class is useful for managing collections where keys can have multiple associated values and thread safety is required.
-    /// <para>
-    /// Unlike <see cref="MultiMapLock{TKey, TValue}"/> and <see cref="MultiMapAsync{TKey, TValue}"/>, this class does <b>not</b> implement <see cref="IDisposable"/> because it owns no disposable resources — the underlying <see cref="System.Collections.Concurrent.ConcurrentDictionary{TKey, TValue}"/> requires no explicit cleanup.
-    /// </para>
+    /// This constructor is an additive convenience overload. All existing individual constructors remain available.
+    /// When both <see cref="ConcurrentMultiMapOptions{TKey,TValue}.ConcurrencyLevel"/> and
+    /// <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> are non-zero, the underlying
+    /// <see cref="ConcurrentDictionary{TKey,TValue}"/> is created with the three-argument overload that
+    /// accepts <c>concurrencyLevel</c>, <c>capacity</c>, and <c>keyComparer</c>.
+    /// When only <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> is non-zero, the two-argument
+    /// <c>concurrencyLevel</c>+<c>capacity</c> overload is used.
+    /// Otherwise the key-comparer-only overload is used.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the multi-map.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
-    public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TKey, TValue, ConcurrentSet<TValue>>
-        where TKey : notnull
-        where TValue : notnull
+    /// <param name="options">
+    /// The options object. Must not be <see langword="null"/>.
+    /// </param>
+    /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
+    public ConcurrentMultiMap(ConcurrentMultiMapOptions<TKey, TValue> options)
+        : base(BuildDictionary(options))
     {
-        private readonly IEqualityComparer<TValue>? _valueComparer;
+        _concurrentDictionary = InitializeDictionary();
+        _valueComparer = options.ValueComparer;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class.
-        /// </summary>
-        public ConcurrentMultiMap()
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>())
+    private static ConcurrentDictionary<TKey, ConcurrentSet<TValue>> BuildDictionary(
+        ConcurrentMultiMapOptions<TKey, TValue> options)
+    {
+        ArgumentNullException.ThrowIfNull(options, nameof(options));
+        if (options.ConcurrencyLevel > 0 && options.Capacity > 0)
         {
-            _concurrentDictionary = InitializeDictionary();
+            return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
+                options.ConcurrencyLevel, options.Capacity, options.KeyComparer);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparer for keys.
-        /// </summary>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public ConcurrentMultiMap(IEqualityComparer<TKey>? keyComparer)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(keyComparer))
+        if (options.Capacity > 0)
         {
-            _concurrentDictionary = InitializeDictionary();
+            return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
+                Environment.ProcessorCount, options.Capacity, options.KeyComparer);
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparers for keys and values.
-        /// </summary>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public ConcurrentMultiMap(IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(keyComparer))
+        return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(options.KeyComparer);
+    }
+
+    /// <summary>
+    /// Initializes the underlying dictionary as a <see cref="ConcurrentDictionary{TKey, TValue}"/> for efficient access.
+    /// </summary>
+    /// <returns>The initialized concurrent dictionary.</returns>
+    /// <exception cref="InvalidOperationException">Thrown if the underlying dictionary is not a <see cref="ConcurrentDictionary{TKey, TValue}"/>.</exception>
+    private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> InitializeDictionary()
+    {
+        if (_dictionary is not ConcurrentDictionary<TKey, ConcurrentSet<TValue>> concurrentDict)
         {
-            _concurrentDictionary = InitializeDictionary();
-            _valueComparer = valueComparer;
+            throw new InvalidOperationException("The underlying dictionary must be a ConcurrentDictionary<TKey, ConcurrentSet<TValue>>.");
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level and initial capacity for keys.
-        /// </summary>
-        /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        public ConcurrentMultiMap(int concurrencyLevel, int capacity)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity))
-        {
-            _concurrentDictionary = InitializeDictionary();
-        }
+        return concurrentDict;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level, initial capacity, and equality comparer for keys.
-        /// </summary>
-        /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity, keyComparer))
-        {
-            _concurrentDictionary = InitializeDictionary();
-        }
+    /// <summary>
+    /// Gets a typed reference to the underlying concurrent dictionary for efficient access.
+    /// </summary>
+    private readonly ConcurrentDictionary<TKey, ConcurrentSet<TValue>> _concurrentDictionary;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified concurrency level, initial capacity, and equality comparers for keys and values.
-        /// </summary>
-        /// <param name="concurrencyLevel">The estimated number of threads that will update the multimap concurrently.</param>
-        /// <param name="capacity">The initial number of keys that the multimap can contain without resizing.</param>
-        /// <param name="keyComparer">The equality comparer to use for comparing keys, or <see langword="null"/> to use the default comparer.</param>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public ConcurrentMultiMap(int concurrencyLevel, int capacity, IEqualityComparer<TKey>? keyComparer, IEqualityComparer<TValue>? valueComparer)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(concurrencyLevel, capacity, keyComparer))
-        {
-            _concurrentDictionary = InitializeDictionary();
-            _valueComparer = valueComparer;
-        }
+    /// <inheritdoc/>
+    protected override ConcurrentSet<TValue> CreateCollection() => new(_valueComparer);
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class with the specified equality comparer for values.
-        /// </summary>
-        /// <param name="valueComparer">The equality comparer to use for comparing values, or <see langword="null"/> to use the default comparer.</param>
-        public ConcurrentMultiMap(IEqualityComparer<TValue>? valueComparer)
-            : base(new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>())
-        {
-            _concurrentDictionary = InitializeDictionary();
-            _valueComparer = valueComparer;
-        }
+    /// <inheritdoc/>
+    protected override bool AddToCollection(ConcurrentSet<TValue> collection, TValue value) => collection.TryAdd(value);
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ConcurrentMultiMap{TKey, TValue}"/> class using a
-        /// <see cref="ConcurrentMultiMapOptions{TKey, TValue}"/> configuration object.
-        /// </summary>
-        /// <remarks>
-        /// This constructor is an additive convenience overload. All existing individual constructors remain available.
-        /// When both <see cref="ConcurrentMultiMapOptions{TKey,TValue}.ConcurrencyLevel"/> and
-        /// <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> are non-zero, the underlying
-        /// <see cref="ConcurrentDictionary{TKey,TValue}"/> is created with the three-argument overload that
-        /// accepts <c>concurrencyLevel</c>, <c>capacity</c>, and <c>keyComparer</c>.
-        /// When only <see cref="MultiMapOptions{TKey,TValue}.Capacity"/> is non-zero, the two-argument
-        /// <c>concurrencyLevel</c>+<c>capacity</c> overload is used.
-        /// Otherwise the key-comparer-only overload is used.
-        /// </remarks>
-        /// <param name="options">
-        /// The options object. Must not be <see langword="null"/>.
-        /// </param>
-        /// <exception cref="ArgumentNullException"><paramref name="options"/> is <see langword="null"/>.</exception>
-        public ConcurrentMultiMap(ConcurrentMultiMapOptions<TKey, TValue> options)
-            : base(BuildDictionary(options))
+    /// <inheritdoc/>
+    protected override int RemoveWhereFromCollection(ConcurrentSet<TValue> collection, Predicate<TValue> predicate)
+    {
+        int removed = 0;
+        foreach (var value in collection)
         {
-            _concurrentDictionary = InitializeDictionary();
-            _valueComparer = options.ValueComparer;
-        }
-
-        private static ConcurrentDictionary<TKey, ConcurrentSet<TValue>> BuildDictionary(
-            ConcurrentMultiMapOptions<TKey, TValue> options)
-        {
-            ArgumentNullException.ThrowIfNull(options, nameof(options));
-            if (options.ConcurrencyLevel > 0 && options.Capacity > 0)
+            if (predicate(value) && collection.TryRemove(value, out _))
             {
-                return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
-                    options.ConcurrencyLevel, options.Capacity, options.KeyComparer);
+                removed++;
             }
-
-            if (options.Capacity > 0)
-            {
-                return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(
-                    Environment.ProcessorCount, options.Capacity, options.KeyComparer);
-            }
-
-            return new ConcurrentDictionary<TKey, ConcurrentSet<TValue>>(options.KeyComparer);
         }
 
-        /// <summary>
-        /// Initializes the underlying dictionary as a <see cref="ConcurrentDictionary{TKey, TValue}"/> for efficient access.
-        /// </summary>
-        /// <returns>The initialized concurrent dictionary.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the underlying dictionary is not a <see cref="ConcurrentDictionary{TKey, TValue}"/>.</exception>
-        private ConcurrentDictionary<TKey, ConcurrentSet<TValue>> InitializeDictionary()
-        {
-            if (_dictionary is not ConcurrentDictionary<TKey, ConcurrentSet<TValue>> concurrentDict)
-            {
-                throw new InvalidOperationException("The underlying dictionary must be a ConcurrentDictionary<TKey, ConcurrentSet<TValue>>.");
-            }
+        return removed;
+    }
 
-            return concurrentDict;
+    /// <summary>
+    /// Returns a snapshot of values from a concurrent set without relying on Count, which can change during enumeration.
+    /// This avoids "Destination array was not long enough" errors under concurrent modification.
+    /// </summary>
+    protected override IEnumerable<TValue> ToReadOnly(ConcurrentSet<TValue> collection)
+    {
+        var result = new List<TValue>();
+        foreach (var item in collection)
+        {
+            result.Add(item);
         }
 
-        /// <summary>
-        /// Gets a typed reference to the underlying concurrent dictionary for efficient access.
-        /// </summary>
-        private readonly ConcurrentDictionary<TKey, ConcurrentSet<TValue>> _concurrentDictionary;
+        return result;
+    }
 
-        /// <inheritdoc/>
-        protected override ConcurrentSet<TValue> CreateCollection() => new(_valueComparer);
-
-        /// <inheritdoc/>
-        protected override bool AddToCollection(ConcurrentSet<TValue> collection, TValue value) => collection.TryAdd(value);
-
-        /// <inheritdoc/>
-        protected override int RemoveWhereFromCollection(ConcurrentSet<TValue> collection, Predicate<TValue> predicate)
+    /// <summary>
+    /// Attempts to retrieve the collection associated with a key, filtering out empty sets.
+    /// Empty sets can transiently exist in the dictionary due to concurrent remove operations; this override hides them.
+    /// </summary>
+    protected override bool TryGetCollection(TKey key, out ConcurrentSet<TValue> collection)
+    {
+        if (_dictionary.TryGetValue(key, out var valueSet) && !valueSet.IsEmpty)
         {
-            int removed = 0;
-            foreach (var value in collection)
-            {
-                if (predicate(value) && collection.TryRemove(value, out _))
-                {
-                    removed++;
-                }
-            }
-
-            return removed;
+            collection = valueSet;
+            return true;
         }
 
-        /// <summary>
-        /// Returns a snapshot of values from a concurrent set without relying on Count, which can change during enumeration.
-        /// This avoids "Destination array was not long enough" errors under concurrent modification.
-        /// </summary>
-        protected override IEnumerable<TValue> ToReadOnly(ConcurrentSet<TValue> collection)
-        {
-            var result = new List<TValue>();
-            foreach (var item in collection)
-            {
-                result.Add(item);
-            }
+        collection = null!;
 
-            return result;
+        return false;
+    }
+
+    /// <inheritdoc/>
+    public override IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
+
+        bool created = false;
+        var collection = _concurrentDictionary.GetOrAdd(key, _ =>
+        {
+            created = true;
+            return CreateCollection();
+        });
+
+        if ((created || collection.IsEmpty) && collection.TryAdd(defaultValue))
+        {
+            InterlockedIncrementCount();
         }
 
-        /// <summary>
-        /// Attempts to retrieve the collection associated with a key, filtering out empty sets.
-        /// Empty sets can transiently exist in the dictionary due to concurrent remove operations; this override hides them.
-        /// </summary>
-        protected override bool TryGetCollection(TKey key, out ConcurrentSet<TValue> collection)
+        return ToReadOnly(collection);
+    }
+
+    /// <inheritdoc/>
+    public override IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
+
+        bool created = false;
+        var collection = _concurrentDictionary.GetOrAdd(key, _ =>
         {
-            if (_dictionary.TryGetValue(key, out var valueSet) && !valueSet.IsEmpty)
-            {
-                collection = valueSet;
-                return true;
-            }
+            created = true;
+            return CreateCollection();
+        });
 
-            collection = null!;
-
-            return false;
-        }
-
-        /// <inheritdoc/>
-        public override IEnumerable<TValue> GetOrAdd(TKey key, TValue defaultValue)
+        if (created || collection.IsEmpty)
         {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
+            var value = valueFactory.Value;
+            ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
 
-            bool created = false;
-            var collection = _concurrentDictionary.GetOrAdd(key, _ =>
-            {
-                created = true;
-                return CreateCollection();
-            });
-
-            if ((created || collection.IsEmpty) && collection.TryAdd(defaultValue))
+            if (collection.TryAdd(value))
             {
                 InterlockedIncrementCount();
             }
-
-            return ToReadOnly(collection);
         }
 
-        /// <inheritdoc/>
-        public override IEnumerable<TValue> GetOrAdd(TKey key, Lazy<TValue> valueFactory)
+        return ToReadOnly(collection);
+    }
+
+    /// <inheritdoc/>
+    public override void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+    {
+        ArgumentNullException.ThrowIfNull(array, nameof(array));
+
+        if (arrayIndex < 0 || arrayIndex > array.Length)
         {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
-
-            bool created = false;
-            var collection = _concurrentDictionary.GetOrAdd(key, _ =>
-            {
-                created = true;
-                return CreateCollection();
-            });
-
-            if (created || collection.IsEmpty)
-            {
-                var value = valueFactory.Value;
-                ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
-
-                if (collection.TryAdd(value))
-                {
-                    InterlockedIncrementCount();
-                }
-            }
-
-            return ToReadOnly(collection);
+            throw new ArgumentOutOfRangeException(nameof(arrayIndex));
         }
 
-        /// <inheritdoc/>
-        public override void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        var snapshot = new List<KeyValuePair<TKey, TValue>>();
+        foreach (var item in this)
         {
-            ArgumentNullException.ThrowIfNull(array, nameof(array));
-
-            if (arrayIndex < 0 || arrayIndex > array.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
-            }
-
-            var snapshot = new List<KeyValuePair<TKey, TValue>>();
-            foreach (var item in this)
-            {
-                snapshot.Add(item);
-            }
-
-            if (array.Length - arrayIndex < snapshot.Count)
-            {
-                throw new ArgumentException("The destination array has insufficient space for all elements.", nameof(array));
-            }
-
-            int index = arrayIndex;
-            foreach (var item in snapshot)
-            {
-                array[index++] = item;
-            }
+            snapshot.Add(item);
         }
 
-        /// <inheritdoc/>
-        public override bool Add(TKey key, TValue value)
+        if (array.Length - arrayIndex < snapshot.Count)
         {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            throw new ArgumentException("The destination array has insufficient space for all elements.", nameof(array));
+        }
 
-            var valueSet = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
+        int index = arrayIndex;
+        foreach (var item in snapshot)
+        {
+            array[index++] = item;
+        }
+    }
 
+    /// <inheritdoc/>
+    public override bool Add(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        var valueSet = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
+
+        if (valueSet.TryAdd(value))
+        {
+            InterlockedIncrementCount();
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <inheritdoc/>
+    public override int AddRange(TKey key, IEnumerable<TValue> values)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(values, nameof(values));
+
+        var items = values as ICollection<TValue> ?? [.. values];
+        if (items.Count == 0)
+        {
+            return 0;
+        }
+
+        var valueSet = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
+
+        int added = 0;
+        foreach (var value in items)
+        {
             if (valueSet.TryAdd(value))
             {
-                InterlockedIncrementCount();
-                return true;
+                added++;
             }
-
-            return false;
         }
 
-        /// <inheritdoc/>
-        public override int AddRange(TKey key, IEnumerable<TValue> values)
+        if (added > 0)
         {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(values, nameof(values));
+            InterlockedAddCount(added);
+        }
 
-            var items = values as ICollection<TValue> ?? [.. values];
-            if (items.Count == 0)
+        return added;
+    }
+
+    /// <inheritdoc/>
+    public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+    {
+        ArgumentNullException.ThrowIfNull(items, nameof(items));
+
+        // Group by key so we call GetOrAdd at most once per unique key instead of once per item.
+        var grouped = new Dictionary<TKey, List<TValue>>();
+        foreach (var item in items)
+        {
+            Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+            Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+            if (!grouped.TryGetValue(item.Key, out var list))
             {
-                return 0;
+                list = [];
+                grouped[item.Key] = list;
             }
 
-            var valueSet = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
+            list.Add(item.Value);
+        }
 
-            int added = 0;
-            foreach (var value in items)
+        int added = 0;
+        foreach (var group in grouped)
+        {
+            var valueSet = _concurrentDictionary.GetOrAdd(group.Key, _ => CreateCollection());
+
+            int groupAdded = 0;
+            foreach (var value in group.Value)
             {
                 if (valueSet.TryAdd(value))
                 {
-                    added++;
+                    groupAdded++;
                 }
             }
 
-            if (added > 0)
+            if (groupAdded > 0)
             {
-                InterlockedAddCount(added);
+                InterlockedAddCount(groupAdded);
+                added += groupAdded;
             }
-
-            return added;
         }
 
-        /// <inheritdoc/>
-        public override int AddRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+        return added;
+    }
+
+    /// <inheritdoc/>
+    public override bool Remove(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        if (!_dictionary.TryGetValue(key, out var valueSet))
         {
-            ArgumentNullException.ThrowIfNull(items, nameof(items));
-
-            // Group by key so we call GetOrAdd at most once per unique key instead of once per item.
-            var grouped = new Dictionary<TKey, List<TValue>>();
-            foreach (var item in items)
-            {
-                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
-                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
-
-                if (!grouped.TryGetValue(item.Key, out var list))
-                {
-                    list = [];
-                    grouped[item.Key] = list;
-                }
-
-                list.Add(item.Value);
-            }
-
-            int added = 0;
-            foreach (var group in grouped)
-            {
-                var valueSet = _concurrentDictionary.GetOrAdd(group.Key, _ => CreateCollection());
-
-                int groupAdded = 0;
-                foreach (var value in group.Value)
-                {
-                    if (valueSet.TryAdd(value))
-                    {
-                        groupAdded++;
-                    }
-                }
-
-                if (groupAdded > 0)
-                {
-                    InterlockedAddCount(groupAdded);
-                    added += groupAdded;
-                }
-            }
-
-            return added;
+            return false;
         }
 
-        /// <inheritdoc/>
-        public override bool Remove(TKey key, TValue value)
+        if (!valueSet.TryRemove(value, out _))
         {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
+            return false;
+        }
 
-            if (!_dictionary.TryGetValue(key, out var valueSet))
+        InterlockedAddCount(-1);
+
+        // Prune the outer key
+        // Use the conditional-remove pattern: remove the entry, then re-add it
+        // if another thread concurrently inserted a value — this makes the prune
+        // atomic with respect to concurrent Adds on the same key.
+        TryPruneEmptySet(key, valueSet);
+
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public override int RemoveWhere(TKey key, Predicate<TValue> predicate)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
+
+        if (!_dictionary.TryGetValue(key, out var valueSet))
+        {
+            return 0;
+        }
+
+        int removedCount = 0;
+        foreach (var value in valueSet)
+        {
+            if (predicate(value) && valueSet.TryRemove(value, out _))
             {
-                return false;
+                removedCount++;
             }
+        }
 
-            if (!valueSet.TryRemove(value, out _))
-            {
-                return false;
-            }
-
-            InterlockedAddCount(-1);
-
-            // Prune the outer key
-            // Use the conditional-remove pattern: remove the entry, then re-add it
-            // if another thread concurrently inserted a value — this makes the prune
-            // atomic with respect to concurrent Adds on the same key.
+        if (removedCount > 0)
+        {
+            InterlockedAddCount(-removedCount);
             TryPruneEmptySet(key, valueSet);
-
-            return true;
         }
 
-        /// <inheritdoc/>
-        public override int RemoveWhere(TKey key, Predicate<TValue> predicate)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(predicate, nameof(predicate));
+        return removedCount;
+    }
 
-            if (!_dictionary.TryGetValue(key, out var valueSet))
+    /// <inheritdoc/>
+    public override bool RemoveKey(TKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        if (!_concurrentDictionary.TryRemove(key, out var removedSet))
+        {
+            return false;
+        }
+
+        // Snapshot the inner count at the moment of removal and adjust the value counter.
+        // Under a concurrent Add/Remove racing on the same key, the counter may transiently
+        // deviate from the true value by the number of values touched in that race window;
+        // this is an accepted trade-off for O(1) Count.
+        int c = removedSet.Count;
+        if (c > 0)
+        {
+            InterlockedAddCount(-c);
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public override void Clear()
+    {
+        _concurrentDictionary.Clear();
+        InterlockedExchangeCount(0);
+    }
+
+    /// <inheritdoc/>
+    public override int Count => VolatileReadCount();
+
+    /// <inheritdoc/>
+    public override IEnumerable<TKey> Keys
+    {
+        get
+        {
+            foreach (var kvp in _concurrentDictionary)
             {
-                return 0;
+                if (!kvp.Value.IsEmpty)
+                {
+                    yield return kvp.Key;
+                }
+            }
+        }
+    }
+
+    /// <inheritdoc/>
+    public override int KeyCount
+    {
+        get
+        {
+            int count = 0;
+            foreach (var kvp in _concurrentDictionary)
+            {
+                if (!kvp.Value.IsEmpty)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+    }
+
+    /// <inheritdoc/>
+    public override bool Contains(TKey key, TValue value)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+        ArgumentNullException.ThrowIfNull(value, nameof(value));
+
+        return _dictionary.TryGetValue(key, out var collection) && collection.Contains(value);
+    }
+
+    /// <inheritdoc/>
+    public override int GetValuesCount(TKey key)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        if (!TryGetCollection(key, out var collection))
+        {
+            return 0;
+        }
+
+        return collection.Count;
+    }
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as ConcurrentMultiMap<TKey, TValue>);
+
+    /// <inheritdoc/>
+    public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
+        => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues) =>
+        {
+            if (!TryGetCollection(key, out var valueSet))
+            {
+                return false;
             }
 
-            int removedCount = 0;
+            var otherSet = new HashSet<TValue>(otherValues, _valueComparer);
+            if (valueSet.Count != otherSet.Count)
+            {
+                return false;
+            }
+
             foreach (var value in valueSet)
             {
-                if (predicate(value) && valueSet.TryRemove(value, out _))
+                if (!otherSet.Contains(value))
                 {
-                    removedCount++;
+                    return false;
                 }
-            }
-
-            if (removedCount > 0)
-            {
-                InterlockedAddCount(-removedCount);
-                TryPruneEmptySet(key, valueSet);
-            }
-
-            return removedCount;
-        }
-
-        /// <inheritdoc/>
-        public override bool RemoveKey(TKey key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            if (!_concurrentDictionary.TryRemove(key, out var removedSet))
-            {
-                return false;
-            }
-
-            // Snapshot the inner count at the moment of removal and adjust the value counter.
-            // Under a concurrent Add/Remove racing on the same key, the counter may transiently
-            // deviate from the true value by the number of values touched in that race window;
-            // this is an accepted trade-off for O(1) Count.
-            int c = removedSet.Count;
-            if (c > 0)
-            {
-                InterlockedAddCount(-c);
             }
 
             return true;
-        }
+        });
 
-        /// <inheritdoc/>
-        public override void Clear()
+    /// <inheritdoc/>
+    public override int GetHashCode()
+    {
+        unchecked
         {
-            _concurrentDictionary.Clear();
-            InterlockedExchangeCount(0);
-        }
-
-        /// <inheritdoc/>
-        public override int Count => VolatileReadCount();
-
-        /// <inheritdoc/>
-        public override IEnumerable<TKey> Keys
-        {
-            get
+            int hash = 0;
+            foreach (var kvp in _concurrentDictionary)
             {
-                foreach (var kvp in _concurrentDictionary)
+                if (kvp.Value.IsEmpty)
                 {
-                    if (!kvp.Value.IsEmpty)
-                    {
-                        yield return kvp.Key;
-                    }
+                    continue;
                 }
-            }
-        }
 
-        /// <inheritdoc/>
-        public override int KeyCount
-        {
-            get
-            {
-                int count = 0;
-                foreach (var kvp in _concurrentDictionary)
+                int valueHash = 0;
+                foreach (var value in kvp.Value)
                 {
-                    if (!kvp.Value.IsEmpty)
-                    {
-                        count++;
-                    }
+                    valueHash += MultiMapHelper.Scramble(value.GetHashCode());
                 }
-                return count;
-            }
-        }
 
-        /// <inheritdoc/>
-        public override bool Contains(TKey key, TValue value)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-            ArgumentNullException.ThrowIfNull(value, nameof(value));
-
-            return _dictionary.TryGetValue(key, out var collection) && collection.Contains(value);
-        }
-
-        /// <inheritdoc/>
-        public override int GetValuesCount(TKey key)
-        {
-            ArgumentNullException.ThrowIfNull(key, nameof(key));
-
-            if (!TryGetCollection(key, out var collection))
-            {
-                return 0;
+                hash += MultiMapHelper.Scramble(HashCode.Combine(kvp.Key, valueHash));
             }
 
-            return collection.Count;
+            return hash;
+        }
+    }
+
+    /// <summary>
+    /// Attempts to remove <paramref name="key"/> from the outer dictionary when its inner set is empty.
+    /// If another thread has concurrently added a value to the set between the caller's last removal and this prune attempt, the key is left in place (or re-inserted if <c>TryRemove</c> already succeeded).
+    /// This makes key-pruning safe under concurrent <c>Add</c> operations.
+    /// </summary>
+    private void TryPruneEmptySet(TKey key, ConcurrentSet<TValue> valueSet)
+    {
+        if (!valueSet.IsEmpty)
+        {
+            return;
         }
 
-        /// <inheritdoc/>
-        public override bool Equals(object? obj) => Equals(obj as ConcurrentMultiMap<TKey, TValue>);
-
-        /// <inheritdoc/>
-        public override bool Equals(IReadOnlyMultiMap<TKey, TValue>? other)
-            => MultiMapEqualityHelper.EqualsByKey(this, other, Keys, (key, otherValues) =>
-            {
-                if (!TryGetCollection(key, out var valueSet))
-                {
-                    return false;
-                }
-
-                var otherSet = new HashSet<TValue>(otherValues, _valueComparer);
-                if (valueSet.Count != otherSet.Count)
-                {
-                    return false;
-                }
-
-                foreach (var value in valueSet)
-                {
-                    if (!otherSet.Contains(value))
-                    {
-                        return false;
-                    }
-                }
-
-                return true;
-            });
-
-        /// <inheritdoc/>
-        public override int GetHashCode()
+        // Attempt to remove the outer entry only while the inner set is still empty.
+        // If TryRemove succeeds but the set was concurrently populated, put it back.
+        if (_concurrentDictionary.TryRemove(key, out var removedSet))
         {
-            unchecked
+            if (!removedSet.IsEmpty)
             {
-                int hash = 0;
-                foreach (var kvp in _concurrentDictionary)
-                {
-                    if (kvp.Value.IsEmpty)
-                    {
-                        continue;
-                    }
-
-                    int valueHash = 0;
-                    foreach (var value in kvp.Value)
-                    {
-                        valueHash += MultiMapHelper.Scramble(value.GetHashCode());
-                    }
-
-                    hash += MultiMapHelper.Scramble(HashCode.Combine(kvp.Key, valueHash));
-                }
-
-                return hash;
-            }
-        }
-
-        /// <summary>
-        /// Attempts to remove <paramref name="key"/> from the outer dictionary when its inner set is empty.
-        /// If another thread has concurrently added a value to the set between the caller's last removal and this prune attempt, the key is left in place (or re-inserted if <c>TryRemove</c> already succeeded).
-        /// This makes key-pruning safe under concurrent <c>Add</c> operations.
-        /// </summary>
-        private void TryPruneEmptySet(TKey key, ConcurrentSet<TValue> valueSet)
-        {
-            if (!valueSet.IsEmpty)
-            {
-                return;
-            }
-
-            // Attempt to remove the outer entry only while the inner set is still empty.
-            // If TryRemove succeeds but the set was concurrently populated, put it back.
-            if (_concurrentDictionary.TryRemove(key, out var removedSet))
-            {
-                if (!removedSet.IsEmpty)
-                {
-                    // Another thread added to the set between our check and the remove;
-                    // restore the entry so no values are lost.
-                    _concurrentDictionary.TryAdd(key, removedSet);
-                }
+                // Another thread added to the set between our check and the remove;
+                // restore the entry so no values are lost.
+                _concurrentDictionary.TryAdd(key, removedSet);
             }
         }
     }

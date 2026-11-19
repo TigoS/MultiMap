@@ -5,21 +5,20 @@
 //   HashSet<T>.AsReadOnly()  — available from .NET 10 onward.
 //   On earlier targets we return an array snapshot instead.
 
-namespace MultiMap.Helpers
+namespace MultiMap.Helpers;
+
+internal static class Polyfills
 {
-    internal static class Polyfills
+    /// <summary>
+    /// Returns a read-only view of <paramref name="source"/> on .NET 10+,
+    /// or a defensive array copy on earlier targets.
+    /// </summary>
+    internal static IEnumerable<T> AsReadOnlyOrSnapshot<T>(HashSet<T> source)
     {
-        /// <summary>
-        /// Returns a read-only view of <paramref name="source"/> on .NET 10+,
-        /// or a defensive array copy on earlier targets.
-        /// </summary>
-        internal static IEnumerable<T> AsReadOnlyOrSnapshot<T>(HashSet<T> source)
-        {
 #if NET10_0_OR_GREATER
-            return source.AsReadOnly();
+        return source.AsReadOnly();
 #else
-            return [.. source];
+        return [.. source];
 #endif
-        }
     }
 }
