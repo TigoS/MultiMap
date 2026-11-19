@@ -226,14 +226,12 @@ public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TK
         ArgumentNullException.ThrowIfNull(key, nameof(key));
         ArgumentNullException.ThrowIfNull(defaultValue, nameof(defaultValue));
 
-        bool created = false;
-        var collection = _concurrentDictionary.GetOrAdd(key, _ =>
+        if (!_concurrentDictionary.TryGetValue(key, out var collection))
         {
-            created = true;
-            return CreateCollection();
-        });
+            collection = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
+        }
 
-        if ((created || collection.IsEmpty) && collection.TryAdd(defaultValue))
+        if (collection.IsEmpty && collection.TryAdd(defaultValue))
         {
             InterlockedIncrementCount();
         }
@@ -247,14 +245,12 @@ public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TK
         ArgumentNullException.ThrowIfNull(key, nameof(key));
         ArgumentNullException.ThrowIfNull(valueFactory, nameof(valueFactory));
 
-        bool created = false;
-        var collection = _concurrentDictionary.GetOrAdd(key, _ =>
+        if (!_concurrentDictionary.TryGetValue(key, out var collection))
         {
-            created = true;
-            return CreateCollection();
-        });
+            collection = _concurrentDictionary.GetOrAdd(key, _ => CreateCollection());
+        }
 
-        if (created || collection.IsEmpty)
+        if (collection.IsEmpty)
         {
             var value = valueFactory.Value;
             ArgumentNullException.ThrowIfNull(value, nameof(valueFactory));
