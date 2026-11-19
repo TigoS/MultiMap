@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9620%2F9620%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.3%25%20line%20%7C%2095%25%20branch%20%7C%2098.8%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9628%2F9628%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -23,7 +23,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Testing
 
-The library includes **9,620 unit-test executions** written with **NUnit 5**, running on **net11.0**, **net10.0**, **net9.0**, and **net8.0** (**2,405 per framework**)
+The library includes **9,628 unit-test executions** written with **NUnit 5**, running on **net11.0**, **net10.0**, **net9.0**, and **net8.0** (**2,407 per framework**)
 
 ```shell
 dotnet test
@@ -54,13 +54,13 @@ Code coverage is collected with **Coverlet** (`coverlet.collector`) during `dotn
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-#### Summary (net10.0, 2026-11-11)
+#### Summary (all TFMs aggregated, 2026-11-19)
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **99.45%** (2,201 / 2,213) |
-| **Branch coverage** | **97.22%** (1,050 / 1,080) |
-| **Method coverage** | **100%** (340 / 340) |
+| **Line coverage** | **97.3%** (3,598 / 3,697) |
+| **Branch coverage** | **95%** (1,023 / 1,076) |
+| **Method coverage** | **98.8%** (358 / 362) |
 
 #### Per-Class Breakdown
 
@@ -80,10 +80,10 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Polyfills` | 1 / 1 | **100%** (1/1) | **100%** | ✅ Full |
 
 > **Notes:**
-> - Coverage from fresh Coverlet run for **net11.0** (2026-11-11). Latest test run reports **2,405/2,405 tests** passing per TFM; full matrix is **9,620 total tests** across 4 TFMs with zero failures.
+> - Coverage from a fresh Coverlet run aggregated across **net11.0**, **net10.0**, **net9.0**, and **net8.0** (2026-11-19). Latest test run reports **2,407/2,407 tests** passing per TFM; full matrix is **9,628 total tests** across 4 TFMs with zero failures.
 > - `SimpleMultiMap<TKey, TValue>` ⚠️ is deprecated (`[Obsolete]` since v3.0.0). Tests are retained for regression coverage.
-> - Method coverage is now **100% (340/340)** after targeted branch/coverage tests for `ConcurrentMultiMap`, `MultiMapList`, and `MultiMapSet`.
-> - A single defensive `ConcurrentMultiMap` invalid-state guard branch remains intentionally unexecuted in normal operation.
+> - Method coverage is **98.8% (358/362)** and branch coverage is **95% (1,023/1,076)** in the aggregated multi-TFM report.
+> - A small set of defensive/concurrency branches remains intentionally hard to execute in normal operation.
 
 | `MultiMapSet_ConstructorAndHashTests` | 11 | Constructor overloads and `GetHashCode`/`Equals` paths for `MultiMapSet` |
 | `MultiMapSet_CapacityComparerConstructorTests` | 4 | Capacity/comparer constructor paths for `MultiMapSet` |
