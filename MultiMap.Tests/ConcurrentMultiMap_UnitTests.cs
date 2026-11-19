@@ -314,6 +314,83 @@ public class ConcurrentMultiMapTests
     }
 
     [Test]
+    public void GetOrAdd_MissingKey_AddsDefaultValue()
+    {
+        var values = _map.GetOrAdd("a", 7);
+
+        Assert.That(values, Is.EquivalentTo(new[] { 7 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 7 }));
+    }
+
+    [Test]
+    public void GetOrAddLazy_ExistingKey_DoesNotInvokeFactory()
+    {
+        _map.Add("a", 1);
+
+        int factoryCalls = 0;
+        var lazy = new Lazy<int>(() =>
+        {
+            factoryCalls++;
+            return 10;
+        });
+
+        var values = _map.GetOrAdd("a", lazy);
+
+        Assert.That(factoryCalls, Is.EqualTo(0));
+        Assert.That(values, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void GetOrAdd_ExistingKey_ConcurrentCalls_DoNotAddDefaultValue()
+    {
+        _map.Add("a", 1);
+
+        Parallel.For(0, 1024, _ =>
+        {
+            _ = _map.GetOrAdd("a", 999).Count();
+        });
+
+        Assert.That(_map.Count, Is.EqualTo(1));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void GetOrAddLazy_ExistingKey_ConcurrentCalls_DoNotInvokeFactory()
+    {
+        _map.Add("a", 1);
+
+        int factoryCalls = 0;
+        var lazy = new Lazy<int>(() =>
+        {
+            Interlocked.Increment(ref factoryCalls);
+            return 999;
+        });
+
+        Parallel.For(0, 1024, _ =>
+        {
+            _ = _map.GetOrAdd("a", lazy).Count();
+        });
+
+        Assert.That(factoryCalls, Is.Zero);
+        Assert.That(_map.Count, Is.EqualTo(1));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void CopyTo_CopiesSnapshotAtRequestedIndex()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var snapshot = _map.ToArray();
+        var destination = new KeyValuePair<string, int>[snapshot.Length + 1];
+
+        _map.CopyTo(destination, 1);
+
+        Assert.That(destination.Skip(1).Take(snapshot.Length), Is.EquivalentTo(snapshot));
+    }
+
+    [Test]
     public void Remove_ExistingValue_ReturnsTrue()
     {
         _map.Add("a", 1);

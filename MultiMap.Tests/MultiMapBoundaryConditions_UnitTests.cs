@@ -1855,6 +1855,9 @@ public class MultiMapAsync_GeneralInterfacePathTests
         public ValueTask<bool> AddAsync(TKey key, TValue value, CancellationToken ct = default) => _inner.AddAsync(key, value, ct);
         public ValueTask<int> AddRangeAsync(TKey key, IEnumerable<TValue> values, CancellationToken ct = default) => _inner.AddRangeAsync(key, values, ct);
         public ValueTask<int> AddRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken ct = default) => _inner.AddRangeAsync(items, ct);
+        public ValueTask<IEnumerable<TValue>> GetOrAddAsync(TKey key, TValue defaultValue, CancellationToken ct = default) => _inner.GetOrAddAsync(key, defaultValue, ct);
+        public ValueTask<IEnumerable<TValue>> GetOrAddAsync(TKey key, Lazy<TValue> valueFactory, CancellationToken ct = default) => _inner.GetOrAddAsync(key, valueFactory, ct);
+        public ValueTask CopyToAsync(KeyValuePair<TKey, TValue>[] array, int arrayIndex, CancellationToken ct = default) => _inner.CopyToAsync(array, arrayIndex, ct);
         public ValueTask<bool> RemoveAsync(TKey key, TValue value, CancellationToken ct = default) => _inner.RemoveAsync(key, value, ct);
         public ValueTask<int> RemoveRangeAsync(IEnumerable<KeyValuePair<TKey, TValue>> items, CancellationToken ct = default) => _inner.RemoveRangeAsync(items, ct);
         public ValueTask<int> RemoveWhereAsync(TKey key, Predicate<TValue> predicate, CancellationToken ct = default) => _inner.RemoveWhereAsync(key, predicate, ct);

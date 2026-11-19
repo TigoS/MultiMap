@@ -1,73 +1,72 @@
 using System.Collections;
 
-namespace MultiMap.Entities
+namespace MultiMap.Entities;
+
+public abstract partial class MultiMapBase<TKey, TValue, TCollection>
+    where TKey : notnull
+    where TValue : notnull
+    where TCollection : ICollection<TValue>
 {
-    public abstract partial class MultiMapBase<TKey, TValue, TCollection>
-        where TKey : notnull
-        where TValue : notnull
-        where TCollection : ICollection<TValue>
+    /// <summary>
+    /// A struct enumerator that walks every value in every inner collection.
+    /// The struct itself is stack-allocated when used via the concrete <see cref="ValuesCollection.GetEnumerator"/> overload, avoiding boxing of the enumerator.
+    /// The <see cref="_outerEnumerator"/> field is still a heap-allocated <see cref="System.Collections.Generic.IEnumerator{T}"/> object.
+    /// </summary>
+    internal struct ValuesEnumerator : IEnumerator<TValue>
     {
-        /// <summary>
-        /// A struct enumerator that walks every value in every inner collection.
-        /// The struct itself is stack-allocated when used via the concrete <see cref="ValuesCollection.GetEnumerator"/> overload, avoiding boxing of the enumerator.
-        /// The <see cref="_outerEnumerator"/> field is still a heap-allocated <see cref="System.Collections.Generic.IEnumerator{T}"/> object.
-        /// </summary>
-        internal struct ValuesEnumerator : IEnumerator<TValue>
+        private readonly IEnumerator<TCollection> _outerEnumerator;
+        private IEnumerator<TValue>? _innerEnumerator;
+        private TValue _current;
+
+        internal ValuesEnumerator(ICollection<TCollection> collections)
         {
-            private readonly IEnumerator<TCollection> _outerEnumerator;
-            private IEnumerator<TValue>? _innerEnumerator;
-            private TValue _current;
+            _outerEnumerator = collections.GetEnumerator();
+            _innerEnumerator = null;
+            _current = default!;
+        }
 
-            internal ValuesEnumerator(ICollection<TCollection> collections)
+        /// <inheritdoc/>
+        public readonly TValue Current => _current;
+
+        readonly object IEnumerator.Current => _current;
+
+        /// <inheritdoc/>
+        public bool MoveNext()
+        {
+            while (true)
             {
-                _outerEnumerator = collections.GetEnumerator();
-                _innerEnumerator = null;
-                _current = default!;
-            }
-
-            /// <inheritdoc/>
-            public readonly TValue Current => _current;
-
-            readonly object IEnumerator.Current => _current;
-
-            /// <inheritdoc/>
-            public bool MoveNext()
-            {
-                while (true)
+                if (_innerEnumerator != null && _innerEnumerator.MoveNext())
                 {
-                    if (_innerEnumerator != null && _innerEnumerator.MoveNext())
-                    {
-                        _current = _innerEnumerator.Current;
-                        return true;
-                    }
-
-                    _innerEnumerator?.Dispose();
-                    _innerEnumerator = null;
-
-                    if (!_outerEnumerator.MoveNext())
-                    {
-                        return false;
-                    }
-
-                    _innerEnumerator = _outerEnumerator.Current.GetEnumerator();
+                    _current = _innerEnumerator.Current;
+                    return true;
                 }
-            }
 
-            /// <inheritdoc/>
-            public void Reset()
-            {
-                _outerEnumerator.Reset();
                 _innerEnumerator?.Dispose();
                 _innerEnumerator = null;
-                _current = default!;
-            }
 
-            /// <inheritdoc/>
-            public readonly void Dispose()
-            {
-                _innerEnumerator?.Dispose();
-                _outerEnumerator.Dispose();
+                if (!_outerEnumerator.MoveNext())
+                {
+                    return false;
+                }
+
+                _innerEnumerator = _outerEnumerator.Current.GetEnumerator();
             }
+        }
+
+        /// <inheritdoc/>
+        public void Reset()
+        {
+            _outerEnumerator.Reset();
+            _innerEnumerator?.Dispose();
+            _innerEnumerator = null;
+            _current = default!;
+        }
+
+        /// <inheritdoc/>
+        public readonly void Dispose()
+        {
+            _innerEnumerator?.Dispose();
+            _outerEnumerator.Dispose();
         }
     }
 }

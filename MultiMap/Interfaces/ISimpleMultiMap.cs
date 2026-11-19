@@ -1,73 +1,72 @@
-namespace MultiMap.Interfaces
+namespace MultiMap.Interfaces;
+
+/// <summary>
+/// Defines a collection that associates multiple values with each key, supporting retrieval and removal of key-value pairs.
+/// </summary>
+/// <remarks>
+/// Implementations of this interface allow storing multiple values for a single key and provide methods to add, retrieve, and remove key-value pairs.
+/// The interface does not specify whether keys or values can be null; this depends on the specific implementation.
+/// The collection supports enumeration of all key-value pairs.
+/// </remarks>
+/// <typeparam name="TKey">The type of keys in the collection.</typeparam>
+/// <typeparam name="TValue">The type of values associated with each key.</typeparam>
+public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
+    where TKey : notnull
+    where TValue : notnull
 {
     /// <summary>
-    /// Defines a collection that associates multiple values with each key, supporting retrieval and removal of key-value pairs.
+    /// Attempts to add the specified key and value to the collection.
     /// </summary>
     /// <remarks>
-    /// Implementations of this interface allow storing multiple values for a single key and provide methods to add, retrieve, and remove key-value pairs.
-    /// The interface does not specify whether keys or values can be null; this depends on the specific implementation.
-    /// The collection supports enumeration of all key-value pairs.
+    /// If the collection already contains the specified key-value pair, the method does not modify the collection and returns false.
+    /// The behavior regarding null keys or values depends on the specific implementation.
     /// </remarks>
-    /// <typeparam name="TKey">The type of keys in the collection.</typeparam>
-    /// <typeparam name="TValue">The type of values associated with each key.</typeparam>
-    public interface ISimpleMultiMap<TKey, TValue> : IReadOnlySimpleMultiMap<TKey, TValue>
-        where TKey : notnull
-        where TValue : notnull
-    {
-        /// <summary>
-        /// Attempts to add the specified key and value to the collection.
-        /// </summary>
-        /// <remarks>
-        /// If the collection already contains the specified key-value pair, the method does not modify the collection and returns false.
-        /// The behavior regarding null keys or values depends on the specific implementation.
-        /// </remarks>
-        /// <param name="key">The key to add to the collection.
-        /// Cannot be null if the collection does not support null keys.</param>
-        /// <param name="value">The value associated with the key to add.
-        /// May be subject to constraints depending on the collection implementation.</param>
-        /// <returns>
-        /// <see langword="true"/> if the key and value were added successfully;
-        /// otherwise, <see langword="false"/> if the key-value pair already exists in the collection.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
-        /// </exception>
-        public bool Add(TKey key, TValue value);
+    /// <param name="key">The key to add to the collection.
+    /// Cannot be null if the collection does not support null keys.</param>
+    /// <param name="value">The value associated with the key to add.
+    /// May be subject to constraints depending on the collection implementation.</param>
+    /// <returns>
+    /// <see langword="true"/> if the key and value were added successfully;
+    /// otherwise, <see langword="false"/> if the key-value pair already exists in the collection.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+    /// </exception>
+    public bool Add(TKey key, TValue value);
 
-        /// <summary>
-        /// Removes the entry with the specified key and value from the collection.
-        /// </summary>
-        /// <remarks>This method removes the entry only if both the key and value match an existing element.
-        /// If the collection does not contain the specified key-value pair, no action is taken.</remarks>
-        /// <param name="key">The key of the element to remove. Cannot be null.</param>
-        /// <param name="value">The value associated with the key to remove.</param>
-        /// <returns>
-        /// <see langword="true"/> if the element was found and removed;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
-        /// </exception>
-        public bool Remove(TKey key, TValue value);
+    /// <summary>
+    /// Removes the entry with the specified key and value from the collection.
+    /// </summary>
+    /// <remarks>This method removes the entry only if both the key and value match an existing element.
+    /// If the collection does not contain the specified key-value pair, no action is taken.</remarks>
+    /// <param name="key">The key of the element to remove. Cannot be null.</param>
+    /// <param name="value">The value associated with the key to remove.</param>
+    /// <returns>
+    /// <see langword="true"/> if the element was found and removed;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="key"/> or <paramref name="value"/> is <see langword="null"/>.
+    /// </exception>
+    public bool Remove(TKey key, TValue value);
 
-        /// <summary>
-        /// Removes all values associated with the specified key.
-        /// </summary>
-        /// <remarks>Use this method to remove all entries for a given key.
-        /// If the key does not exist, no action is taken and the method returns false.</remarks>
-        /// <param name="key">The key whose values are to be removed. Cannot be null.</param>
-        /// <returns>
-        /// <see langword="true"/> if the key was found and its values were removed;
-        /// otherwise, <see langword="false"/>.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">
-        /// Thrown when <paramref name="key"/> is <see langword="null"/>.
-        /// </exception>
-        public bool RemoveKey(TKey key);
+    /// <summary>
+    /// Removes all values associated with the specified key.
+    /// </summary>
+    /// <remarks>Use this method to remove all entries for a given key.
+    /// If the key does not exist, no action is taken and the method returns false.</remarks>
+    /// <param name="key">The key whose values are to be removed. Cannot be null.</param>
+    /// <returns>
+    /// <see langword="true"/> if the key was found and its values were removed;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="key"/> is <see langword="null"/>.
+    /// </exception>
+    public bool RemoveKey(TKey key);
 
-        /// <summary>
-        /// Removes all items from the collection.
-        /// </summary>
-        public void Clear();
-    }
+    /// <summary>
+    /// Removes all items from the collection.
+    /// </summary>
+    public void Clear();
 }

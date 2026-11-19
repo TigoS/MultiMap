@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.3%25%20line%20%7C%2095%25%20branch%20%7C%2098.8%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9628%2F9628%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -29,7 +29,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 Benchmarks are run with **BenchmarkDotNet v0.15.8** with `CPUUsageDiagnoser`.
 
-**Environment:** .NET 10.0.8, SDK 10.0.300, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
+**Environment:** .NET 10.0.15, SDK 11.0.100, 13th Gen Intel Core i9-13900H, 20 logical / 14 physical cores, RyuJIT AVX2
 
 **Benchmark Parameters:** 100 keys × 50 values/key for bulk operations (5,000 pairs); 50 keys × 20 values/key for set operations (1,000 pairs).
 
@@ -59,6 +59,8 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 | **Values** / **GetValuesAsync** | 8,970 ns | 7,746 ns | 52,927 ns | 33,008 ns | 6,168 ns | 6,565 ns |
 | **GetValuesCount** / **GetValuesCountAsync** | 3.7 ns | 3.6 ns | 370 ns | 120 ns | 14 ns | 84 ns |
 | **Indexer** (`this[key]`) | 47.2 ns | 5.8 ns | 435 ns | 267 ns | 54 ns | — |
+| **GetOrAdd** / **GetOrAddAsync** | 8.94 ns | 8.28 ns | 643.29 ns | 284.64 ns | 64.19 ns | 79.72 ns |
+| **CopyTo** / **CopyToAsync** | 44,014 ns | 41,815 ns | 173,020 ns | 66,119 ns | 11,785 ns | 11,841 ns |
 | **AddRange(items)** / **AddRangeAsync(items)** | 232,561 ns | 186,239 ns | 369,302 ns | 998,484 ns | 229,419 ns | 238,555 ns |
 | **RemoveRange** / **RemoveRangeAsync** | 270,674 ns | 238,678 ns | 463,287 ns | 1,412,126 ns | 291,588 ns | 340,336 ns |
 | **RemoveWhere** / **RemoveWhereAsync** | 1,371 ns | 664 ns | 5,600 ns | 3,355 ns | 2,365 ns | 3,664 ns |
@@ -66,6 +68,7 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 > **Notes:**
 > - **KeyCount**: O(1) for non-concurrent implementations (< 1 ns). `ConcurrentMultiMap.KeyCount` scans the live dictionary for non-empty inner sets (O(k)). `MultiMapLock` acquires a read lock (~12 ns). `MultiMapAsync` acquires a semaphore (~81 ns).
 > - **Indexer**: Not available for `MultiMapAsync` (async API uses `GetAsync` instead).
+> - **GetOrAddAsync (Lazy)**: Additional benchmark run reports `85.44 ns` for `MultiMapAsync_GetOrAdd_Lazy`.
 > - **AddRange(items)**: The KVP overload is ~3–5x slower than `AddRange(key, values)` because it groups items by key and processes multiple keys across the map.
 > - **RemoveWhere**: Very efficient (0.7–8.9 μs) compared to `RemoveRange` (241 μs–1,582 μs) because it operates on a single key's value set.
 
@@ -85,7 +88,7 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 > **New in v2.1.0:** Read-only set query operations (`IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`) are now available as extension methods via `MultiMapHelper` and as atomic instance methods on `MultiMapAsync` and `MultiMapLock`. These operations provide snapshot-based comparisons without modifying the source maps.
 >
 > **Performance notes:** 
-> - `MultiMapLock` benchmarks measured on .NET 10.0.8, 13th Gen Intel Core i9-13900H (see detailed results above).
+> - `MultiMapLock` benchmarks measured on .NET 10.0.15, 13th Gen Intel Core i9-13900H (see detailed results above).
 > - Helper extension benchmarks for `MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, and `SortedMultiMap` follow similar performance characteristics to other set operations (~85 μs for hash-based, ~52 μs for list-based, ~164 μs for concurrent, ~411 μs for sorted implementations).
 > - These read-only query operations are optimized with early-exit conditions and avoid allocations where possible.
 > - To run full benchmarks: `dotnet run --project BenchmarkSuite -c Release -- --filter '*IsSubsetOf' '*IsSupersetOf' '*Overlaps' '*SetEquals'`

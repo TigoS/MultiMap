@@ -1,48 +1,47 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace MultiMap.Helpers
+namespace MultiMap.Helpers;
+
+/// <summary>
+/// Internal static class that provides guard methods for validating method arguments, such as checking for null values. These methods throw appropriate exceptions when validation fails, helping to ensure that public APIs are used correctly and to prevent common programming errors.
+/// </summary>
+internal static class Guard
 {
     /// <summary>
-    /// Internal static class that provides guard methods for validating method arguments, such as checking for null values. These methods throw appropriate exceptions when validation fails, helping to ensure that public APIs are used correctly and to prevent common programming errors.
+    /// Validates that a value is not null. If the value is null, throws an <see cref="ArgumentNullException"/> with a custom message.
     /// </summary>
-    internal static class Guard
+    /// <typeparam name="T">The type of the value to validate.</typeparam>
+    /// <param name="value">The value to validate.</param>
+    /// <param name="paramName">The name of the parameter being validated.</param>
+    /// <param name="message">The error message to use if the value is null.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void NotNullMessage<T>([NotNull] T? value, string paramName, string message)
     {
-        /// <summary>
-        /// Validates that a value is not null. If the value is null, throws an <see cref="ArgumentNullException"/> with a custom message.
-        /// </summary>
-        /// <typeparam name="T">The type of the value to validate.</typeparam>
-        /// <param name="value">The value to validate.</param>
-        /// <param name="paramName">The name of the parameter being validated.</param>
-        /// <param name="message">The error message to use if the value is null.</param>
-        /// <exception cref="ArgumentNullException"><paramref name="value"/> is null.</exception>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static void NotNullMessage<T>([NotNull] T? value, string paramName, string message)
+        if (value is null)
         {
-            if (value is null)
-            {
-                ThrowArgumentNull(paramName, message);
-            }
+            ThrowArgumentNull(paramName, message);
         }
-
-        /// <summary>
-        /// Validates that a reference type argument is not null and returns the value.
-        /// Intended for use in constructor-chaining expressions (<c>: this(...)</c>).
-        /// </summary>
-        /// <typeparam name="T">The reference type to validate.</typeparam>
-        /// <param name="value">The argument to validate.</param>
-        /// <param name="paramName">The name of the parameter being validated.</param>
-        /// <returns><paramref name="value"/> when it is not null.</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static T NotNullReturn<T>([NotNull] T? value, string paramName)
-            where T : class
-        {
-            ArgumentNullException.ThrowIfNull(value, paramName);
-            return value;
-        }
-
-        [DoesNotReturn]
-        private static void ThrowArgumentNull(string paramName, string message)
-            => throw new ArgumentNullException(paramName, message);
     }
+
+    /// <summary>
+    /// Validates that a reference type argument is not null and returns the value.
+    /// Intended for use in constructor-chaining expressions (<c>: this(...)</c>).
+    /// </summary>
+    /// <typeparam name="T">The reference type to validate.</typeparam>
+    /// <param name="value">The argument to validate.</param>
+    /// <param name="paramName">The name of the parameter being validated.</param>
+    /// <returns><paramref name="value"/> when it is not null.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static T NotNullReturn<T>([NotNull] T? value, string paramName)
+        where T : class
+    {
+        ArgumentNullException.ThrowIfNull(value, paramName);
+        return value;
+    }
+
+    [DoesNotReturn]
+    private static void ThrowArgumentNull(string paramName, string message)
+        => throw new ArgumentNullException(paramName, message);
 }

@@ -298,6 +298,47 @@ public class MultiMapLockTests
     }
 
     [Test]
+    public void GetOrAdd_MissingKey_AddsDefaultValue()
+    {
+        var values = _map.GetOrAdd("a", 7);
+
+        Assert.That(values, Is.EquivalentTo(new[] { 7 }));
+        Assert.That(_map.GetOrDefault("a"), Is.EquivalentTo(new[] { 7 }));
+    }
+
+    [Test]
+    public void GetOrAddLazy_ExistingKey_DoesNotInvokeFactory()
+    {
+        _map.Add("a", 1);
+
+        int factoryCalls = 0;
+        var lazy = new Lazy<int>(() =>
+        {
+            factoryCalls++;
+            return 10;
+        });
+
+        var values = _map.GetOrAdd("a", lazy);
+
+        Assert.That(factoryCalls, Is.EqualTo(0));
+        Assert.That(values, Is.EquivalentTo(new[] { 1 }));
+    }
+
+    [Test]
+    public void CopyTo_CopiesSnapshotAtRequestedIndex()
+    {
+        _map.Add("a", 1);
+        _map.Add("b", 2);
+
+        var snapshot = _map.ToArray();
+        var destination = new KeyValuePair<string, int>[snapshot.Length + 1];
+
+        _map.CopyTo(destination, 1);
+
+        Assert.That(destination.Skip(1).Take(snapshot.Length), Is.EquivalentTo(snapshot));
+    }
+
+    [Test]
     public void Remove_ExistingValue_ReturnsTrue()
     {
         _map.Add("a", 1);
@@ -2511,6 +2552,19 @@ public class MultiMapLockTests
         other.Add("z", 1);
 
         Assert.That(_map.Equals((IReadOnlyMultiMap<string, int>)other), Is.False);
+    }
+
+    [Test]
+    public void Equals_TypedInterface_ValueComparerAsymmetry_IsPreserved()
+    {
+        using var left = new MultiMapLock<string, string>(valueComparer: StringComparer.Ordinal);
+        using var right = new MultiMapLock<string, string>(valueComparer: StringComparer.OrdinalIgnoreCase);
+
+        left.Add("k", "A");
+        right.Add("k", "a");
+
+        Assert.That(left.Equals((IReadOnlyMultiMap<string, string>)right), Is.True);
+        Assert.That(right.Equals((IReadOnlyMultiMap<string, string>)left), Is.False);
     }
 
     [Test]

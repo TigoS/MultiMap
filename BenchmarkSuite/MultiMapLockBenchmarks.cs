@@ -306,6 +306,18 @@ public class MultiMapLockBenchmarks
         return map.RemoveWhere(Consts.Key1Prefix, v => v % 2 == 0);
     }
 
+    [Benchmark]
+    public int MultiMapLock_GetOrAdd()
+        => _map.GetOrAdd(Consts.Key50Prefix, -1).Count();
+
+    [Benchmark]
+    public int MultiMapLock_CopyTo()
+    {
+        var buffer = new KeyValuePair<string, int>[_map.Count];
+        _map.CopyTo(buffer, 0);
+        return buffer.Length;
+    }
+
     #endregion
 
     #region Microbenchmarks

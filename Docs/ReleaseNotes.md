@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-99.45%25%20line%20%7C%2097.22%25%20branch%20%7C%20100%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9496%2F9496%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.3%25%20line%20%7C%2095%25%20branch%20%7C%2098.8%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9628%2F9628%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -18,6 +18,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 ## Table of Contents
 
 - [Release Notes](#release-notes)
+  - [3.1.0](#310)
   - [3.0.2](#302)
   - [3.0.1](#301)
   - [3.0.0](#300)
@@ -39,6 +40,52 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
   - [1.0.0](#100)
 
 ## Release Notes
+
+### 3.1.0
+
+**API Additions**
+
+- `IMultiMap<TKey, TValue>` now includes `GetOrAdd(TKey, TValue)`, `GetOrAdd(TKey, Lazy<TValue>)`, and `CopyTo(KeyValuePair<TKey, TValue>[], int)`.
+- `IMultiMapAsync<TKey, TValue>` now includes `GetOrAddAsync(TKey, TValue, CancellationToken)`, `GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
+- `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new sync APIs; `MultiMapAsync<TKey, TValue>` implements the new async APIs using the existing semaphore-based fast/slow-path pattern.
+
+**Code Quality Improvements & Refactoring**
+
+- Expanded `.editorconfig` with additional C# style rules for improved code consistency and developer guidance:
+  - `csharp_style_prefer_simple_using_statement = true:suggestion` — Encourages simple `using` statements for better readability
+  - `csharp_style_inlined_variable_declaration = true:suggestion` — Promotes inline variable declarations
+  - `dotnet_diagnostic.CS1591.severity = warning` — Enforces XML documentation on public members for better API discoverability
+  - `csharp_style_namespace_declarations = file_scoped:warning` — Encourages file-scoped namespaces (C# 10+) for cleaner code organization
+- Added `Helpers/MultiMapEqualityHelper.cs` and migrated duplicated `Equals` logic in `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, and `SimpleMultiMap` to shared key-by-key comparison helpers.
+- Added `Helpers/AsyncReaderWriterLock.cs` and consolidated `MultiMapAsync` internal readers-writer semaphore protocol behind a dedicated helper while preserving existing `_writeLock`/`_readerLock` instrumentation fields.
+- Added regression test coverage for comparer asymmetry behavior in `MultiMapLock` typed-interface equality.
+
+**Tests**
+
+- Added targeted coverage tests for the new `GetOrAdd`/`GetOrAddAsync` and `CopyTo`/`CopyToAsync` APIs across all implementations.
+- Added targeted coverage tests for the new `MultiMapEqualityHelper` and `AsyncReaderWriterLock` helpers.
+- Added targeted coverage tests for comparer asymmetry behavior in `MultiMapLock` typed-interface equality.
+- Added **.NET 11 test target support** in `MultiMap.Tests` (`net11.0;net10.0;net9.0;net8.0`) and CI SDK setup (`11.0.x`).
+- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,405/2,405 tests passing**.
+- Full test matrix now executes **9,620 tests** (2,405 × 4 TFMs) with zero failures.
+
+**Documentation Improvements**
+
+- Added `Docs/UsagePatterns.md` and moved detailed usage recipes from `README.md`.
+- Added `Docs/CommonMistakes.md` and moved practical pitfalls/guidance from `README.md`.
+- Added `Docs/ADRs/ADR_README.md` and `Docs/ADRs/ADR-001-MultiMapAsync-Reader-Writer-Protocol.md`.
+- Simplified `README.md` to keep quick-start usage while linking to dedicated long-form documentation pages.
+- Expanded `.editorconfig` with additional C# style rules for improved code consistency and developer guidance:
+  - `csharp_style_prefer_simple_using_statement = true:suggestion` — Encourages simple `using` statements for better readability.
+  - `csharp_style_inlined_variable_declaration = true:suggestion` — Promotes inline variable declarations.
+  - `dotnet_diagnostic.CS1591.severity = warning` — Enforces XML documentation on public members for better API discoverability.
+  - `csharp_style_namespace_declarations = file_scoped:warning` — Encourages file-scoped namespaces (C# 10+) for cleaner code organization.
+- These analyzer rules are non-breaking and serve as development-time guidance only; no API changes were introduced.
+
+**Benchmark Refresh**
+
+- Added benchmark coverage for the new API members: `GetOrAdd` / `GetOrAddAsync` and `CopyTo` / `CopyToAsync` across sync/lock/async implementations.
+- Re-ran benchmark groups with BenchmarkDotNet ShortRun and updated `Docs/Benchmarks.md` with the latest environment baseline (`.NET 10.0.15`, SDK `11.0.100`) and measured `GetOrAdd`/`CopyTo` metrics.
 
 ### 3.0.2
 
