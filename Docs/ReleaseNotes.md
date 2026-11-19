@@ -43,21 +43,29 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ### 3.1.0
 
-**Tests**
-- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,405/2,405 tests passing**.
-- Full test matrix now executes **9,620 tests** (2,405 × 4 TFMs) with zero failures.
-
 **API Additions**
 
 - `IMultiMap<TKey, TValue>` now includes `GetOrAdd(TKey, TValue)`, `GetOrAdd(TKey, Lazy<TValue>)`, and `CopyTo(KeyValuePair<TKey, TValue>[], int)`.
 - `IMultiMapAsync<TKey, TValue>` now includes `GetOrAddAsync(TKey, TValue, CancellationToken)`, `GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
 - `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new sync APIs; `MultiMapAsync<TKey, TValue>` implements the new async APIs using the existing semaphore-based fast/slow-path pattern.
 
-**Code Refactoring**
+**Code Quality Improvements & Rerfactoring**
 
+- Expanded `.editorconfig` with additional C# style rules for improved code consistency and developer guidance:
+  - `csharp_style_prefer_simple_using_statement = true:suggestion` — Encourages simple `using` statements for better readability
+  - `csharp_style_inlined_variable_declaration = true:suggestion` — Promotes inline variable declarations
+  - `dotnet_diagnostic.CS1591.severity = warning` — Enforces XML documentation on public members for better API discoverability
+  - `csharp_style_namespace_declarations = file_scoped:warning` — Encourages file-scoped namespaces (C# 10+) for cleaner code organization
 - Added `Helpers/MultiMapEqualityHelper.cs` and migrated duplicated `Equals` logic in `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, and `SimpleMultiMap` to shared key-by-key comparison helpers.
 - Added `Helpers/AsyncReaderWriterLock.cs` and consolidated `MultiMapAsync` internal readers-writer semaphore protocol behind a dedicated helper while preserving existing `_writeLock`/`_readerLock` instrumentation fields.
 - Added regression test coverage for comparer asymmetry behavior in `MultiMapLock` typed-interface equality.
+
+**Tests**
+
+- Added targeted coverage tests for the new `GetOrAdd`/`GetOrAddAsync` and `CopyTo`/`CopyToAsync` APIs across all implementations.
+- Added targeted coverage tests for the new `MultiMapEqualityHelper` and `AsyncReaderWriterLock` helpers.
+- Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,405/2,405 tests passing**.
+- Full test matrix now executes **9,620 tests** (2,405 × 4 TFMs) with zero failures.
 
 **Documentation Improvements**
 
