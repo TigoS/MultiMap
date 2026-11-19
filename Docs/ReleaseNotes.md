@@ -49,7 +49,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 - `IMultiMapAsync<TKey, TValue>` now includes `GetOrAddAsync(TKey, TValue, CancellationToken)`, `GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
 - `MultiMapBase<TKey, TValue, TCollection>`, `MultiMapLock<TKey, TValue>`, and `ConcurrentMultiMap<TKey, TValue>` implement the new sync APIs; `MultiMapAsync<TKey, TValue>` implements the new async APIs using the existing semaphore-based fast/slow-path pattern.
 
-**Code Quality Improvements & Rerfactoring**
+**Code Quality Improvements & Refactoring**
 
 - Expanded `.editorconfig` with additional C# style rules for improved code consistency and developer guidance:
   - `csharp_style_prefer_simple_using_statement = true:suggestion` — Encourages simple `using` statements for better readability
@@ -64,6 +64,8 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 - Added targeted coverage tests for the new `GetOrAdd`/`GetOrAddAsync` and `CopyTo`/`CopyToAsync` APIs across all implementations.
 - Added targeted coverage tests for the new `MultiMapEqualityHelper` and `AsyncReaderWriterLock` helpers.
+- Added targeted coverage tests for comparer asymmetry behavior in `MultiMapLock` typed-interface equality.
+- Added **.NET 11 test target support** in `MultiMap.Tests` (`net11.0;net10.0;net9.0;net8.0`) and CI SDK setup (`11.0.x`).
 - Latest Coverlet run (`net11.0`) reports **99.45% line**, **97.22% branch**, and **100% method** coverage with **2,405/2,405 tests passing**.
 - Full test matrix now executes **9,620 tests** (2,405 × 4 TFMs) with zero failures.
 
