@@ -147,7 +147,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
   - `SortedMultiMap` options constructor propagates the `IEqualityComparer` validation (`ArgumentException` on bare `IComparer`).
   - `ConcurrentMultiMap` options constructor selects the correct `ConcurrentDictionary` overload (concurrency level + capacity, capacity-only, key-comparer-only).
 
-- **Total: 7,107 tests** (2,369 per framework o
+- **Total: 7,107 tests** (2,369 per framework × 3 frameworks) with **zero failures**.
 - **Coverage: 98.5% line, 96.6% branch, 98.3% method** (net9.0 Coverlet run, 2026-11-04).
 
 **API Additions**
