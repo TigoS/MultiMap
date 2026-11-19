@@ -25,8 +25,8 @@
     <Copyright>© 2026 TigoS</Copyright>
     <PackageReleaseNotes>3.1.0
 
-- CopyTo added to all interfaces
-- Bug Fixes
+- API Changes: CopyTo &amp; GetOrAdd added to all interfaces
+- Refactorings &amp; Optimizations
 - Tests
 - Documentation
 - Package Updates
