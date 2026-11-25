@@ -53,6 +53,16 @@ public interface IReadOnlySimpleMultiMap<TKey, TValue> : IEnumerable<KeyValuePai
     public bool TryGet(TKey key, out IEnumerable<TValue> values);
 
     /// <summary>
+    /// Attempts to copy values associated with a key into a caller-provided span.
+    /// </summary>
+    /// <param name="key">The key whose associated values are to be retrieved.</param>
+    /// <param name="buffer">The destination span for associated values.</param>
+    /// <param name="count">When this method returns, the number of values copied into <paramref name="buffer"/>.</param>
+    /// <returns><see langword="true"/> if the key was found; otherwise, <see langword="false"/>.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="key"/> is <see langword="null"/>.</exception>
+    public bool TryGetSpan(TKey key, Span<TValue> buffer, out int count);
+
+    /// <summary>
     /// Determines whether the collection contains an element with the specified key.
     /// </summary>
     /// <param name="key">The key to locate in the collection. Cannot be null.</param>
