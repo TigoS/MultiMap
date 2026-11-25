@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.3%25%20line%20%7C%2095%25%20branch%20%7C%2098.8%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9628%2F9628%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.57%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9700%2F9700%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -61,8 +61,8 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 5 test suite**:
-  - **9,620 total tests** (2,405 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
-  - **99.45% line coverage**, **97.22% branch coverage**, **100% method coverage** (latest Coverlet metrics)
+  - **9,700 total tests** (2,425 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
+  - **97.25% line coverage**, **94.57% branch coverage**, **98.94% method coverage** (fresh aggregated Coverlet metrics)
   - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
@@ -493,6 +493,8 @@ See [Implementation Selection Guide](https://github.com/TigoS/MultiMap/blob/mast
 See [Migration Guide](https://github.com/TigoS/MultiMap/blob/master/Docs/MigrationGuide.md) for the full migration guide.
 
 ## Release Notes
+
+**Current release: 3.2.0** adds span-based `TryGetSpan` retrieval for zero-allocation stack-buffer use cases and retains the lightweight optimized `Values` enumeration implementation.
 
 See [Release Notes](https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md) for the full version history.
 
