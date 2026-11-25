@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-**MultiMap** is a mature, well-engineered .NET library providing seven distinct multimap implementations with comprehensive test coverage (**9,620 matrix executions**, **99.45% line coverage**) and robust documentation. The codebase demonstrates strong architectural practices, excellent separation of concerns, and production-ready code quality.
+**MultiMap** is a mature, well-engineered .NET library providing seven distinct multimap implementations with comprehensive test coverage (**9,700 matrix executions**, **97.25% aggregate line coverage**) and robust documentation. The codebase demonstrates strong architectural practices, excellent separation of concerns, and production-ready code quality.
 
 ### Overall Assessment
 - ✅ **Excellent code quality** with consistent patterns and SOLID principles
@@ -99,8 +99,8 @@ Guard.NotNullMessage(values, nameof(values), "Values collection cannot be null")
 ### Strengths
 
 #### 3.1 Comprehensive Test Suite
-- **7,107 tests** across 3 frameworks (2,369 per framework)
-- **98.5% line coverage**, 96.6% branch coverage, 98.3% method coverage
+- **2,425 tests** per framework, **9,700 matrix executions** across net8.0/net9.0/net10.0/net11.0
+- **97.25% line coverage**, 94.57% branch coverage, 98.94% method coverage in fresh aggregated Coverlet reports
 - Tests organized by fixture type and concern (boundary conditions, stress, concurrency)
 - Concurrent stress tests validate thread-safety guarantees
 
@@ -575,7 +575,7 @@ map.ToBinary();  // via MessagePack
 **MultiMap is a production-grade library** that demonstrates:
 
 1. **Excellent architecture**: Clean interface hierarchy, proper SOLID principles, thoughtful concurrency models
-2. **Outstanding testing**: 7,107 tests, 98.5% coverage, stress tests, boundary condition handling
+2. **Outstanding testing**: 9,700 matrix executions, 97.25% aggregate line coverage, stress tests, boundary condition handling
 3. **Strong documentation**: Comprehensive README, release notes, benchmarks, migration guides
 4. **Performance-conscious design**: Optimization mindset evident in race condition fixes and batching strategies
 5. **Modern C# practices**: Nullable references, file-scoped namespaces, C# 14 features

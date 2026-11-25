@@ -1,6 +1,6 @@
 # MultiMap Solution: Code Improvements & Optimization Guide
 
-> ✅ **State Sync (2026-11-12):** This guide has been compared with the current codebase. Completed items are kept marked as completed; remaining recommendations should be treated as forward-looking backlog.
+> ✅ **State Sync (2026-11-25):** This guide has been compared with v3.2.0. TryGetSpan, benchmark coverage, and review documentation updates are complete; remaining recommendations are forward-looking backlog.
 
 ## Overview
 
@@ -120,7 +120,7 @@ if (map.TryGetSpan("tags", buffer, out int count))
 **Effort:** Low (1 hour)
 **Complexity:** Low
 **Benefit:** Medium (advanced users, hot paths)
-**Status:** ✅ Implemented as `TryGetSpan` on `IReadOnlySimpleMultiMap` and all synchronous implementations; covered by focused unit tests.
+**Status:** ✅ Implemented as `TryGetSpan` on `IReadOnlySimpleMultiMap` and all synchronous implementations; covered by focused unit tests and BenchmarkDotNet benchmarks. ShortRun results: MultiMapList 42.53 ns, SimpleMultiMap 50.75 ns, MultiMapSet 52.10 ns, MultiMapLock 66.35 ns, SortedMultiMap 382.47 ns, ConcurrentMultiMap 533.86 ns.
 
 ---
 

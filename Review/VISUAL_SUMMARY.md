@@ -128,7 +128,8 @@ Week 5-6: PERFORMANCE (12 hours)
 ┌────────────────────────────────-─┐
 │ ❌ RemoveRange Batching          │
 │ ✅ TryGetSpan Overload           │
-│ ❌ Allocation Profiling          │
+│  ✅ Allocation Profiling          │
+
 │ ✅ GetOrAdd Methods              │
 │ ❌ Perf Validation Tests         │
 └────────────────────────────────-─┘
@@ -171,6 +172,11 @@ IMultiMap (full featured)
 
 ### Performance Characteristics
 ```
+TryGetSpan (50-value key, 50-element stack buffer):
+MultiMapList       42.53 ns  |  SimpleMultiMap 50.75 ns
+MultiMapSet        52.10 ns  |  MultiMapLock   66.35 ns
+SortedMultiMap     382.47 ns |  Concurrent     533.86 ns
+
 Operation: Add (5,000 pairs)
   🏎️  MultiMapList:       46,949 ns   ⚡⚡⚡⚡⚡
   🏎️  MultiMapSet:        81,379 ns   ⚡⚡⚡⚡
@@ -197,7 +203,7 @@ High Impact / Low Effort (DO FIRST)
   ❌ Implementation Selection Guide    1-2 hrs   │ Prevents wrong choices
   ❌ Benchmark Regression Tests        2 hrs     │ Prevents perf drops
   ✅ Common Mistakes Documentation     1 hr      │ Reduces support load
-  ❌ Add TryGetSpan API                1 hr      │ Zero-allocation paths
+  ✅ Add TryGetSpan API                1 hr      │ Zero-allocation paths (complete)
 
 Medium Effort / High Impact (NEXT)
   ✅ Extract Equality Helper           4 hrs     │ Reduce duplication
@@ -351,7 +357,7 @@ TOTAL: ~60 pages of detailed analysis, code examples, and recommendations
 
 ## Summary in 3 Sentences
 
-**MultiMap is a production-grade .NET library demonstrating excellent architecture, exceptional test coverage (98.5%), and zero critical issues.** The codebase serves as a model for collections design with 7 well-chosen implementations and clean interfaces. **Recommended next steps are non-breaking enhancements: documentation improvements, benchmark regression tests, and targeted performance optimizations.**
+**MultiMap is a production-grade .NET library demonstrating excellent architecture, strong test coverage (97.25% aggregate line coverage), and zero critical issues.** The codebase serves as a model for collections design with 7 well-chosen implementations and clean interfaces. **Recommended next steps are non-breaking enhancements: documentation improvements, benchmark regression tests, and targeted performance optimizations.**
 
 ---
 
