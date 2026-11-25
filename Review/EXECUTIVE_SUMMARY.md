@@ -3,15 +3,15 @@
 > ✅ **State Sync (2026-11-25):** This document was refreshed for v3.2.0 against the current codebase.
 > - Targets: **.NET 11 / 10 / 9 / 8** (`MultiMap.csproj`)
 > - Package version: **3.2.0**
-> - Tests: **2,434 unique tests**, **9,736 matrix executions**, **0 failures**
-> - Fresh aggregated coverage: **97.25% line**, **94.52% branch**, **98.94% method**
+> - Tests: **2,438 unique tests**, **9,752 matrix executions**, **0 failures**
+> - Fresh aggregated coverage: **97.28% line**, **94.56% branch**, **98.94% method**
 > - Completed since the original January review: implementation/usage/mistakes docs, `GetOrAdd`/`CopyTo` APIs (sync+async), `MultiMapEqualityHelper`, `AsyncReaderWriterLock`, `Directory.Build.props`, deterministic/CI build settings.
 > - Still open from prior recommendations: benchmark regression gates, `RemoveRange` batching optimization, CI security scanning.
 
 **Date:** 2026-11-25 (updated; original review: January 2026)
 **Reviewed:** Entire solution across 4 projects
 **Lines of Code:** ~5,500 (library) + ~15,000 (tests)
-**Test Coverage:** 97.25% line, 94.52% branch, 98.94% method
+**Test Coverage:** 97.28% line, 94.56% branch, 98.94% method
 **Status:** ✅ Production-Ready
 
 ---
@@ -21,7 +21,7 @@
 | Category | Rating | Notes |
 |----------|--------|-------|
 | **Code Quality** | ⭐⭐⭐⭐⭐ | Excellent patterns, nullable refs, SOLID principles |
-| **Testing** | ⭐⭐⭐⭐⭐ | 9,736 matrix test executions (2,434 per TFM), comprehensive coverage, stress tests |
+| **Testing** | ⭐⭐⭐⭐⭐ | 9,752 matrix test executions (2,438 per TFM), comprehensive coverage, stress tests, FsCheck properties |
 | **Documentation** | ⭐⭐⭐⭐☆ | Strong README/benchmarks; could add usage patterns |
 | **Architecture** | ⭐⭐⭐⭐⭐ | Clean interfaces, proper abstractions, no unnecessary complexity |
 | **Performance** | ⭐⭐⭐⭐☆ | Well-optimized; benchmarked; room for Span-based variants |
@@ -38,7 +38,7 @@
 ### Strengths
 
 1. **No Critical Issues Found**
-   - Clean compilation, all 9,736 matrix executions pass
+   - Clean compilation, all 9,752 matrix executions pass
    - No null-safety violations or unsafe code
    - Proper resource disposal (IDisposable/IAsyncDisposable)
 
@@ -152,9 +152,9 @@ Effort: 8 hours | Owner: 1 developer
 
 ### Phase 2: Quality Improvements (Week 3-4)
 ```
-[ ] Add benchmark regression tests
+[x] Add benchmark regression tests
 [x] Extract MultiMapEqualityHelper
-[ ] Add property-based tests (FsCheck)
+[x] Add property-based tests (FsCheck)
 [x] Add CopyTo method for BCL compliance
 Effort: 16 hours | Owner: 1-2 developers
 ```
@@ -184,10 +184,10 @@ Effort: 40+ hours | Owner: 2 developers
 
 | Metric | Value | Benchmark | Status |
 |--------|-------|-----------|--------|
-| Test Coverage (Lines) | 97.25% | ≥ 80% | ✅ Excellent |
-| Test Coverage (Branch) | 94.52% | ≥ 70% | ✅ Excellent |
+| Test Coverage (Lines) | 97.28% | ≥ 80% | ✅ Excellent |
+| Test Coverage (Branch) | 94.56% | ≥ 70% | ✅ Excellent |
 | Test Coverage (Method) | 98.94% | ≥ 85% | ✅ Excellent |
-| Tests Passing | 9,736/9,736 | 100% | ✅ Perfect |
+| Tests Passing | 9,752/9,752 | 100% | ✅ Perfect |
 | Static Analysis Issues | 0 | 0 | ✅ None |
 | Code Duplication | Low (~200 lines) | Minimal | ⚠️ Minor (extract helper) |
 | Nullable Violations | 0 | 0 | ✅ None |
@@ -214,7 +214,7 @@ Effort: 40+ hours | Owner: 2 developers
 **Why MultiMap stands out:**
 
 1. **7 implementations, not 1** — Users choose their performance/feature trade-off
-2. **Exceptional test coverage** — 97.25% aggregate line coverage (not typical for collection libraries)
+2. **Exceptional test coverage** — 97.28% aggregate line coverage (not typical for collection libraries)
 3. **Clean async support** — Unlike Dictionary or similar classes
 4. **Reader-writer fairness** — MultiMapLock favors readers (rare, useful)
 5. **Zero external dependencies** — Entirely BCL-based

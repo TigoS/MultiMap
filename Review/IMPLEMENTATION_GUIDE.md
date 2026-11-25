@@ -28,72 +28,13 @@ This section was implemented for v3.2.0:
 
 ---
 
-## 3. Testing Enhancements
+## 3. Testing Enhancements (Completed)
 
-### 3.1 Add Property-Based Testing with FsCheck
+This section was implemented for v3.2.0:
 
-**Recommendation:** Add optional property-based tests for invariant preservation.
-
-**Example Package:** NuGet `FsCheck.NUnit`
-
-```csharp
-[TestFixture]
-public class MultiMapPropertyTests
-{
-    [Property]
-    public void Add_Then_Contains_Property(string key, int value)
-    {
-        var map = new MultiMapSet<string, int>();
-        map.Add(key, value);
-        Assert.That(map.Contains(key, value));
-    }
-
-    [Property]
-    public void Count_Matches_Enumeration(string key, int[] values)
-    {
-        var map = new MultiMapSet<string, int>();
-        foreach (var v in values.Distinct())
-            map.Add(key, v);
-
-        Assert.That(map.Count, Is.EqualTo(values.Distinct().Length));
-    }
-}
-```
-
-**Benefit:** Catches edge cases in random combinations.
-
-**Effort:** Medium (2-4 hours to set up)
-**Complexity:** Medium
-**Benefit:** Medium (high confidence, but coverage already at 98%)
-
----
-
-### 3.2 Add Benchmark Regression Tests
-
-**In BenchmarkSuite:**
-```csharp
-[Benchmark(Baseline = true)]
-public void AddRange_Batched_Baseline()
-{
-    var map = new MultiMapSet<int, int>();
-    for (int i = 0; i < _data.Length; i++)
-    {
-        map.AddRange(_data[i].Key, _data[i].Value);
-    }
-}
-
-[Benchmark]
-public void AddRange_Batched_Current()
-{
-    // Current implementation
-}
-```
-
-**Benefit:** CI/CD can warn on regressions (>10% slower).
-
-**Effort:** Low (1-2 hours)
-**Complexity:** Low
-**Benefit:** High (prevents performance regressions)
+- Added four FsCheck/NUnit property tests for add/containment, distinct counts, batched removals, and duplicate removal-input invariants.
+- Added a BenchmarkDotNet baseline-vs-batched RemoveRange regression benchmark for 100 and 1000 pairs.
+- Added FsCheck.NUnit 3.6.0 centrally, compatible with the NUnit 5 test project.
 
 ---
 
@@ -290,8 +231,8 @@ Consider for next major version:
 
 - [x] Batch `RemoveRange` optimization
 - [x] Add `GetOrAdd` methods
-- [ ] Implement benchmark regression tests
-- [ ] Add property-based testing (FsCheck)
+- [x] Implement benchmark regression tests
+- [x] Add property-based testing (FsCheck)
 
 **Effort:** 20 hours
 **Complexity:** Medium
