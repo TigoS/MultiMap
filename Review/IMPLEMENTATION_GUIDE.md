@@ -10,7 +10,7 @@ This document outlines specific, actionable code improvements that can be implem
 
 ## 1. Documentation Improvements (Completed)
 
-This section was implemented and is now tracked in project documentation rather than as pending work:
+This section was implemented for v3.1.0:
 
 - XML documentation for the targeted public APIs is in place.
 - Implementation selection guide created at `Docs/ImplementationGuide.md`.
@@ -99,7 +99,7 @@ public void AddRange_Batched_Current()
 
 ## 4. API Enhancements (Completed)
 
-This section is now implemented in the codebase:
+This section is now implemented in the codebase for v3.1.0:
 
 - Added `IMultiMap<TKey, TValue>.GetOrAdd(TKey, TValue)`, `IMultiMap<TKey, TValue>.GetOrAdd(TKey, Lazy<TValue>)`, and `IMultiMap<TKey, TValue>.CopyTo(KeyValuePair<TKey, TValue>[], int)`.
 - Added `IMultiMapAsync<TKey, TValue>.GetOrAddAsync(TKey, TValue, CancellationToken)`, `IMultiMapAsync<TKey, TValue>.GetOrAddAsync(TKey, Lazy<TValue>, CancellationToken)`, and `IMultiMapAsync<TKey, TValue>.CopyToAsync(KeyValuePair<TKey, TValue>[], int, CancellationToken)`.
@@ -111,7 +111,7 @@ This section is now implemented in the codebase:
 
 ## 5. Code Refactoring (Completed)
 
-This section is now implemented in the codebase:
+This section is now implemented in the codebase for v3.1.0:
 
 - Added `Helpers/MultiMapEqualityHelper.cs` and centralized shared equality precondition/key-loop logic.
 - Refactored duplicated `Equals` implementations in `MultiMapSet`, `MultiMapList`, `SortedMultiMap`, `ConcurrentMultiMap`, `MultiMapLock`, and `SimpleMultiMap` to use the helper.
@@ -233,7 +233,7 @@ public partial class SortedMultiMap<TKey, TValue>
 
 ## 8. Documentation Improvements (Completed)
 
-This section is now implemented in project documentation:
+This section is now implemented in project documentation for v3.1.0:
 
 - Added `Docs/UsagePatterns.md` and moved detailed usage recipes from `README.md`.
 - Added `Docs/CommonMistakes.md` and moved practical pitfalls guidance from `README.md`.
@@ -326,7 +326,7 @@ MultiMap is a mature, well-designed library. The recommended improvements are pr
 
 ---
 
-**Last Updated:** 2026-11-11
+**Last Updated:** 2026-11-25
 **Status:** Ready for Implementation
 **Maintainer:** TigoS
 **Repository:** https://github.com/TigoS/MultiMap
