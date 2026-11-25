@@ -54,6 +54,7 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Multi-target**: .NET 11, .NET 10, .NET 9, and .NET 8
 - **Set-like extension methods**: `Union`, `Intersect`, `ExceptWith`, `SymmetricExceptWith`
 - **Set algebra query methods**: `IsSubsetOf`, `IsSupersetOf`, `Overlaps`, `SetEquals`
+- **Span-based retrieval**: `TryGetSpan` copies matching values into a caller-provided `Span<TValue>` with no result-array allocation
 - **Thread-safe variants**: fully lock-free (`ConcurrentMultiMap`), reader-writer locked (`MultiMapLock`), and async-safe (`MultiMapAsync`)
 - **Dispose safety**: `MultiMapLock` and `MultiMapAsync` throw `ObjectDisposedException` after disposal
 - **Custom value comparers**: `IEqualityComparer<TValue>` constructor overloads on all `HashSet`-based implementations
@@ -131,7 +132,7 @@ MultiMap/
 The library follows a hierarchical interface design with three parallel families:
 
 **Read-Only Interfaces:**
-- `IReadOnlySimpleMultiMap<TKey, TValue>` — Base read-only interface with `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, and `Contains`
+- `IReadOnlySimpleMultiMap<TKey, TValue>` — Base read-only interface with `Get`, `GetOrDefault`, `TryGet`, `TryGetSpan`, `ContainsKey`, and `Contains`
 - `IReadOnlyMultiMap<TKey, TValue>` — Extends `IReadOnlySimpleMultiMap` with `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, `this[key]`, and typed enumeration
 - `IReadOnlyMultiMapAsync<TKey, TValue>` — Async read-only with async `Get`-s, `Contains`-es, `Count`-s, `Keys`/`Values` accessors, and async enumeration
 
@@ -149,6 +150,7 @@ The base read-only interface. Extends `IEnumerable<KeyValuePair<TKey, TValue>>` 
 | `Get(key)` | `IEnumerable<TValue>` | Returns values; throws `KeyNotFoundException` if not found |
 | `GetOrDefault(key)` | `IEnumerable<TValue>` | Returns values or empty if not found |
 | `TryGet(key, out values)` | `bool` | Attempts to retrieve values; returns `true` if key exists |
+| `TryGetSpan(key, buffer, out count)` | `bool` | Copies up to `buffer.Length` values into a caller-provided span; reports copied count |
 | `ContainsKey(key)` | `bool` | Checks if a key exists |
 | `Contains(key, value)` | `bool` | Checks if a specific key-value pair exists |
 | `Count` | `int` | Gets the total number of key-value pairs (from `IReadOnlyCollection<KeyValuePair<TKey,TValue>>`) |
@@ -166,7 +168,7 @@ A simplified multimap interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`
 
 > **Migration note:** legacy `ISimpleMultiMap.Clear(TKey)`/void patterns were removed; use `RemoveKey(TKey)` and consume its `bool` result.
 
-**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`
+**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `TryGetSpan`, `ContainsKey`, `Contains`, `Count`
 
 ### `IReadOnlyMultiMap<TKey, TValue>`
 
@@ -181,7 +183,7 @@ Extended read-only interface. Extends `IReadOnlySimpleMultiMap<TKey, TValue>`.
 | `this[key]` | `IEnumerable<TValue>` | Indexer — convenient value access by key |
 | `GetEnumerator()` | `IEnumerator<KeyValuePair>` | Enumerates all key-value pairs |
 
-**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`
+**Inherited from `IReadOnlySimpleMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `TryGetSpan`, `ContainsKey`, `Contains`, `Count`
 
 ### `IMultiMap<TKey, TValue>`
 
@@ -201,7 +203,7 @@ The standard synchronous multimap interface. Extends `IReadOnlyMultiMap<TKey, TV
 | `RemoveKey(key)` | `bool` | Removes a key and all its values |
 | `Clear()` | `void` | Removes all entries |
 
-**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `KeyCount`, `Count`, `Keys`, `Values`, `GetValuesCount`, `this[key]`
+**Inherited from `IReadOnlyMultiMap`:** `Get`, `GetOrDefault`, `TryGet`, `TryGetSpan`, `ContainsKey`, `Contains`, `KeyCount`, `Count`, `Keys`, `Values`, `GetValuesCount`, `this[key]`
 
 ### `IReadOnlyMultiMapAsync<TKey, TValue>`
 
@@ -244,7 +246,8 @@ Asynchronous multimap interface. Extends `IReadOnlyMultiMapAsync<TKey, TValue>`.
 
 ### `MultiMapBase<TKey, TValue, TCollection>` — Abstract Base Class
 
-Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type. `MultiMapList` and `MultiMapSet` also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup per operation.
+Provides the shared dictionary-backed implementation inherited by `MultiMapList`, `MultiMapSet`, `SortedMultiMap`, and `ConcurrentMultiMap`. Implements `IMultiMap<TKey, TValue>` with `Add`, `AddRange`, `Remove`, `RemoveKey`, `RemoveRange`, `RemoveWhere`, `Get`, `GetOrDefault`, `TryGet`, `TryGetSpan`, `ContainsKey`, `Contains`, `Count`, `KeyCount`, `Keys`, `Values`, `GetValuesCount`, indexer, `Clear`, and `GetEnumerator`. Subclasses override `protected` `CreateCollection()`, `TryGetCollection`, `AddToCollection()`, `ToReadOnly`, and `RemoveWhereFromCollection()` to plug in their specific collection type.
+`MultiMapList` and `MultiMapSet` also override `Add`/`AddRange` to use `CollectionsMarshal.GetValueRefOrAddDefault` for a single dictionary lookup per operation.
 
 **Encapsulation:** The underlying `_dictionary` field is `protected`. The value counter `_count` is `private protected`; non-concurrent subclasses mutate it via `IncrementCount()`, `DecrementCount(int by = 1)`, and `ResetCount()`. Atomic variants (`InterlockedIncrementCount`, `InterlockedAddCount`, `InterlockedExchangeCount`, `VolatileReadCount`) live in the intermediate `ConcurrentMultiMapBase` class to keep concurrent concerns out of the shared base.
 
@@ -300,7 +303,7 @@ Implements `IMultiMapAsync`, `IDisposable`, and `IAsyncDisposable`.
 
 > **Deprecated** — `SimpleMultiMap<TKey, TValue>` is marked `[Obsolete]` and may be removed in a future major version. Use [`MultiMapSet<TKey, TValue>`](#multimapsettkey-tvalue--set-based) instead; it provides the same set-based, no-duplicate semantics while implementing the richer `IMultiMap` contract (including `AddRange`, `RemoveRange`, `RemoveWhere`, `KeyCount`, and all extension methods).
 
-Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplified API. Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
+Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplified API, including allocation-conscious `TryGetSpan` retrieval. Provides typed `Equals(IReadOnlySimpleMultiMap<TKey, TValue>?)` comparing total pair count then per-key value-set contents.
 
 **Constructors:**
 
@@ -335,6 +338,7 @@ Implements `ISimpleMultiMap`. A lightweight, standalone multimap with a simplifi
 | **Interface Hierarchy** | ✅ Extends `IReadOnlyMultiMap` → `IReadOnlySimpleMultiMap` | ✅ Extends `IReadOnlyMultiMapAsync` | ✅ Extends `IReadOnlySimpleMultiMap` |
 | **Get (missing key)** | ✅ `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty | ✅ `GetAsync` throws `KeyNotFoundException`; `GetOrDefaultAsync` returns empty | ✅ `Get` throws `KeyNotFoundException`; `GetOrDefault` returns empty |
 | **TryGet (missing key)** | ✅ `TryGet` returns `false` with empty collection | ✅ `TryGetAsync` returns `(false, empty)` tuple | ✅ `TryGet` returns `false` with empty collection |
+| **TryGetSpan** | ✅ Copies values into a caller-provided span; synchronous implementations | ❌ Not applicable to async interface; use `TryGetAsync` | ✅ Copies values into a caller-provided span |
 | **KeyCount property** | ✅ `KeyCount` property (number of unique keys) | ✅ `GetKeyCountAsync()` method | ❌ Not available |
 | **Add (duplicate)** | ✅ Returns `false` | ✅ Returns `false` (via `ValueTask<bool>`) | ✅ Returns `false` |
 | **AddRange** | ✅ `AddRange(key, values)` and `AddRange(items)` | ✅ `AddRangeAsync(key, values)` and `AddRangeAsync(items)` | ❌ Not available |
@@ -413,7 +417,7 @@ dotnet add package MultiMap
 ### Package Reference
 
 ```xml
-<PackageReference Include="MultiMap" Version="2.1.0" />
+<PackageReference Include="MultiMap" Version="3.2.0" />
 ```
 
 ## Usage
@@ -431,6 +435,12 @@ map.Add("fruits", 2);
 
 var values = map.GetOrDefault("fruits");
 int count = map.Count;
+
+Span<int> buffer = stackalloc int[2];
+if (map.TryGetSpan("fruits", buffer, out int copied))
+{
+    // The first `copied` span entries contain the retrieved values.
+}
 ```
 
 ### Async Usage
