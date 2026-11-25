@@ -413,6 +413,57 @@ public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TK
     }
 
     /// <inheritdoc/>
+    public override int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+    {
+        ArgumentNullException.ThrowIfNull(items, nameof(items));
+
+        var itemsByKey = new Dictionary<TKey, List<TValue>>(_concurrentDictionary.Comparer);
+        foreach (var item in items)
+        {
+            ArgumentNullException.ThrowIfNull(item.Key, nameof(item.Key));
+            ArgumentNullException.ThrowIfNull(item.Value, nameof(item.Value));
+
+            if (!itemsByKey.TryGetValue(item.Key, out var values))
+            {
+                values = [];
+                itemsByKey[item.Key] = values;
+            }
+
+            values.Add(item.Value);
+        }
+
+        int removedCount = 0;
+        foreach (var group in itemsByKey)
+        {
+            if (!_concurrentDictionary.TryGetValue(group.Key, out var valueSet))
+            {
+                continue;
+            }
+
+            int removedForKey = 0;
+            foreach (var value in group.Value)
+            {
+                if (valueSet.TryRemove(value, out _))
+                {
+                    removedForKey++;
+                }
+            }
+
+            if (removedForKey > 0)
+            {
+                InterlockedAddCount(-removedForKey);
+                removedCount += removedForKey;
+                if (valueSet.IsEmpty)
+                {
+                    TryPruneEmptySet(group.Key, valueSet);
+                }
+            }
+        }
+
+        return removedCount;
+    }
+
+    /// <inheritdoc/>
     public override int RemoveWhere(TKey key, Predicate<TValue> predicate)
     {
         ArgumentNullException.ThrowIfNull(key, nameof(key));

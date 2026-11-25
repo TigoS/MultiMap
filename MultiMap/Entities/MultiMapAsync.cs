@@ -334,12 +334,41 @@ public sealed partial class MultiMapAsync<TKey, TValue>(int capacity, IEqualityC
 
     private int RemoveRangeCore(IEnumerable<KeyValuePair<TKey, TValue>> items)
     {
-        int removedCount = 0;
+        var itemsByKey = new Dictionary<TKey, List<TValue>>(_dictionary.Comparer);
         foreach (var item in items)
         {
-            if (RemoveCore(item.Key, item.Value))
+            ArgumentNullException.ThrowIfNull(item.Key, nameof(item.Key));
+            ArgumentNullException.ThrowIfNull(item.Value, nameof(item.Value));
+
+            if (!itemsByKey.TryGetValue(item.Key, out var values))
             {
-                removedCount++;
+                values = [];
+                itemsByKey[item.Key] = values;
+            }
+
+            values.Add(item.Value);
+        }
+
+        int removedCount = 0;
+        foreach (var group in itemsByKey)
+        {
+            if (!_dictionary.TryGetValue(group.Key, out var hashset))
+            {
+                continue;
+            }
+
+            foreach (var value in group.Value)
+            {
+                if (hashset.Remove(value))
+                {
+                    _count--;
+                    removedCount++;
+                }
+            }
+
+            if (hashset.Count == 0)
+            {
+                _dictionary.Remove(group.Key);
             }
         }
 

@@ -324,16 +324,55 @@ public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionar
     }
 
     /// <inheritdoc/>
-    public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+    public virtual int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
     {
         ArgumentNullException.ThrowIfNull(items, nameof(items));
 
-        int removedCount = 0;
+        IEqualityComparer<TKey> keyComparer =
+            (_dictionary as Dictionary<TKey, TCollection>)?.Comparer
+            ?? ((_dictionary as SortedDictionary<TKey, TCollection>)?.Comparer as IEqualityComparer<TKey>)
+            ?? EqualityComparer<TKey>.Default;
+
+        var itemsByKey = new Dictionary<TKey, List<TValue>>(keyComparer);
         foreach (var item in items)
         {
-            if (Remove(item.Key, item.Value))
+            Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+            Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+            if (!itemsByKey.TryGetValue(item.Key, out var values))
             {
-                removedCount++;
+                values = [];
+                itemsByKey[item.Key] = values;
+            }
+
+            values.Add(item.Value);
+        }
+
+        int removedCount = 0;
+        foreach (var group in itemsByKey)
+        {
+            if (!TryGetCollection(group.Key, out var collection))
+            {
+                continue;
+            }
+
+            int removedForKey = 0;
+            foreach (var value in group.Value)
+            {
+                if (collection.Remove(value))
+                {
+                    removedForKey++;
+                }
+            }
+
+            if (removedForKey > 0)
+            {
+                DecrementCount(removedForKey);
+                removedCount += removedForKey;
+                if (collection.Count == 0)
+                {
+                    _dictionary.Remove(group.Key);
+                }
             }
         }
 
