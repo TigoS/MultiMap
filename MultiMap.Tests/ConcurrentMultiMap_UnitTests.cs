@@ -1315,6 +1315,28 @@ public class ConcurrentMultiMapTests
     }
 
     [Test]
+    public void RemoveRange_RepeatedAndInterleavedKeys_RemovesAllExistingPairs()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key2", 3);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 3),
+            new KeyValuePair<string, int>("key1", 2),
+            new KeyValuePair<string, int>("missing", 9)
+        };
+
+        int removed = _map.RemoveRange(pairs);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.KeyCount, Is.Zero);
+    }
+
+    [Test]
     public void RemoveRange_LastValueOfKey_RemovesKey()
     {
         _map.Add("key1", 1);

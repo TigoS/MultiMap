@@ -565,6 +565,46 @@ public abstract class MultiMapBaseTests
     }
 
     [Test]
+    public void RemoveRange_RepeatedAndInterleavedKeys_RemovesEachExistingPairOnce()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 3),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("missing", 9)
+        };
+
+        int removed = _map.RemoveRange(pairs);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.KeyCount, Is.Zero);
+    }
+
+    [Test]
+    public void RemoveRange_DuplicateInputPair_CountsEachSuccessfulRemovalOnce()
+    {
+        _map.Add("a", 1);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 1)
+        };
+
+        int removed = _map.RemoveRange(pairs);
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.ContainsKey("a"), Is.False);
+    }
+
+    [Test]
     public void RemoveRange_LastValueOfKey_RemovesKey()
     {
         _map.Add("a", 1);

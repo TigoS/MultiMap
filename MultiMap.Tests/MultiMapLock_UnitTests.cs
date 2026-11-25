@@ -2020,6 +2020,28 @@ public class MultiMapLockTests
     }
 
     [Test]
+    public void RemoveRange_RepeatedAndInterleavedKeys_RemovesAllExistingPairs()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 10);
+
+        var items = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 10),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("missing", 99)
+        };
+
+        int removed = _map.RemoveRange(items);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.KeyCount, Is.Zero);
+    }
+
+    [Test]
     public void RemoveRange_NonExistentPairs_ReturnsZero()
     {
         _map.Add("a", 1);
