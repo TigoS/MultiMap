@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.52%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9736%2F9736%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.28%25%20line%20%7C%2094.56%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9752%2F9752%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -142,6 +142,7 @@ Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
 - **AddRange vs Add**: `AddRange(key, values)` is significantly faster — `MultiMapList` **~2.5x**, `SortedMultiMap` **~6.1x**, `MultiMapAsync` **~4.0x**, `MultiMapLock` **~2.6x** faster than individual `Add` calls
 - **Fastest adds**: `MultiMapList` remains the fastest among `IMultiMap` implementations; `MultiMapSet` is ~1.7x slower due to uniqueness checks
 - **Retrieval methods**: `Get()`, `GetOrDefault()`, and `TryGet()` remain close for existing keys; select based on semantics (exception, empty collection, or bool)
+- **RemoveRange regression**: With 100 pairs, item-by-item removal measured 3.523 μs versus batched `RemoveRange` 6.184 μs (1.76x); with 1000 pairs, item-by-item measured 29.028 μs versus batched 36.085 μs (1.24x). The benchmark is a regression baseline, not an assertion of universal batching speedup.
 - **TryGetSpan**: Copies a bounded value span in 42–382 ns for synchronous dictionary-backed implementations; `ConcurrentMultiMap` is higher at 533.86 ns due to concurrent collection iteration and `MultiMapLock` is 66.35 ns due to read-lock synchronization
 - **KeyCount**: O(1) for all synchronous implementations (< 1 ns), including `ConcurrentMultiMap` which now uses a cached `_keyCount` counter; `MultiMapLock` and `MultiMapAsync` add synchronization overhead (~12 ns and ~81 ns)
 - **GetValuesCount**: Non-concurrent maps remain very fast (~3.6 ns), while synchronized/concurrent variants are slower (`MultiMapLock` ~14 ns, `MultiMapAsync` ~84 ns, `ConcurrentMultiMap` ~370 ns)

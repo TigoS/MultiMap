@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.52%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9736%2F9736%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.28%25%20line%20%7C%2094.56%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9752%2F9752%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -54,8 +54,14 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 **Tests**
 
 - Added focused span retrieval and batched `RemoveRange` tests for existing, missing, truncated, and null-key scenarios across shared-base and concrete implementations.
-- Fresh multi-target Coverlet run: **97.25% line**, **94.52% branch**, and **98.94% method** coverage aggregated across four TFMs.
-- Full test matrix: **2,434 tests per TFM × 4 TFMs = 9,736 executions**, with zero failures.
+- Added four FsCheck/NUnit property tests for add/containment, distinct counts, batched removals, and duplicate removal-input invariants.
+- Fresh multi-target Coverlet run: **97.28% line**, **94.56% branch**, and **98.94% method** coverage aggregated across four TFMs.
+- Full test matrix: **2,438 tests per TFM × 4 TFMs = 9,752 executions**, with zero failures.
+
+**Benchmark Regression Coverage**
+
+- Added `RemoveRangeRegressionBenchmarks` with item-by-item baseline and batched `RemoveRange` methods at 100 and 1000 pairs.
+- ShortRun results on .NET 10.0.15: 100 pairs measured 3.523 μs baseline versus 6.184 μs batched; 1000 pairs measured 29.028 μs baseline versus 36.085 μs batched. The comparison is a repeatable regression baseline rather than a universal performance guarantee.
 
 **TryGetSpan Benchmarks**
 
