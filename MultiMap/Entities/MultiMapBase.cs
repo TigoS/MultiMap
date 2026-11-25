@@ -275,6 +275,30 @@ public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionar
     }
 
     /// <inheritdoc/>
+    public virtual bool TryGetSpan(TKey key, Span<TValue> buffer, out int count)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        count = 0;
+        if (!TryGetCollection(key, out var collection))
+        {
+            return false;
+        }
+
+        foreach (var value in collection)
+        {
+            if (count >= buffer.Length)
+            {
+                break;
+            }
+
+            buffer[count++] = value;
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc/>
     public virtual bool Remove(TKey key, TValue value)
     {
         ArgumentNullException.ThrowIfNull(key, nameof(key));
