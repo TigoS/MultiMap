@@ -25,9 +25,11 @@
     <Copyright>© 2026 TigoS</Copyright>
     <PackageReleaseNotes>3.2.0
 
-- Performance: Optimized Values enumeration and added span-based TryGetSpan retrieval
-- Tests
-- Documentation: Updated testing, release notes, and review documentation
+- Performance: Optimized Values enumeration, added span-based TryGetSpan retrieval, and batched RemoveRange processing
+- Testing: Added four FsCheck/NUnit property tests and BenchmarkDotNet remove-range regression benchmarks
+- Coverage: Fresh all-TFM run reports 97.28% line, 94.56% branch, and 98.94% method coverage
+- Tests: 9,752 executions across net11.0, net10.0, net9.0, and net8.0 with zero failures
+- Documentation: Updated README, testing, benchmarks, release notes, badges, and Review documentation
 
 See the full Release Notes history: https://github.com/TigoS/MultiMap/blob/master/Docs/ReleaseNotes.md</PackageReleaseNotes>
     <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
