@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.57%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9700%2F9700%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.52%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9736%2F9736%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -58,9 +58,9 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **97.25%** (14,576 / 14,988) |
-| **Branch coverage** | **94.57%** (4,252 / 4,496) |
-| **Method coverage** | **98.94%** (1,492 / 1,508) |
+| **Line coverage** | **97.25%** (15,062 / 15,488) |
+| **Branch coverage** | **94.52%** (4,469 / 4,728) |
+| **Method coverage** | **98.94%** (1,496 / 1,512) |
 
 #### Per-Class Breakdown
 
@@ -80,7 +80,7 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Polyfills` | 1 / 1 | **100%** (1/1) | **100%** | ✅ Full |
 
 > **Notes:**
-> - Coverage from a fresh Coverlet run aggregated across **net11.0**, **net10.0**, **net9.0**, and **net8.0** (2026-11-25). Latest test run reports **2,425/2,425 tests** passing per TFM; full matrix is **9,700 total tests** across 4 TFMs with zero failures.
+> - Coverage from a fresh Coverlet run aggregated across **net11.0**, **net10.0**, **net9.0**, and **net8.0** (2026-11-25). Latest test run reports **2,434/2,434 tests** passing per TFM; full matrix is **9,736 total tests** across 4 TFMs with zero failures.
 > - `SimpleMultiMap<TKey, TValue>` ⚠️ is deprecated (`[Obsolete]` since v3.0.0). Tests are retained for regression coverage.
 > - Method coverage is **98.8% (358/362)** and branch coverage is **95% (1,023/1,076)** in the aggregated multi-TFM report.
 > - A small set of defensive/concurrency branches remains intentionally hard to execute in normal operation.
@@ -123,7 +123,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | | |
 |---|---|
-| **Total** | **2,425 tests × 4 TFMs = 9,700 executions** |
+| **Total** | **2,434 tests × 4 TFMs = 9,736 executions** |
 
 ### Test Categories
 
@@ -196,9 +196,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.6% |
 | **Helper subtotal** | **408** | **18.3%** |
-| **Total** | **2,425 × 4 TFMs** | **9,700 executions** |
+| **Total** | **2,434 × 4 TFMs** | **9,736 executions** |
 
-> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated span-based retrieval paths, branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,425 unique tests** run on **net11.0**, **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across four runtime targets.
+> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated span-based retrieval paths, branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,434 unique tests** run on **net11.0**, **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across four runtime targets.
 
 > **Historical context:**
 > - `ConcurrentSet<T>` was raised from 39.1% line / 0% branch to **100% / 100%** via targeted tests.

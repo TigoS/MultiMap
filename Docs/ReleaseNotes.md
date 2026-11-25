@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.57%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9700%2F9700%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.52%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9736%2F9736%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -46,15 +46,16 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 **Performance Enhancements**
 
-- Preserved the allocation-conscious `Values` implementation as a lightweight nested collection/struct enumerator path for dictionary-backed implementations.
+- Preserved and completed the allocation-conscious `Values` implementation as the concrete lightweight enumerator path for dictionary-backed maps as a lightweight nested collection/struct enumerator path for dictionary-backed implementations.
 - Added `TryGetSpan(TKey key, Span<TValue> buffer, out int count)` to `IReadOnlySimpleMultiMap<TKey, TValue>` and implemented it across `MultiMapBase`-derived implementations, `MultiMapLock`, and `SimpleMultiMap`.
+- Batched `RemoveRange` by unique key, reducing dictionary lookups and collection dispatch for repeated/interleaved key groups across base, lock, async, and concurrent implementations
 - Span retrieval copies at most `buffer.Length` values, reports the copied count, returns `false` for missing keys, and performs no heap allocation in the stack-buffer use case.
 
 **Tests**
 
-- Added focused span retrieval tests for existing, missing, truncated, and null-key scenarios across shared-base and concrete implementations.
-- Fresh multi-target Coverlet run: **97.25% line**, **94.57% branch**, and **98.94% method** coverage aggregated across four TFMs.
-- Full test matrix: **2,425 tests per TFM × 4 TFMs = 9,700 executions**, with zero failures.
+- Added focused span retrieval and batched `RemoveRange` tests for existing, missing, truncated, and null-key scenarios across shared-base and concrete implementations.
+- Fresh multi-target Coverlet run: **97.25% line**, **94.52% branch**, and **98.94% method** coverage aggregated across four TFMs.
+- Full test matrix: **2,434 tests per TFM × 4 TFMs = 9,736 executions**, with zero failures.
 
 **TryGetSpan Benchmarks**
 
