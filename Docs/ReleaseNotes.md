@@ -56,6 +56,12 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 - Fresh multi-target Coverlet run: **97.25% line**, **94.57% branch**, and **98.94% method** coverage aggregated across four TFMs.
 - Full test matrix: **2,425 tests per TFM × 4 TFMs = 9,700 executions**, with zero failures.
 
+**TryGetSpan Benchmarks**
+
+- Added BenchmarkDotNet coverage for `TryGetSpan` across `MultiMapSet`, `MultiMapList`, `ConcurrentMultiMap`, `SortedMultiMap`, `MultiMapLock`, and deprecated `SimpleMultiMap`.
+- ShortRun results on .NET 10.0.15: `MultiMapList` 42.53 ns, `SimpleMultiMap` 50.75 ns, `MultiMapSet` 52.10 ns, `MultiMapLock` 66.35 ns, `SortedMultiMap` 382.47 ns, and `ConcurrentMultiMap` 533.86 ns.
+- Benchmarks use a pre-populated key with 50 values and a 50-element stack-allocated `Span<int>`.
+
 **Documentation**
 
 - Updated package metadata, README, testing coverage, release notes, and Review documentation for v3.2.0.
