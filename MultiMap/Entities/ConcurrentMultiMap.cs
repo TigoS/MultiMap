@@ -420,8 +420,8 @@ public sealed class ConcurrentMultiMap<TKey, TValue> : ConcurrentMultiMapBase<TK
         var itemsByKey = new Dictionary<TKey, List<TValue>>(_concurrentDictionary.Comparer);
         foreach (var item in items)
         {
-            ArgumentNullException.ThrowIfNull(item.Key, nameof(item.Key));
-            ArgumentNullException.ThrowIfNull(item.Value, nameof(item.Value));
+            Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+            Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
             if (!itemsByKey.TryGetValue(item.Key, out var values))
             {

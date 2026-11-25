@@ -337,8 +337,8 @@ public sealed partial class MultiMapAsync<TKey, TValue>(int capacity, IEqualityC
         var itemsByKey = new Dictionary<TKey, List<TValue>>(_dictionary.Comparer);
         foreach (var item in items)
         {
-            ArgumentNullException.ThrowIfNull(item.Key, nameof(item.Key));
-            ArgumentNullException.ThrowIfNull(item.Value, nameof(item.Value));
+            Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+            Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
 
             if (!itemsByKey.TryGetValue(item.Key, out var values))
             {
