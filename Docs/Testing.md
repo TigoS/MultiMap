@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.3%25%20line%20%7C%2095%25%20branch%20%7C%2098.8%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9628%2F9628%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.28%25%20line%20%7C%2094.56%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9752%2F9752%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -23,7 +23,7 @@ Targets **.NET 11**, **.NET 10**, **.NET 9**, and **.NET 8**.
 
 ## Testing
 
-The library includes **9,628 unit-test executions** written with **NUnit 5**, running on **net11.0**, **net10.0**, **net9.0**, and **net8.0** (**2,407 per framework**)
+The library includes **9,752 unit-test executions** written with **NUnit 5**, running on **net11.0**, **net10.0**, **net9.0**, and **net8.0** (**2,438 per framework**)
 
 ```shell
 dotnet test
@@ -39,6 +39,7 @@ dotnet test
 | `MultiMapBoundaryConditions_UnitTests.cs` | `MultiMapBoundaryConditionsTests`, `AdditionalBoundaryTests`, `ConcurrentMultiMap_CoverageBoostTests`, `MultiMapHelper_CoverageBoostTests`, `MultiMapAsync_EqualsNullPathTests`, `MultiMapBase_ValuesEnumerator_ExplicitCurrentTests`, `MultiMapList_ConstructorTests`, `MultiMapSet_EqualsCoverageTests`, `SortedMultiMap_EqualsCoverageTests`, `MultiMapLock_SetOperationsSelfReferenceTests`, `MultiMapAsync_StressTests`, `MultiMapAsync_EqualsAsyncForeignTests`, `ConcurrentSetPublicSurfaceTests`, `MultiMapAsync_GeneralInterfacePathTests`, `ConcurrentMultiMap_EqualsBranchTests`, `MultiMapSet_EqualsBranchTests`, `MultiMapList_EqualsBranchTests`, `SortedMultiMap_EqualsBranchTests`, `MultiMapLock_EqualsBranchTests`, `MultiMapAsync_FastPathBranchTests`, `NonEquatableConstraintTests` | Boundary conditions, coverage-gap fills, equals-branch coverage, constraint tests |
 | `MultiMapHelper_UnitTests.cs` | `MultiMapHelperTests`, `MultiMapHelperWithMultiMapSetTests`, `MultiMapHelperWithSortedMultiMapTests`, `MultiMapHelperWithConcurrentMultiMapTests`, `MultiMapHelperWithMultiMapListTests`, `MultiMapHelperWithMultiMapLockTests`, `MultiMapHelperAsyncTests`, `MultiMapHelperWithSortedMultiMapEdgeCaseTests`, `MultiMapHelperWithConcurrentMultiMapEdgeCaseTests`, `MultiMapHelperWithMultiMapListEdgeCaseTests`, `MultiMapHelperWithMultiMapLockEdgeCaseTests`, `MultiMapHelper_IMultiMapOverloadsTests`, `MultiMapHelperExtensionAsyncTests` | `MultiMapHelper` sync/async extension methods across all implementations |
 | `MultiMapList_UnitTest.cs` | `MultiMapListTests`, `MultiMapList_ConstructorAndHashTests`, `MultiMapList_CoverageTests` | List-based implementation |
+| `MultiMapProperty_UnitTests.cs` | `MultiMapPropertyTests` | FsCheck/NUnit property tests for add/containment, distinct counts, and batched RemoveRange invariants |
 | `MultiMapLock_UnitTests.cs` | `MultiMapLockTests`, `MultiMapLock_ExtraStressTests`, `MultiMapLock_StressTests`, `MultiMapLock_CancellationTokenTests`, `Guard_NotNullMessageTests` | RW-lock implementation, cancellation-token paths, stress |
 | `MultiMapSet_UnitTests.cs` | `MultiMapSetTests`, `MultiMapSet_ConstructorAndHashTests` | HashSet-based implementation |
 | `SimpleMultiMap_UnitTests.cs` | `SimpleMultiMapTests` ⚠️ | Deprecated (`[Obsolete]`). Tests retained for regression coverage of `SimpleMultiMap<TKey,TValue>` |
@@ -54,13 +55,13 @@ Code coverage is collected with **Coverlet** (`coverlet.collector`) during `dotn
 dotnet test --collect:"XPlat Code Coverage"
 ```
 
-#### Summary (all TFMs aggregated, 2026-11-19)
+#### Summary (all TFMs aggregated, 2026-11-25)
 
 | Metric | Value |
 |---|---|
-| **Line coverage** | **97.3%** (3,598 / 3,697) |
-| **Branch coverage** | **95%** (1,023 / 1,076) |
-| **Method coverage** | **98.8%** (358 / 362) |
+| **Line coverage** | **97.28%** (15,066 / 15,488) |
+| **Branch coverage** | **94.56%** (4,471 / 4,728) |
+| **Method coverage** | **98.94%** (1,496 / 1,512) |
 
 #### Per-Class Breakdown
 
@@ -80,9 +81,9 @@ dotnet test --collect:"XPlat Code Coverage"
 | `Polyfills` | 1 / 1 | **100%** (1/1) | **100%** | ✅ Full |
 
 > **Notes:**
-> - Coverage from a fresh Coverlet run aggregated across **net11.0**, **net10.0**, **net9.0**, and **net8.0** (2026-11-19). Latest test run reports **2,407/2,407 tests** passing per TFM; full matrix is **9,628 total tests** across 4 TFMs with zero failures.
+> - Coverage from a fresh Coverlet run aggregated across **net11.0**, **net10.0**, **net9.0**, and **net8.0** (2026-11-25). Latest test run reports **2,438/2,438 tests** passing per TFM; full matrix is **9,752 total tests** across 4 TFMs with zero failures.
 > - `SimpleMultiMap<TKey, TValue>` ⚠️ is deprecated (`[Obsolete]` since v3.0.0). Tests are retained for regression coverage.
-> - Method coverage is **98.8% (358/362)** and branch coverage is **95% (1,023/1,076)** in the aggregated multi-TFM report.
+> - Method coverage is **98.94% (1,496/1,512)** and branch coverage is **94.56% (4,471/4,728)** in the aggregated multi-TFM report.
 > - A small set of defensive/concurrency branches remains intentionally hard to execute in normal operation.
 
 | `MultiMapSet_ConstructorAndHashTests` | 11 | Constructor overloads and `GetHashCode`/`Equals` paths for `MultiMapSet` |
@@ -123,7 +124,7 @@ dotnet test --collect:"XPlat Code Coverage"
 
 | | |
 |---|---|
-| **Total** | **2,405 tests × 4 TFMs = 9,620 executions** |
+| **Total** | **2,438 tests × 4 TFMs = 9,752 executions** |
 
 ### Test Categories
 
@@ -139,12 +140,15 @@ Each implementation is tested across the following categories:
 | **Concurrency** | Thread-safety under parallel access | Stress tests with `Parallel.For` (concurrent & lock variants) |
 | **Equality & Hashing** | Custom equality comparers, hash collisions | Value type and reference type behavior |
 | **Set Operations** | Union, Intersect, ExceptWith, SymmetricExceptWith, IsSubsetOf, IsSupersetOf, Overlaps, SetEquals | Overlapping/disjoint maps, self-operations, empty inputs, read-only queries |
+| **Property-Based Testing** | FsCheck/NUnit generated invariants | Add/containment, distinct counts, RemoveRange duplicates, and remaining-pair behavior |
+| **Benchmark Regression** | BenchmarkDotNet baseline comparison | Item-by-item versus batched RemoveRange for 100 and 1000 pairs |
 
 ### Test Coverage Percentage
 
 | Area | Tests | % of Total |
 |---|---|---|
 | `MultiMapAsyncTests` | 269 | 13.2% |
+| `MultiMapPropertyTests` | 4 | 0.2% |
 | `MultiMapAsync_GenericInterfaceEqualsTests` | 21 | 1.0% |
 | `ConcurrentMultiMapTests` | 161 | 7.9% |
 | `MultiMapLockTests` | 230 | 11.2% |
@@ -196,9 +200,9 @@ Each implementation is tested across the following categories:
 | `MultiMapHelperWithMultiMapListTests` | 10 | 0.5% |
 | `MultiMapHelperWithSortedMultiMapTests` | 14 | 0.6% |
 | **Helper subtotal** | **408** | **18.3%** |
-| **Total** | **2,405 × 4 TFMs** | **9,620 executions** |
+| **Total** | **2,438 × 4 TFMs** | **9,752 executions** |
 
-> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,405 unique tests** run on **net11.0**, **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across four runtime targets.
+> **Coverage distribution:** tests target all core implementations, shared base contracts, dedicated span-based retrieval and FsCheck property-test paths, branch-gap scenarios, and set-like extension methods (sync/async), including stress and edge-case coverage. All **2,438 unique tests** run on **net11.0**, **net10.0**, **net9.0**, and **net8.0**, validating `#if NET6_0_OR_GREATER` paths across four runtime targets.
 
 > **Historical context:**
 > - `ConcurrentSet<T>` was raised from 39.1% line / 0% branch to **100% / 100%** via targeted tests.

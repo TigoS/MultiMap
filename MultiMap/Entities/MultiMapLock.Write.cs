@@ -395,22 +395,44 @@ public sealed partial class MultiMapLock<TKey, TValue>
         _lock.EnterWriteLock();
         try
         {
-            int removedCount = 0;
+            var itemsByKey = new Dictionary<TKey, List<TValue>>(_dictionary.Comparer);
             foreach (var item in items)
             {
-                if (_dictionary.TryGetValue(item.Key, out var hashset))
+                ArgumentNullException.ThrowIfNull(item.Key, nameof(item.Key));
+                ArgumentNullException.ThrowIfNull(item.Value, nameof(item.Value));
+
+                if (!itemsByKey.TryGetValue(item.Key, out var values))
                 {
-                    if (hashset.Remove(item.Value))
+                    values = [];
+                    itemsByKey[item.Key] = values;
+                }
+
+                values.Add(item.Value);
+            }
+
+            int removedCount = 0;
+            foreach (var group in itemsByKey)
+            {
+                if (!_dictionary.TryGetValue(group.Key, out var hashset))
+                {
+                    continue;
+                }
+
+                foreach (var value in group.Value)
+                {
+                    if (hashset.Remove(value))
                     {
                         _count--;
                         removedCount++;
-                        if (hashset.Count == 0)
-                        {
-                            _dictionary.Remove(item.Key);
-                        }
                     }
                 }
+
+                if (hashset.Count == 0)
+                {
+                    _dictionary.Remove(group.Key);
+                }
             }
+
             return removedCount;
         }
         finally
@@ -438,22 +460,44 @@ public sealed partial class MultiMapLock<TKey, TValue>
         EnterWriteLockCancellable(cancellationToken);
         try
         {
-            int removedCount = 0;
+            var itemsByKey = new Dictionary<TKey, List<TValue>>(_dictionary.Comparer);
             foreach (var item in items)
             {
-                if (_dictionary.TryGetValue(item.Key, out var hashset))
+                Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+                Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+                if (!itemsByKey.TryGetValue(item.Key, out var values))
                 {
-                    if (hashset.Remove(item.Value))
+                    values = [];
+                    itemsByKey[item.Key] = values;
+                }
+
+                values.Add(item.Value);
+            }
+
+            int removedCount = 0;
+            foreach (var group in itemsByKey)
+            {
+                if (!_dictionary.TryGetValue(group.Key, out var hashset))
+                {
+                    continue;
+                }
+
+                foreach (var value in group.Value)
+                {
+                    if (hashset.Remove(value))
                     {
                         _count--;
                         removedCount++;
-                        if (hashset.Count == 0)
-                        {
-                            _dictionary.Remove(item.Key);
-                        }
                     }
                 }
+
+                if (hashset.Count == 0)
+                {
+                    _dictionary.Remove(group.Key);
+                }
             }
+
             return removedCount;
         }
         finally

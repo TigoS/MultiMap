@@ -255,6 +255,31 @@ public class ConcurrentMultiMapTests
     }
 
     [Test]
+    public void TryGetSpan_ExistingKey_CopiesValuesAndReturnsCount()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        Span<int> buffer = stackalloc int[3];
+
+        bool found = _map.TryGetSpan("a", buffer, out int count);
+
+        Assert.That(found, Is.True);
+        Assert.That(count, Is.EqualTo(2));
+        Assert.That(buffer[..count].ToArray(), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGetSpan_NonExistentKey_ReturnsFalseAndZeroCount()
+    {
+        Span<int> buffer = stackalloc int[2];
+
+        bool found = _map.TryGetSpan("missing", buffer, out int count);
+
+        Assert.That(found, Is.False);
+        Assert.That(count, Is.Zero);
+    }
+
+    [Test]
     public void TryGet_NonExistentKey_ReturnsFalseWithEmpty()
     {
         bool found = _map.TryGet("missing", out var values);
@@ -1287,6 +1312,28 @@ public class ConcurrentMultiMapTests
         int removed = _map.RemoveRange(pairs);
         Assert.That(removed, Is.EqualTo(1));
         Assert.That(_map.Count, Is.EqualTo(1));
+    }
+
+    [Test]
+    public void RemoveRange_RepeatedAndInterleavedKeys_RemovesAllExistingPairs()
+    {
+        _map.Add("key1", 1);
+        _map.Add("key1", 2);
+        _map.Add("key2", 3);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 3),
+            new KeyValuePair<string, int>("key1", 2),
+            new KeyValuePair<string, int>("missing", 9)
+        };
+
+        int removed = _map.RemoveRange(pairs);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.KeyCount, Is.Zero);
     }
 
     [Test]

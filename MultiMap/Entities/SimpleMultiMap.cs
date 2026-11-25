@@ -173,6 +173,30 @@ public sealed class SimpleMultiMap<TKey, TValue> : ISimpleMultiMap<TKey, TValue>
     }
 
     /// <inheritdoc />
+    public bool TryGetSpan(TKey key, Span<TValue> buffer, out int count)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        count = 0;
+        if (!_dictionary.TryGetValue(key, out var hashset) || hashset is null)
+        {
+            return false;
+        }
+
+        foreach (var value in hashset)
+        {
+            if (count >= buffer.Length)
+            {
+                break;
+            }
+
+            buffer[count++] = value;
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc />
     public bool Remove(TKey key, TValue value)
     {
         ArgumentNullException.ThrowIfNull(key, nameof(key));

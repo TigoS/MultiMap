@@ -1879,6 +1879,28 @@ public class MultiMapAsyncTests
     }
 
     [Test]
+    public async Task RemoveRangeAsync_RepeatedAndInterleavedKeys_RemovesAllExistingPairs()
+    {
+        await _map.AddAsync("key1", 1);
+        await _map.AddAsync("key1", 2);
+        await _map.AddAsync("key2", 3);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("key1", 1),
+            new KeyValuePair<string, int>("key2", 3),
+            new KeyValuePair<string, int>("key1", 2),
+            new KeyValuePair<string, int>("missing", 9)
+        };
+
+        int removed = await _map.RemoveRangeAsync(pairs);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(await _map.GetCountAsync(), Is.Zero);
+        Assert.That(await _map.GetKeyCountAsync(), Is.Zero);
+    }
+
+    [Test]
     public async Task RemoveRangeAsync_SingleNonExistentPair_ReturnsZero()
     {
         await _map.AddAsync("key1", 1);

@@ -135,6 +135,31 @@ public class SimpleMultiMapTests
     }
 
     [Test]
+    public void TryGetSpan_ExistingKey_CopiesValuesAndReturnsCount()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        Span<int> buffer = stackalloc int[3];
+
+        bool found = _map.TryGetSpan("a", buffer, out int count);
+
+        Assert.That(found, Is.True);
+        Assert.That(count, Is.EqualTo(2));
+        Assert.That(buffer[..count].ToArray(), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGetSpan_NonExistentKey_ReturnsFalseAndZeroCount()
+    {
+        Span<int> buffer = stackalloc int[2];
+
+        bool found = _map.TryGetSpan("missing", buffer, out int count);
+
+        Assert.That(found, Is.False);
+        Assert.That(count, Is.Zero);
+    }
+
+    [Test]
     public void TryGet_NonExistentKey_ReturnsFalseWithEmpty()
     {
         bool found = _map.TryGet("missing", out var values);

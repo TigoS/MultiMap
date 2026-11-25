@@ -63,6 +63,40 @@ public sealed partial class MultiMapLock<TKey, TValue>
     }
 
     /// <inheritdoc/>
+    public bool TryGetSpan(TKey key, Span<TValue> buffer, out int count)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        ThrowIfDisposed();
+
+        count = 0;
+        _lock.EnterReadLock();
+        try
+        {
+            if (!_dictionary.TryGetValue(key, out var hashset))
+            {
+                return false;
+            }
+
+            foreach (var value in hashset)
+            {
+                if (count >= buffer.Length)
+                {
+                    break;
+                }
+
+                buffer[count++] = value;
+            }
+
+            return true;
+        }
+        finally
+        {
+            _lock.ExitReadLock();
+        }
+    }
+
+    /// <inheritdoc/>
     public bool ContainsKey(TKey key)
     {
         ArgumentNullException.ThrowIfNull(key, nameof(key));

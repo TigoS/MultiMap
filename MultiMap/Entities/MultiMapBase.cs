@@ -275,6 +275,30 @@ public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionar
     }
 
     /// <inheritdoc/>
+    public virtual bool TryGetSpan(TKey key, Span<TValue> buffer, out int count)
+    {
+        ArgumentNullException.ThrowIfNull(key, nameof(key));
+
+        count = 0;
+        if (!TryGetCollection(key, out var collection))
+        {
+            return false;
+        }
+
+        foreach (var value in collection)
+        {
+            if (count >= buffer.Length)
+            {
+                break;
+            }
+
+            buffer[count++] = value;
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc/>
     public virtual bool Remove(TKey key, TValue value)
     {
         ArgumentNullException.ThrowIfNull(key, nameof(key));
@@ -300,16 +324,53 @@ public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionar
     }
 
     /// <inheritdoc/>
-    public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
+    public virtual int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
     {
         ArgumentNullException.ThrowIfNull(items, nameof(items));
 
-        int removedCount = 0;
+        IDictionary<TKey, List<TValue>> itemsByKey = _dictionary is SortedDictionary<TKey, TCollection> sorted
+             ? new SortedDictionary<TKey, List<TValue>>(sorted.Comparer)
+             : new Dictionary<TKey, List<TValue>>((_dictionary as Dictionary<TKey, TCollection>)?.Comparer ?? EqualityComparer<TKey>.Default);
+
         foreach (var item in items)
         {
-            if (Remove(item.Key, item.Value))
+            Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
+            Guard.NotNullMessage(item.Value, nameof(item.Value), "Sequence contains a null value.");
+
+            if (!itemsByKey.TryGetValue(item.Key, out var values))
             {
-                removedCount++;
+                values = [];
+                itemsByKey[item.Key] = values;
+            }
+
+            values.Add(item.Value);
+        }
+
+        int removedCount = 0;
+        foreach (var group in itemsByKey)
+        {
+            if (!TryGetCollection(group.Key, out var collection))
+            {
+                continue;
+            }
+
+            int removedForKey = 0;
+            foreach (var value in group.Value)
+            {
+                if (collection.Remove(value))
+                {
+                    removedForKey++;
+                }
+            }
+
+            if (removedForKey > 0)
+            {
+                DecrementCount(removedForKey);
+                removedCount += removedForKey;
+                if (collection.Count == 0)
+                {
+                    _dictionary.Remove(group.Key);
+                }
             }
         }
 

@@ -565,6 +565,46 @@ public abstract class MultiMapBaseTests
     }
 
     [Test]
+    public void RemoveRange_RepeatedAndInterleavedKeys_RemovesEachExistingPairOnce()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        _map.Add("b", 3);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("b", 3),
+            new KeyValuePair<string, int>("a", 2),
+            new KeyValuePair<string, int>("missing", 9)
+        };
+
+        int removed = _map.RemoveRange(pairs);
+
+        Assert.That(removed, Is.EqualTo(3));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.KeyCount, Is.Zero);
+    }
+
+    [Test]
+    public void RemoveRange_DuplicateInputPair_CountsEachSuccessfulRemovalOnce()
+    {
+        _map.Add("a", 1);
+
+        var pairs = new[]
+        {
+            new KeyValuePair<string, int>("a", 1),
+            new KeyValuePair<string, int>("a", 1)
+        };
+
+        int removed = _map.RemoveRange(pairs);
+
+        Assert.That(removed, Is.EqualTo(1));
+        Assert.That(_map.Count, Is.Zero);
+        Assert.That(_map.ContainsKey("a"), Is.False);
+    }
+
+    [Test]
     public void RemoveRange_LastValueOfKey_RemovesKey()
     {
         _map.Add("a", 1);
@@ -1126,6 +1166,49 @@ public abstract class MultiMapBaseTests
     [Test]
     public void TryGet_NullKey_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _map.TryGet(null!, out _));
+
+    [Test]
+    public void TryGetSpan_ExistingKey_CopiesValuesAndReturnsCount()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        Span<int> buffer = stackalloc int[3];
+
+        bool found = _map.TryGetSpan("a", buffer, out int count);
+
+        Assert.That(found, Is.True);
+        Assert.That(count, Is.EqualTo(2));
+        Assert.That(buffer[..count].ToArray(), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGetSpan_SmallBuffer_CopiesOnlyAvailableCapacity()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        Span<int> buffer = stackalloc int[1];
+
+        bool found = _map.TryGetSpan("a", buffer, out int count);
+
+        Assert.That(found, Is.True);
+        Assert.That(count, Is.EqualTo(1));
+        Assert.That(buffer[0], Is.AnyOf(1, 2));
+    }
+
+    [Test]
+    public void TryGetSpan_MissingKey_ReturnsFalseAndZeroCount()
+    {
+        Span<int> buffer = stackalloc int[2];
+
+        bool found = _map.TryGetSpan("missing", buffer, out int count);
+
+        Assert.That(found, Is.False);
+        Assert.That(count, Is.Zero);
+    }
+
+    [Test]
+    public void TryGetSpan_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.TryGetSpan(null!, Span<int>.Empty, out _));
 
     // ── ValuesEnumerator branch coverage ────────────────────────
 
