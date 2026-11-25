@@ -1,6 +1,6 @@
 # MultiMap Solution Review & Recommendations
 
-> ✅ **State Sync (2026-11-12):** The current repository now targets **.NET 11 / 10 / 9 / 8**, reports **2,405 unique tests** (**9,620 matrix executions**) with **0 failures**, and latest Coverlet metrics of **99.45% line / 97.22% branch / 100% method**.
+> ✅ **State Sync (2026-11-25):** The current repository now targets **.NET 11 / 10 / 9 / 8**, reports **2,425 unique tests** (**9,700 matrix executions**) with **0 failures**, and fresh aggregated Coverlet metrics of **97.25% line / 94.57% branch / 98.94% method**. v3.2.0 adds `TryGetSpan` and retains the optimized `Values` enumerator implementation.
 > 
 > ⚠️ This file still contains parts of the original January 2026 narrative; where numbers differ, the values in this sync note and `Docs/Testing.md` take precedence.
 

@@ -20,6 +20,8 @@ This section was implemented and is now tracked in project documentation rather 
 
 ## 2. Performance Enhancements
 
+**Status:** Implemented for v3.2.0. The dictionary-backed `Values` view uses a lightweight collection/struct enumerator, and span-based retrieval is available across the synchronous read-only interface family.
+
 ### 2.1 Optimize `Values` Property Enumeration
 
 **Current Implementation (MultiMapBase.cs):**
@@ -71,6 +73,7 @@ public IEnumerable<TValue> Values => _dictionary.Values
 **Effort:** Very Low (15 min)
 **Complexity:** Very Low
 **Benefit:** Low
+**Status:** ✅ Implemented with `ValuesCollection` and `ValuesEnumerator` in `MultiMapBase.ValuesCollection.cs` and `MultiMapBase.ValuesEnumerator.cs`.
 
 ---
 
@@ -117,6 +120,7 @@ if (map.TryGetSpan("tags", buffer, out int count))
 **Effort:** Low (1 hour)
 **Complexity:** Low
 **Benefit:** Medium (advanced users, hot paths)
+**Status:** ✅ Implemented as `TryGetSpan` on `IReadOnlySimpleMultiMap` and all synchronous implementations; covered by focused unit tests.
 
 ---
 
