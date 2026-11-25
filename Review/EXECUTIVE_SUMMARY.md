@@ -3,15 +3,15 @@
 > ✅ **State Sync (2026-11-25):** This document was refreshed for v3.2.0 against the current codebase.
 > - Targets: **.NET 11 / 10 / 9 / 8** (`MultiMap.csproj`)
 > - Package version: **3.2.0**
-> - Tests: **2,425 unique tests**, **9,700 matrix executions**, **0 failures**
-> - Fresh aggregated coverage: **97.25% line**, **94.57% branch**, **98.94% method**
+> - Tests: **2,434 unique tests**, **9,736 matrix executions**, **0 failures**
+> - Fresh aggregated coverage: **97.25% line**, **94.52% branch**, **98.94% method**
 > - Completed since the original January review: implementation/usage/mistakes docs, `GetOrAdd`/`CopyTo` APIs (sync+async), `MultiMapEqualityHelper`, `AsyncReaderWriterLock`, `Directory.Build.props`, deterministic/CI build settings.
 > - Still open from prior recommendations: benchmark regression gates, `RemoveRange` batching optimization, CI security scanning.
 
 **Date:** 2026-11-25 (updated; original review: January 2026)
 **Reviewed:** Entire solution across 4 projects
 **Lines of Code:** ~5,500 (library) + ~15,000 (tests)
-**Test Coverage:** 97.25% line, 94.57% branch, 98.94% method
+**Test Coverage:** 97.25% line, 94.52% branch, 98.94% method
 **Status:** ✅ Production-Ready
 
 ---
@@ -21,7 +21,7 @@
 | Category | Rating | Notes |
 |----------|--------|-------|
 | **Code Quality** | ⭐⭐⭐⭐⭐ | Excellent patterns, nullable refs, SOLID principles |
-| **Testing** | ⭐⭐⭐⭐⭐ | 9,700 matrix test executions (2,425 per TFM), comprehensive coverage, stress tests |
+| **Testing** | ⭐⭐⭐⭐⭐ | 9,736 matrix test executions (2,434 per TFM), comprehensive coverage, stress tests |
 | **Documentation** | ⭐⭐⭐⭐☆ | Strong README/benchmarks; could add usage patterns |
 | **Architecture** | ⭐⭐⭐⭐⭐ | Clean interfaces, proper abstractions, no unnecessary complexity |
 | **Performance** | ⭐⭐⭐⭐☆ | Well-optimized; benchmarked; room for Span-based variants |
@@ -38,7 +38,7 @@
 ### Strengths
 
 1. **No Critical Issues Found**
-   - Clean compilation, all 9,700 matrix executions pass
+   - Clean compilation, all 9,736 matrix executions pass
    - No null-safety violations or unsafe code
    - Proper resource disposal (IDisposable/IAsyncDisposable)
 
@@ -161,8 +161,8 @@ Effort: 16 hours | Owner: 1-2 developers
 
 ### Phase 3: Performance Optimization (Week 5-6)
 ```
-[ ] Implement RemoveRange batching
-[ ] Add TryGetSpan overload
+[x] Implement RemoveRange batching
+[x] Add TryGetSpan overload
 [ ] Add allocation profiling to benchmarks
 [ ] Benchmark on .NET 10.1 (when available)
 Effort: 12 hours | Owner: 1 developer (perf specialist)
@@ -185,9 +185,9 @@ Effort: 40+ hours | Owner: 2 developers
 | Metric | Value | Benchmark | Status |
 |--------|-------|-----------|--------|
 | Test Coverage (Lines) | 97.25% | ≥ 80% | ✅ Excellent |
-| Test Coverage (Branch) | 94.57% | ≥ 70% | ✅ Excellent |
+| Test Coverage (Branch) | 94.52% | ≥ 70% | ✅ Excellent |
 | Test Coverage (Method) | 98.94% | ≥ 85% | ✅ Excellent |
-| Tests Passing | 9,700/9,700 | 100% | ✅ Perfect |
+| Tests Passing | 9,736/9,736 | 100% | ✅ Perfect |
 | Static Analysis Issues | 0 | 0 | ✅ None |
 | Code Duplication | Low (~200 lines) | Minimal | ⚠️ Minor (extract helper) |
 | Nullable Violations | 0 | 0 | ✅ None |

@@ -1,12 +1,12 @@
 # MultiMap Solution Review & Recommendations
 
-> ✅ **State Sync (2026-11-25):** The current repository now targets **.NET 11 / 10 / 9 / 8**, reports **2,425 unique tests** (**9,700 matrix executions**) with **0 failures**, and fresh aggregated Coverlet metrics of **97.25% line / 94.57% branch / 98.94% method**. v3.2.0 adds `TryGetSpan` and retains the optimized `Values` enumerator implementation.
+> ✅ **State Sync (2026-11-25):** The current repository now targets **.NET 11 / 10 / 9 / 8**, reports **2,434 unique tests** (**9,736 matrix executions**) with **0 failures**, and fresh aggregated Coverlet metrics of **97.25% line / 94.52% branch / 98.94% method**. v3.2.0 adds `TryGetSpan` and retains the optimized `Values` enumerator implementation.
 > 
 > ⚠️ This file still contains parts of the original January 2026 narrative; where numbers differ, the values in this sync note and `Docs/Testing.md` take precedence.
 
 ## Executive Summary
 
-**MultiMap** is a mature, well-engineered .NET library providing seven distinct multimap implementations with comprehensive test coverage (**9,700 matrix executions**, **97.25% aggregate line coverage**) and robust documentation. The codebase demonstrates strong architectural practices, excellent separation of concerns, and production-ready code quality.
+**MultiMap** is a mature, well-engineered .NET library providing seven distinct multimap implementations with comprehensive test coverage (**9,736 matrix executions**, **97.25% aggregate line coverage**) and robust documentation. The codebase demonstrates strong architectural practices, excellent separation of concerns, and production-ready code quality.
 
 ### Overall Assessment
 - ✅ **Excellent code quality** with consistent patterns and SOLID principles
@@ -99,8 +99,8 @@ Guard.NotNullMessage(values, nameof(values), "Values collection cannot be null")
 ### Strengths
 
 #### 3.1 Comprehensive Test Suite
-- **2,425 tests** per framework, **9,700 matrix executions** across net8.0/net9.0/net10.0/net11.0
-- **97.25% line coverage**, 94.57% branch coverage, 98.94% method coverage in fresh aggregated Coverlet reports
+- **2,434 tests** per framework, **9,736 matrix executions** across net8.0/net9.0/net10.0/net11.0
+- **97.25% line coverage**, 94.52% branch coverage, 98.94% method coverage in fresh aggregated Coverlet reports
 - Tests organized by fixture type and concern (boundary conditions, stress, concurrency)
 - Concurrent stress tests validate thread-safety guarantees
 
@@ -575,7 +575,7 @@ map.ToBinary();  // via MessagePack
 **MultiMap is a production-grade library** that demonstrates:
 
 1. **Excellent architecture**: Clean interface hierarchy, proper SOLID principles, thoughtful concurrency models
-2. **Outstanding testing**: 9,700 matrix executions, 97.25% aggregate line coverage, stress tests, boundary condition handling
+2. **Outstanding testing**: 9,736 matrix executions, 97.25% aggregate line coverage, stress tests, boundary condition handling
 3. **Strong documentation**: Comprehensive README, release notes, benchmarks, migration guides
 4. **Performance-conscious design**: Optimization mindset evident in race condition fixes and batching strategies
 5. **Modern C# practices**: Nullable references, file-scoped namespaces, C# 14 features

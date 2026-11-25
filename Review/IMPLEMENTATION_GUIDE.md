@@ -1,6 +1,6 @@
 # MultiMap Solution: Code Improvements & Optimization Guide
 
-> ✅ **State Sync (2026-11-25):** This guide has been compared with v3.2.0. TryGetSpan, benchmark coverage, and review documentation updates are complete; remaining recommendations are forward-looking backlog.
+> ✅ **State Sync (2026-11-25):** This guide has been compared with v3.2.0. TryGetSpan, batched RemoveRange processing, benchmark coverage, and review documentation updates are complete; remaining recommendations are forward-looking backlog.
 
 ## Overview
 
@@ -178,6 +178,7 @@ public int RemoveRange(IEnumerable<KeyValuePair<TKey, TValue>> items)
 **Effort:** Low (1-2 hours)
 **Complexity:** Medium
 **Benefit:** High (same ROI as AddRange fix)
+**Status:** ✅ Implemented across `MultiMapBase`, `MultiMapLock`, `MultiMapAsync`, and `ConcurrentMultiMap`; removals are grouped by key and each unique key is looked up once. Focused repeated/interleaved-key tests were added.
 
 ---
 
@@ -441,7 +442,7 @@ Consider for next major version:
 
 ### Medium-term (Q4 2026)
 
-- [ ] Batch `RemoveRange` optimization
+- [x] Batch `RemoveRange` optimization
 - [x] Add `GetOrAdd` methods
 - [ ] Implement benchmark regression tests
 - [ ] Add property-based testing (FsCheck)
