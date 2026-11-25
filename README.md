@@ -8,8 +8,8 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/MultiMap.svg)](https://www.nuget.org/packages/MultiMap/)
 [![NUnit](https://img.shields.io/badge/tests-NUnit%205.0.0-green)](https://nunit.org/)
 [![Test SDK](https://img.shields.io/badge/Microsoft.NET.Test.Sdk-v18.12.0-blue)](https://www.nuget.org/packages/Microsoft.NET.Test.Sdk)
-[![Coverage](https://img.shields.io/badge/coverage-97.25%25%20line%20%7C%2094.52%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
-[![Build](https://img.shields.io/badge/tests-9736%2F9736%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-97.28%25%20line%20%7C%2094.56%25%20branch%20%7C%2098.94%25%20method-brightgreen)](https://github.com/TigoS/MultiMap/blob/master/Docs/Testing.md#code-coverage-coverlet)
+[![Build](https://img.shields.io/badge/tests-9752%2F9752%20passing-success)](https://github.com/TigoS/MultiMap/actions/workflows/ci.yml)
 
 A **.NET** library providing various multimap implementations — collections that associate each generic key with one or more generic values.
 Includes _**list-based**_, _**set-based**_, _**sorted**_, _**concurrent**_, _**reader-writer locked**_, and _**async**_ variants with set-like extension methods.
@@ -62,9 +62,10 @@ A **multimap** is a collection that maps each key to one or more values — unli
 - **Initial capacity constructors**: Pre-size internal dictionaries to reduce re-allocations
 - **Full XML documentation** for IntelliSense support
 - **Comprehensive NUnit 5 test suite**:
-  - **9,736 total tests** (2,434 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
-  - **97.25% line coverage**, **94.52% branch coverage**, **98.94% method coverage** (fresh aggregated Coverlet metrics)
-  - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, and exception handling
+  - **9,752 total tests** (2,438 per framework) running on **net11.0**, **net10.0**, **net9.0**, and **net8.0**
+  - **97.28% line coverage**, **94.56% branch coverage**, **98.94% method coverage** (fresh aggregated Coverlet metrics)
+  - Covers all implementations, interfaces, edge cases, boundary conditions, concurrent stress tests, cancellation-token scenarios, exception handling, and FsCheck property invariants
+  - Includes BenchmarkDotNet baseline-vs-batched RemoveRange regression benchmarks for 100 and 1000 pairs
   - **High code coverage** measured with Coverlet (see [Testing](#testing) section for latest report)
 
 ## Known Limitations
