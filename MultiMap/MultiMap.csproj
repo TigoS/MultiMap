@@ -11,7 +11,7 @@
     <Version>3.2.0</Version>
     <Authors>TigoS</Authors>
     <Description>A .NET library providing various multimap implementations — generic collections that associate each key with one or more values. Includes list-based, set-based, sorted, concurrent, reader-writer locked, and async variants with set-like extension methods. Targets .NET 11, .NET 10, .NET 9, and .NET 8.</Description>
-    <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;data-structures</PackageTags>
+    <PackageTags>multimap;dictionary;collection;concurrent;async;sorted;locked;data-structures;key-values-map;key-value-multimap</PackageTags>
     <RepositoryUrl>https://github.com/TigoS/MultiMap</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReadmeFile>README.md</PackageReadmeFile>
