@@ -328,12 +328,10 @@ public abstract partial class MultiMapBase<TKey, TValue, TCollection>(IDictionar
     {
         ArgumentNullException.ThrowIfNull(items, nameof(items));
 
-        IEqualityComparer<TKey> keyComparer =
-            (_dictionary as Dictionary<TKey, TCollection>)?.Comparer
-            ?? ((_dictionary as SortedDictionary<TKey, TCollection>)?.Comparer as IEqualityComparer<TKey>)
-            ?? EqualityComparer<TKey>.Default;
+        IDictionary<TKey, List<TValue>> itemsByKey = _dictionary is SortedDictionary<TKey, TCollection> sorted
+             ? new SortedDictionary<TKey, List<TValue>>(sorted.Comparer)
+             : new Dictionary<TKey, List<TValue>>((_dictionary as Dictionary<TKey, TCollection>)?.Comparer ?? EqualityComparer<TKey>.Default);
 
-        var itemsByKey = new Dictionary<TKey, List<TValue>>(keyComparer);
         foreach (var item in items)
         {
             Guard.NotNullMessage(item.Key, nameof(item.Key), "Sequence contains a null key.");
