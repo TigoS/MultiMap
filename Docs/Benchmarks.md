@@ -42,6 +42,7 @@ Benchmarks are run with **BenchmarkDotNet v0.15.8** with `CPUUsageDiagnoser`.
 | **Get** (100 keys) | 12,909 ns | 9,157 ns | 54,536 ns | 37,745 ns | 12,439 ns | 18,283 ns |
 | **GetOrDefault** (100 keys) | 12,498 ns | 10,796 ns | 52,371 ns | 36,904 ns | 12,476 ns | 17,459 ns |
 | **TryGet** | 38 ns | 30 ns | 394 ns | 37 ns | 54 ns | 124 ns |
+| **TryGetSpan** | 52.10 ns | 42.53 ns | 533.86 ns | 382.47 ns | 66.35 ns | — |
 | **Remove** (5,000 pairs) | 126,489 ns | 114,174 ns | 341,180 ns | 1,505,125 ns | 204,002 ns | 342,749 ns |
 | **Clear** | 167,984 ns | 119,028 ns | 293,641 ns | 956,024 ns | 192,364 ns | 239,735 ns |
 | **Contains** | 41 ns | 35 ns | 186 ns | 34 ns | 15 ns | 82 ns |
@@ -65,6 +66,8 @@ Benchmarks for properties and methods introduced in v1.0.8+. Async equivalents a
 | **RemoveRange** / **RemoveRangeAsync** | 270,674 ns | 238,678 ns | 463,287 ns | 1,412,126 ns | 291,588 ns | 340,336 ns |
 | **RemoveWhere** / **RemoveWhereAsync** | 1,371 ns | 664 ns | 5,600 ns | 3,355 ns | 2,365 ns | 3,664 ns |
 
+> **TryGetSpan notes:** Benchmarks use a pre-populated key with 50 values and a 50-element stack-allocated `Span<int>`. Results from a ShortRun (`.NET 10.0.15`, 2026-11-25): `MultiMapSet` 52.10 ns, `MultiMapList` 42.53 ns, `ConcurrentMultiMap` 533.86 ns, `SortedMultiMap` 382.47 ns, `MultiMapLock` 66.35 ns, and deprecated `SimpleMultiMap` 50.75 ns. `MultiMapAsync` has no span overload because `TryGetSpan` is synchronous and no async result buffer can be used safely across an await boundary.
+>
 > **Notes:**
 > - **KeyCount**: O(1) for non-concurrent implementations (< 1 ns). `ConcurrentMultiMap.KeyCount` scans the live dictionary for non-empty inner sets (O(k)). `MultiMapLock` acquires a read lock (~12 ns). `MultiMapAsync` acquires a semaphore (~81 ns).
 > - **Indexer**: Not available for `MultiMapAsync` (async API uses `GetAsync` instead).
@@ -122,6 +125,7 @@ Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
 | **GetOrDefault (missing)** (100 keys) | 2,134 ns |
 | **TryGet** | 39.30 ns |
 | **TryGet (missing)** | 34.29 ns |
+| **TryGetSpan** | 50.75 ns |
 | **Contains** | 5.60 ns |
 | **ContainsKey** | 2.97 ns |
 | **Remove** (5,000 pairs) | 121,900 ns |
@@ -138,6 +142,7 @@ Benchmarks for the lightweight `SimpleMultiMap` (`ISimpleMultiMap` interface):
 - **AddRange vs Add**: `AddRange(key, values)` is significantly faster — `MultiMapList` **~2.5x**, `SortedMultiMap` **~6.1x**, `MultiMapAsync` **~4.0x**, `MultiMapLock` **~2.6x** faster than individual `Add` calls
 - **Fastest adds**: `MultiMapList` remains the fastest among `IMultiMap` implementations; `MultiMapSet` is ~1.7x slower due to uniqueness checks
 - **Retrieval methods**: `Get()`, `GetOrDefault()`, and `TryGet()` remain close for existing keys; select based on semantics (exception, empty collection, or bool)
+- **TryGetSpan**: Copies a bounded value span in 42–382 ns for synchronous dictionary-backed implementations; `ConcurrentMultiMap` is higher at 533.86 ns due to concurrent collection iteration and `MultiMapLock` is 66.35 ns due to read-lock synchronization
 - **KeyCount**: O(1) for all synchronous implementations (< 1 ns), including `ConcurrentMultiMap` which now uses a cached `_keyCount` counter; `MultiMapLock` and `MultiMapAsync` add synchronization overhead (~12 ns and ~81 ns)
 - **GetValuesCount**: Non-concurrent maps remain very fast (~3.6 ns), while synchronized/concurrent variants are slower (`MultiMapLock` ~14 ns, `MultiMapAsync` ~84 ns, `ConcurrentMultiMap` ~370 ns)
 - **RemoveWhere vs RemoveRange**: `RemoveWhere` (single-key predicate) is still dramatically faster than `RemoveRange` in every implementation
