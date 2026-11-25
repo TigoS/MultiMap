@@ -1127,6 +1127,49 @@ public abstract class MultiMapBaseTests
     public void TryGet_NullKey_ThrowsArgumentNullException()
         => Assert.Throws<ArgumentNullException>(() => _map.TryGet(null!, out _));
 
+    [Test]
+    public void TryGetSpan_ExistingKey_CopiesValuesAndReturnsCount()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        Span<int> buffer = stackalloc int[3];
+
+        bool found = _map.TryGetSpan("a", buffer, out int count);
+
+        Assert.That(found, Is.True);
+        Assert.That(count, Is.EqualTo(2));
+        Assert.That(buffer[..count].ToArray(), Is.EquivalentTo(new[] { 1, 2 }));
+    }
+
+    [Test]
+    public void TryGetSpan_SmallBuffer_CopiesOnlyAvailableCapacity()
+    {
+        _map.Add("a", 1);
+        _map.Add("a", 2);
+        Span<int> buffer = stackalloc int[1];
+
+        bool found = _map.TryGetSpan("a", buffer, out int count);
+
+        Assert.That(found, Is.True);
+        Assert.That(count, Is.EqualTo(1));
+        Assert.That(buffer[0], Is.AnyOf(1, 2));
+    }
+
+    [Test]
+    public void TryGetSpan_MissingKey_ReturnsFalseAndZeroCount()
+    {
+        Span<int> buffer = stackalloc int[2];
+
+        bool found = _map.TryGetSpan("missing", buffer, out int count);
+
+        Assert.That(found, Is.False);
+        Assert.That(count, Is.Zero);
+    }
+
+    [Test]
+    public void TryGetSpan_NullKey_ThrowsArgumentNullException()
+        => Assert.Throws<ArgumentNullException>(() => _map.TryGetSpan(null!, Span<int>.Empty, out _));
+
     // ── ValuesEnumerator branch coverage ────────────────────────
 
     [Test]
