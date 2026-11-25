@@ -661,6 +661,34 @@ public class MultiMapBenchmarks
     }
 
     [Benchmark]
+    public int MultiMapSet_TryGetSpan()
+    {
+        Span<int> buffer = stackalloc int[Consts.ValuesPerKey];
+        return _setMap.TryGetSpan(Consts.Key50Prefix, buffer, out int count) ? count : -1;
+    }
+
+    [Benchmark]
+    public int MultiMapList_TryGetSpan()
+    {
+        Span<int> buffer = stackalloc int[Consts.ValuesPerKey];
+        return _listMap.TryGetSpan(Consts.Key50Prefix, buffer, out int count) ? count : -1;
+    }
+
+    [Benchmark]
+    public int ConcurrentMultiMap_TryGetSpan()
+    {
+        Span<int> buffer = stackalloc int[Consts.ValuesPerKey];
+        return _concurrentMap.TryGetSpan(Consts.Key50Prefix, buffer, out int count) ? count : -1;
+    }
+
+    [Benchmark]
+    public int SortedMultiMap_TryGetSpan()
+    {
+        Span<int> buffer = stackalloc int[Consts.ValuesPerKey];
+        return _sortedMap.TryGetSpan(Consts.Key50Prefix, buffer, out int count) ? count : -1;
+    }
+
+    [Benchmark]
     public bool MultiMapLock_TryGet()
     {
         var map = new MultiMapLock<string, int>();

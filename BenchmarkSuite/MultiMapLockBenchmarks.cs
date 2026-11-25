@@ -158,6 +158,13 @@ public class MultiMapLockBenchmarks
     }
 
     [Benchmark]
+    public int MultiMapLock_TryGetSpan()
+    {
+        Span<int> buffer = stackalloc int[Consts.ValuesPerKey];
+        return _map.TryGetSpan(Consts.Key50Prefix, buffer, out int count) ? count : -1;
+    }
+
+    [Benchmark]
     public void MultiMapLock_Union()
     {
         var target = new MultiMapLock<string, int>();

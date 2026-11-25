@@ -141,6 +141,13 @@ public class SimpleMultiMapBenchmarks
         return map.TryGet(Consts.KeyMissingPrefix, out var values) && values.Contains(Consts.KeyOffset);
     }
 
+    [Benchmark]
+    public int SimpleMultiMap_TryGetSpan()
+    {
+        Span<int> buffer = stackalloc int[Consts.ValuesPerKey];
+        return _map.TryGetSpan(Consts.Key50Prefix, buffer, out int count) ? count : -1;
+    }
+
     // --- Contains benchmarks ---
 
     [Benchmark]
